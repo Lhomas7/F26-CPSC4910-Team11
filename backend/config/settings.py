@@ -130,4 +130,4 @@ MAILERS = {
     },
 }
 
-ORS_ALLOW_ALL_ORIGINS = True # placeholder
+CORS_ALLOW_ALL_ORIGINS = True # placeholder
