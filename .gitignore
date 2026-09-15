@@ -1,0 +1,49 @@
+# Environment files and local secrets
+.env
+.env.*
+!.env.example
+
+# Python / Django
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+.venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+coverage.xml
+*.sqlite3
+*.sqlite3-journal
+
+# Node / React
+node_modules/
+frontend/build/
+dist/
+.npm-cache/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE and editor settings
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
