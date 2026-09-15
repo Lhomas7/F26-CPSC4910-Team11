@@ -25,3 +25,12 @@ Add a test driver:
 Go to http://localhost:8000/api/sponsor/drivers/ in your browser, fill out the form at the bottom (Name, Sponsor id, Status), click POST.
 
 Note: sponsor ID is currently hardcoded to 1 as a placeholder until login/auth exists.
+
+
+
+
+
+
+*** TO CONNECT TO DATABASE ***
+export RDSHOST="database-1.cluster-cobd8enwsupz.us-east-1.rds.amazonaws.com" 
+psql "host=$RDSHOST port=5432 dbname=postgres user=postgres sslmode=require password=$(aws rds generate-db-auth-token --hostname $RDSHOST --port 5432 --username postgres --region us-east-1)"
