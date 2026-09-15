@@ -1,6 +1,6 @@
 import { BrowserRouter, Link, Route, Routes } from 'react-router-dom';
 import { DriverList, DriverDetail } from './components/Drivers';
-import About from './components/About';
+import AboutPage from './components/AboutPage';
 import './App.css';
 
 function App() {
@@ -17,7 +17,7 @@ function App() {
         <Routes>
           <Route path="/" element={<DriverList />} />
           <Route path="/drivers/:driverId" element={<DriverDetail />} />
-          <Route path="/about" element={<About />} />
+          <Route path="/about" element={<AboutPage />} />
         </Routes>
       </div>
     </BrowserRouter>

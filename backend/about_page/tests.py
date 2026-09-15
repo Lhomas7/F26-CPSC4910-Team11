@@ -39,7 +39,7 @@ class CurrentAboutPageReleaseTests(APITestCase):
             set(response.data),
             {
                 'team_number',
-                'version',
+                'version_number',
                 'release_date',
                 'product_name',
                 'product_description',
@@ -52,5 +52,5 @@ class CurrentAboutPageReleaseTests(APITestCase):
 
         response = self.client.get(self.url)
 
-        self.assertEqual(response.data['version'], 'Sprint 2')
+        self.assertEqual(response.data['version_number'], 'Sprint 2')
         self.assertEqual(response.data['release_date'], '2026-09-29')
