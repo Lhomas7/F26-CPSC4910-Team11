@@ -13,9 +13,10 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-test('provides an About link in the primary navigation', async () => {
+test('provides About and Sign in links in the primary navigation', async () => {
   render(<App />);
 
   await screen.findByText('No drivers assigned yet.');
   expect(screen.getByRole('link', { name: 'About' })).toHaveAttribute('href', '/about');
+  expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/login');
 });
