@@ -31,6 +31,20 @@ Note: sponsor ID is currently hardcoded to 1 as a placeholder until login/auth e
 
 
 
-*** TO CONNECT TO DATABASE ***
-export RDSHOST="database-1.cluster-cobd8enwsupz.us-east-1.rds.amazonaws.com" 
-psql "host=$RDSHOST port=5432 dbname=postgres user=postgres sslmode=require password=$(aws rds generate-db-auth-token --hostname $RDSHOST --port 5432 --username postgres --region us-east-1)"
+# The AWS Workload Credentials Provider is a client-side HTTP service that,
+# caches secrets in memory. Use it with Lambda, ECS, EKS, or EC2.  
+# https://docs.aws.amazon.com/secretsmanager/latest/userguide/secrets-manager-agent.html
+
+# Build the AWS Workload Credentials Provider
+# Install AWS Workload Credentials Provider
+
+# Retrieve secret 
+# The example relies on the SSRF being present in a file, which is where it is stored by the install script.  
+curl -v -H \
+    "X-Aws-Parameters-Secrets-Token: $(</var/run/awssmatoken)" \
+    'http://localhost:2773/secretsmanager/get?secretId=prod/AppBeta/MySQL'
+
+# Retrieve a specific version stage  
+curl -H \
+    "X-Aws-Parameters-Secrets-Token: $(</var/run/awssmatoken)" \
+    'http://localhost:2773/secretsmanager/get?secretId=prod/AppBeta/MySQL&versionStage=AWSCURRENT'
