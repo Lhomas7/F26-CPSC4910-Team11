@@ -26,25 +26,3 @@ Go to http://localhost:8000/api/sponsor/drivers/ in your browser, fill out the f
 
 Note: sponsor ID is currently hardcoded to 1 as a placeholder until login/auth exists.
 
-
-
-
-
-
-# The AWS Workload Credentials Provider is a client-side HTTP service that,
-# caches secrets in memory. Use it with Lambda, ECS, EKS, or EC2.  
-# https://docs.aws.amazon.com/secretsmanager/latest/userguide/secrets-manager-agent.html
-
-# Build the AWS Workload Credentials Provider
-# Install AWS Workload Credentials Provider
-
-# Retrieve secret 
-# The example relies on the SSRF being present in a file, which is where it is stored by the install script.  
-curl -v -H \
-    "X-Aws-Parameters-Secrets-Token: $(</var/run/awssmatoken)" \
-    'http://localhost:2773/secretsmanager/get?secretId=prod/AppBeta/MySQL'
-
-# Retrieve a specific version stage  
-curl -H \
-    "X-Aws-Parameters-Secrets-Token: $(</var/run/awssmatoken)" \
-    'http://localhost:2773/secretsmanager/get?secretId=prod/AppBeta/MySQL&versionStage=AWSCURRENT'
