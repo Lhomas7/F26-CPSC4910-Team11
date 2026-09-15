@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import AboutPage from './AboutPage';
 
@@ -39,12 +39,24 @@ test('renders release information returned by the API', async () => {
   ).toBeInTheDocument();
   expect(screen.getByText(release.product_description)).toBeInTheDocument();
   expect(screen.getByText('Team 11')).toBeInTheDocument();
-  expect(screen.getByText('Sprint 1')).toBeInTheDocument();
-  expect(screen.getByText('September 15, 2026')).toBeInTheDocument();
+  expect(screen.getAllByText('Sprint 1')).toHaveLength(2);
+  expect(screen.getAllByText('September 15, 2026')).toHaveLength(2);
   expect(global.fetch).toHaveBeenCalledWith(
     'http://localhost:8000/api/about/',
-    expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    expect.objectContaining({
+      headers: { Accept: 'application/json' },
+      signal: expect.any(AbortSignal),
+    }),
   );
+});
+
+test('explains when no release has been added yet', async () => {
+  global.fetch.mockResolvedValue({ status: 404, ok: false });
+
+  render(<AboutPage />);
+
+  expect(await screen.findByRole('heading', { name: 'No release information yet' })).toBeInTheDocument();
+  expect(screen.getByText(/add the product and release details in Django Admin/i)).toBeInTheDocument();
 });
 
 test('shows a readable error when the API request fails', async () => {
@@ -53,7 +65,7 @@ test('shows a readable error when the API request fails', async () => {
   render(<AboutPage />);
 
   await waitFor(() => {
-    expect(screen.getByRole('alert')).toHaveTextContent('temporarily unavailable');
+    expect(screen.getByRole('alert')).toHaveTextContent("Release information couldn't be loaded");
   });
 });
 
@@ -63,6 +75,21 @@ test('shows a readable error when the API returns a failure response', async () 
   render(<AboutPage />);
 
   await waitFor(() => {
-    expect(screen.getByRole('alert')).toHaveTextContent('temporarily unavailable');
+    expect(screen.getByRole('alert')).toHaveTextContent("Release information couldn't be loaded");
   });
+});
+
+test('allows a failed request to be retried', async () => {
+  global.fetch
+    .mockRejectedValueOnce(new Error('Network unavailable'))
+    .mockResolvedValueOnce({ ok: true, json: async () => release });
+
+  render(<AboutPage />);
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+
+  expect(
+    await screen.findByRole('heading', { name: release.product_name }),
+  ).toBeInTheDocument();
+  expect(global.fetch).toHaveBeenCalledTimes(2);
 });
