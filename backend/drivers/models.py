@@ -12,21 +12,3 @@ class Driver(models.Model):
 
     def __str__(self):
         return self.name
-
-
-class AboutInformation(models.Model):
-    """Release information displayed on the public About page."""
-
-    team_number = models.PositiveIntegerField()
-    version = models.CharField(max_length=50)
-    release_date = models.DateField()
-    product_name = models.CharField(max_length=150)
-    product_description = models.TextField()
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        verbose_name = 'about information'
-        verbose_name_plural = 'about information'
-
-    def __str__(self):
-        return f'{self.product_name} - {self.version}'

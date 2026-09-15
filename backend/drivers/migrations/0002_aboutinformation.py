@@ -1,20 +1,4 @@
-from datetime import date
-
 from django.db import migrations, models
-
-
-def add_initial_about_information(apps, schema_editor):
-    AboutInformation = apps.get_model('drivers', 'AboutInformation')
-    AboutInformation.objects.create(
-        team_number=11,
-        version='Sprint 1',
-        release_date=date(2026, 9, 15),
-        product_name='Good Driver Incentive Program',
-        product_description=(
-            'A web application that helps sponsor companies encourage safer '
-            'driving by awarding points that drivers can redeem for rewards.'
-        ),
-    )
 
 
 class Migration(migrations.Migration):
@@ -37,5 +21,4 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'about information',
             },
         ),
-        migrations.RunPython(add_initial_about_information, migrations.RunPython.noop),
     ]
