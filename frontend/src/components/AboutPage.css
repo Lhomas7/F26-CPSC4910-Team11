@@ -1,67 +1,354 @@
-.about-layout { min-height: 100vh; }
-.about-topbar { background: var(--surface); border-bottom: 1px solid var(--line); min-height: 4rem; padding: .7rem 1.75rem; }
-.about-topbar h1 { font-size: 1.075rem; margin: 0; }
-.about-topbar p { color: var(--ink-2); font-size: .75rem; margin: .1rem 0 0; }
-.about-content { max-width: 67.5rem; padding: 1.5rem 1.75rem 2.5rem; width: 100%; }
+.about-layout {
+  min-height: 100vh;
+}
 
-.sr-only { clip: rect(0 0 0 0); clip-path: inset(50%); height: 1px; overflow: hidden; position: absolute; white-space: nowrap; width: 1px; }
+.about-topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  min-height: 4rem;
+  padding: .7rem 1.75rem;
+}
 
-.road-hero { background: var(--road); border: 1px solid var(--line); border-radius: .75rem; color: #f4f5f2; margin-bottom: 1.25rem; overflow: hidden; padding: 1.75rem 1.875rem 0; }
-.road-hero h2 { font-size: clamp(1.5rem, 3.4vw, 2.125rem); line-height: 1.15; margin: 0; max-width: 22ch; }
-.road-hero > p { color: #c9cec9; font-size: .95rem; margin: .625rem 0 0; max-width: 62ch; }
-.release-facts { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; margin: 1.125rem 0 0; padding: 0; }
-.release-facts li { background: rgb(255 255 255 / 8%); border: 1px solid rgb(255 255 255 / 14%); border-radius: 999px; color: #e8ebe7; font-size: .75rem; padding: .25rem .75rem; }
-.release-facts b { color: var(--stripe); font-weight: 700; }
-.road-lane { border-top: 1px solid rgb(255 255 255 / 8%); height: 2.125rem; margin: 1.5rem -1.875rem 0; position: relative; }
-.road-lane::before { background: repeating-linear-gradient(to right, var(--stripe) 0 2.375rem, transparent 2.375rem 4.375rem); content: ''; height: .25rem; left: 0; position: absolute; right: 0; top: calc(50% - .125rem); }
-.truck { height: 1.125rem; left: 1.125rem; position: absolute; top: calc(50% - .5625rem); transition: left 3s cubic-bezier(.45,.05,.3,1); width: 2.875rem; }
-.truck-arrived { left: calc(100% - 4.125rem); }
-.truck-trailer { background: #e8ebe7; border-radius: .125rem; height: .875rem; left: 0; position: absolute; top: 0; width: 2rem; }
-.truck-cab { background: #3fae86; border-radius: .125rem .25rem .125rem .125rem; height: .7rem; left: 2.05rem; position: absolute; top: .2rem; width: .75rem; }
-.truck-wheel { background: #111; border: 1px solid #555; border-radius: 50%; bottom: 0; height: .375rem; position: absolute; width: .375rem; }
-.truck-wheel-one { left: .2rem; }
-.truck-wheel-two { left: 1.25rem; }
-.truck-wheel-three { left: 2.3rem; }
+.about-topbar h1 {
+  font-size: 1.075rem;
+  margin: 0;
+}
 
-.about-grid { display: grid; gap: 1rem; grid-template-columns: 1.1fr 1fr; }
-.about-card, .state-panel { background: var(--surface); border: 1px solid var(--line); border-radius: .625rem; padding: 1.125rem 1.25rem; }
-.about-card h3, .state-panel h2 { align-items: center; display: flex; font-size: .875rem; justify-content: space-between; margin: 0 0 .625rem; }
-.current-badge { background: var(--accent-soft); border-radius: 999px; color: var(--accent); font-size: .7rem; padding: .125rem .625rem; }
-.detail-rows { margin: 0; }
-.detail-rows div { border-bottom: 1px solid var(--line); display: flex; font-size: .825rem; gap: 1rem; justify-content: space-between; padding: .55rem 0; }
-.detail-rows div:last-child { border-bottom: 0; }
-.detail-rows dt { color: var(--ink-2); }
-.detail-rows dd { font-weight: 600; margin: 0; text-align: right; }
-.points-steps { counter-reset: step; display: grid; gap: .75rem; list-style: none; margin: 0; padding: 0; }
-.points-steps li { align-items: center; counter-increment: step; display: grid; font-size: .825rem; gap: .625rem; grid-template-columns: 1.75rem 1fr; }
-.points-steps li::before { background: #f8ecd4; border-radius: 50%; color: #6b4508; content: counter(step); display: grid; font-size: .75rem; font-weight: 700; height: 1.625rem; place-items: center; width: 1.625rem; }
+.about-topbar p {
+  color: var(--ink-2);
+  font-size: .75rem;
+  margin: .1rem 0 0;
+}
 
-.state-panel { margin-bottom: 1.25rem; }
-.state-panel p { color: var(--ink-2); margin: .25rem 0 0; max-width: 64ch; }
-.state-panel-error { background: #fbeae8; border-color: #dfaaa6; }
-.state-panel-error h2 { color: #9e2f29; }
-.state-panel button { background: var(--accent); border: 1px solid var(--accent); border-radius: .45rem; color: white; cursor: pointer; font-weight: 700; margin-top: .75rem; padding: .45rem .875rem; }
+.about-content {
+  max-width: 67.5rem;
+  padding: 1.5rem 1.75rem 2.5rem;
+  width: 100%;
+}
 
-.skeleton { animation: skeleton-shimmer 1.2s linear infinite; background: linear-gradient(90deg, #3a403c, #4a514c, #3a403c); background-size: 200% 100%; border-radius: .35rem; color: transparent; display: inline-block; min-width: 6ch; }
-.skeleton-title { height: 1.05em; width: 14ch; }
-.skeleton-line { display: block; height: 1em; margin-top: .35rem; max-width: 100%; width: 46ch; }
-.skeleton-line-short { width: 30ch; }
-@keyframes skeleton-shimmer { to { background-position: -200% 0; } }
+.sr-only {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.road-hero {
+  background: var(--road);
+  border: 1px solid var(--line);
+  border-radius: .75rem;
+  color: #f4f5f2;
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+  padding: 1.75rem 1.875rem 0;
+}
+
+.road-hero h2 {
+  font-size: clamp(1.5rem, 3.4vw, 2.125rem);
+  line-height: 1.15;
+  margin: 0;
+  max-width: 22ch;
+}
+
+.road-hero > p {
+  color: #c9cec9;
+  font-size: .95rem;
+  margin: .625rem 0 0;
+  max-width: 62ch;
+}
+
+.release-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  list-style: none;
+  margin: 1.125rem 0 0;
+  padding: 0;
+}
+
+.release-facts li {
+  background: rgb(255 255 255 / 8%);
+  border: 1px solid rgb(255 255 255 / 14%);
+  border-radius: 999px;
+  color: #e8ebe7;
+  font-size: .75rem;
+  padding: .25rem .75rem;
+}
+
+.release-facts b {
+  color: var(--stripe);
+  font-weight: 700;
+}
+
+.road-lane {
+  border-top: 1px solid rgb(255 255 255 / 8%);
+  height: 2.125rem;
+  margin: 1.5rem -1.875rem 0;
+  position: relative;
+}
+
+.road-lane::before {
+  background: repeating-linear-gradient(to right, var(--stripe) 0 2.375rem, transparent 2.375rem 4.375rem);
+  content: '';
+  height: .25rem;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: calc(50% - .125rem);
+}
+
+.truck {
+  height: 1.125rem;
+  left: 1.125rem;
+  position: absolute;
+  top: calc(50% - .5625rem);
+  transition: left 3s cubic-bezier(.45, .05, .3, 1);
+  width: 2.875rem;
+}
+
+.truck-arrived {
+  left: calc(100% - 4.125rem);
+}
+
+.truck-trailer {
+  background: #e8ebe7;
+  border-radius: .125rem;
+  height: .875rem;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 2rem;
+}
+
+.truck-cab {
+  background: #3fae86;
+  border-radius: .125rem .25rem .125rem .125rem;
+  height: .7rem;
+  left: 2.05rem;
+  position: absolute;
+  top: .2rem;
+  width: .75rem;
+}
+
+.truck-wheel {
+  background: #111;
+  border: 1px solid #555;
+  border-radius: 50%;
+  bottom: 0;
+  height: .375rem;
+  position: absolute;
+  width: .375rem;
+}
+
+.truck-wheel-one {
+  left: .2rem;
+}
+
+.truck-wheel-two {
+  left: 1.25rem;
+}
+
+.truck-wheel-three {
+  left: 2.3rem;
+}
+
+.about-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1.1fr 1fr;
+}
+
+.about-card,
+.state-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .625rem;
+  padding: 1.125rem 1.25rem;
+}
+
+.about-card h3,
+.state-panel h2 {
+  align-items: center;
+  display: flex;
+  font-size: .875rem;
+  justify-content: space-between;
+  margin: 0 0 .625rem;
+}
+
+.current-badge {
+  background: var(--accent-soft);
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: .7rem;
+  padding: .125rem .625rem;
+}
+
+.detail-rows {
+  margin: 0;
+}
+
+.detail-rows div {
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  font-size: .825rem;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: .55rem 0;
+}
+
+.detail-rows div:last-child {
+  border-bottom: 0;
+}
+
+.detail-rows dt {
+  color: var(--ink-2);
+}
+
+.detail-rows dd {
+  font-weight: 600;
+  margin: 0;
+  text-align: right;
+}
+
+.points-steps {
+  counter-reset: step;
+  display: grid;
+  gap: .75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.points-steps li {
+  align-items: center;
+  counter-increment: step;
+  display: grid;
+  font-size: .825rem;
+  gap: .625rem;
+  grid-template-columns: 1.75rem 1fr;
+}
+
+.points-steps li::before {
+  background: #f8ecd4;
+  border-radius: 50%;
+  color: #6b4508;
+  content: counter(step);
+  display: grid;
+  font-size: .75rem;
+  font-weight: 700;
+  height: 1.625rem;
+  place-items: center;
+  width: 1.625rem;
+}
+
+.state-panel {
+  margin-bottom: 1.25rem;
+}
+
+.state-panel p {
+  color: var(--ink-2);
+  margin: .25rem 0 0;
+  max-width: 64ch;
+}
+
+.state-panel-error {
+  background: #fbeae8;
+  border-color: #dfaaa6;
+}
+
+.state-panel-error h2 {
+  color: #9e2f29;
+}
+
+.state-panel button {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: .45rem;
+  color: white;
+  cursor: pointer;
+  font-weight: 700;
+  margin-top: .75rem;
+  padding: .45rem .875rem;
+}
+
+.skeleton {
+  animation: skeleton-shimmer 1.2s linear infinite;
+  background: linear-gradient(90deg, #3a403c, #4a514c, #3a403c);
+  background-size: 200% 100%;
+  border-radius: .35rem;
+  color: transparent;
+  display: inline-block;
+  min-width: 6ch;
+}
+
+.skeleton-title {
+  height: 1.05em;
+  width: 14ch;
+}
+
+.skeleton-line {
+  display: block;
+  height: 1em;
+  margin-top: .35rem;
+  max-width: 100%;
+  width: 46ch;
+}
+
+.skeleton-line-short {
+  width: 30ch;
+}
+
+@keyframes skeleton-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
 
 @media (prefers-color-scheme: dark) {
-  .points-steps li::before { background: #3a2f1a; color: #f3d49a; }
-  .state-panel-error { background: #3b2220; border-color: #7c3c37; }
-  .state-panel-error h2 { color: #e5766e; }
+  .points-steps li::before {
+    background: #3a2f1a;
+    color: #f3d49a;
+  }
+
+  .state-panel-error {
+    background: #3b2220;
+    border-color: #7c3c37;
+  }
+
+  .state-panel-error h2 {
+    color: #e5766e;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .truck { transition: none; }
-  .skeleton { animation: none; }
+  .truck {
+    transition: none;
+  }
+
+  .skeleton {
+    animation: none;
+  }
 }
 
 @media (max-width: 53.75rem) {
-  .about-content, .about-topbar { padding-left: 1rem; padding-right: 1rem; }
-  .about-grid { grid-template-columns: 1fr; }
-  .road-hero { padding: 1.375rem 1.25rem 0; }
-  .road-lane { margin: 1.25rem -1.25rem 0; }
+  .about-content,
+  .about-topbar {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .about-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .road-hero {
+    padding: 1.375rem 1.25rem 0;
+  }
+
+  .road-lane {
+    margin: 1.25rem -1.25rem 0;
+  }
 }
