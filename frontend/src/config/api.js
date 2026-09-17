@@ -98,3 +98,7 @@ export function getDriver(driverId) {
 export function updateDriver(driverId, data) {
   return request(`/sponsor/drivers/${driverId}/`, { method: 'PATCH', body: data }).then(readJson);
 }
+
+export function linkDriver(username) {
+  return request('/sponsor/drivers/link/', { method: 'POST', body: { username } }).then(readJson);
+}

@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { getDriver, getDrivers, updateDriver } from '../config/api';
+import { useAuth } from '../auth/AuthContext';
+import { getDriver, getDrivers, linkDriver, updateDriver } from '../config/api';
 
 export function DriverList() {
+  const { user } = useAuth();
   const [drivers, setDrivers] = useState(null);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -16,16 +18,69 @@ export function DriverList() {
 
   if (error) return <p role="alert">Could not load drivers: {error}</p>;
   if (!drivers) return <p>Loading…</p>;
-  if (drivers.length === 0) return <p>No drivers assigned yet.</p>;
 
   return (
-    <ul>
-      {drivers.map((d) => (
-        <li key={d.id} onClick={() => navigate(`/drivers/${d.id}`)}>
-          {d.name} — {d.status}
-        </li>
-      ))}
-    </ul>
+    <>
+      {drivers.length === 0 ? (
+        <p>No drivers assigned yet.</p>
+      ) : (
+        <ul>
+          {drivers.map((d) => (
+            <li key={d.id} onClick={() => navigate(`/drivers/${d.id}`)}>
+              {d.name} — {d.status}
+            </li>
+          ))}
+        </ul>
+      )}
+      {user?.account_type === 'sponsor' && (
+        <LinkDriver
+          onLinked={() =>
+            getDrivers()
+              .then(setDrivers)
+              .catch((err) => setError(err.message))
+          }
+        />
+      )}
+    </>
+  );
+}
+
+function LinkDriver({ onLinked }) {
+  const [username, setUsername] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState(null);
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setBusy(true);
+    setMessage(null);
+    try {
+      await linkDriver(username.trim());
+      setUsername('');
+      setMessage({ ok: true, text: 'Driver linked.' });
+      onLinked();
+    } catch (err) {
+      setMessage({ ok: false, text: err.message });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <form onSubmit={submit}>
+      <label htmlFor="link-username">Link a driver by username</label>
+      <input
+        id="link-username"
+        value={username}
+        onChange={(event) => setUsername(event.target.value)}
+        autoCapitalize="none"
+        spellCheck="false"
+      />
+      <button type="submit" disabled={busy || !username.trim()}>
+        {busy ? 'Linking…' : 'Link Driver'}
+      </button>
+      {message && <p role={message.ok ? 'status' : 'alert'}>{message.text}</p>}
+    </form>
   );
 }
 
