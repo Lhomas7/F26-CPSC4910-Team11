@@ -14,6 +14,24 @@ function RequireAuth({ children }) {
   return children;
 }
 
+function AccountMenu({ user, onSignOut }) {
+  if (user) {
+    return (
+      <>
+        <span className="topbar-user">{user.name || user.username}</span>
+        <button className="topbar-signout" type="button" onClick={onSignOut}>
+          Sign out
+        </button>
+      </>
+    );
+  }
+  return (
+    <Link className="topbar-signin" to="/login">
+      Sign in
+    </Link>
+  );
+}
+
 function SiteLayout() {
   const { user, signOut } = useAuth();
 
@@ -34,23 +52,15 @@ function SiteLayout() {
             <span className="nav-icon" aria-hidden="true" />
             About
           </NavLink>
-          {user ? (
-            <>
-              <span className="nav-user">{user.name || user.username}</span>
-              <button className="nav-signout" type="button" onClick={signOut}>
-                Sign out
-              </button>
-            </>
-          ) : (
-            <NavLink to="/login">
-              <span className="nav-icon" aria-hidden="true" />
-              Sign in
-            </NavLink>
-          )}
         </nav>
       </aside>
-      <div className="app-main" id="main-content" tabIndex="-1">
-        <Outlet />
+      <div className="app-main">
+        <header className="app-topbar">
+          <AccountMenu user={user} onSignOut={signOut} />
+        </header>
+        <div className="app-content" id="main-content" tabIndex="-1">
+          <Outlet />
+        </div>
       </div>
     </div>
   );
