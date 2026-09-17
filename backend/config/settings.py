@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
+    'accounts',
     'about_page',
     'drivers',
 ]
@@ -171,4 +172,25 @@ MAILERS = {
     },
 }
 
-CORS_ALLOW_ALL_ORIGINS = True # placeholder
+# Development-only CORS for the React dev server (separate local process).
+# React on http://localhost:3000 calls Django on http://localhost:8000.
+# /api/csrf/ issues the CSRF cookie; every non-GET request sends X-CSRFToken.
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+]
+CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+}
