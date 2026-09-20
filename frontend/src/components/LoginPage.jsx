@@ -256,6 +256,18 @@ function RoleRegistrationForm({ role, onBack, onDone }) {
     if (!name.trim()) return 'Enter your name.';
     if (!username.trim()) return 'Enter a username.';
     if (!password) return 'Enter a password.';
+    if (password.length < 12) {
+      return 'Password must be at least 12 characters long.';
+    }
+    if (!/[A-Za-z]/.test(password)) {
+      return 'Password must contain at least one letter.';
+    }
+    if (!/[0-9]/.test(password)) {
+      return 'Password must contain at least one number.';
+    }
+    if (!/[^A-Za-z0-9]/.test(password)) {
+      return 'Password must contain at least one symbol.';
+    }
     if (password !== passwordConfirm) return 'Passwords do not match.';
     if (role === 'sponsor' && !companyName.trim()) return 'Enter a company name.';
     return null;

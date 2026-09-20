@@ -71,6 +71,10 @@ export function login(username, password) {
   return request('/login/', { method: 'POST', body: { username, password } }).then(readJson);
 }
 
+export function changePassword(password) {
+  return request('/change-password/', {method: 'POST', body: { password }, }).then(readJson);
+}
+
 export function logout() {
   return request('/logout/', { method: 'POST' }).then(readJson);
 }

@@ -3,6 +3,7 @@ import { DriverList, DriverDetail } from './components/Drivers';
 import AboutPage from './components/AboutPage';
 import LoginPage from './components/LoginPage';
 import { AuthProvider, useAuth } from './auth/AuthContext';
+import AccountPage from './components/AccountPage';
 import './App.css';
 
 function RequireAuth({ children }) {
@@ -52,6 +53,10 @@ function SiteLayout() {
             <span className="nav-icon" aria-hidden="true" />
             About
           </NavLink>
+          <NavLink to="/account">
+            <span className="nav-icon" aria-hidden="true" />
+            Account
+          </NavLink>
         </nav>
       </aside>
       <div className="app-main">
@@ -72,6 +77,7 @@ function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route element={<SiteLayout />}>
         <Route path="/" element={<RequireAuth><DriverList /></RequireAuth>} />
+        <Route path="/account" element={<RequireAuth><AccountPage /></RequireAuth>} />
         <Route path="/drivers/:driverId" element={<RequireAuth><DriverDetail /></RequireAuth>} />
         <Route path="/about" element={<AboutPage />} />
       </Route>

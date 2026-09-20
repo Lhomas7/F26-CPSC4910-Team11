@@ -13,6 +13,7 @@ from drivers.models import Driver
 
 from .models import SponsorAccount, SponsorCompany
 from .serializers import (
+    ChangePasswordSerializer,
     DriverRegistrationSerializer,
     LoginSerializer,
     SponsorRegistrationSerializer,
@@ -104,6 +105,21 @@ class LogoutView(APIView):
     def post(self, request):
         logout(request)
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = request.user
+        user.set_password(serializer.validated_data['password'])
+        user.save()
+
+        return Response(
+            {'detail': 'Password changed successfully.'},
+            status=status.HTTP_200_OK,
+        )
 
 
 @method_decorator(ensure_csrf_cookie, name='dispatch')

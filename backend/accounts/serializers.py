@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
+import re
 
 
 class RegistrationSerializer(serializers.Serializer):
@@ -15,6 +16,17 @@ class RegistrationSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 'A user with this username already exists.'
             )
+        return value
+    
+    def validate_password(self, value):
+        if len(value) < 12:
+            raise serializers.ValidationError('Password must be at least 12 characters long.')
+        if not re.search(r'[A-Za-z]', value):
+            raise serializers.ValidationError('Password must contain at least one letter.')
+        if not re.search(r'[0-9]', value):
+            raise serializers.ValidationError('Password must contain at least one number.')
+        if not re.search(r'[^A-Za-z0-9]', value):
+            raise serializers.ValidationError('Password must contain at least one symbol.')
         return value
 
     def validate_name(self, value):
@@ -41,3 +53,25 @@ class SponsorRegistrationSerializer(RegistrationSerializer):
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True)
+
+class ChangePasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(write_only=True)
+
+    def validate_password(self, value):
+        if len(value) < 12:
+            raise serializers.ValidationError(
+                'Password must be at least 12 characters long.'
+            )
+        if not re.search(r'[A-Za-z]', value):
+            raise serializers.ValidationError(
+                'Password must contain at least one letter.'
+            )
+        if not re.search(r'[0-9]', value):
+            raise serializers.ValidationError(
+                'Password must contain at least one number.'
+            )
+        if not re.search(r'[^A-Za-z0-9]', value):
+            raise serializers.ValidationError(
+                'Password must contain at least one symbol.'
+            )
+        return value
