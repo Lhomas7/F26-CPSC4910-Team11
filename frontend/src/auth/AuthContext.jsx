@@ -35,7 +35,15 @@ export function AuthProvider({ children }) {
     setState({ loading: false, user: null });
   }, []);
 
-  return <AuthContext.Provider value={{ ...state, signIn, signOut }}>{children}</AuthContext.Provider>;
+  const updateUser = useCallback((user) => {
+    setState({ loading: false, user });
+  }, []);
+
+  return (
+    <AuthContext.Provider value={{ ...state, signIn, signOut, updateUser }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

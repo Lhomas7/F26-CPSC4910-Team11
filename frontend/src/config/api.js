@@ -75,6 +75,14 @@ export function changePassword(password) {
   return request('/change-password/', {method: 'POST', body: { password }, }).then(readJson);
 }
 
+export function getProfile() {
+  return request('/profile/').then(readJson);
+}
+
+export function updateProfile(data) {
+  return request('/profile/', { method: 'PATCH', body: data }).then(readJson);
+}
+
 export function logout() {
   return request('/logout/', { method: 'POST' }).then(readJson);
 }
