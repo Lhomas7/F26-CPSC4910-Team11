@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from rest_framework import serializers
 import re
 
@@ -6,15 +7,25 @@ import re
 class RegistrationSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=150)
     password = serializers.CharField(write_only=True)
-    name = serializers.CharField(max_length=200)
+    first_name = serializers.CharField(max_length=150)
+    last_name = serializers.CharField(max_length=150)
+    email = serializers.EmailField(max_length=254)
 
     def validate_username(self, value):
         value = value.strip()
         if not value:
             raise serializers.ValidationError('Username is required.')
-        if get_user_model().objects.filter(username=value).exists():
+        if get_user_model().objects.filter(username__iexact=value).exists():
             raise serializers.ValidationError(
                 'A user with this username already exists.'
+            )
+        return value
+
+    def validate_email(self, value):
+        value = value.strip().lower()
+        if get_user_model().objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError(
+                'A user with this email address already exists.'
             )
         return value
     
@@ -29,10 +40,16 @@ class RegistrationSerializer(serializers.Serializer):
             raise serializers.ValidationError('Password must contain at least one symbol.')
         return value
 
-    def validate_name(self, value):
+    def validate_first_name(self, value):
         value = ' '.join(value.split())
         if not value:
-            raise serializers.ValidationError('Name is required.')
+            raise serializers.ValidationError('First name is required.')
+        return value
+
+    def validate_last_name(self, value):
+        value = ' '.join(value.split())
+        if not value:
+            raise serializers.ValidationError('Last name is required.')
         return value
 
 
@@ -75,3 +92,82 @@ class ChangePasswordSerializer(serializers.Serializer):
                 'Password must contain at least one symbol.'
             )
         return value
+
+
+class SelfProfileSerializer(serializers.ModelSerializer):
+    # Profile data spans Django's User model and the role-specific related model
+    name = serializers.CharField(max_length=200)
+    account_type = serializers.SerializerMethodField()
+    company = serializers.SerializerMethodField()
+
+    class Meta:
+        model = get_user_model()
+        fields = ('id', 'username', 'name', 'account_type', 'company')
+        read_only_fields = ('id', 'account_type', 'company')
+
+    def get_account_type(self, user):
+        if hasattr(user, 'driver_profile'):
+            return 'driver'
+        if hasattr(user, 'sponsor_account'):
+            return 'sponsor'
+        return None
+
+    def get_company(self, user):
+        if hasattr(user, 'driver_profile'):
+            sponsor = user.driver_profile.sponsor
+            return sponsor.name if sponsor is not None else None
+        if hasattr(user, 'sponsor_account'):
+            return user.sponsor_account.company.name
+        return None
+
+    def validate_username(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError('Username is required.')
+
+        # Treat differently cased usernames as duplicates to avoid ambiguous logins
+        duplicate = get_user_model().objects.filter(username__iexact=value)
+        if self.instance is not None:
+            duplicate = duplicate.exclude(pk=self.instance.pk)
+        if duplicate.exists():
+            raise serializers.ValidationError(
+                'A user with this username already exists.'
+            )
+        return value
+
+    def validate_name(self, value):
+        value = ' '.join(value.split())
+        if not value:
+            raise serializers.ValidationError('Name is required.')
+        return value
+
+    def to_representation(self, user):
+        # Driver names live on Driver; sponsor names currently live on User
+        if hasattr(user, 'driver_profile'):
+            name = user.driver_profile.name
+        else:
+            name = user.get_full_name() or user.get_username()
+
+        return {
+            'id': user.id,
+            'username': user.get_username(),
+            'name': name,
+            'account_type': self.get_account_type(user),
+            'company': self.get_company(user),
+        }
+
+    @transaction.atomic
+    def update(self, user, validated_data):
+        # Keep User and its role-specific profile consistent if either save fails
+        name = validated_data.pop('name', None)
+        user.username = validated_data.get('username', user.username)
+
+        if hasattr(user, 'driver_profile'):
+            if name is not None:
+                user.driver_profile.name = name
+                user.driver_profile.save(update_fields=['name'])
+        elif name is not None:
+            user.first_name = name
+
+        user.save()
+        return user

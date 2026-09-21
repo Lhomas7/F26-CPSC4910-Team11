@@ -7,6 +7,7 @@ from .views import (
     LoginView,
     LogoutView,
     MeView,
+    SelfProfileView,
     SponsorRegistrationView,
 )
 
@@ -20,4 +21,5 @@ urlpatterns = [
     path('me/', MeView.as_view(), name='me'),
     path('csrf/', CSRFView.as_view(), name='csrf'),
     path('change-password/', ChangePasswordView.as_view(), name='change-password'),
+    path('profile/', SelfProfileView.as_view(), name='self-profile'),
 ]
