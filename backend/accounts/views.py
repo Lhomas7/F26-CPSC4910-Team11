@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import transaction
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import status
@@ -33,15 +34,21 @@ class DriverRegistrationView(AnonymousAPIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        user = get_user_model()(username=data['username'])
+        user = get_user_model()(
+            username=data['username'],
+            first_name=data['first_name'],
+            last_name=data['last_name'],
+            email=data['email'],
+        )
         try:
             validate_password(data['password'], user)
         except DjangoValidationError as exc:
             raise DRFValidationError({'password': list(exc.messages)})
 
-        user.set_password(data['password'])
-        user.save()
-        Driver.objects.create(user=user, name=data['name'])
+        with transaction.atomic():
+            user.set_password(data['password'])
+            user.save()
+            Driver.objects.create(user=user, name=user.get_full_name())
 
         return Response(get_public_user(user), status=status.HTTP_201_CREATED)
 
@@ -52,19 +59,24 @@ class SponsorRegistrationView(AnonymousAPIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        user = get_user_model()(username=data['username'])
+        user = get_user_model()(
+            username=data['username'],
+            first_name=data['first_name'],
+            last_name=data['last_name'],
+            email=data['email'],
+        )
         try:
             validate_password(data['password'], user)
         except DjangoValidationError as exc:
             raise DRFValidationError({'password': list(exc.messages)})
 
-        user.set_password(data['password'])
-        user.first_name = data['name']
-        user.save()
+        with transaction.atomic():
+            user.set_password(data['password'])
+            user.save()
 
-        company_name = normalize_company_name(data['company_name'])
-        company, _ = SponsorCompany.objects.get_or_create(name=company_name)
-        SponsorAccount.objects.create(user=user, company=company)
+            company_name = normalize_company_name(data['company_name'])
+            company, _ = SponsorCompany.objects.get_or_create(name=company_name)
+            SponsorAccount.objects.create(user=user, company=company)
 
         return Response(get_public_user(user), status=status.HTTP_201_CREATED)
 

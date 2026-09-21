@@ -8,6 +8,79 @@ from drivers.models import Driver
 from .models import SponsorCompany
 
 
+class RegistrationTests(APITestCase):
+    driver_url = reverse('accounts:driver-register')
+    sponsor_url = reverse('accounts:sponsor-register')
+
+    def registration_data(self, **overrides):
+        data = {
+            'first_name': 'Jamie',
+            'last_name': 'Rivera',
+            'email': 'jamie@example.com',
+            'username': 'jamie.rivera',
+            'password': 'ExamplePassword123!',
+        }
+        data.update(overrides)
+        return data
+
+    def test_driver_registration_stores_name_and_email(self):
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = get_user_model().objects.get(username='jamie.rivera')
+        self.assertEqual(user.first_name, 'Jamie')
+        self.assertEqual(user.last_name, 'Rivera')
+        self.assertEqual(user.email, 'jamie@example.com')
+        self.assertEqual(user.driver_profile.name, 'Jamie Rivera')
+
+    def test_sponsor_registration_stores_name_email_and_company(self):
+        data = self.registration_data(
+            username='sponsor.user',
+            email='sponsor@example.com',
+            company_name='Palmetto Freight',
+        )
+
+        response = self.client.post(self.sponsor_url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = get_user_model().objects.get(username='sponsor.user')
+        self.assertEqual(user.get_full_name(), 'Jamie Rivera')
+        self.assertEqual(user.email, 'sponsor@example.com')
+        self.assertEqual(user.sponsor_account.company.name, 'Palmetto Freight')
+
+    def test_registration_rejects_duplicate_email_case_insensitively(self):
+        get_user_model().objects.create_user(
+            username='existing.user',
+            email='jamie@example.com',
+        )
+
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(email='JAMIE@EXAMPLE.COM'),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data['email'][0],
+            'A user with this email address already exists.',
+        )
+
+    def test_registration_requires_each_name_and_email_field(self):
+        for field in ('first_name', 'last_name', 'email'):
+            data = self.registration_data()
+            del data[field]
+
+            response = self.client.post(self.driver_url, data, format='json')
+
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertIn(field, response.data)
+
+
 class SelfProfileTests(APITestCase):
     url = reverse('accounts:self-profile')
 

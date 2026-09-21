@@ -244,7 +244,9 @@ function RoleChoice({ onPick }) {
 }
 
 function RoleRegistrationForm({ role, onBack, onDone }) {
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
@@ -253,7 +255,10 @@ function RoleRegistrationForm({ role, onBack, onDone }) {
   const [busy, setBusy] = useState(false);
 
   const validate = () => {
-    if (!name.trim()) return 'Enter your name.';
+    if (!firstName.trim()) return 'Enter your first name.';
+    if (!lastName.trim()) return 'Enter your last name.';
+    if (!email.trim()) return 'Enter your email address.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return 'Enter a valid email address.';
     if (!username.trim()) return 'Enter a username.';
     if (!password) return 'Enter a password.';
     if (password.length < 12) {
@@ -284,7 +289,9 @@ function RoleRegistrationForm({ role, onBack, onDone }) {
     setBusy(true);
     try {
       const payload = {
-        name: name.trim(),
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        email: email.trim(),
         username: username.trim(),
         password,
       };
@@ -320,13 +327,36 @@ function RoleRegistrationForm({ role, onBack, onDone }) {
       {error && <p className="login-alert login-alert-error" role="alert">{error}</p>}
 
       <div className="login-field">
-        <label htmlFor="reg-name">Name</label>
+        <label htmlFor="reg-first-name">First Name</label>
         <input
-          id="reg-name"
+          id="reg-first-name"
           className="login-input"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          autoComplete="name"
+          value={firstName}
+          onChange={(event) => setFirstName(event.target.value)}
+          autoComplete="given-name"
+        />
+      </div>
+
+      <div className="login-field">
+        <label htmlFor="reg-last-name">Last Name</label>
+        <input
+          id="reg-last-name"
+          className="login-input"
+          value={lastName}
+          onChange={(event) => setLastName(event.target.value)}
+          autoComplete="family-name"
+        />
+      </div>
+
+      <div className="login-field">
+        <label htmlFor="reg-email">Email</label>
+        <input
+          id="reg-email"
+          type="email"
+          className="login-input"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          autoComplete="email"
         />
       </div>
 

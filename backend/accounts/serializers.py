@@ -7,15 +7,25 @@ import re
 class RegistrationSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=150)
     password = serializers.CharField(write_only=True)
-    name = serializers.CharField(max_length=200)
+    first_name = serializers.CharField(max_length=150)
+    last_name = serializers.CharField(max_length=150)
+    email = serializers.EmailField(max_length=254)
 
     def validate_username(self, value):
         value = value.strip()
         if not value:
             raise serializers.ValidationError('Username is required.')
-        if get_user_model().objects.filter(username=value).exists():
+        if get_user_model().objects.filter(username__iexact=value).exists():
             raise serializers.ValidationError(
                 'A user with this username already exists.'
+            )
+        return value
+
+    def validate_email(self, value):
+        value = value.strip().lower()
+        if get_user_model().objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError(
+                'A user with this email address already exists.'
             )
         return value
     
@@ -30,10 +40,16 @@ class RegistrationSerializer(serializers.Serializer):
             raise serializers.ValidationError('Password must contain at least one symbol.')
         return value
 
-    def validate_name(self, value):
+    def validate_first_name(self, value):
         value = ' '.join(value.split())
         if not value:
-            raise serializers.ValidationError('Name is required.')
+            raise serializers.ValidationError('First name is required.')
+        return value
+
+    def validate_last_name(self, value):
+        value = ' '.join(value.split())
+        if not value:
+            raise serializers.ValidationError('Last name is required.')
         return value
 
 
