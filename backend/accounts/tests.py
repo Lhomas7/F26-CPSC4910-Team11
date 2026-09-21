@@ -1,5 +1,12 @@
+from io import BytesIO
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from django.urls import reverse
+from PIL import Image
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -107,6 +114,34 @@ class SelfProfileTests(APITestCase):
             status='approved',
         )
 
+    def setUp(self):
+        self.media_directory = TemporaryDirectory()
+        self.media_override = override_settings(MEDIA_ROOT=self.media_directory.name)
+        self.media_override.enable()
+
+    def tearDown(self):
+        self.media_override.disable()
+        self.media_directory.cleanup()
+
+    def image_upload(self, name='profile.png'):
+        image_bytes = BytesIO()
+        Image.new('RGB', (40, 40), color='#3fae86').save(image_bytes, format='PNG')
+        return SimpleUploadedFile(
+            name,
+            image_bytes.getvalue(),
+            content_type='image/png',
+        )
+
+    def large_image_upload(self):
+        image_bytes = BytesIO()
+        # An uncompressed image reliably exceeds the limit without a huge fixture.
+        Image.new('RGB', (900, 900), color='#3fae86').save(image_bytes, format='BMP')
+        return SimpleUploadedFile(
+            'too-large.png',
+            image_bytes.getvalue(),
+            content_type='image/png',
+        )
+
     def test_requires_authentication(self):
         response = self.client.get(self.url)
 
@@ -126,6 +161,7 @@ class SelfProfileTests(APITestCase):
                 'name': 'Driver One',
                 'account_type': 'driver',
                 'company': 'Palmetto Freight',
+                'avatar_url': None,
             },
         )
 
@@ -170,3 +206,86 @@ class SelfProfileTests(APITestCase):
             response.data['username'][0],
             'A user with this username already exists.',
         )
+
+    def test_uploads_verified_picture_with_randomized_filename(self):
+        self.client.force_authenticate(self.user)
+
+        response = self.client.patch(
+            self.url,
+            {'profile_picture': self.image_upload('My Vacation Photo.png')},
+            format='multipart',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.driver.refresh_from_db()
+        self.assertTrue(self.driver.profile_picture.name.startswith(
+            f'driver_profiles/{self.driver.pk}/'
+        ))
+        self.assertNotIn('My Vacation Photo', self.driver.profile_picture.name)
+        self.assertTrue(Path(self.driver.profile_picture.path).exists())
+        self.assertIn('/media/driver_profiles/', response.data['avatar_url'])
+
+    def test_rejects_a_file_that_is_not_an_image(self):
+        self.client.force_authenticate(self.user)
+        fake_picture = SimpleUploadedFile(
+            'profile.png',
+            b'this is not an image',
+            content_type='image/png',
+        )
+
+        response = self.client.patch(
+            self.url,
+            {'profile_picture': fake_picture},
+            format='multipart',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('profile_picture', response.data)
+
+    def test_rejects_an_unsupported_image_extension(self):
+        self.client.force_authenticate(self.user)
+
+        response = self.client.patch(
+            self.url,
+            {'profile_picture': self.image_upload('profile.gif')},
+            format='multipart',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data['profile_picture'][0],
+            'Choose a JPG, PNG, or WebP image.',
+        )
+
+    def test_rejects_a_picture_larger_than_two_megabytes(self):
+        self.client.force_authenticate(self.user)
+
+        response = self.client.patch(
+            self.url,
+            {'profile_picture': self.large_image_upload()},
+            format='multipart',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data['profile_picture'][0],
+            'Profile pictures must be 2 MB or smaller.',
+        )
+
+    def test_removes_picture_and_deletes_stored_file_after_commit(self):
+        self.driver.profile_picture.save('original.png', self.image_upload(), save=True)
+        original_path = Path(self.driver.profile_picture.path)
+        self.client.force_authenticate(self.user)
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.patch(
+                self.url,
+                {'remove_profile_picture': True},
+                format='json',
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.driver.refresh_from_db()
+        self.assertFalse(self.driver.profile_picture)
+        self.assertFalse(original_path.exists())
+        self.assertIsNone(response.data['avatar_url'])

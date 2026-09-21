@@ -7,7 +7,7 @@ import AccountPage from './AccountPage';
 jest.mock('../auth/AuthContext');
 jest.mock('../config/api');
 
-const profile = { id: 7, username: 'driver.one', name: 'Driver One', account_type: 'driver', company: 'Palmetto Freight' };
+const profile = { id: 7, username: 'driver.one', name: 'Driver One', account_type: 'driver', company: 'Palmetto Freight', avatar_url: null };
 
 beforeEach(() => {
   useAuth.mockReturnValue({ updateUser: jest.fn() });
@@ -16,6 +16,11 @@ beforeEach(() => {
 });
 
 afterEach(() => jest.clearAllMocks());
+
+beforeAll(() => {
+  URL.createObjectURL = jest.fn(() => 'blob:profile-preview');
+  URL.revokeObjectURL = jest.fn();
+});
 
 test('loads and displays the authenticated profile', async () => {
   render(<AccountPage />);
@@ -65,4 +70,27 @@ test('can retry after the profile fails to load', async () => {
   fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
   expect(await screen.findByText('Driver One')).toBeInTheDocument();
   expect(api.getProfile).toHaveBeenCalledTimes(2);
+});
+
+test('selects and uploads a valid driver profile picture', async () => {
+  const picture = new File(['picture'], 'driver.png', { type: 'image/png' });
+  api.updateProfile.mockResolvedValue({ ...profile, avatar_url: 'http://localhost:8000/media/driver.png' });
+  render(<AccountPage />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit profile' }));
+  fireEvent.change(screen.getByLabelText('Choose picture'), { target: { files: [picture] } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+  await waitFor(() => expect(api.updateProfile).toHaveBeenCalledWith({
+    name: 'Driver One',
+    username: 'driver.one',
+    profile_picture: picture,
+  }));
+});
+
+test('rejects an unsupported profile picture before upload', async () => {
+  const picture = new File(['not-an-image'], 'driver.gif', { type: 'image/gif' });
+  render(<AccountPage />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit profile' }));
+  fireEvent.change(screen.getByLabelText('Choose picture'), { target: { files: [picture] } });
+  expect(screen.getByRole('alert')).toHaveTextContent('JPG, PNG, or WebP');
+  expect(api.updateProfile).not.toHaveBeenCalled();
 });

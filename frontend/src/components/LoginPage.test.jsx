@@ -40,8 +40,8 @@ test('driver registration sends separate name and email fields', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Create Account' }));
   fireEvent.click(screen.getByRole('button', { name: /Driver.*Earn points/i }));
 
-  fireEvent.change(screen.getByLabelText('First name'), { target: { value: 'Jamie' } });
-  fireEvent.change(screen.getByLabelText('Last name'), { target: { value: 'Rivera' } });
+  fireEvent.change(screen.getByLabelText(/First Name/i), { target: { value: 'Jamie' } });
+  fireEvent.change(screen.getByLabelText(/Last Name/i), { target: { value: 'Rivera' } });
   fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'jamie@example.com' } });
   fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'jamie.rivera' } });
   fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ExamplePassword123!' } });
