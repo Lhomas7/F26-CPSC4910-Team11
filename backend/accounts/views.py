@@ -16,6 +16,7 @@ from .serializers import (
     ChangePasswordSerializer,
     DriverRegistrationSerializer,
     LoginSerializer,
+    SelfProfileSerializer,
     SponsorRegistrationSerializer,
 )
 from .services import get_account_type, get_public_user, normalize_company_name
@@ -120,6 +121,25 @@ class ChangePasswordView(APIView):
             {'detail': 'Password changed successfully.'},
             status=status.HTTP_200_OK,
         )
+
+
+class SelfProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # This endpoint is intentionally self-scoped and accepts no user ID
+        return Response(SelfProfileSerializer(request.user).data)
+
+    def patch(self, request):
+        # Read-only serializer fields prevent role, company, and ID changes
+        serializer = SelfProfileSerializer(
+            request.user,
+            data=request.data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 
 @method_decorator(ensure_csrf_cookie, name='dispatch')
