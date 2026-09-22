@@ -8,6 +8,10 @@ pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
 
+Note: MFA uses `TOTP_ENCRYPTION_KEY` (required, no default). Copy
+`backend/.env.example` to `backend/.env` and set it — generate a key with:
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+
 Frontend (React), in a separate terminal:
 cd frontend
 npm install
