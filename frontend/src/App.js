@@ -2,6 +2,7 @@ import { BrowserRouter, Link, NavLink, Navigate, Outlet, Route, Routes, useLocat
 import { DriverList, DriverDetail } from './components/Drivers';
 import AboutPage from './components/AboutPage';
 import LoginPage from './components/LoginPage';
+import MfaSetupWall from './components/MfaSetupWall';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import AccountPage from './components/AccountPage';
 import './App.css';
@@ -35,6 +36,7 @@ function AccountMenu({ user, onSignOut }) {
 
 function SiteLayout() {
   const { user, signOut } = useAuth();
+  const sponsorNeedsMfa = user && user.account_type === 'sponsor' && user.mfa && !user.mfa.enrolled;
 
   return (
     <div className="app-shell">
@@ -64,7 +66,20 @@ function SiteLayout() {
           <AccountMenu user={user} onSignOut={signOut} />
         </header>
         <div className="app-content" id="main-content" tabIndex="-1">
-          <Outlet />
+          {sponsorNeedsMfa ? (
+            <MfaSetupWall />
+          ) : (
+            <>
+              {user && user.mfa && user.mfa.required && !user.mfa.enrolled && (
+                <div className="mfa-required-banner">
+                  Your sponsor requires two-factor authentication. Set it up to keep
+                  signing in without interruption.{' '}
+                  <Link to="/account">Set up now</Link>
+                </div>
+              )}
+              <Outlet />
+            </>
+          )}
         </div>
       </div>
     </div>

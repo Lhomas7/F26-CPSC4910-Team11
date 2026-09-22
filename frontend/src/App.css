@@ -155,6 +155,49 @@ body {
   min-width: 0;
 }
 
+.mfa-required-banner {
+  background: #fbeae8;
+  border-bottom: 1px solid var(--line);
+  color: #9e2f29;
+  font-size: .8rem;
+  padding: .6rem 1.75rem;
+}
+
+.mfa-required-banner a {
+  color: inherit;
+  font-weight: 700;
+}
+
+.mfa-required-toggle {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .7rem;
+  margin-bottom: 1rem;
+  padding: .8rem 1.1rem;
+}
+
+.mfa-required-toggle label {
+  align-items: center;
+  display: inline-flex;
+  font-size: .875rem;
+  font-weight: 700;
+  gap: .5rem;
+}
+
+.mfa-required-hint {
+  color: var(--ink-2);
+  font-size: .75rem;
+  margin: .35rem 0 0 1.6rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .mfa-required-banner {
+    background: #3b2220;
+    border-color: #7c3c37;
+    color: #e5766e;
+  }
+}
+
 .app-topbar {
   align-items: center;
   background: var(--surface);
