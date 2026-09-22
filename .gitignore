@@ -19,6 +19,7 @@ htmlcov/
 coverage.xml
 *.sqlite3
 *.sqlite3-journal
+backend/media/
 
 # Node / React
 node_modules/

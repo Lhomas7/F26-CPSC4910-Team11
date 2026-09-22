@@ -34,12 +34,13 @@ export class ApiError extends Error {
 }
 
 async function request(path, { method = 'GET', body, headers } = {}) {
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
   const init = {
     method,
     credentials: 'include',
     headers: {
       Accept: 'application/json',
-      ...(body != null ? { 'Content-Type': 'application/json' } : {}),
+      ...(body != null && !isFormData ? { 'Content-Type': 'application/json' } : {}),
       ...headers,
     },
   };
@@ -47,7 +48,8 @@ async function request(path, { method = 'GET', body, headers } = {}) {
     init.headers['X-CSRFToken'] = csrfToken();
   }
   if (body != null) {
-    init.body = JSON.stringify(body);
+    // The browser supplies the multipart boundary for FormData requests.
+    init.body = isFormData ? body : JSON.stringify(body);
   }
   return fetch(`${API_URL}${path}`, init);
 }
@@ -80,6 +82,15 @@ export function getProfile() {
 }
 
 export function updateProfile(data) {
+  const includesPictureChange = data.profile_picture || data.remove_profile_picture;
+  if (includesPictureChange) {
+    const body = new FormData();
+    body.append('name', data.name);
+    body.append('username', data.username);
+    if (data.profile_picture) body.append('profile_picture', data.profile_picture);
+    if (data.remove_profile_picture) body.append('remove_profile_picture', 'true');
+    return request('/profile/', { method: 'PATCH', body }).then(readJson);
+  }
   return request('/profile/', { method: 'PATCH', body: data }).then(readJson);
 }
 

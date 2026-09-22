@@ -163,6 +163,11 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# Uploaded files use local storage during development. Production can swap the
+# Django storage backend without changing the profile API.
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 
 # Email (env-configurable; console backend by default so dev/CI need no config).
 # An empty EMAIL_BACKEND (e.g. `EMAIL_BACKEND=` in .env) falls back to the

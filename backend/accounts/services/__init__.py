@@ -1,5 +1,8 @@
 def get_account_type(user):
-    """Return 'sponsor', 'driver', or None for a Django user."""
+    """Return the application role represented by a Django user."""
+    # Staff accounts are application administrators, including superusers.
+    if user.is_staff or user.is_superuser:
+        return 'admin'
     if hasattr(user, 'sponsor_account'):
         return 'sponsor'
     if hasattr(user, 'driver_profile'):
@@ -32,7 +35,10 @@ def get_public_user(user):
     if account_type is None:
         return None
 
-    if account_type == 'sponsor':
+    if account_type == 'admin':
+        name = user.get_full_name() or user.get_username()
+        company = None
+    elif account_type == 'sponsor':
         name = user.get_full_name() or user.get_username()
         company = user.sponsor_account.company.name
     else:

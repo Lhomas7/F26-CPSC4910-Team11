@@ -6,6 +6,8 @@ import MfaPanel from './MfaPanel';
 import './AccountPage.css';
 
 const ACCOUNT_LABELS = { driver: 'Driver', sponsor: 'Sponsor', admin: 'Admin' };
+const PROFILE_PICTURE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const PROFILE_PICTURE_LIMIT = 2 * 1024 * 1024;
 
 function initials(name) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2)
@@ -27,12 +29,23 @@ function ProfileSkeleton() {
   );
 }
 
+function Avatar({ name, src }) {
+  return (
+    <div className="account-avatar" aria-label={`Profile picture for ${name}`}>
+      {src ? <img src={src} alt="" /> : initials(name)}
+    </div>
+  );
+}
+
 export default function AccountPage() {
   const { updateUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [status, setStatus] = useState('loading');
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ name: '', username: '' });
+  const [pendingPicture, setPendingPicture] = useState(null);
+  const [removePicture, setRemovePicture] = useState(false);
+  const [picturePreview, setPicturePreview] = useState('');
   const [formError, setFormError] = useState('');
   const [notice, setNotice] = useState('');
   const [password, setPassword] = useState('');
@@ -74,17 +87,48 @@ export default function AccountPage() {
     loadProfile();
   }, [loadProfile]);
 
+  useEffect(() => {
+    if (!pendingPicture) {
+      setPicturePreview('');
+      return undefined;
+    }
+    const objectUrl = URL.createObjectURL(pendingPicture);
+    setPicturePreview(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [pendingPicture]);
+
   const beginEditing = () => {
     setForm({ name: profile.name, username: profile.username });
     setFormError('');
     setNotice('');
+    setPendingPicture(null);
+    setRemovePicture(false);
     setEditing(true);
   };
 
   const cancelEditing = () => {
     setForm({ name: profile.name, username: profile.username });
     setFormError('');
+    setPendingPicture(null);
+    setRemovePicture(false);
     setEditing(false);
+  };
+
+  const choosePicture = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!PROFILE_PICTURE_TYPES.includes(file.type)) {
+      setFormError('Choose a JPG, PNG, or WebP image.');
+      return;
+    }
+    if (file.size > PROFILE_PICTURE_LIMIT) {
+      setFormError('Profile pictures must be 2 MB or smaller.');
+      return;
+    }
+    setFormError('');
+    setPendingPicture(file);
+    setRemovePicture(false);
   };
 
   const saveProfile = async (event) => {
@@ -100,10 +144,15 @@ export default function AccountPage() {
     setFormError('');
     setNotice('');
     try {
-      const updated = await api.updateProfile({ name, username });
+      const changes = { name, username };
+      if (pendingPicture) changes.profile_picture = pendingPicture;
+      if (removePicture) changes.remove_profile_picture = true;
+      const updated = await api.updateProfile(changes);
       setProfile(updated);
       setForm({ name: updated.name, username: updated.username });
       updateUser(updated);
+      setPendingPicture(null);
+      setRemovePicture(false);
       setEditing(false);
       setNotice('Profile saved. Your changes are live.');
       setStatus('ready');
@@ -147,6 +196,10 @@ export default function AccountPage() {
   };
 
   const roleLabel = profile && (ACCOUNT_LABELS[profile.account_type] || profile.account_type);
+  const displayedPicture = removePicture ? '' : (picturePreview || profile?.avatar_url);
+  const companyValue = profile?.account_type === 'admin'
+    ? 'Not applicable'
+    : (profile?.company || 'Not assigned yet');
 
   return (
     <div className="account-page">
@@ -165,25 +218,37 @@ export default function AccountPage() {
           <>
             <section className="account-card" aria-labelledby="profile-heading">
               <div className="account-card-header">
-                <div><h2 id="profile-heading">Profile</h2><p>{editing ? 'Editing. Changes are not saved until you select Save changes.' : 'How you appear to your sponsor and admins'}</p></div>
+                <div><h2 id="profile-heading">Profile</h2><p>{editing ? 'Editing. Changes are not saved until you select Save changes.' : 'Your account information'}</p></div>
                 {!editing && <button className="account-button" type="button" onClick={beginEditing}>Edit profile</button>}
               </div>
               {notice && <p className="account-banner success" role="status">{notice}</p>}
               {formError && <p className="account-banner error" role="alert">{formError}</p>}
               {!editing ? (
                 <div className="profile-layout">
-                  <div className="account-avatar" aria-label={`Initials for ${profile.name}`}>{initials(profile.name)}</div>
+                  <Avatar name={profile.name} src={profile.avatar_url} />
                   <dl className="profile-details">
                     <div><dt>Display name</dt><dd>{profile.name}</dd></div>
                     <div><dt>Username</dt><dd>@{profile.username}</dd></div>
                     <div><dt>Account type</dt><dd>{roleLabel}</dd></div>
-                    <div><dt>Sponsor organization</dt><dd>{profile.company || <i>Not assigned yet</i>}</dd></div>
+                    <div><dt>Sponsor organization</dt><dd>{profile.account_type === 'admin' ? <i>{companyValue}</i> : (profile.company || <i>{companyValue}</i>)}</dd></div>
                   </dl>
                 </div>
               ) : (
                 <form onSubmit={saveProfile} noValidate>
                   <div className="profile-layout">
-                    <div className="account-avatar" aria-label={`Initials for ${form.name || profile.name}`}>{initials(form.name || profile.name)}</div>
+                    <div className="profile-picture-editor">
+                      <Avatar name={form.name || profile.name} src={displayedPicture} />
+                      {profile.account_type === 'driver' && (
+                        <div className="profile-picture-actions">
+                          <label className="account-button" htmlFor="profile-picture">Choose picture</label>
+                          <input id="profile-picture" className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" onChange={choosePicture} disabled={status === 'saving'} />
+                          {(displayedPicture || pendingPicture) && (
+                            <button className="account-link-button" type="button" onClick={() => { setPendingPicture(null); setRemovePicture(Boolean(profile.avatar_url)); setFormError(''); }} disabled={status === 'saving'}>Remove picture</button>
+                          )}
+                          <small>JPG, PNG, or WebP. Maximum 2 MB.</small>
+                        </div>
+                      )}
+                    </div>
                     <div className="profile-form">
                       <p className="profile-section-label">You can change</p>
                       <label htmlFor="profile-name">Display name</label>
@@ -195,7 +260,7 @@ export default function AccountPage() {
                       <p className="profile-section-label">Only an admin can change</p>
                       <div className="locked-fields">
                         <div><span>Account type</span><strong>{roleLabel}</strong></div>
-                        <div><span>Sponsor organization</span><strong>{profile.company || 'Not assigned yet'}</strong></div>
+                        <div><span>Sponsor organization</span><strong>{companyValue}</strong></div>
                       </div>
                     </div>
                   </div>

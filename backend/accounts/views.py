@@ -343,7 +343,9 @@ class SelfProfileView(APIView):
 
     def get(self, request):
         # This endpoint is intentionally self-scoped and accepts no user ID
-        return Response(SelfProfileSerializer(request.user).data)
+        return Response(
+            SelfProfileSerializer(request.user, context={'request': request}).data
+        )
 
     def patch(self, request):
         # Read-only serializer fields prevent role, company, and ID changes
@@ -351,6 +353,7 @@ class SelfProfileView(APIView):
             request.user,
             data=request.data,
             partial=True,
+            context={'request': request},
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
