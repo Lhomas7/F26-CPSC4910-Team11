@@ -1,6 +1,17 @@
+import base64
+import io
+from datetime import timedelta
+
+import pyotp
+import qrcode
+
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.password_validation import validate_password
+from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import transaction
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import status
@@ -15,15 +26,63 @@ from .models import SponsorAccount, SponsorCompany
 from .serializers import (
     ChangePasswordSerializer,
     DriverRegistrationSerializer,
+    LoginMFASerializer,
+    LoginMFARequestCodeSerializer,
     LoginSerializer,
+    MFADisableSerializer,
+    MFARequestCodeSerializer,
+    MFAResetSerializer,
+    MFASetupSerializer,
+    MFAVerifySerializer,
+    SelfProfileSerializer,
+    SponsorMFASerializer,
     SponsorRegistrationSerializer,
 )
-from .services import get_account_type, get_public_user, normalize_company_name
+from .services import (
+    get_account_type,
+    get_mfa_status,
+    get_public_user,
+    normalize_company_name,
+)
+from .services.crypto import decrypt_secret, encrypt_secret
+from .services.delivery import send_email_code, send_sms_code
+from .services.mfa import create_mfa_code, get_or_create_mfa_settings, verify_code
+from .services.notify import notify_driver_mfa_change
+
+MFA_METHOD_LABELS = {
+    'email': 'email code',
+    'sms': 'text message',
+    'totp': 'authenticator app',
+}
+
+
+def notify_method_change(user, method, action):
+    """Drivers get an in-app notification + email when their MFA setup changes."""
+    if not hasattr(user, 'driver_profile'):
+        return
+    label = MFA_METHOD_LABELS.get(method, method)
+    message = (
+        f'You {action} {label} two-factor authentication '
+        'on your Good Driver account.'
+    )
+    notify_driver_mfa_change(user.driver_profile, message)
 
 
 class AnonymousAPIView(APIView):
     authentication_classes = ()
     permission_classes = ()
+
+
+def totp_qr_payload(user, secret):
+    """Build a {qr_code(data-URI PNG), manual_key} payload for TOTP setup/reset."""
+    uri = pyotp.totp.TOTP(secret).provisioning_uri(
+        name=user.get_username(),
+        issuer_name='Good Driver',
+    )
+    buf = io.BytesIO()
+    qrcode.make(uri).save(buf, format='PNG')
+    qr_data_uri = 'data:image/png;base64,' + base64.b64encode(buf.getvalue()).decode()
+    return {'qr_code': qr_data_uri, 'manual_key': secret}
 
 
 class DriverRegistrationView(AnonymousAPIView):
@@ -32,15 +91,21 @@ class DriverRegistrationView(AnonymousAPIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        user = get_user_model()(username=data['username'])
+        user = get_user_model()(
+            username=data['username'],
+            first_name=data['first_name'],
+            last_name=data['last_name'],
+            email=data['email'],
+        )
         try:
             validate_password(data['password'], user)
         except DjangoValidationError as exc:
             raise DRFValidationError({'password': list(exc.messages)})
 
-        user.set_password(data['password'])
-        user.save()
-        Driver.objects.create(user=user, name=data['name'])
+        with transaction.atomic():
+            user.set_password(data['password'])
+            user.save()
+            Driver.objects.create(user=user, name=user.get_full_name())
 
         return Response(get_public_user(user), status=status.HTTP_201_CREATED)
 
@@ -51,20 +116,28 @@ class SponsorRegistrationView(AnonymousAPIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        user = get_user_model()(username=data['username'])
+        user = get_user_model()(
+            username=data['username'],
+            first_name=data['first_name'],
+            last_name=data['last_name'],
+            email=data['email'],
+        )
         try:
             validate_password(data['password'], user)
         except DjangoValidationError as exc:
             raise DRFValidationError({'password': list(exc.messages)})
 
-        user.set_password(data['password'])
-        user.first_name = data['name']
-        user.save()
+        with transaction.atomic():
+            user.set_password(data['password'])
+            user.save()
 
-        company_name = normalize_company_name(data['company_name'])
-        company, _ = SponsorCompany.objects.get_or_create(name=company_name)
-        SponsorAccount.objects.create(user=user, company=company)
+            company_name = normalize_company_name(data['company_name'])
+            company, _ = SponsorCompany.objects.get_or_create(name=company_name)
+            SponsorAccount.objects.create(user=user, company=company)
 
+        # Sponsors must complete MFA onboarding before the account is usable, so
+        # establish a session right away and let the frontend show the setup wall.
+        login(request, user)
         return Response(get_public_user(user), status=status.HTTP_201_CREATED)
 
 
@@ -82,8 +155,151 @@ class LoginView(AnonymousAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        mfa = getattr(user, 'mfa_settings', None)
+        if mfa is not None and mfa.any_enabled:
+            # Stage a pending-MFA session. No authenticated session exists yet.
+            # Codes are NOT sent here: the user picks their method on the second
+            # step, then POST /login/mfa/request-code/ delivers a code for that
+            # method only.
+            request.session['pending_mfa_user_id'] = user.id
+            request.session['pending_mfa_expires'] = (
+                timezone.now() + timedelta(minutes=5)
+            ).isoformat()
+            request.session['pending_mfa_attempts'] = 0
+            request.session.set_expiry(300)
+
+            return Response({'mfa': get_mfa_status(user)})
+
         login(request, user)
         return Response(get_public_user(user))
+
+
+class LoginMFAView(AnonymousAPIView):
+    def post(self, request):
+        serializer = LoginMFASerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        method = serializer.validated_data['method']
+        code = serializer.validated_data['code']
+
+        pending_user_id = request.session.get('pending_mfa_user_id')
+        pending_expires_str = request.session.get('pending_mfa_expires')
+        pending_attempts = request.session.get('pending_mfa_attempts', 0)
+
+        if pending_user_id is None:
+            return Response(
+                {'detail': 'Session expired, log in again.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        pending_expires = parse_datetime(pending_expires_str)
+        if pending_expires is None or timezone.now() > pending_expires:
+            self._clear_pending_mfa(request)
+            return Response(
+                {'detail': 'Session expired, log in again.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if pending_attempts >= 5:
+            self._clear_pending_mfa(request)
+            return Response(
+                {'detail': 'Too many attempts, log in again.'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        try:
+            user = get_user_model().objects.get(id=pending_user_id)
+        except get_user_model().DoesNotExist:
+            self._clear_pending_mfa(request)
+            return Response(
+                {'detail': 'Session expired, log in again.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        verified = False
+        if method == 'totp':
+            mfa = getattr(user, 'mfa_settings', None)
+            if mfa is not None and mfa.totp_enabled and mfa.totp_secret_encrypted:
+                secret = decrypt_secret(mfa.totp_secret_encrypted)
+                verified = pyotp.TOTP(secret).verify(code)
+        else:
+            verified = verify_code(user, purpose='login', method=method, raw_code=code)
+
+        if not verified:
+            request.session['pending_mfa_attempts'] = pending_attempts + 1
+            return Response(
+                {'detail': 'Invalid code.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        self._clear_pending_mfa(request)
+        login(request, user)
+        return Response(get_public_user(user))
+
+    def _clear_pending_mfa(self, request):
+        for key in ('pending_mfa_user_id', 'pending_mfa_expires', 'pending_mfa_attempts'):
+            request.session.pop(key, None)
+        request.session.set_expiry(0)
+
+
+class LoginMFARequestCodeView(AnonymousAPIView):
+    """Send a login-purpose code for a single method during the staged MFA step.
+
+    Anonymous like /login/mfa/ because no authenticated session exists yet; the
+    pending session (set by POST /login/) identifies the user.
+    """
+
+    def post(self, request):
+        pending_user_id = request.session.get('pending_mfa_user_id')
+        if pending_user_id is None:
+            return Response(
+                {'detail': 'Session expired, log in again.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        pending_expires = parse_datetime(request.session.get('pending_mfa_expires'))
+        if pending_expires is None or timezone.now() > pending_expires:
+            return Response(
+                {'detail': 'Session expired, log in again.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            user = get_user_model().objects.get(id=pending_user_id)
+        except get_user_model().DoesNotExist:
+            return Response(
+                {'detail': 'Session expired, log in again.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = LoginMFARequestCodeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        method = serializer.validated_data['method']
+
+        mfa = getattr(user, 'mfa_settings', None)
+        if mfa is None or not getattr(mfa, f'{method}_enabled', False):
+            return Response(
+                {'detail': f'{method.title()} is not enabled for this account.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if method == 'sms' and not mfa.phone_number:
+            return Response(
+                {'detail': 'No phone number on file.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        throttle_key = f'mfa_resend:{user.id}'
+        if not cache.add(throttle_key, '1', 30):
+            return Response(
+                {'detail': 'Please wait before requesting a new code.'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        raw_code = create_mfa_code(user, purpose='login', method=method)
+        if method == 'email':
+            send_email_code(user, raw_code)
+        else:
+            send_sms_code(mfa.phone_number or '', raw_code)
+        return Response({'detail': 'Verification code sent.'})
 
 
 class MeView(APIView):
@@ -122,7 +338,285 @@ class ChangePasswordView(APIView):
         )
 
 
+class SelfProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # This endpoint is intentionally self-scoped and accepts no user ID
+        return Response(SelfProfileSerializer(request.user).data)
+
+    def patch(self, request):
+        # Read-only serializer fields prevent role, company, and ID changes
+        serializer = SelfProfileSerializer(
+            request.user,
+            data=request.data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
 @method_decorator(ensure_csrf_cookie, name='dispatch')
 class CSRFView(AnonymousAPIView):
     def get(self, request):
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class MFAStatusView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({'mfa': get_mfa_status(request.user)})
+
+
+class MFASetupView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = MFASetupSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        method = serializer.validated_data['method']
+        user = request.user
+
+        if method == 'totp':
+            mfa = get_or_create_mfa_settings(user)
+            if mfa.totp_enabled:
+                return Response(
+                    {'detail': 'TOTP is already enabled.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            secret = pyotp.random_base32()
+            mfa.totp_secret_encrypted = encrypt_secret(secret)
+            mfa.save(update_fields=['totp_secret_encrypted'])
+            return Response(totp_qr_payload(user, secret))
+
+        phone_number = serializer.validated_data.get('phone_number', '').strip()
+        if method == 'sms' and not phone_number:
+            return Response(
+                {'phone_number': ['This field is required when method is sms.']},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        mfa = get_or_create_mfa_settings(user)
+        if method == 'sms':
+            mfa.phone_number = phone_number
+            mfa.save(update_fields=['phone_number'])
+
+        raw_code = create_mfa_code(user, purpose='enroll', method=method)
+        if method == 'email':
+            send_email_code(user, raw_code)
+        else:
+            send_sms_code(phone_number, raw_code)
+        return Response({'method': method, 'detail': 'Verification code sent.'})
+
+
+
+class MFAVerifyView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = MFAVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        method = serializer.validated_data['method']
+        code = serializer.validated_data['code']
+        user = request.user
+
+        if method == 'totp':
+            mfa = getattr(user, 'mfa_settings', None)
+            if mfa is None or not mfa.totp_secret_encrypted:
+                return Response(
+                    {'detail': 'TOTP has not been set up.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            secret = decrypt_secret(mfa.totp_secret_encrypted)
+            if not pyotp.TOTP(secret).verify(code):
+                return Response(
+                    {'detail': 'Invalid code.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            mfa.totp_enabled = True
+            mfa.save(update_fields=['totp_enabled'])
+            notify_method_change(user, 'totp', 'enabled')
+            return Response({'detail': 'TOTP enabled.'})
+
+        if not verify_code(user, purpose='enroll', method=method, raw_code=code):
+            return Response(
+                {'detail': 'Invalid code.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        mfa = get_or_create_mfa_settings(user)
+        field = f'{method}_enabled'
+        setattr(mfa, field, True)
+        mfa.save(update_fields=[field])
+        notify_method_change(user, method, 'enabled')
+        return Response({'detail': f'{method.title()} enabled.'})
+
+
+class MFARequestCodeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = MFARequestCodeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        purpose = serializer.validated_data['purpose']
+        method = serializer.validated_data['method']
+        user = request.user
+
+        throttle_key = f'mfa_resend:{user.id}'
+        if not cache.add(throttle_key, '1', 30):
+            return Response(
+                {'detail': 'Please wait before requesting a new code.'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        if method == 'sms':
+            mfa = getattr(user, 'mfa_settings', None)
+            phone_number = None
+            if mfa is not None and mfa.phone_number:
+                phone_number = mfa.phone_number
+            if not phone_number:
+                return Response(
+                    {'detail': 'No phone number on file.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        else:
+            phone_number = None
+
+        raw_code = create_mfa_code(user, purpose=purpose, method=method)
+        if method == 'email':
+            send_email_code(user, raw_code)
+        else:
+            send_sms_code(phone_number, raw_code)
+        return Response({'detail': 'Verification code sent.'})
+
+
+class MFAResetView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = MFAResetSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        method = serializer.validated_data['fallback_method']
+        code = serializer.validated_data['fallback_code']
+        user = request.user
+
+        mfa = getattr(user, 'mfa_settings', None)
+        if mfa is None or not mfa.totp_enabled:
+            return Response(
+                {'detail': 'TOTP is not enabled.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not getattr(mfa, f'{method}_enabled', False):
+            return Response(
+                {'detail': f'{method.title()} is not enabled as a fallback.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if method == 'sms' and not mfa.phone_number:
+            return Response(
+                {'detail': 'No phone number on file.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not verify_code(user, purpose='reset', method=method, raw_code=code):
+            return Response(
+                {'detail': 'Invalid fallback code.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        new_secret = pyotp.random_base32()
+        mfa.totp_secret_encrypted = encrypt_secret(new_secret)
+        mfa.save(update_fields=['totp_secret_encrypted'])
+        return Response(totp_qr_payload(user, new_secret))
+
+
+class MFADisableView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = MFADisableSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        method = serializer.validated_data['method']
+        password = serializer.validated_data['password']
+        user = request.user
+
+        if not user.check_password(password):
+            return Response(
+                {'detail': 'Incorrect password.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        mfa = getattr(user, 'mfa_settings', None)
+        if mfa is None:
+            return Response(
+                {'detail': f'{method.title()} is not enabled.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if method == 'totp':
+            if not mfa.totp_enabled:
+                return Response(
+                    {'detail': 'TOTP is not enabled.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            mfa.totp_enabled = False
+            mfa.totp_secret_encrypted = None
+            mfa.save(update_fields=['totp_enabled', 'totp_secret_encrypted'])
+        else:
+            field = f'{method}_enabled'
+            if not getattr(mfa, field, False):
+                return Response(
+                    {'detail': f'{method.title()} is not enabled.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            setattr(mfa, field, False)
+            mfa.save(update_fields=[field])
+
+        notify_method_change(user, method, 'disabled')
+        return Response({'detail': f'{method.title()} disabled.'})
+
+
+class SponsorMFASettingsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        if not hasattr(user, 'sponsor_account') or user.sponsor_account is None:
+            return Response(
+                {'detail': 'Only a sponsor can manage this setting.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        company = user.sponsor_account.company
+        return Response({'driver_mfa_required': company.driver_mfa_required})
+
+    def post(self, request):
+        serializer = SponsorMFASerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        driver_mfa_required = serializer.validated_data['driver_mfa_required']
+        user = request.user
+
+        if not hasattr(user, 'sponsor_account') or user.sponsor_account is None:
+            return Response(
+                {'detail': 'Only a sponsor can manage this setting.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        company = user.sponsor_account.company
+        company.driver_mfa_required = driver_mfa_required
+        company.save(update_fields=['driver_mfa_required'])
+
+        drivers = Driver.objects.filter(sponsor=company).select_related('user')
+        for driver in drivers:
+            message = (
+                'Your sponsor now requires multi-factor authentication. '
+                'Please set up MFA in your account.'
+                if driver_mfa_required
+                else 'MFA is no longer required for your account.'
+            )
+            notify_driver_mfa_change(
+                driver,
+                message,
+                subject='Multi-factor authentication requirement changed',
+            )
+
+        return Response({'driver_mfa_required': driver_mfa_required})

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { useAuth } from '../auth/AuthContext';
-import { getDriver, getDrivers, linkDriver, updateDriver } from '../config/api';
+import { getDriver, getDrivers, getSponsorMfaSetting, linkDriver, sponsorMfaSettings, updateDriver } from '../config/api';
 
 export function DriverList() {
   const { user } = useAuth();
@@ -33,15 +33,75 @@ export function DriverList() {
         </ul>
       )}
       {user?.account_type === 'sponsor' && (
-        <LinkDriver
-          onLinked={() =>
-            getDrivers()
-              .then(setDrivers)
-              .catch((err) => setError(err.message))
-          }
-        />
+        <>
+          <SponsorMfaToggle company={user.company} />
+          <LinkDriver
+            onLinked={() =>
+              getDrivers()
+                .then(setDrivers)
+                .catch((err) => setError(err.message))
+            }
+          />
+        </>
       )}
     </>
+  );
+}
+
+function SponsorMfaToggle({ company }) {
+  const [required, setRequired] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState(null);
+
+  useEffect(() => {
+    getSponsorMfaSetting()
+      .then((data) => {
+        setRequired(data.driver_mfa_required);
+        setMessage(null);
+      })
+      .catch((err) => setMessage({ ok: false, text: err.message }));
+  }, []);
+
+  const toggle = async (event) => {
+    const next = event.target.checked;
+    setBusy(true);
+    setMessage(null);
+    try {
+      await sponsorMfaSettings(next);
+      setRequired(next);
+      setMessage({
+        ok: true,
+        text: next
+          ? 'MFA is now required for every driver at your company.'
+          : 'MFA is no longer required for drivers at your company.',
+      });
+    } catch (err) {
+      setMessage({ ok: false, text: err.message });
+      setRequired(!next);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <form onSubmit={(e) => e.preventDefault()} className="mfa-required-toggle">
+      <label htmlFor="require-mfa">
+        <input
+          id="require-mfa"
+          type="checkbox"
+          checked={required === true}
+          onChange={toggle}
+          disabled={busy || required === null}
+        />
+        Require drivers to enable MFA
+      </label>
+      <p className="mfa-required-hint">
+        {company ? `${company} drivers` : 'Your drivers'} must set up two-factor
+        authentication before they are considered enrolled. Changing this
+        requirement notifies every affected driver by notification and email.
+      </p>
+      {message && <p role={message.ok ? 'status' : 'alert'}>{message.text}</p>}
+    </form>
   );
 }
 

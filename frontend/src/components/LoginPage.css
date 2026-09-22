@@ -107,6 +107,7 @@
 }
 
 .login-truck {
+  animation: login-drive 4.5s ease-in-out infinite;
   height: 1.125rem;
   left: 2.75rem;
   position: absolute;
@@ -126,7 +127,7 @@
 }
 
 .login-cab {
-  background: var(--stripe);
+  background: #3fae86;
   border-radius: .125rem .25rem .125rem .125rem;
   height: .6875rem;
   left: 2.0625rem;
@@ -148,6 +149,15 @@
 .login-wheel-a { left: .1875rem; }
 .login-wheel-b { left: 1.25rem; }
 .login-wheel-c { left: 2.3125rem; }
+
+@keyframes login-drive {
+  0% { left: 2.75rem; }
+  75%, 100% { left: calc(100% - 4rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-truck { animation: none; }
+}
 
 .login-road-foot {
   color: #8f968f;

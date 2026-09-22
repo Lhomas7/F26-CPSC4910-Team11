@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 import * as api from '../config/api';
 import { useAuth } from '../auth/AuthContext';
@@ -8,7 +8,7 @@ import './LoginPage.css';
 const ROLE_LABEL = { driver: 'Driver', sponsor: 'Sponsor' };
 
 export default function LoginPage() {
-  const { loading, user, signIn, signOut } = useAuth();
+  const { loading, user, signIn, completeMfaLogin, requestMfaLoginCode, signOut } = useAuth();
 
   let content;
   if (loading) {
@@ -16,7 +16,7 @@ export default function LoginPage() {
   } else if (user) {
     content = <LoggedInCard user={user} onSignOut={signOut} />;
   } else {
-    content = <AuthCard onSignIn={signIn} />;
+    content = <AuthCard onSignIn={signIn} onMfaComplete={completeMfaLogin} onRequestMfaCode={requestMfaLoginCode} />;
   }
 
   return (
@@ -95,7 +95,7 @@ function LoggedInCard({ user, onSignOut }) {
   );
 }
 
-function AuthCard({ onSignIn }) {
+function AuthCard({ onSignIn, onMfaComplete, onRequestMfaCode }) {
   const [view, setView] = useState('signin');
   const [role, setRole] = useState(null);
   const [notice, setNotice] = useState(null);
@@ -139,7 +139,7 @@ function AuthCard({ onSignIn }) {
 
       {notice && <p className="login-alert login-alert-success" role="status">{notice}</p>}
 
-      {view === 'signin' && <LoginForm onSignIn={onSignIn} />}
+      {view === 'signin' && <LoginForm onSignIn={onSignIn} onMfaComplete={onMfaComplete} onRequestMfaCode={onRequestMfaCode} />}
 
       {view === 'signup' && role === null && <RoleChoice onPick={setRole} />}
 
@@ -154,11 +154,38 @@ function AuthCard({ onSignIn }) {
   );
 }
 
-function LoginForm({ onSignIn }) {
+const METHOD_LABEL = { totp: 'Authenticator app', email: 'Email code', sms: 'Text message' };
+
+function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode }) {
+  const [step, setStep] = useState('creds');
+  const [mfaMethods, setMfaMethods] = useState([]);
+  const [method, setMethod] = useState(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [code, setCode] = useState('');
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [sendingCode, setSendingCode] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return undefined;
+    const timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
+
+  const sendLoginCode = async (chosen) => {
+    setSendingCode(true);
+    setError(null);
+    try {
+      await onRequestMfaCode(chosen);
+      setCooldown(30);
+    } catch (err) {
+      setError(err.message || 'Could not send the verification code.');
+    } finally {
+      setSendingCode(false);
+    }
+  };
 
   const submit = async (event) => {
     event.preventDefault();
@@ -173,7 +200,22 @@ function LoginForm({ onSignIn }) {
     }
     setBusy(true);
     try {
-      await onSignIn(username.trim(), password);
+      const result = await onSignIn(username.trim(), password);
+      if (result && result.mfa && result.mfa.methods && result.mfa.methods.length > 0) {
+        const methods = result.mfa.methods;
+        setMfaMethods(methods);
+        setPassword('');
+        setCode('');
+        if (methods.length === 1) {
+          const only = methods[0];
+          setMethod(only);
+          setStep('code');
+          if (only !== 'totp') await sendLoginCode(only);
+        } else {
+          setMethod(null);
+          setStep('select');
+        }
+      }
     } catch (err) {
       setError(err.message || 'Invalid username or password.');
       setPassword('');
@@ -182,7 +224,131 @@ function LoginForm({ onSignIn }) {
     }
   };
 
+  const chooseMethod = async (chosen) => {
+    setMethod(chosen);
+    setCode('');
+    setError(null);
+    setStep('code');
+    if (chosen !== 'totp') await sendLoginCode(chosen);
+  };
+
+  const submitCode = async (event) => {
+    event.preventDefault();
+    setError(null);
+    if (!method) {
+      setError('Choose a verification method.');
+      return;
+    }
+    if (!code.trim()) {
+      setError('Enter your code.');
+      return;
+    }
+    setBusy(true);
+    try {
+      await onMfaComplete(method, code.trim());
+    } catch (err) {
+      setError(err.message || 'Invalid code.');
+      setCode('');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resend = () => {
+    if (method && method !== 'totp' && !sendingCode && cooldown <= 0) {
+      sendLoginCode(method);
+    }
+  };
+
+  const backToCredentials = () => {
+    setStep('creds');
+    setError(null);
+    setCode('');
+    setMethod(null);
+  };
+
+  const backFromCode = () => {
+    setError(null);
+    setCode('');
+    if (mfaMethods.length > 1) {
+      setMethod(null);
+      setStep('select');
+    } else {
+      backToCredentials();
+    }
+  };
+
   const fieldClass = (bad) => bad ? 'login-input login-input-error' : 'login-input';
+
+  if (step === 'select') {
+    return (
+      <form className="login-form" onSubmit={(event) => event.preventDefault()} noValidate>
+        <h2>Two-step verification</h2>
+        <p className="login-sub">Choose a method to receive your verification code.</p>
+
+        {error && <p className="login-alert login-alert-error" role="alert">{error}</p>}
+
+        <div className="login-role-grid">
+          {mfaMethods.map((m) => (
+            <button key={m} type="button" className="login-role" onClick={() => chooseMethod(m)} disabled={busy}>
+              <strong>{METHOD_LABEL[m] || m}</strong>
+              <span>
+                {m === 'totp'
+                  ? 'Use your authenticator app'
+                  : m === 'sms'
+                    ? 'Get a code by text message'
+                    : 'Get a code by email'}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <button className="login-btn login-btn-outline" type="button" onClick={backToCredentials} disabled={busy}>
+          Back
+        </button>
+      </form>
+    );
+  }
+
+  if (step === 'code') {
+    return (
+      <form className="login-form" onSubmit={submitCode} noValidate>
+        <h2>Two-step verification</h2>
+        <p className="login-sub">
+          {method && method !== 'totp'
+            ? `Your ${method === 'sms' ? 'text message' : 'email'} code was sent to your ${method === 'sms' ? 'phone' : 'account email'}. Your sign-in times out after 5 minutes, so re-enter your password if it expires.`
+            : 'Enter the code from your authenticator app. Your sign-in times out after 5 minutes, so re-enter your password if it expires.'}
+        </p>
+
+        {error && <p className="login-alert login-alert-error" role="alert">{error}</p>}
+
+        {method && method !== 'totp' && (
+          <button className="login-btn login-btn-outline" type="button" onClick={resend} disabled={sendingCode || cooldown > 0}>
+            {sendingCode ? 'Sending…' : cooldown > 0 ? `Resend code (${cooldown}s)` : 'Resend code'}
+          </button>
+        )}
+
+        <div className="login-field">
+          <label htmlFor="login-mfa-code">Verification code</label>
+          <input
+            id="login-mfa-code"
+            className={fieldClass(error && !code.trim())}
+            value={code}
+            onChange={(event) => setCode(event.target.value)}
+            inputMode="numeric"
+            autoComplete="one-time-code"
+          />
+        </div>
+
+        <button className="login-btn" type="submit" disabled={busy}>
+          {busy ? 'Verifying…' : 'Verify and sign in'}
+        </button>
+        <button className="login-btn login-btn-outline" type="button" onClick={backFromCode} disabled={busy}>
+          Back
+        </button>
+      </form>
+    );
+  }
 
   return (
     <form className="login-form" onSubmit={submit} noValidate>
@@ -244,7 +410,11 @@ function RoleChoice({ onPick }) {
 }
 
 function RoleRegistrationForm({ role, onBack, onDone }) {
-  const [name, setName] = useState('');
+  const { updateUser } = useAuth();
+  const navigate = useNavigate();
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
@@ -253,7 +423,10 @@ function RoleRegistrationForm({ role, onBack, onDone }) {
   const [busy, setBusy] = useState(false);
 
   const validate = () => {
-    if (!name.trim()) return 'Enter your name.';
+    if (!firstName.trim()) return 'Enter your first name.';
+    if (!lastName.trim()) return 'Enter your last name.';
+    if (!email.trim()) return 'Enter your email address.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return 'Enter a valid email address.';
     if (!username.trim()) return 'Enter a username.';
     if (!password) return 'Enter a password.';
     if (password.length < 12) {
@@ -284,7 +457,9 @@ function RoleRegistrationForm({ role, onBack, onDone }) {
     setBusy(true);
     try {
       const payload = {
-        name: name.trim(),
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        email: email.trim(),
         username: username.trim(),
         password,
       };
@@ -294,13 +469,16 @@ function RoleRegistrationForm({ role, onBack, onDone }) {
       const created = role === 'sponsor'
         ? await api.registerSponsor(payload)
         : await api.registerDriver(payload);
+      if (role === 'sponsor') {
+        // Sponsors finish MFA setup before the account is usable; land them on
+        // the onboarding wall (SiteLayout gates the app until they enroll).
+        updateUser(created);
+        navigate('/');
+        return;
+      }
       const accountLabel = ROLE_LABEL[role];
-      const companyPart = role === 'sponsor' && created && created.company
-        ? ` Company: ${created.company}.`
-        : '';
       onDone(
         `✓ ${accountLabel} account created successfully.`
-        + `${companyPart}`
         + ` You can now sign in with your username and password.`
       );
     } catch (err) {
@@ -320,13 +498,36 @@ function RoleRegistrationForm({ role, onBack, onDone }) {
       {error && <p className="login-alert login-alert-error" role="alert">{error}</p>}
 
       <div className="login-field">
-        <label htmlFor="reg-name">Name</label>
+        <label htmlFor="reg-first-name">First Name</label>
         <input
-          id="reg-name"
+          id="reg-first-name"
           className="login-input"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          autoComplete="name"
+          value={firstName}
+          onChange={(event) => setFirstName(event.target.value)}
+          autoComplete="given-name"
+        />
+      </div>
+
+      <div className="login-field">
+        <label htmlFor="reg-last-name">Last Name</label>
+        <input
+          id="reg-last-name"
+          className="login-input"
+          value={lastName}
+          onChange={(event) => setLastName(event.target.value)}
+          autoComplete="family-name"
+        />
+      </div>
+
+      <div className="login-field">
+        <label htmlFor="reg-email">Email</label>
+        <input
+          id="reg-email"
+          type="email"
+          className="login-input"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          autoComplete="email"
         />
       </div>
 
