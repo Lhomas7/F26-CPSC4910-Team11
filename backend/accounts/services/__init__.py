@@ -7,6 +7,25 @@ def get_account_type(user):
     return None
 
 
+def get_mfa_status(user):
+    """Public MFA state for a user: required flag, enrolled flag, enabled methods."""
+    mfa = getattr(user, 'mfa_settings', None)
+    required = False
+    if hasattr(user, 'driver_profile') and user.driver_profile.sponsor is not None:
+        required = user.driver_profile.sponsor.driver_mfa_required
+    if mfa is not None:
+        enrolled = mfa.any_enabled
+        methods = mfa.enabled_methods()
+    else:
+        enrolled = False
+        methods = []
+    return {
+        'required': required,
+        'enrolled': enrolled,
+        'methods': methods,
+    }
+
+
 def get_public_user(user):
     """Public representation of an authenticated application user."""
     account_type = get_account_type(user)
@@ -30,6 +49,7 @@ def get_public_user(user):
         'name': name,
         'account_type': account_type,
         'company': company,
+        'mfa': get_mfa_status(user),
     }
 
 

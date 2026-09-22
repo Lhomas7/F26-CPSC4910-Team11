@@ -71,6 +71,70 @@ class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True)
 
+
+class MFASetupSerializer(serializers.Serializer):
+    METHOD_CHOICES = [('totp', 'TOTP'), ('email', 'Email'), ('sms', 'SMS')]
+    method = serializers.ChoiceField(choices=METHOD_CHOICES)
+    phone_number = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    E164_RE = re.compile(r'^\+[1-9]\d{7,14}$')
+
+    def validate_phone_number(self, value):
+        value = (value or '').strip()
+        if not value:
+            return value
+        if not value.startswith('+'):
+            if re.fullmatch(r'\d{10}', value):
+                value = '+1' + value
+            else:
+                raise serializers.ValidationError(
+                    'Phone number must be in E.164 format (e.g. +18645551234).'
+                )
+        if not self.E164_RE.match(value):
+            raise serializers.ValidationError(
+                'Phone number must be in E.164 format (e.g. +18645551234).'
+            )
+        return value
+
+
+class MFAVerifySerializer(serializers.Serializer):
+    METHOD_CHOICES = [('totp', 'TOTP'), ('email', 'Email'), ('sms', 'SMS')]
+    method = serializers.ChoiceField(choices=METHOD_CHOICES)
+    code = serializers.CharField(max_length=6, min_length=6)
+
+
+class MFARequestCodeSerializer(serializers.Serializer):
+    PURPOSE_CHOICES = [('enroll', 'Enroll'), ('login', 'Login'), ('reset', 'Reset')]
+    METHOD_CHOICES = [('email', 'Email'), ('sms', 'SMS')]
+    purpose = serializers.ChoiceField(choices=PURPOSE_CHOICES)
+    method = serializers.ChoiceField(choices=METHOD_CHOICES)
+
+
+class MFAResetSerializer(serializers.Serializer):
+    METHOD_CHOICES = [('email', 'Email'), ('sms', 'SMS')]
+    fallback_method = serializers.ChoiceField(choices=METHOD_CHOICES)
+    fallback_code = serializers.CharField(max_length=6, min_length=6)
+
+
+class MFADisableSerializer(serializers.Serializer):
+    METHOD_CHOICES = [('totp', 'TOTP'), ('email', 'Email'), ('sms', 'SMS')]
+    method = serializers.ChoiceField(choices=METHOD_CHOICES)
+    password = serializers.CharField(write_only=True)
+
+
+class LoginMFASerializer(serializers.Serializer):
+    METHOD_CHOICES = [('totp', 'TOTP'), ('email', 'Email'), ('sms', 'SMS')]
+    method = serializers.ChoiceField(choices=METHOD_CHOICES)
+    code = serializers.CharField(max_length=6, min_length=6)
+
+
+class LoginMFARequestCodeSerializer(serializers.Serializer):
+    METHOD_CHOICES = [('email', 'Email'), ('sms', 'SMS')]
+    method = serializers.ChoiceField(choices=METHOD_CHOICES)
+
+
+class SponsorMFASerializer(serializers.Serializer):
+    driver_mfa_required = serializers.BooleanField()
+
 class ChangePasswordSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
@@ -99,10 +163,11 @@ class SelfProfileSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=200)
     account_type = serializers.SerializerMethodField()
     company = serializers.SerializerMethodField()
+    mfa = serializers.SerializerMethodField()
 
     class Meta:
         model = get_user_model()
-        fields = ('id', 'username', 'name', 'account_type', 'company')
+        fields = ('id', 'username', 'name', 'account_type', 'company', 'mfa')
         read_only_fields = ('id', 'account_type', 'company')
 
     def get_account_type(self, user):
@@ -111,6 +176,10 @@ class SelfProfileSerializer(serializers.ModelSerializer):
         if hasattr(user, 'sponsor_account'):
             return 'sponsor'
         return None
+
+    def get_mfa(self, user):
+        from .services import get_mfa_status
+        return get_mfa_status(user)
 
     def get_company(self, user):
         if hasattr(user, 'driver_profile'):
@@ -154,6 +223,7 @@ class SelfProfileSerializer(serializers.ModelSerializer):
             'name': name,
             'account_type': self.get_account_type(user),
             'company': self.get_company(user),
+            'mfa': self.get_mfa(user),
         }
 
     @transaction.atomic
