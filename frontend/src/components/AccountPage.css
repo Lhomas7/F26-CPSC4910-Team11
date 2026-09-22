@@ -315,6 +315,10 @@
   padding: .8rem 1.25rem 0;
 }
 
+.password-form:last-child {
+  padding-bottom: .8rem;
+}
+
 .password-form .account-banner {
   margin: .75rem 0 0;
 }
