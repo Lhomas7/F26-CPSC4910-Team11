@@ -412,6 +412,81 @@ class AdminSelfProfileTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('profile_picture', response.data)
 
+
+class AdminUserListTests(APITestCase):
+    url = reverse('accounts:admin-user-list')
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.company = SponsorCompany.objects.create(name='Palmetto Freight')
+        cls.admin = get_user_model().objects.create_superuser(
+            username='directory.admin',
+            password='ExamplePassword123!',
+            first_name='Directory',
+            last_name='Admin',
+        )
+        cls.driver_user = get_user_model().objects.create_user(
+            username='marcus.driver',
+            password='ExamplePassword123!',
+        )
+        Driver.objects.create(
+            user=cls.driver_user,
+            name='Marcus Alvarez',
+            sponsor=cls.company,
+            status='approved',
+        )
+        cls.sponsor_user = get_user_model().objects.create_user(
+            username='dana.sponsor',
+            password='ExamplePassword123!',
+            first_name='Dana',
+            last_name='Whitfield',
+        )
+        SponsorAccount.objects.create(user=cls.sponsor_user, company=cls.company)
+        cls.orphan = get_user_model().objects.create_user(username='orphan.user')
+
+    def test_only_admins_can_list_users(self):
+        anonymous_response = self.client.get(self.url)
+        self.client.force_authenticate(self.driver_user)
+        driver_response = self.client.get(self.url)
+
+        self.assertEqual(anonymous_response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(driver_response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_returns_each_application_role_and_excludes_orphans(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual([user['display_name'] for user in response.data], [
+            'Dana Whitfield', 'Directory Admin', 'Marcus Alvarez'
+        ])
+        driver = next(user for user in response.data if user['role'] == 'driver')
+        self.assertEqual(driver['display_name'], 'Marcus Alvarez')
+        self.assertEqual(driver['sponsor_org']['name'], 'Palmetto Freight')
+        self.assertNotIn('orphan.user', [user['username'] for user in response.data])
+
+    def test_filters_by_role_and_searches_name_or_username(self):
+        self.client.force_authenticate(self.admin)
+
+        role_response = self.client.get(self.url, {'role': 'sponsor'})
+        search_response = self.client.get(self.url, {'search': 'marcus'})
+
+        self.assertEqual([user['username'] for user in role_response.data], [
+            'dana.sponsor'
+        ])
+        self.assertEqual([user['username'] for user in search_response.data], [
+            'marcus.driver'
+        ])
+
+    def test_rejects_an_unknown_role_filter(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.get(self.url, {'role': 'owner'})
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('role', response.data)
+
 class MFAEnrollmentTests(APITestCase):
 
     @classmethod

@@ -139,6 +139,42 @@ class LoginMFARequestCodeSerializer(serializers.Serializer):
 class SponsorMFASerializer(serializers.Serializer):
     driver_mfa_required = serializers.BooleanField()
 
+
+class AdminUserListSerializer(serializers.ModelSerializer):
+    display_name = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
+    sponsor_org = serializers.SerializerMethodField()
+
+    class Meta:
+        model = get_user_model()
+        fields = (
+            'id',
+            'display_name',
+            'username',
+            'role',
+            'sponsor_org',
+            'is_active',
+        )
+
+    def get_display_name(self, user):
+        if hasattr(user, 'driver_profile'):
+            return user.driver_profile.name
+        return user.get_full_name() or user.get_username()
+
+    def get_role(self, user):
+        return get_account_type(user)
+
+    def get_sponsor_org(self, user):
+        company = None
+        if hasattr(user, 'driver_profile'):
+            company = user.driver_profile.sponsor
+        elif hasattr(user, 'sponsor_account'):
+            company = user.sponsor_account.company
+        if company is None:
+            return None
+        return {'id': company.id, 'name': company.name}
+
+
 class ChangePasswordSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 

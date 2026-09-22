@@ -10,13 +10,14 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import status
 from rest_framework.exceptions import ValidationError as DRFValidationError
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -24,6 +25,7 @@ from drivers.models import Driver
 
 from .models import SponsorAccount, SponsorCompany
 from .serializers import (
+    AdminUserListSerializer,
     ChangePasswordSerializer,
     DriverRegistrationSerializer,
     LoginMFASerializer,
@@ -358,6 +360,44 @@ class SelfProfileView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+
+class AdminUserListView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        role = request.query_params.get('role', '').strip().lower()
+        search = request.query_params.get('search', '').strip()
+        if role and role not in {'driver', 'sponsor', 'admin'}:
+            raise DRFValidationError({'role': 'Choose driver, sponsor, or admin.'})
+
+        # Exclude orphan Django users that have no application role.
+        users = get_user_model().objects.filter(
+            Q(is_staff=True)
+            | Q(driver_profile__isnull=False)
+            | Q(sponsor_account__isnull=False)
+        ).select_related(
+            'driver_profile__sponsor',
+            'sponsor_account__company',
+        ).distinct()
+
+        if role == 'admin':
+            users = users.filter(is_staff=True)
+        elif role == 'driver':
+            users = users.filter(is_staff=False, driver_profile__isnull=False)
+        elif role == 'sponsor':
+            users = users.filter(is_staff=False, sponsor_account__isnull=False)
+
+        if search:
+            users = users.filter(
+                Q(username__icontains=search)
+                | Q(first_name__icontains=search)
+                | Q(last_name__icontains=search)
+                | Q(driver_profile__name__icontains=search)
+            ).distinct()
+
+        data = AdminUserListSerializer(users, many=True).data
+        return Response(sorted(data, key=lambda user: user['display_name'].casefold()))
 
 
 @method_decorator(ensure_csrf_cookie, name='dispatch')

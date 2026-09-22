@@ -174,3 +174,11 @@ export function sponsorMfaSettings(driverMfaRequired) {
 export function getSponsorMfaSetting() {
   return request('/sponsor/mfa/settings/').then(readJson);
 }
+
+export function getAdminUsers({ search = '', role = '' } = {}) {
+  const params = new URLSearchParams();
+  if (search) params.set('search', search);
+  if (role && role !== 'all') params.set('role', role);
+  const query = params.toString();
+  return request(`/admin/users/${query ? `?${query}` : ''}`).then(readJson);
+}
