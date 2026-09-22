@@ -180,6 +180,9 @@ export default function AccountPage() {
 
   const roleLabel = profile && (ACCOUNT_LABELS[profile.account_type] || profile.account_type);
   const displayedPicture = removePicture ? '' : (picturePreview || profile?.avatar_url);
+  const companyValue = profile?.account_type === 'admin'
+    ? 'Not applicable'
+    : (profile?.company || 'Not assigned yet');
 
   return (
     <div className="account-page">
@@ -198,7 +201,7 @@ export default function AccountPage() {
           <>
             <section className="account-card" aria-labelledby="profile-heading">
               <div className="account-card-header">
-                <div><h2 id="profile-heading">Profile</h2><p>{editing ? 'Editing. Changes are not saved until you select Save changes.' : 'How you appear to your sponsor and admins'}</p></div>
+                <div><h2 id="profile-heading">Profile</h2><p>{editing ? 'Editing. Changes are not saved until you select Save changes.' : 'Your account information'}</p></div>
                 {!editing && <button className="account-button" type="button" onClick={beginEditing}>Edit profile</button>}
               </div>
               {notice && <p className="account-banner success" role="status">{notice}</p>}
@@ -210,7 +213,7 @@ export default function AccountPage() {
                     <div><dt>Display name</dt><dd>{profile.name}</dd></div>
                     <div><dt>Username</dt><dd>@{profile.username}</dd></div>
                     <div><dt>Account type</dt><dd>{roleLabel}</dd></div>
-                    <div><dt>Sponsor organization</dt><dd>{profile.company || <i>Not assigned yet</i>}</dd></div>
+                    <div><dt>Sponsor organization</dt><dd>{profile.account_type === 'admin' ? <i>{companyValue}</i> : (profile.company || <i>{companyValue}</i>)}</dd></div>
                   </dl>
                 </div>
               ) : (
@@ -240,7 +243,7 @@ export default function AccountPage() {
                       <p className="profile-section-label">Only an admin can change</p>
                       <div className="locked-fields">
                         <div><span>Account type</span><strong>{roleLabel}</strong></div>
-                        <div><span>Sponsor organization</span><strong>{profile.company || 'Not assigned yet'}</strong></div>
+                        <div><span>Sponsor organization</span><strong>{companyValue}</strong></div>
                       </div>
                     </div>
                   </div>

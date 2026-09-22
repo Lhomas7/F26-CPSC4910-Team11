@@ -289,3 +289,80 @@ class SelfProfileTests(APITestCase):
         self.assertFalse(self.driver.profile_picture)
         self.assertFalse(original_path.exists())
         self.assertIsNone(response.data['avatar_url'])
+
+
+class AdminSelfProfileTests(APITestCase):
+    profile_url = reverse('accounts:self-profile')
+    login_url = reverse('accounts:login')
+    me_url = reverse('accounts:me')
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.admin = get_user_model().objects.create_superuser(
+            username='team11.admin',
+            email='admin@example.com',
+            password='ExamplePassword123!',
+            first_name='Team',
+            last_name='Administrator',
+        )
+
+    def test_admin_can_log_in_and_is_returned_as_an_admin(self):
+        response = self.client.post(
+            self.login_url,
+            {'username': 'team11.admin', 'password': 'ExamplePassword123!'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['account_type'], 'admin')
+        self.assertEqual(response.data['name'], 'Team Administrator')
+        self.assertIsNone(response.data['company'])
+
+        me_response = self.client.get(self.me_url)
+        self.assertTrue(me_response.data['authenticated'])
+        self.assertEqual(me_response.data['user']['account_type'], 'admin')
+
+    def test_admin_can_get_and_update_their_own_profile(self):
+        self.client.force_authenticate(self.admin)
+
+        get_response = self.client.get(self.profile_url)
+        self.assertEqual(get_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(get_response.data, {
+            'id': self.admin.id,
+            'username': 'team11.admin',
+            'name': 'Team Administrator',
+            'account_type': 'admin',
+            'company': None,
+            'avatar_url': None,
+        })
+
+        patch_response = self.client.patch(
+            self.profile_url,
+            {'name': 'Program Administrator', 'username': 'program.admin'},
+            format='json',
+        )
+
+        self.assertEqual(patch_response.status_code, status.HTTP_200_OK)
+        self.admin.refresh_from_db()
+        self.assertEqual(self.admin.username, 'program.admin')
+        self.assertEqual(self.admin.get_full_name(), 'Program Administrator')
+        self.assertEqual(patch_response.data['account_type'], 'admin')
+
+    def test_admin_cannot_add_a_driver_profile_picture(self):
+        self.client.force_authenticate(self.admin)
+        image_bytes = BytesIO()
+        Image.new('RGB', (40, 40), color='#3fae86').save(image_bytes, format='PNG')
+        picture = SimpleUploadedFile(
+            'profile.png',
+            image_bytes.getvalue(),
+            content_type='image/png',
+        )
+
+        response = self.client.patch(
+            self.profile_url,
+            {'profile_picture': picture},
+            format='multipart',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('profile_picture', response.data)

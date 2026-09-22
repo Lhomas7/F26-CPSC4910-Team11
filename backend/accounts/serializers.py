@@ -5,6 +5,8 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework import serializers
 
+from .services import get_account_type
+
 
 class RegistrationSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=150)
@@ -128,11 +130,7 @@ class SelfProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'account_type', 'company', 'avatar_url')
 
     def get_account_type(self, user):
-        if hasattr(user, 'driver_profile'):
-            return 'driver'
-        if hasattr(user, 'sponsor_account'):
-            return 'sponsor'
-        return None
+        return get_account_type(user)
 
     def get_company(self, user):
         if hasattr(user, 'driver_profile'):
@@ -244,7 +242,9 @@ class SelfProfileSerializer(serializers.ModelSerializer):
                     lambda storage=old_storage, name=old_picture_name: storage.delete(name)
                 )
         elif name is not None:
+            # Non-driver display names are stored on Django's User record.
             user.first_name = name
+            user.last_name = ''
 
         user.save()
         return user

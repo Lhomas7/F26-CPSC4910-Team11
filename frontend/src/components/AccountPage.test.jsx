@@ -94,3 +94,23 @@ test('rejects an unsupported profile picture before upload', async () => {
   expect(screen.getByRole('alert')).toHaveTextContent('JPG, PNG, or WebP');
   expect(api.updateProfile).not.toHaveBeenCalled();
 });
+
+test('reuses the profile page for an administrator account', async () => {
+  const adminProfile = {
+    id: 1,
+    username: 'team11.admin',
+    name: 'Team Administrator',
+    account_type: 'admin',
+    company: null,
+    avatar_url: null,
+  };
+  api.getProfile.mockResolvedValue(adminProfile);
+  render(<AccountPage />);
+
+  expect(await screen.findByText('Team Administrator')).toBeInTheDocument();
+  expect(screen.getByText('Admin')).toBeInTheDocument();
+  expect(screen.getByText('Not applicable')).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Edit profile' }));
+  expect(screen.queryByLabelText('Choose picture')).not.toBeInTheDocument();
+});
