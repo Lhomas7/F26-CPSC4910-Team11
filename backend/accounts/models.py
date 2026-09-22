@@ -9,6 +9,14 @@ class SponsorCompany(models.Model):
     def __str__(self):
         return self.name
 
+class LoginAttempt(models.Model):
+    username = models.CharField(max_length=150)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    successful = models.BooleanField()
+
+    def __str__(self):
+        result = 'Success' if self.successful else 'Failure'
+        return f'{self.username} - {result} - {self.timestamp}'
 
 class SponsorAccount(models.Model):
     user = models.OneToOneField(
