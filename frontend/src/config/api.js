@@ -114,3 +114,52 @@ export function updateDriver(driverId, data) {
 export function linkDriver(username) {
   return request('/sponsor/drivers/link/', { method: 'POST', body: { username } }).then(readJson);
 }
+
+export function mfaStatus() {
+  return request('/mfa/status/').then(readJson);
+}
+
+export function mfaSetup(method, phoneNumber) {
+  return request('/mfa/setup/', {
+    method: 'POST',
+    body: { method, phone_number: phoneNumber },
+  }).then(readJson);
+}
+
+export function mfaVerify(method, code) {
+  return request('/mfa/verify/', { method: 'POST', body: { method, code } }).then(readJson);
+}
+
+export function mfaRequestCode(purpose, method) {
+  return request('/mfa/request-code/', { method: 'POST', body: { purpose, method } }).then(readJson);
+}
+
+export function mfaReset(fallbackMethod, fallbackCode) {
+  return request('/mfa/reset/', {
+    method: 'POST',
+    body: { fallback_method: fallbackMethod, fallback_code: fallbackCode },
+  }).then(readJson);
+}
+
+export function mfaDisable(method, password) {
+  return request('/mfa/disable/', { method: 'POST', body: { method, password } }).then(readJson);
+}
+
+export function loginMfa(method, code) {
+  return request('/login/mfa/', { method: 'POST', body: { method, code } }).then(readJson);
+}
+
+export function loginMfaRequestCode(method) {
+  return request('/login/mfa/request-code/', { method: 'POST', body: { method } }).then(readJson);
+}
+
+export function sponsorMfaSettings(driverMfaRequired) {
+  return request('/sponsor/mfa/settings/', {
+    method: 'POST',
+    body: { driver_mfa_required: driverMfaRequired },
+  }).then(readJson);
+}
+
+export function getSponsorMfaSetting() {
+  return request('/sponsor/mfa/settings/').then(readJson);
+}

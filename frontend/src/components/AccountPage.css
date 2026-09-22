@@ -42,6 +42,18 @@
 .password-form { display: grid; gap: .35rem; padding: .8rem 1.25rem 0; }
 .password-form .account-banner { margin: .75rem 0 0; }
 .password-form .account-card-footer { margin-left: -1.25rem; margin-right: -1.25rem; }
+.mfa-methods { display: grid; gap: 0; }
+.mfa-method { align-items: center; display: flex; gap: 1rem; justify-content: space-between; min-height: 3.5rem; padding: .75rem 1.25rem; }
+.mfa-method + .mfa-method { border-top: 1px solid var(--line); }
+.mfa-method strong { font-size: .8375rem; }
+.mfa-method p { color: var(--ink-2); font-size: .75rem; margin: .15rem 0 0; }
+.mfa-method-actions { align-items: center; display: flex; gap: .6rem; }
+.mfa-pill { background: var(--accent-soft); border-radius: 99rem; color: var(--accent); font-size: .7rem; font-weight: 800; padding: .2rem .6rem; text-transform: uppercase; }
+.mfa-setup-block { border-top: 1px solid var(--line); padding: 1rem 1.25rem; }
+.mfa-setup-block p { color: var(--ink-2); font-size: .8rem; margin: 0 0 .75rem; }
+.mfa-qr { background: white; border: 1px solid var(--line); border-radius: .5rem; display: block; height: 9.5rem; margin: .25rem auto .75rem; padding: .4rem; width: 9.5rem; }
+.mfa-manual-key { color: var(--ink-2); font-size: .8rem; }
+.mfa-manual-key code { background: var(--surface-2); border: 1px solid var(--line); border-radius: .35rem; color: var(--ink); font-weight: 700; margin-left: .35rem; overflow-wrap: anywhere; padding: .2rem .5rem; }
 .account-skeleton { animation: account-shimmer 1.2s linear infinite; background: linear-gradient(90deg, var(--line), var(--surface-2), var(--line)); background-size: 200% 100%; border-radius: .35rem; display: block; height: .9rem; width: 65%; }
 .account-skeleton-heading { width: 5rem; }
 .account-skeleton-avatar { border-radius: 50%; height: 7rem; margin: 0 auto; width: 7rem; }

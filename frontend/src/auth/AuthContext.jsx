@@ -25,9 +25,23 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signIn = useCallback(async (username, password) => {
-    const user = await api.login(username, password);
+    const result = await api.login(username, password);
+    if (result && result.mfa && result.mfa.enrolled) {
+      // Staged MFA challenge — no authenticated session yet.
+      return { mfa: result.mfa };
+    }
+    setState({ loading: false, user: result });
+    return result;
+  }, []);
+
+  const completeMfaLogin = useCallback(async (method, code) => {
+    const user = await api.loginMfa(method, code);
     setState({ loading: false, user });
     return user;
+  }, []);
+
+  const requestMfaLoginCode = useCallback(async (method) => {
+    await api.loginMfaRequestCode(method);
   }, []);
 
   const signOut = useCallback(async () => {
@@ -40,7 +54,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ ...state, signIn, signOut, updateUser }}>
+    <AuthContext.Provider value={{ ...state, signIn, completeMfaLogin, requestMfaLoginCode, signOut, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

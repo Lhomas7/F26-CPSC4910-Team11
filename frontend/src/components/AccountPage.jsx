@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '../auth/AuthContext';
 import * as api from '../config/api';
+import MfaPanel from './MfaPanel';
 import './AccountPage.css';
 
 const ACCOUNT_LABELS = { driver: 'Driver', sponsor: 'Sponsor', admin: 'Admin' };
@@ -51,6 +52,22 @@ export default function AccountPage() {
       setStatus('error');
     }
   }, []);
+
+  const refreshMfa = useCallback(async () => {
+    try {
+      const data = await api.mfaStatus();
+      const mfa = data.mfa;
+      setProfile((prev) => {
+        if (!prev) return prev;
+        return { ...prev, mfa };
+      });
+      if (profile) {
+        updateUser({ ...profile, mfa });
+      }
+    } catch {
+      // Keep the current MFA view; a later action will refresh again.
+    }
+  }, [updateUser, profile]);
 
   useEffect(() => {
     document.title = 'My account | Good Driver Incentive Program';
@@ -201,6 +218,7 @@ export default function AccountPage() {
                 <div className="account-card-footer"><button className="account-button primary" type="submit" disabled={passwordBusy}>{passwordBusy ? 'Changing password…' : 'Change password'}</button></div>
               </form>
             </section>
+            <MfaPanel mfa={profile.mfa || { required: false, enrolled: false, methods: [] }} onRefreshed={refreshMfa} />
           </>
         )}
       </main>

@@ -14,6 +14,8 @@ beforeEach(() => {
     user: null,
     signIn: jest.fn(),
     signOut: jest.fn(),
+    completeMfaLogin: jest.fn(),
+    requestMfaLoginCode: jest.fn(),
   });
   api.registerDriver.mockResolvedValue({ username: 'jamie.rivera' });
 });
@@ -57,4 +59,31 @@ test('driver registration sends separate name and email fields', async () => {
       password: 'ExamplePassword123!',
     });
   });
+});
+
+test('single-method MFA login stages, auto-requests the code, and shows the code entry screen', async () => {
+  const signIn = jest.fn().mockResolvedValue({
+    mfa: { required: false, enrolled: true, methods: ['email'] },
+  });
+  const requestMfaLoginCode = jest.fn().mockResolvedValue({ detail: 'Verification code sent.' });
+  const completeMfaLogin = jest.fn().mockResolvedValue({ username: 'driver.one' });
+  useAuth.mockReturnValue({
+    loading: false,
+    user: null,
+    signIn,
+    signOut: jest.fn(),
+    completeMfaLogin,
+    requestMfaLoginCode,
+  });
+
+  renderLoginPage();
+  fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'driver.one' } });
+  fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ExamplePassword123!' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Sign In' }));
+
+  await waitFor(() => expect(signIn).toHaveBeenCalledWith('driver.one', 'ExamplePassword123!'));
+  await waitFor(() => expect(requestMfaLoginCode).toHaveBeenCalledWith('email'));
+  expect(await screen.findByText('Two-step verification')).toBeInTheDocument();
+  expect(screen.getByLabelText('Verification code')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Verify and sign in' })).toBeInTheDocument();
 });
