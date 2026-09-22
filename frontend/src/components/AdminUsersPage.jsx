@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import { useAuth } from '../auth/AuthContext';
 import * as api from '../config/api';
@@ -85,7 +86,7 @@ export default function AdminUsersPage() {
     <div className="users-page">
       <header className="users-heading">
         <div><h1>Users</h1><p>Find and manage driver, sponsor, and admin accounts</p></div>
-        <button className="users-button primary" type="button" disabled title="User creation is the next implementation group">+ Add user</button>
+        <Link className="users-button primary" to="/users/new">+ Add user</Link>
       </header>
       <main className="users-content" aria-busy={status === 'loading'}>
         <p className="sr-only" role="status" aria-live="polite">

@@ -25,6 +25,7 @@ from drivers.models import Driver
 
 from .models import SponsorAccount, SponsorCompany
 from .serializers import (
+    AdminUserCreateSerializer,
     AdminUserListSerializer,
     ChangePasswordSerializer,
     DriverRegistrationSerializer,
@@ -37,6 +38,7 @@ from .serializers import (
     MFASetupSerializer,
     MFAVerifySerializer,
     SelfProfileSerializer,
+    SponsorCompanySerializer,
     SponsorMFASerializer,
     SponsorRegistrationSerializer,
 )
@@ -398,6 +400,23 @@ class AdminUserListView(APIView):
 
         data = AdminUserListSerializer(users, many=True).data
         return Response(sorted(data, key=lambda user: user['display_name'].casefold()))
+
+    def post(self, request):
+        serializer = AdminUserCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(
+            AdminUserListSerializer(user).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class AdminSponsorCompanyListView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        companies = SponsorCompany.objects.order_by('name')
+        return Response(SponsorCompanySerializer(companies, many=True).data)
 
 
 @method_decorator(ensure_csrf_cookie, name='dispatch')

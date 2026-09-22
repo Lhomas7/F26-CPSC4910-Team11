@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 
 import { useAuth } from '../auth/AuthContext';
 import * as api from '../config/api';
@@ -6,6 +7,14 @@ import AdminUsersPage from './AdminUsersPage';
 
 jest.mock('../auth/AuthContext');
 jest.mock('../config/api');
+
+function renderPage() {
+  return render(
+    <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <AdminUsersPage />
+    </MemoryRouter>,
+  );
+}
 
 const users = [
   { id: 1, display_name: 'Kylie Gilbert', username: 'kgilbert', role: 'admin', sponsor_org: null, is_active: true },
@@ -21,7 +30,7 @@ beforeEach(() => {
 afterEach(() => jest.clearAllMocks());
 
 test('loads and displays the admin user directory', async () => {
-  render(<AdminUsersPage />);
+  renderPage();
   expect(screen.getByRole('status')).toHaveTextContent('Loading users');
   expect(await screen.findByText('Marcus Alvarez')).toBeInTheDocument();
   expect(screen.getByText('@malvarez')).toBeInTheDocument();
@@ -29,7 +38,7 @@ test('loads and displays the admin user directory', async () => {
 });
 
 test('searches and filters the loaded directory', async () => {
-  render(<AdminUsersPage />);
+  renderPage();
   await screen.findByText('Marcus Alvarez');
   fireEvent.change(screen.getByLabelText('Search by name or username'), { target: { value: 'dana' } });
   expect(screen.getByText('Dana Whitfield')).toBeInTheDocument();
@@ -43,14 +52,14 @@ test('searches and filters the loaded directory', async () => {
 
 test('does not call the API for a non-admin user', () => {
   useAuth.mockReturnValue({ user: { account_type: 'driver' } });
-  render(<AdminUsersPage />);
+  renderPage();
   expect(screen.getByRole('heading', { name: /don\'t have access/i })).toBeInTheDocument();
   expect(api.getAdminUsers).not.toHaveBeenCalled();
 });
 
 test('offers retry when the directory request fails', async () => {
   api.getAdminUsers.mockRejectedValueOnce(new Error('Unavailable')).mockResolvedValueOnce(users);
-  render(<AdminUsersPage />);
+  renderPage();
   fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
   expect(await screen.findByText('Marcus Alvarez')).toBeInTheDocument();
   expect(api.getAdminUsers).toHaveBeenCalledTimes(2);

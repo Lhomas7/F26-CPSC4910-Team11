@@ -487,6 +487,141 @@ class AdminUserListTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('role', response.data)
 
+
+class AdminUserCreationTests(APITestCase):
+    user_url = reverse('accounts:admin-user-list')
+    company_url = reverse('accounts:admin-sponsor-company-list')
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.company = SponsorCompany.objects.create(name='Palmetto Freight')
+        cls.admin = get_user_model().objects.create_superuser(
+            username='creator.admin',
+            password='ExamplePassword123!',
+        )
+        cls.driver_user = get_user_model().objects.create_user(
+            username='ordinary.driver',
+            password='ExamplePassword123!',
+        )
+        Driver.objects.create(user=cls.driver_user, name='Ordinary Driver')
+
+    def payload(self, **overrides):
+        data = {
+            'first_name': 'Jamie',
+            'last_name': 'Rivera',
+            'username': 'jamie.rivera',
+            'email': 'jamie@example.com',
+            'role': 'driver',
+            'sponsor_org_id': self.company.id,
+            'password': 'ExamplePassword123!',
+        }
+        data.update(overrides)
+        return data
+
+    def test_only_admins_can_load_companies_or_create_users(self):
+        self.client.force_authenticate(self.driver_user)
+
+        company_response = self.client.get(self.company_url)
+        create_response = self.client.post(
+            self.user_url,
+            self.payload(),
+            format='json',
+        )
+
+        self.assertEqual(company_response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(create_response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_lists_sponsor_companies_alphabetically(self):
+        SponsorCompany.objects.create(name='Blue Ridge Logistics')
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.get(self.company_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual([company['name'] for company in response.data], [
+            'Blue Ridge Logistics', 'Palmetto Freight'
+        ])
+
+    def test_creates_driver_with_optional_sponsor(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.post(self.user_url, self.payload(), format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = get_user_model().objects.get(username='jamie.rivera')
+        self.assertEqual(user.driver_profile.name, 'Jamie Rivera')
+        self.assertEqual(user.driver_profile.sponsor, self.company)
+        self.assertEqual(response.data['role'], 'driver')
+
+    def test_creates_sponsor_with_required_organization(self):
+        self.client.force_authenticate(self.admin)
+        data = self.payload(
+            username='sponsor.user',
+            email='sponsor@example.com',
+            role='sponsor',
+        )
+
+        response = self.client.post(self.user_url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = get_user_model().objects.get(username='sponsor.user')
+        self.assertEqual(user.sponsor_account.company, self.company)
+        self.assertEqual(response.data['sponsor_org']['name'], 'Palmetto Freight')
+
+    def test_creates_staff_superuser_for_admin_role(self):
+        self.client.force_authenticate(self.admin)
+        data = self.payload(
+            username='new.admin',
+            email='new.admin@example.com',
+            role='admin',
+            sponsor_org_id=None,
+        )
+
+        response = self.client.post(self.user_url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = get_user_model().objects.get(username='new.admin')
+        self.assertTrue(user.is_staff)
+        self.assertTrue(user.is_superuser)
+        self.assertEqual(response.data['role'], 'admin')
+
+    def test_rejects_duplicate_username_and_email_case_insensitively(self):
+        get_user_model().objects.create_user(
+            username='existing.user',
+            email='existing@example.com',
+        )
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.post(
+            self.user_url,
+            self.payload(
+                username='EXISTING.USER',
+                email='EXISTING@EXAMPLE.COM',
+            ),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('username', response.data)
+        self.assertIn('email', response.data)
+
+    def test_requires_an_organization_for_sponsor_accounts(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.post(
+            self.user_url,
+            self.payload(
+                username='sponsor.without.org',
+                email='sponsor.without.org@example.com',
+                role='sponsor',
+                sponsor_org_id=None,
+            ),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('sponsor_org_id', response.data)
+
 class MFAEnrollmentTests(APITestCase):
 
     @classmethod

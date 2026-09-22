@@ -182,3 +182,11 @@ export function getAdminUsers({ search = '', role = '' } = {}) {
   const query = params.toString();
   return request(`/admin/users/${query ? `?${query}` : ''}`).then(readJson);
 }
+
+export function getAdminSponsorOrganizations() {
+  return request('/admin/sponsor-organizations/').then(readJson);
+}
+
+export function createAdminUser(data) {
+  return request('/admin/users/', { method: 'POST', body: data }).then(readJson);
+}

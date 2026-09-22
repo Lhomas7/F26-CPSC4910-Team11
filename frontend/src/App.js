@@ -6,6 +6,7 @@ import MfaSetupWall from './components/MfaSetupWall';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import AccountPage from './components/AccountPage';
 import AdminUsersPage from './components/AdminUsersPage';
+import AddUserPage from './components/AddUserPage';
 import './App.css';
 
 function RequireAuth({ children }) {
@@ -101,6 +102,7 @@ function AppRoutes() {
         <Route path="/" element={<RequireAuth><DriverList /></RequireAuth>} />
         <Route path="/account" element={<RequireAuth><AccountPage /></RequireAuth>} />
         <Route path="/users" element={<RequireAuth><AdminUsersPage /></RequireAuth>} />
+        <Route path="/users/new" element={<RequireAuth><AddUserPage /></RequireAuth>} />
         <Route path="/drivers/:driverId" element={<RequireAuth><DriverDetail /></RequireAuth>} />
         <Route path="/about" element={<AboutPage />} />
       </Route>
