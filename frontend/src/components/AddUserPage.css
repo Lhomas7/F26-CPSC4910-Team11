@@ -1,0 +1,363 @@
+.add-user-page {
+  min-height: 100%;
+}
+
+.add-user-heading {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  min-height: 4rem;
+  padding: .55rem 1.75rem;
+}
+
+.add-user-heading h1 {
+  font-size: 1.075rem;
+  margin: .1rem 0 0;
+}
+
+.add-user-heading p {
+  color: var(--ink-2);
+  font-size: .72rem;
+  margin: 0;
+}
+
+.add-user-heading a {
+  color: var(--ink-2);
+  text-decoration: none;
+}
+
+.add-user-content {
+  max-width: 48rem;
+  padding: 1.5rem 1.75rem 3rem;
+}
+
+.add-user-card,
+.add-user-state {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .7rem;
+  overflow: hidden;
+}
+
+.add-user-body {
+  display: grid;
+  gap: 1.1rem;
+  padding: 1.25rem;
+}
+
+.add-user-body fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.add-user-body legend {
+  color: var(--ink-2);
+  font-size: .75rem;
+  font-weight: 700;
+  margin-bottom: .4rem;
+}
+
+.add-user-roles {
+  display: grid;
+  gap: .6rem;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.add-user-roles label {
+  position: relative;
+}
+
+.add-user-roles input {
+  height: 1px;
+  opacity: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.add-user-roles span {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .55rem;
+  cursor: pointer;
+  display: grid;
+  padding: .7rem;
+}
+
+.add-user-roles strong {
+  font-size: .8rem;
+}
+
+.add-user-roles small {
+  color: var(--ink-2);
+  font-size: .68rem;
+}
+
+.add-user-roles input:checked + span {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.add-user-roles input:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.add-user-two {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr 1fr;
+}
+
+.add-user-field {
+  display: grid;
+  gap: .3rem;
+}
+
+.add-user-field label {
+  color: var(--ink-2);
+  font-size: .75rem;
+  font-weight: 700;
+}
+
+.add-user-field label span {
+  font-weight: 400;
+}
+
+.add-user-field input,
+.add-user-field select {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .5rem;
+  color: var(--ink);
+  font: inherit;
+  padding: .55rem .7rem;
+  width: 100%;
+}
+
+.add-user-field input:focus,
+.add-user-field select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: 0;
+}
+
+.add-user-field input[aria-invalid='true'],
+.add-user-field select[aria-invalid='true'] {
+  border-color: #b3372f;
+}
+
+.add-user-field small {
+  color: var(--ink-2);
+  font-size: .68rem;
+  min-height: .95rem;
+}
+
+.add-user-field small.error {
+  color: #b3372f;
+}
+
+.add-user-password {
+  position: relative;
+}
+
+.add-user-password input {
+  padding-right: 3.5rem;
+}
+
+.add-user-password button {
+  background: transparent;
+  border: 0;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: .72rem;
+  font-weight: 700;
+  position: absolute;
+  right: .35rem;
+  top: .45rem;
+}
+
+.add-user-note {
+  border-left: 2px solid var(--line);
+  color: var(--ink-2);
+  font-size: .72rem;
+  margin: 0;
+  padding-left: .65rem;
+}
+
+.add-user-divider {
+  border-top: 1px solid var(--line);
+}
+
+.add-user-footer {
+  background: var(--surface-2);
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: .55rem;
+  justify-content: flex-end;
+  padding: .8rem 1.25rem;
+}
+
+.add-user-button {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .45rem;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: .8rem;
+  font-weight: 700;
+  padding: .45rem .8rem;
+  text-decoration: none;
+}
+
+.add-user-button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.add-user-button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.add-user-banner {
+  background: #fbeae8;
+  color: #9e2f29;
+  font-size: .78rem;
+  margin: 1rem 1.25rem 0;
+  padding: .6rem .75rem;
+}
+
+.add-user-state {
+  padding: 1.5rem;
+}
+
+.add-user-state h1,
+.add-user-state h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.add-user-state p {
+  color: var(--ink-2);
+  margin: .25rem 0 1rem;
+}
+
+.add-user-state.error {
+  background: #fbeae8;
+  border-color: #dfaaa6;
+}
+
+.add-user-state.success {
+  border-color: var(--accent);
+}
+
+.add-user-check {
+  align-items: center;
+  background: var(--accent-soft);
+  border-radius: 50%;
+  color: var(--accent);
+  display: flex;
+  font-size: 1.1rem;
+  font-weight: 800;
+  height: 2.5rem;
+  justify-content: center;
+  margin-bottom: .75rem;
+  width: 2.5rem;
+}
+
+.add-user-summary {
+  border: 1px solid var(--line);
+  border-radius: .55rem;
+  margin: 1rem 0;
+}
+
+.add-user-summary div {
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  padding: .55rem .75rem;
+}
+
+.add-user-summary div:last-child {
+  border-bottom: 0;
+}
+
+.add-user-summary dt {
+  color: var(--ink-2);
+}
+
+.add-user-summary dd {
+  font-weight: 600;
+  margin: 0;
+}
+
+.add-user-actions {
+  display: flex;
+  gap: .5rem;
+}
+
+.add-user-skeleton {
+  animation: add-user-shimmer 1.2s linear infinite;
+  background: linear-gradient(90deg, var(--line), var(--surface-2), var(--line));
+  background-size: 200% 100%;
+  border-radius: .3rem;
+  display: block;
+  height: .8rem;
+  margin-bottom: .8rem;
+  width: 55%;
+}
+
+.add-user-skeleton.wide {
+  width: 75%;
+}
+
+.add-user-skeleton.block {
+  height: 3rem;
+  width: 100%;
+}
+
+@keyframes add-user-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .add-user-banner,
+  .add-user-state.error {
+    background: #3b2220;
+    border-color: #7c3c37;
+    color: #e5766e;
+  }
+
+  .add-user-field small.error {
+    color: #e5766e;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .add-user-skeleton {
+    animation: none;
+  }
+}
+
+@media (max-width: 53.75rem) {
+  .add-user-heading,
+  .add-user-content {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .add-user-roles,
+  .add-user-two {
+    grid-template-columns: 1fr;
+  }
+
+  .add-user-footer .add-user-button,
+  .add-user-actions .add-user-button {
+    flex: 1;
+    text-align: center;
+  }
+}

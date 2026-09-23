@@ -236,6 +236,40 @@ class SelfProfileTests(APITestCase):
         self.assertEqual(self.other_user.username, 'driver.two')
         self.assertEqual(self.other_driver.name, 'Driver Two')
 
+    def test_driver_cannot_select_another_profile_with_query_or_body_ids(self):
+        self.client.force_authenticate(self.user)
+
+        get_response = self.client.get(self.url, {'user_id': self.other_user.id})
+        patch_response = self.client.patch(
+            f'{self.url}?user_id={self.other_user.id}',
+            {
+                'id': self.other_user.id,
+                'user_id': self.other_user.id,
+                'name': 'Still Driver One',
+            },
+            format='json',
+        )
+
+        self.assertEqual(get_response.data['id'], self.user.id)
+        self.assertEqual(patch_response.data['id'], self.user.id)
+        self.other_driver.refresh_from_db()
+        self.assertEqual(self.other_driver.name, 'Driver Two')
+
+    def test_rejects_username_outside_the_shared_account_rules(self):
+        self.client.force_authenticate(self.user)
+
+        invalid_characters = self.client.patch(
+            self.url, {'username': 'driver one'}, format='json'
+        )
+        too_short = self.client.patch(
+            self.url, {'username': 'ab'}, format='json'
+        )
+
+        self.assertEqual(invalid_characters.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('username', invalid_characters.data)
+        self.assertEqual(too_short.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('username', too_short.data)
+
     def test_rejects_duplicate_username_case_insensitively(self):
         self.client.force_authenticate(self.user)
 
@@ -411,6 +445,413 @@ class AdminSelfProfileTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('profile_picture', response.data)
+
+
+class AdminUserListTests(APITestCase):
+    url = reverse('accounts:admin-user-list')
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.company = SponsorCompany.objects.create(name='Palmetto Freight')
+        cls.admin = get_user_model().objects.create_superuser(
+            username='directory.admin',
+            password='ExamplePassword123!',
+            first_name='Directory',
+            last_name='Admin',
+        )
+        cls.driver_user = get_user_model().objects.create_user(
+            username='marcus.driver',
+            password='ExamplePassword123!',
+        )
+        Driver.objects.create(
+            user=cls.driver_user,
+            name='Marcus Alvarez',
+            sponsor=cls.company,
+            status='approved',
+        )
+        cls.sponsor_user = get_user_model().objects.create_user(
+            username='dana.sponsor',
+            password='ExamplePassword123!',
+            first_name='Dana',
+            last_name='Whitfield',
+        )
+        SponsorAccount.objects.create(user=cls.sponsor_user, company=cls.company)
+        cls.orphan = get_user_model().objects.create_user(username='orphan.user')
+
+    def test_only_admins_can_list_users(self):
+        anonymous_response = self.client.get(self.url)
+        self.client.force_authenticate(self.driver_user)
+        driver_response = self.client.get(self.url)
+
+        self.assertEqual(anonymous_response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(driver_response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_returns_each_application_role_and_excludes_orphans(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual([user['display_name'] for user in response.data], [
+            'Dana Whitfield', 'Directory Admin', 'Marcus Alvarez'
+        ])
+        driver = next(user for user in response.data if user['role'] == 'driver')
+        self.assertEqual(driver['display_name'], 'Marcus Alvarez')
+        self.assertEqual(driver['sponsor_org']['name'], 'Palmetto Freight')
+        self.assertNotIn('orphan.user', [user['username'] for user in response.data])
+
+    def test_filters_by_role_and_searches_name_or_username(self):
+        self.client.force_authenticate(self.admin)
+
+        role_response = self.client.get(self.url, {'role': 'sponsor'})
+        search_response = self.client.get(self.url, {'search': 'marcus'})
+
+        self.assertEqual([user['username'] for user in role_response.data], [
+            'dana.sponsor'
+        ])
+        self.assertEqual([user['username'] for user in search_response.data], [
+            'marcus.driver'
+        ])
+
+    def test_rejects_an_unknown_role_filter(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.get(self.url, {'role': 'owner'})
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('role', response.data)
+
+
+class AdminUserCreationTests(APITestCase):
+    user_url = reverse('accounts:admin-user-list')
+    company_url = reverse('accounts:admin-sponsor-company-list')
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.company = SponsorCompany.objects.create(name='Palmetto Freight')
+        cls.admin = get_user_model().objects.create_superuser(
+            username='creator.admin',
+            password='ExamplePassword123!',
+        )
+        cls.driver_user = get_user_model().objects.create_user(
+            username='ordinary.driver',
+            password='ExamplePassword123!',
+        )
+        Driver.objects.create(user=cls.driver_user, name='Ordinary Driver')
+
+    def payload(self, **overrides):
+        data = {
+            'first_name': 'Jamie',
+            'last_name': 'Rivera',
+            'username': 'jamie.rivera',
+            'email': 'jamie@example.com',
+            'role': 'driver',
+            'sponsor_org_id': self.company.id,
+            'password': 'ExamplePassword123!',
+        }
+        data.update(overrides)
+        return data
+
+    def test_only_admins_can_load_companies_or_create_users(self):
+        self.client.force_authenticate(self.driver_user)
+
+        company_response = self.client.get(self.company_url)
+        create_response = self.client.post(
+            self.user_url,
+            self.payload(),
+            format='json',
+        )
+
+        self.assertEqual(company_response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(create_response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_lists_sponsor_companies_alphabetically(self):
+        SponsorCompany.objects.create(name='Blue Ridge Logistics')
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.get(self.company_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual([company['name'] for company in response.data], [
+            'Blue Ridge Logistics', 'Palmetto Freight'
+        ])
+
+    def test_creates_driver_with_optional_sponsor(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.post(self.user_url, self.payload(), format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = get_user_model().objects.get(username='jamie.rivera')
+        self.assertEqual(user.driver_profile.name, 'Jamie Rivera')
+        self.assertEqual(user.driver_profile.sponsor, self.company)
+        self.assertEqual(response.data['role'], 'driver')
+
+    def test_creates_sponsor_with_required_organization(self):
+        self.client.force_authenticate(self.admin)
+        data = self.payload(
+            username='sponsor.user',
+            email='sponsor@example.com',
+            role='sponsor',
+        )
+
+        response = self.client.post(self.user_url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = get_user_model().objects.get(username='sponsor.user')
+        self.assertEqual(user.sponsor_account.company, self.company)
+        self.assertEqual(response.data['sponsor_org']['name'], 'Palmetto Freight')
+
+    def test_creates_staff_superuser_for_admin_role(self):
+        self.client.force_authenticate(self.admin)
+        data = self.payload(
+            username='new.admin',
+            email='new.admin@example.com',
+            role='admin',
+            sponsor_org_id=None,
+        )
+
+        response = self.client.post(self.user_url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = get_user_model().objects.get(username='new.admin')
+        self.assertTrue(user.is_staff)
+        self.assertTrue(user.is_superuser)
+        self.assertEqual(response.data['role'], 'admin')
+
+    def test_rejects_duplicate_username_and_email_case_insensitively(self):
+        get_user_model().objects.create_user(
+            username='existing.user',
+            email='existing@example.com',
+        )
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.post(
+            self.user_url,
+            self.payload(
+                username='EXISTING.USER',
+                email='EXISTING@EXAMPLE.COM',
+            ),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('username', response.data)
+        self.assertIn('email', response.data)
+
+    def test_requires_an_organization_for_sponsor_accounts(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.post(
+            self.user_url,
+            self.payload(
+                username='sponsor.without.org',
+                email='sponsor.without.org@example.com',
+                role='sponsor',
+                sponsor_org_id=None,
+            ),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('sponsor_org_id', response.data)
+
+
+class AdminSponsorDetailTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.company = SponsorCompany.objects.create(name='Palmetto Freight')
+        cls.other_company = SponsorCompany.objects.create(name='Blue Ridge Logistics')
+        cls.admin = get_user_model().objects.create_superuser(
+            username='sponsor.manager', password='ExamplePassword123!'
+        )
+        cls.sponsor_user = get_user_model().objects.create_user(
+            username='dana.sponsor',
+            password='ExamplePassword123!',
+            first_name='Dana',
+            last_name='Whitfield',
+            email='dana@example.com',
+        )
+        SponsorAccount.objects.create(user=cls.sponsor_user, company=cls.company)
+        cls.driver_user = get_user_model().objects.create_user(
+            username='ordinary.driver', password='ExamplePassword123!'
+        )
+        Driver.objects.create(user=cls.driver_user, name='Ordinary Driver')
+
+    def detail_url(self, user=None):
+        return reverse(
+            'accounts:admin-sponsor-detail',
+            kwargs={'user_id': (user or self.sponsor_user).id},
+        )
+
+    def test_admin_can_load_sponsor_details(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.get(self.detail_url())
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['role'], 'sponsor')
+        self.assertEqual(response.data['sponsor_org']['name'], 'Palmetto Freight')
+        self.assertEqual(response.data['email'], 'dana@example.com')
+
+    def test_non_admin_cannot_view_or_edit_sponsor(self):
+        self.client.force_authenticate(self.driver_user)
+
+        get_response = self.client.get(self.detail_url())
+        patch_response = self.client.patch(
+            self.detail_url(), {'first_name': 'Changed'}, format='json'
+        )
+
+        self.assertEqual(get_response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(patch_response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_driver_id_is_not_exposed_as_a_sponsor_detail(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.get(self.detail_url(self.driver_user))
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_admin_can_update_sponsor_identity_company_and_status(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.patch(self.detail_url(), {
+            'first_name': 'Danielle',
+            'last_name': 'Whitfield',
+            'username': 'danielle.sponsor',
+            'email': 'danielle@example.com',
+            'sponsor_org_id': self.other_company.id,
+            'is_active': False,
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.sponsor_user.refresh_from_db()
+        self.sponsor_user.sponsor_account.refresh_from_db()
+        self.assertEqual(self.sponsor_user.first_name, 'Danielle')
+        self.assertEqual(self.sponsor_user.sponsor_account.company, self.other_company)
+        self.assertFalse(self.sponsor_user.is_active)
+
+    def test_rejects_duplicate_username_and_email(self):
+        get_user_model().objects.create_user(
+            username='existing.user', email='existing@example.com'
+        )
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.patch(self.detail_url(), {
+            'username': 'EXISTING.USER',
+            'email': 'EXISTING@EXAMPLE.COM',
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('username', response.data)
+        self.assertIn('email', response.data)
+
+
+class AdminDriverDetailTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.company = SponsorCompany.objects.create(name='Palmetto Freight')
+        cls.other_company = SponsorCompany.objects.create(name='Blue Ridge Logistics')
+        cls.admin = get_user_model().objects.create_superuser(
+            username='driver.manager', password='ExamplePassword123!'
+        )
+        cls.driver_user = get_user_model().objects.create_user(
+            username='tasha.driver',
+            password='ExamplePassword123!',
+            email='tasha@example.com',
+        )
+        Driver.objects.create(
+            user=cls.driver_user,
+            name='Tasha Greene',
+            sponsor=cls.company,
+            status='approved',
+        )
+        cls.sponsor_user = get_user_model().objects.create_user(
+            username='ordinary.sponsor', password='ExamplePassword123!'
+        )
+        SponsorAccount.objects.create(user=cls.sponsor_user, company=cls.company)
+
+    def detail_url(self, user=None):
+        return reverse(
+            'accounts:admin-driver-detail',
+            kwargs={'user_id': (user or self.driver_user).id},
+        )
+
+    def test_admin_can_load_driver_details(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.get(self.detail_url())
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['display_name'], 'Tasha Greene')
+        self.assertEqual(response.data['role'], 'driver')
+        self.assertEqual(response.data['sponsor_org']['name'], 'Palmetto Freight')
+        self.assertIsNone(response.data['profile_picture_url'])
+
+    def test_non_admin_cannot_view_or_edit_driver(self):
+        self.client.force_authenticate(self.sponsor_user)
+
+        get_response = self.client.get(self.detail_url())
+        patch_response = self.client.patch(
+            self.detail_url(), {'display_name': 'Changed'}, format='json'
+        )
+
+        self.assertEqual(get_response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(patch_response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_sponsor_id_is_not_exposed_as_driver_detail(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.get(self.detail_url(self.sponsor_user))
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_admin_can_update_driver_and_remove_sponsor(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.patch(self.detail_url(), {
+            'display_name': 'Tasha Green',
+            'username': 'tasha.green',
+            'email': 'tasha.green@example.com',
+            'sponsor_org_id': None,
+            'is_active': False,
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.driver_user.refresh_from_db()
+        self.driver_user.driver_profile.refresh_from_db()
+        self.assertEqual(self.driver_user.driver_profile.name, 'Tasha Green')
+        self.assertIsNone(self.driver_user.driver_profile.sponsor)
+        self.assertFalse(self.driver_user.is_active)
+
+    def test_admin_can_reassign_driver_to_another_sponsor(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.patch(
+            self.detail_url(),
+            {'sponsor_org_id': self.other_company.id},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['sponsor_org']['name'], 'Blue Ridge Logistics')
+
+    def test_rejects_invalid_or_duplicate_identity_fields(self):
+        get_user_model().objects.create_user(
+            username='existing.user', email='existing@example.com'
+        )
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.patch(self.detail_url(), {
+            'display_name': '   ',
+            'username': 'EXISTING.USER',
+            'email': 'EXISTING@EXAMPLE.COM',
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('display_name', response.data)
+        self.assertIn('username', response.data)
+        self.assertIn('email', response.data)
 
 class MFAEnrollmentTests(APITestCase):
 
