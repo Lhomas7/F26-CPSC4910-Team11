@@ -1,10 +1,13 @@
 import base64
+import hashlib
 import io
+import logging
 from datetime import timedelta
 
 import pyotp
 import qrcode
 
+from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.password_validation import validate_password
 from django.core.cache import cache
@@ -40,6 +43,7 @@ from .serializers import (
     MFAResetSerializer,
     MFASetupSerializer,
     MFAVerifySerializer,
+    PasswordResetRequestSerializer,
     SelfProfileSerializer,
     SponsorCompanySerializer,
     SponsorMFASerializer,
@@ -53,8 +57,17 @@ from .services import (
 )
 from .services.crypto import decrypt_secret, encrypt_secret
 from .services.delivery import send_email_code, send_sms_code
+from .services.login_audit import record_login_attempt
 from .services.mfa import create_mfa_code, get_or_create_mfa_settings, verify_code
-from .services.notify import notify_driver_mfa_change
+from .services.notify import notify_driver_mfa_change, notify_password_reset
+from .services.password_reset import (
+    find_resettable_users,
+    send_password_reset_email,
+    token_is_valid,
+    user_from_uid,
+)
+
+logger = logging.getLogger(__name__)
 
 MFA_METHOD_LABELS = {
     'email': 'email code',
@@ -157,6 +170,7 @@ class LoginView(AnonymousAPIView):
 
         user = authenticate(request, username=username, password=password)
         if user is None or get_account_type(user) is None:
+            record_login_attempt(username, successful=False)
             return Response(
                 {'detail': 'Invalid username or password.'},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -175,9 +189,12 @@ class LoginView(AnonymousAPIView):
             request.session['pending_mfa_attempts'] = 0
             request.session.set_expiry(300)
 
+            # The password step alone is not a completed sign-in; the outcome is
+            # recorded when the second factor succeeds or fails.
             return Response({'mfa': get_mfa_status(user)})
 
         login(request, user)
+        record_login_attempt(user.get_username(), successful=True)
         return Response(get_public_user(user))
 
 
@@ -233,6 +250,7 @@ class LoginMFAView(AnonymousAPIView):
 
         if not verified:
             request.session['pending_mfa_attempts'] = pending_attempts + 1
+            record_login_attempt(user.get_username(), successful=False)
             return Response(
                 {'detail': 'Invalid code.'},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -240,6 +258,7 @@ class LoginMFAView(AnonymousAPIView):
 
         self._clear_pending_mfa(request)
         login(request, user)
+        record_login_attempt(user.get_username(), successful=True)
         return Response(get_public_user(user))
 
     def _clear_pending_mfa(self, request):
@@ -343,6 +362,63 @@ class ChangePasswordView(APIView):
             {'detail': 'Password changed successfully.'},
             status=status.HTTP_200_OK,
         )
+
+
+PASSWORD_RESET_REQUEST_MESSAGE = (
+    'If an account uses that email address, a password reset link has been sent.'
+)
+PASSWORD_RESET_INVALID_LINK_MESSAGE = 'This password reset link is invalid or has expired.'
+
+
+class PasswordResetRequestView(AnonymousAPIView):
+    """Email a reset link. The response never reveals whether an account exists."""
+
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email']
+
+        # One email per address per cooldown window stops the endpoint being used
+        # to spam a mailbox. Throttled and unknown addresses get the same reply.
+        digest = hashlib.sha256(email.casefold().encode()).hexdigest()
+        if cache.add(f'password_reset:{digest}', '1', settings.PASSWORD_RESET_REQUEST_COOLDOWN):
+            for user in find_resettable_users(email):
+                try:
+                    send_password_reset_email(user)
+                except Exception:
+                    # Delivery problems must not change the response, or they
+                    # would reveal which addresses have accounts.
+                    logger.exception('Could not send password reset email.')
+
+        return Response({'detail': PASSWORD_RESET_REQUEST_MESSAGE})
+
+
+class PasswordResetConfirmView(AnonymousAPIView):
+    """Set a new password using the uid/token from the emailed link."""
+
+    def post(self, request):
+        uid = request.data.get('uid')
+        token = request.data.get('token')
+        user = user_from_uid(uid) if isinstance(uid, str) else None
+        if user is None or not isinstance(token, str) or not token_is_valid(user, token):
+            return Response(
+                {'detail': PASSWORD_RESET_INVALID_LINK_MESSAGE},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = ChangePasswordSerializer(data=request.data, context={'user': user})
+        serializer.is_valid(raise_exception=True)
+        user.set_password(serializer.validated_data['password'])
+        user.save()
+
+        # Changing the password invalidates the token (and every existing session,
+        # because the session hash is derived from the password hash).
+        try:
+            notify_password_reset(user)
+        except Exception:
+            logger.exception('Could not send password reset notification.')
+
+        return Response({'detail': 'Your password has been reset. You can now sign in.'})
 
 
 class SelfProfileView(APIView):

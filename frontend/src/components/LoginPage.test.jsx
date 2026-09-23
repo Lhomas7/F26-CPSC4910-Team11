@@ -117,3 +117,9 @@ test('provides independent password visibility controls during registration', ()
   fireEvent.click(screen.getByRole('button', { name: 'Show confirm password' }));
   expect(confirmation).toHaveAttribute('type', 'text');
 });
+
+test('sign in form links to the forgot password page', () => {
+  renderLoginPage();
+
+  expect(screen.getByRole('link', { name: 'Forgot password?' })).toHaveAttribute('href', '/forgot-password');
+});

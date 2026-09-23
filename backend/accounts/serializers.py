@@ -496,6 +496,10 @@ class ChangePasswordSerializer(serializers.Serializer):
         return attrs
 
 
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = NormalizedEmailField(max_length=254)
+
+
 class SelfProfileSerializer(serializers.ModelSerializer):
     # Profile data spans Django's User model and the role-specific related model
     username = UsernameField()
