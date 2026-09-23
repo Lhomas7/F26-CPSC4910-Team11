@@ -286,6 +286,20 @@
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
+.login-consent {
+  align-items: flex-start;
+  color: var(--ink-2);
+  display: flex;
+  font-size: .75rem;
+  gap: .55rem;
+  line-height: 1.4;
+}
+
+.login-consent input {
+  accent-color: var(--accent);
+  margin-top: .15rem;
+}
+
 .login-password-input {
   position: relative;
 }

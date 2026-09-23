@@ -48,6 +48,7 @@ test('driver registration sends separate name and email fields', async () => {
   fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'jamie.rivera' } });
   fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ExamplePassword123!' } });
   fireEvent.change(screen.getByLabelText('Confirm Password'), { target: { value: 'ExamplePassword123!' } });
+  fireEvent.click(screen.getByRole('checkbox', { name: /program terms/i }));
   fireEvent.click(screen.getByRole('button', { name: 'Create Driver Account' }));
 
   await waitFor(() => {
@@ -57,6 +58,8 @@ test('driver registration sends separate name and email fields', async () => {
       email: 'jamie@example.com',
       username: 'jamie.rivera',
       password: 'ExamplePassword123!',
+      password_confirm: 'ExamplePassword123!',
+      accepted_terms: true,
     });
   });
 });

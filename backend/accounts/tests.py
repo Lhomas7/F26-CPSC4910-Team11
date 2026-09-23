@@ -52,6 +52,8 @@ class RegistrationTests(APITestCase):
             'email': 'jamie@example.com',
             'username': 'jamie.rivera',
             'password': 'ExamplePassword123!',
+            'password_confirm': 'ExamplePassword123!',
+            'accepted_terms': True,
         }
         data.update(overrides)
         return data
@@ -177,7 +179,7 @@ class RegistrationTests(APITestCase):
         password = ' ExamplePassword123! '
         response = self.client.post(
             self.driver_url,
-            self.registration_data(password=password),
+            self.registration_data(password=password, password_confirm=password),
             format='json',
         )
 
@@ -185,6 +187,108 @@ class RegistrationTests(APITestCase):
         user = get_user_model().objects.get(username='jamie.rivera')
         self.assertTrue(user.check_password(password))
         self.assertFalse(user.check_password(password.strip()))
+
+    def test_registration_accepts_accented_and_separated_names(self):
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(first_name='José', last_name="O'Brien-Smith"),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_registration_rejects_repeated_name_separators(self):
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(last_name='Smith--Jones'),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('last_name', response.data)
+
+    def test_registration_rejects_reserved_username(self):
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(username='admin'),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['username'][0], 'Choose a different username.')
+
+    def test_registration_rejects_password_confirmation_mismatch(self):
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(password_confirm='DifferentPassword456!'),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['password_confirm'][0], 'Passwords do not match.')
+
+    def test_registration_requires_terms_acceptance(self):
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(accepted_terms=False),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('accepted_terms', response.data)
+
+    def test_registration_returns_specific_password_policy_error(self):
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(
+                password='EXAMPLEPASSWORD12!',
+                password_confirm='EXAMPLEPASSWORD12!',
+            ),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data['password'][0],
+            'Password must contain at least three lowercase letters.',
+        )
+
+
+class ChangePasswordTests(APITestCase):
+    url = reverse('accounts:change-password')
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username='driver.one',
+            email='driver@example.com',
+            password='ExamplePassword123!',
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_requires_matching_confirmation(self):
+        response = self.client.post(
+            self.url,
+            {
+                'password': 'ValidSecurePassword22!',
+                'password_confirm': 'DifferentSecurePassword33!',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('password_confirm', response.data)
+
+    def test_changes_password_after_server_side_validation(self):
+        password = 'ValidSecurePassword22!'
+        response = self.client.post(
+            self.url,
+            {'password': password, 'password_confirm': password},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(password))
 
 
 class SelfProfileTests(APITestCase):
@@ -604,6 +708,7 @@ class AdminUserCreationTests(APITestCase):
             'role': 'driver',
             'sponsor_org_id': self.company.id,
             'password': 'ExamplePassword123!',
+            'password_confirm': 'ExamplePassword123!',
         }
         data.update(overrides)
         return data

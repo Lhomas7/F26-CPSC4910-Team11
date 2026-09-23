@@ -1,16 +1,8 @@
 import { useState } from 'react';
 
 import * as api from '../config/api';
+import { validatePassword } from '../utils/accountValidation';
 
-function validatePassword(password, confirmation) {
-  if (!password) return 'Enter a new password.';
-  if (password.length < 12) return 'Password must be at least 12 characters long.';
-  if (!/[A-Za-z]/.test(password)) return 'Password must contain at least one letter.';
-  if (!/[0-9]/.test(password)) return 'Password must contain at least one number.';
-  if (!/[^A-Za-z0-9]/.test(password)) return 'Password must contain at least one symbol.';
-  if (password !== confirmation) return 'Passwords do not match.';
-  return null;
-}
 
 function PasswordField({ id, label, value, onChange, visible, onToggle, disabled }) {
   return (
@@ -71,15 +63,19 @@ export default function PasswordPanel() {
     event.preventDefault();
     setError('');
     setSuccess('');
-    const problem = validatePassword(password, confirmation);
+    const problem = validatePassword(password);
     if (problem) {
       setError(problem);
+      return;
+    }
+    if (password !== confirmation) {
+      setError('Passwords do not match.');
       return;
     }
 
     setBusy(true);
     try {
-      await api.changePassword(password);
+      await api.changePassword(password, confirmation);
       setPassword('');
       setConfirmation('');
       setPasswordVisible(false);
@@ -121,7 +117,7 @@ export default function PasswordPanel() {
             onToggle={() => setPasswordVisible((current) => !current)}
             disabled={busy}
           />
-          <small>Use at least 12 characters, including a letter, number, and symbol.</small>
+          <small>Use 12+ characters with 3 lowercase letters, 2 uppercase letters, 2 numbers, and an approved symbol.</small>
           <PasswordField
             id="confirm-password"
             label="Confirm new password"
