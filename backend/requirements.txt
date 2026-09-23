@@ -10,3 +10,6 @@ Pillow==12.3.0
 pyotp==2.9.0
 qrcode==8.2
 twilio==9.4.0
+boto3==1.40.0
+gunicorn==23.0.0
+whitenoise==6.9.0

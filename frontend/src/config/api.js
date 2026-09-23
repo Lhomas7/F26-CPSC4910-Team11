@@ -80,6 +80,17 @@ export function changePassword(password, passwordConfirm) {
   }).then(readJson);
 }
 
+export function requestPasswordReset(email) {
+  return request('/password-reset/', { method: 'POST', body: { email } }).then(readJson);
+}
+
+export function confirmPasswordReset({ uid, token, password, passwordConfirm }) {
+  return request('/password-reset/confirm/', {
+    method: 'POST',
+    body: { uid, token, password, password_confirm: passwordConfirm },
+  }).then(readJson);
+}
+
 export function getProfile() {
   return request('/profile/').then(readJson);
 }

@@ -415,6 +415,9 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode }) {
       <button className="login-btn" type="submit" disabled={busy}>
         {busy ? 'Signing in…' : 'Sign In'}
       </button>
+      <p className="login-help">
+        <Link className="login-link" to="/forgot-password">Forgot password?</Link>
+      </p>
       <p className="login-help">Can&apos;t sign in? Contact your sponsor company to check your account.</p>
     </form>
   );

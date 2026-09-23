@@ -2,6 +2,8 @@ import { BrowserRouter, Link, NavLink, Navigate, Outlet, Route, Routes, useLocat
 import { DriverList, DriverDetail } from './components/Drivers';
 import AboutPage from './components/AboutPage';
 import LoginPage from './components/LoginPage';
+import ForgotPasswordPage from './components/ForgotPasswordPage';
+import ResetPasswordPage from './components/ResetPasswordPage';
 import MfaSetupWall from './components/MfaSetupWall';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import AccountPage from './components/AccountPage';
@@ -100,6 +102,8 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password/:uid/:token" element={<ResetPasswordPage />} />
       <Route element={<SiteLayout />}>
         <Route path="/" element={<RequireAuth><DriverList /></RequireAuth>} />
         <Route path="/account" element={<RequireAuth><AccountPage /></RequireAuth>} />

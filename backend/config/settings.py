@@ -11,25 +11,58 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
+from .aws_secrets import load_aws_secrets
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / '.env')
+# Production/staging: pull secrets from AWS Secrets Manager when
+# AWS_SECRETS_MANAGER_SECRET_ID is set. No-op for local development.
+load_aws_secrets()
 
-# Quick-start development settings - unsuitable for production
+
+def env_bool(name, default=False):
+    value = os.environ.get(name)
+    if value is None or value.strip() == '':
+        return default
+    return value.strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+def env_list(name):
+    return [item.strip() for item in os.environ.get(name, '').split(',') if item.strip()]
+
+
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-9rh=exrv0m33)r&!#j*@vxiv5c+5uqye2zv))8ec15*s4=7_*i'
+# Secure by default: DEBUG is off unless DJANGO_DEBUG=true (set it in your local
+# backend/.env). Never enable it on a deployed server.
+DEBUG = env_bool('DJANGO_DEBUG', default=False)
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# `manage.py test` talks to the app over plain HTTP, so HTTPS-only hardening is
+# skipped there. A deployed server is never started through the test command.
+TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
 
-ALLOWED_HOSTS = []
+# The signing key must come from the environment or Secrets Manager. Only local
+# development (DEBUG) may fall back to a throwaway key.
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '')
+if not SECRET_KEY:
+    if DEBUG or TESTING:
+        SECRET_KEY = 'django-insecure-local-development-only-key'
+    else:
+        raise ImproperlyConfigured(
+            'DJANGO_SECRET_KEY is required when DJANGO_DEBUG is not true. For local '
+            'development add DJANGO_DEBUG=true to backend/.env.'
+        )
+
+# Comma-separated host names, e.g. "api.example.com,localhost". In DEBUG an empty
+# list allows localhost, matching Django's default behaviour.
+ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS')
 
 
 # Application definition
@@ -50,6 +83,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -162,6 +196,14 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# WhiteNoise serves the collected static files (Django admin assets) from the
+# application process, so a bare Gunicorn deployment needs no separate web server.
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage'},
+}
 
 # Uploaded files use local storage during development. Production can swap the
 # Django storage backend without changing the profile API.
@@ -204,19 +246,53 @@ LOGGING = {
     },
 }
 
-# Development-only CORS for the React dev server (separate local process).
-# React on http://localhost:3000 calls Django on http://localhost:8000.
-# /api/csrf/ issues the CSRF cookie; every non-GET request sends X-CSRFToken.
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-]
-CORS_ALLOW_CREDENTIALS = True
+# Where the React app is served. Used to build links in emails (password reset).
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000').rstrip('/')
 
-CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-]
+# Password reset links expire after this many seconds (default: 1 hour) and are
+# single-use because the token is derived from the current password hash.
+PASSWORD_RESET_TIMEOUT = int(os.environ.get('PASSWORD_RESET_TIMEOUT_SECONDS', 3600))
+# Minimum seconds between reset emails to the same address.
+PASSWORD_RESET_REQUEST_COOLDOWN = int(os.environ.get('PASSWORD_RESET_REQUEST_COOLDOWN_SECONDS', 60))
+
+# Cross-origin access for the React app. In development the React dev server
+# (http://localhost:3000) calls Django (http://localhost:8000). Deployed
+# environments list their real origins, comma-separated, e.g.
+# DJANGO_CORS_ALLOWED_ORIGINS=https://app.example.com
+# /api/csrf/ issues the CSRF cookie; every non-GET request sends X-CSRFToken.
+_DEV_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000']
+CORS_ALLOWED_ORIGINS = env_list('DJANGO_CORS_ALLOWED_ORIGINS') or (_DEV_ORIGINS if DEBUG else [])
+CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = env_list('DJANGO_CSRF_TRUSTED_ORIGINS') or (_DEV_ORIGINS if DEBUG else [])
+
+# The SPA reads the csrftoken cookie with JavaScript. If the API and the app are on
+# different subdomains, set DJANGO_COOKIE_DOMAIN to the shared parent (".example.com")
+# so both can see the cookies. Leave unset when both are served from one origin.
+_COOKIE_DOMAIN = os.environ.get('DJANGO_COOKIE_DOMAIN') or None
+SESSION_COOKIE_DOMAIN = _COOKIE_DOMAIN
+CSRF_COOKIE_DOMAIN = _COOKIE_DOMAIN
+SESSION_COOKIE_SAMESITE = os.environ.get('DJANGO_SESSION_COOKIE_SAMESITE', 'Lax')
+CSRF_COOKIE_SAMESITE = SESSION_COOKIE_SAMESITE
+
+# HTTPS hardening for deployed environments (everything below is off in DEBUG so
+# local http://localhost keeps working).
+if not (DEBUG or TESTING):
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = env_bool('DJANGO_SECURE_SSL_REDIRECT', default=True)
+    # Load balancers and health checks reach the app over plain HTTP.
+    SECURE_REDIRECT_EXEMPT = [r'^api/health/$']
+    # Start small: browsers cache HSTS, so raise this only once HTTPS is proven.
+    SECURE_HSTS_SECONDS = int(os.environ.get('DJANGO_SECURE_HSTS_SECONDS', 3600))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool('DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS', default=False)
+    SECURE_HSTS_PRELOAD = env_bool('DJANGO_SECURE_HSTS_PRELOAD', default=False)
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    # includeSubDomains and preload are deliberate opt-ins (they affect every
+    # subdomain and are hard to undo), so their advisory checks are silenced.
+    SILENCED_SYSTEM_CHECKS = ['security.W005', 'security.W021']
+    # Set when a proxy/load balancer terminates TLS and forwards X-Forwarded-Proto.
+    if env_bool('DJANGO_BEHIND_PROXY'):
+        SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [

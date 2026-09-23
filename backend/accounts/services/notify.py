@@ -14,3 +14,24 @@ def notify_driver_mfa_change(driver, message, subject='Good Driver multi-factor 
             from_email=settings.DEFAULT_FROM_EMAIL,
             to=[driver.user.email],
         ).send()
+
+def notify_password_reset(user):
+    """Tell the account owner their password was just reset.
+
+    This is the security signal for account takeover: the person who owns the
+    account gets an email even though the reset itself required no login. Drivers
+    also get an in-app notification.
+    """
+    message = (
+        'The password for your Good Driver account was just reset. '
+        'If this was not you, contact your sponsor or an administrator right away.'
+    )
+    if hasattr(user, 'driver_profile'):
+        DriverNotification.objects.create(driver=user.driver_profile, message=message)
+    if user.email:
+        EmailMessage(
+            subject='Your Good Driver password was reset',
+            body=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[user.email],
+        ).send()
