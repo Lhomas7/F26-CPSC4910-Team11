@@ -73,8 +73,11 @@ export function login(username, password) {
   return request('/login/', { method: 'POST', body: { username, password } }).then(readJson);
 }
 
-export function changePassword(password) {
-  return request('/change-password/', {method: 'POST', body: { password }, }).then(readJson);
+export function changePassword(password, passwordConfirm) {
+  return request('/change-password/', {
+    method: 'POST',
+    body: { password, password_confirm: passwordConfirm },
+  }).then(readJson);
 }
 
 export function getProfile() {

@@ -3,6 +3,12 @@ import { Link } from 'react-router-dom';
 
 import { useAuth } from '../auth/AuthContext';
 import * as api from '../config/api';
+import {
+  validateEmail,
+  validateName,
+  validatePassword,
+  validateUsername,
+} from '../utils/accountValidation';
 import './AddUserPage.css';
 
 const EMPTY_FORM = {
@@ -48,18 +54,20 @@ export default function AddUserPage() {
 
   const validate = () => {
     const next = {};
-    if (!form.first_name.trim()) next.first_name = 'Enter a first name.';
-    if (!form.last_name.trim()) next.last_name = 'Enter a last name.';
-    if (!form.username.trim()) next.username = 'Enter a username.';
-    else if (form.username.trim().length < 3) next.username = 'Username must be at least 3 characters.';
-    else if (!/^[A-Za-z0-9._-]+$/.test(form.username.trim())) next.username = 'Use only letters, numbers, periods, dashes, or underscores.';
-    if (!form.email.trim()) next.email = 'Enter an email address.';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) next.email = 'Enter a valid email address.';
+    next.first_name = validateName(form.first_name, 'first name');
+    next.last_name = validateName(form.last_name, 'last name');
+    next.username = validateUsername(form.username);
+    next.email = validateEmail(form.email);
     if (form.role === 'sponsor' && !form.sponsor_org_id) next.sponsor_org_id = 'Choose the organization this sponsor manages.';
-    if (form.password.length < 12) next.password = 'Password must be at least 12 characters.';
-    else if (!/[A-Za-z]/.test(form.password) || !/[0-9]/.test(form.password) || !/[^A-Za-z0-9]/.test(form.password)) next.password = 'Password must include a letter, number, and symbol.';
+    next.password = validatePassword(form.password, {
+      username: form.username,
+      email: form.email,
+    });
     if (!form.confirm_password) next.confirm_password = 'Re-enter the password.';
     else if (form.confirm_password !== form.password) next.confirm_password = 'Passwords do not match.';
+    Object.keys(next).forEach((field) => {
+      if (!next[field]) delete next[field];
+    });
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -78,6 +86,7 @@ export default function AddUserPage() {
       sponsor_org_id: form.role === 'admin' || !form.sponsor_org_id
         ? null : Number(form.sponsor_org_id),
       password: form.password,
+      password_confirm: form.confirm_password,
     };
     try {
       setCreated(await api.createAdminUser(payload));
@@ -139,7 +148,7 @@ export default function AddUserPage() {
               {form.role !== 'admin' && <div className="add-user-field"><label htmlFor="sponsor-org">Sponsor organization {form.role === 'driver' && <span>(optional)</span>}</label><select id="sponsor-org" value={form.sponsor_org_id} onChange={(event) => update('sponsor_org_id', event.target.value)} disabled={status === 'saving' || organizations.length === 0} aria-invalid={Boolean(fieldError('sponsor_org_id'))}><option value="">{form.role === 'driver' ? 'Leave unassigned for now' : organizations.length ? 'Choose an organization' : 'No organizations available'}</option>{organizations.map((org) => <option key={org.id} value={org.id}>{org.name}</option>)}</select><small className={fieldError('sponsor_org_id') ? 'error' : ''}>{fieldError('sponsor_org_id') || (form.role === 'driver' ? 'A driver can be linked to a sponsor later.' : 'Required for sponsor accounts.')}</small></div>}
               {form.role === 'admin' && <p className="add-user-note">Administrators aren&apos;t tied to a sponsor organization.</p>}
               <div className="add-user-divider" />
-              <div className="add-user-two"><div className="add-user-field"><label htmlFor="password">Temporary password</label><div className="add-user-password"><input id="password" type={showPassword ? 'text' : 'password'} value={form.password} onChange={(event) => update('password', event.target.value)} disabled={status === 'saving'} aria-invalid={Boolean(fieldError('password'))} /><button type="button" onClick={() => setShowPassword((value) => !value)}>{showPassword ? 'Hide' : 'Show'}</button></div><small className={fieldError('password') ? 'error' : ''}>{fieldError('password') || 'At least 12 characters with a letter, number, and symbol.'}</small></div><Field label="Confirm password" name="confirm_password" type={showPassword ? 'text' : 'password'} value={form.confirm_password} error={fieldError('confirm_password')} onChange={update} disabled={status === 'saving'} /></div>
+              <div className="add-user-two"><div className="add-user-field"><label htmlFor="password">Temporary password</label><div className="add-user-password"><input id="password" type={showPassword ? 'text' : 'password'} value={form.password} onChange={(event) => update('password', event.target.value)} disabled={status === 'saving'} aria-invalid={Boolean(fieldError('password'))} /><button type="button" onClick={() => setShowPassword((value) => !value)}>{showPassword ? 'Hide' : 'Show'}</button></div><small className={fieldError('password') ? 'error' : ''}>{fieldError('password') || '12+ characters: 3 lowercase, 2 uppercase, 2 numbers, and an approved symbol.'}</small></div><Field label="Confirm password" name="confirm_password" type={showPassword ? 'text' : 'password'} value={form.confirm_password} error={fieldError('confirm_password')} onChange={update} disabled={status === 'saving'} /></div>
               {selectedOrganization && <p className="add-user-note">Selected organization: {selectedOrganization.name}</p>}
             </div>
             <footer className="add-user-footer"><Link className="add-user-button" to="/users">Cancel</Link><button className="add-user-button primary" type="submit" disabled={status === 'saving' || (form.role === 'sponsor' && organizations.length === 0)}>{status === 'saving' ? 'Creating…' : `Create ${form.role} account`}</button></footer>

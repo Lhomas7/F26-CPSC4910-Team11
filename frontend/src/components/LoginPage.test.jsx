@@ -48,6 +48,7 @@ test('driver registration sends separate name and email fields', async () => {
   fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'jamie.rivera' } });
   fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ExamplePassword123!' } });
   fireEvent.change(screen.getByLabelText('Confirm Password'), { target: { value: 'ExamplePassword123!' } });
+  fireEvent.click(screen.getByRole('checkbox', { name: /program terms/i }));
   fireEvent.click(screen.getByRole('button', { name: 'Create Driver Account' }));
 
   await waitFor(() => {
@@ -57,6 +58,8 @@ test('driver registration sends separate name and email fields', async () => {
       email: 'jamie@example.com',
       username: 'jamie.rivera',
       password: 'ExamplePassword123!',
+      password_confirm: 'ExamplePassword123!',
+      accepted_terms: true,
     });
   });
 });
@@ -88,4 +91,29 @@ test('single-method MFA login stages, auto-requests the code, and shows the code
   expect(await screen.findByText('Two-step verification')).toBeInTheDocument();
   expect(screen.getByLabelText('Verification code')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Verify and sign in' })).toBeInTheDocument();
+});
+
+test('shows and hides the sign-in password without changing its value', () => {
+  renderLoginPage();
+  const password = screen.getByLabelText('Password');
+  fireEvent.change(password, { target: { value: 'ExamplePassword123!' } });
+  expect(password).toHaveAttribute('type', 'password');
+  fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
+  expect(password).toHaveAttribute('type', 'text');
+  expect(password).toHaveValue('ExamplePassword123!');
+  fireEvent.click(screen.getByRole('button', { name: 'Hide password' }));
+  expect(password).toHaveAttribute('type', 'password');
+});
+
+test('provides independent password visibility controls during registration', () => {
+  renderLoginPage();
+  fireEvent.click(screen.getByRole('button', { name: 'Create Account' }));
+  fireEvent.click(screen.getByRole('button', { name: /Driver.*Earn points/i }));
+  const password = screen.getByLabelText('Password');
+  const confirmation = screen.getByLabelText('Confirm Password');
+  fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
+  expect(password).toHaveAttribute('type', 'text');
+  expect(confirmation).toHaveAttribute('type', 'password');
+  fireEvent.click(screen.getByRole('button', { name: 'Show confirm password' }));
+  expect(confirmation).toHaveAttribute('type', 'text');
 });

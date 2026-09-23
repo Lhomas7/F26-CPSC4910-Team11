@@ -46,6 +46,7 @@ test('creates a driver with the selected sponsor organization', async () => {
     first_name: 'Jamie', last_name: 'Rivera', username: 'jamie.rivera',
     email: 'jamie@example.com', role: 'driver', sponsor_org_id: 7,
     password: 'ExamplePassword123!',
+    password_confirm: 'ExamplePassword123!',
   }));
   expect(await screen.findByRole('heading', { name: 'Driver account created' })).toBeInTheDocument();
 });

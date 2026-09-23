@@ -3,9 +3,42 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import * as api from '../config/api';
 import { useAuth } from '../auth/AuthContext';
+import {
+  validateEmail,
+  validateName,
+  validatePassword,
+  validateUsername,
+} from '../utils/accountValidation';
 import './LoginPage.css';
 
 const ROLE_LABEL = { driver: 'Driver', sponsor: 'Sponsor' };
+
+function PasswordInput({ id, label, value, onChange, autoComplete, className = 'login-input' }) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="login-field">
+      <label htmlFor={id}>{label}</label>
+      <div className="login-password-input">
+        <input
+          id={id}
+          type={visible ? 'text' : 'password'}
+          className={className}
+          value={value}
+          onChange={onChange}
+          autoComplete={autoComplete}
+        />
+        <button
+          type="button"
+          onClick={() => setVisible((current) => !current)}
+          aria-label={`${visible ? 'Hide' : 'Show'} ${label.toLowerCase()}`}
+          aria-pressed={visible}
+        >
+          {visible ? 'Hide' : 'Show'}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function LoginPage() {
   const { loading, user, signIn, completeMfaLogin, requestMfaLoginCode, signOut } = useAuth();
@@ -370,17 +403,14 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode }) {
         />
       </div>
 
-      <div className="login-field">
-        <label htmlFor="login-password">Password</label>
-        <input
-          id="login-password"
-          type="password"
-          className={fieldClass(error && !password)}
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          autoComplete="current-password"
-        />
-      </div>
+      <PasswordInput
+        id="login-password"
+        label="Password"
+        className={fieldClass(error && !password)}
+        value={password}
+        onChange={(event) => setPassword(event.target.value)}
+        autoComplete="current-password"
+      />
 
       <button className="login-btn" type="submit" disabled={busy}>
         {busy ? 'Signing in…' : 'Sign In'}
@@ -419,30 +449,20 @@ function RoleRegistrationForm({ role, onBack, onDone }) {
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
 
   const validate = () => {
-    if (!firstName.trim()) return 'Enter your first name.';
-    if (!lastName.trim()) return 'Enter your last name.';
-    if (!email.trim()) return 'Enter your email address.';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return 'Enter a valid email address.';
-    if (!username.trim()) return 'Enter a username.';
-    if (!password) return 'Enter a password.';
-    if (password.length < 12) {
-      return 'Password must be at least 12 characters long.';
-    }
-    if (!/[A-Za-z]/.test(password)) {
-      return 'Password must contain at least one letter.';
-    }
-    if (!/[0-9]/.test(password)) {
-      return 'Password must contain at least one number.';
-    }
-    if (!/[^A-Za-z0-9]/.test(password)) {
-      return 'Password must contain at least one symbol.';
-    }
+    const fieldProblem = validateName(firstName, 'first name')
+      || validateName(lastName, 'last name')
+      || validateEmail(email)
+      || validateUsername(username)
+      || validatePassword(password, { username, email });
+    if (fieldProblem) return fieldProblem;
     if (password !== passwordConfirm) return 'Passwords do not match.';
     if (role === 'sponsor' && !companyName.trim()) return 'Enter a company name.';
+    if (!acceptedTerms) return 'Accept the program terms and privacy notice to create an account.';
     return null;
   };
 
@@ -462,6 +482,8 @@ function RoleRegistrationForm({ role, onBack, onDone }) {
         email: email.trim(),
         username: username.trim(),
         password,
+        password_confirm: passwordConfirm,
+        accepted_terms: acceptedTerms,
       };
       if (role === 'sponsor') {
         payload.company_name = companyName.trim();
@@ -544,29 +566,18 @@ function RoleRegistrationForm({ role, onBack, onDone }) {
         />
       </div>
 
-      <div className="login-field">
-        <label htmlFor="reg-password">Password</label>
-        <input
-          id="reg-password"
-          type="password"
-          className="login-input"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          autoComplete="new-password"
-        />
-      </div>
+      <PasswordInput id="reg-password" label="Password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" />
 
-      <div className="login-field">
-        <label htmlFor="reg-password-confirm">Confirm Password</label>
+      <PasswordInput id="reg-password-confirm" label="Confirm Password" value={passwordConfirm} onChange={(event) => setPasswordConfirm(event.target.value)} autoComplete="new-password" />
+
+      <label className="login-consent">
         <input
-          id="reg-password-confirm"
-          type="password"
-          className="login-input"
-          value={passwordConfirm}
-          onChange={(event) => setPasswordConfirm(event.target.value)}
-          autoComplete="new-password"
+          type="checkbox"
+          checked={acceptedTerms}
+          onChange={(event) => setAcceptedTerms(event.target.checked)}
         />
-      </div>
+        <span>I agree to the program terms and privacy notice.</span>
+      </label>
 
       {role === 'sponsor' && (
         <div className="login-field">

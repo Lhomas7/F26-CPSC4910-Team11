@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import * as api from '../config/api';
+import COUNTRY_CODES from '../data/countryCodes';
 import './AccountPage.css';
 
 const METHOD_LABELS = {
@@ -9,11 +10,22 @@ const METHOD_LABELS = {
   totp: { title: 'Authenticator app', hint: 'Use a time-based code from your authenticator app.' },
 };
 
+function formatNationalNumber(digits, countryCode) {
+  if (countryCode === '+1') {
+    const parts = [digits.slice(0, 3), digits.slice(3, 6), digits.slice(6, 10)];
+    if (digits.length <= 3) return parts[0];
+    if (digits.length <= 6) return `(${parts[0]}) ${parts[1]}`;
+    return `(${parts[0]}) ${parts[1]}-${parts[2]}`;
+  }
+  return digits.replace(/(\d{3})(?=\d)/g, '$1 ').trim();
+}
+
 export default function MfaPanel({ mfa, onRefreshed, requiredText, hideRequiredBanner }) {
   const requiredMessage = requiredText || 'Your sponsor requires you to set up two-factor authentication before continuing.';
   const [flow, setFlow] = useState(null);
   const [code, setCode] = useState('');
-  const [phone, setPhone] = useState('');
+  const [countryIso, setCountryIso] = useState('US');
+  const [phoneDigits, setPhoneDigits] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState(null);
   const [busy, setBusy] = useState(null);
@@ -21,7 +33,7 @@ export default function MfaPanel({ mfa, onRefreshed, requiredText, hideRequiredB
   const reset = () => {
     setFlow(null);
     setCode('');
-    setPhone('');
+    setPhoneDigits('');
     setPassword('');
     setMessage(null);
   };
@@ -30,11 +42,13 @@ export default function MfaPanel({ mfa, onRefreshed, requiredText, hideRequiredB
     setMessage(null);
     let phoneNumber;
     if (method === 'sms') {
-      if (!phone.trim()) {
-        setMessage({ ok: false, text: 'Enter your phone number first (E.164 format, e.g. +18645551234).' });
+      const country = COUNTRY_CODES.find((option) => option.code === countryIso);
+      const nationalNumber = country.dialCode === '+1' ? phoneDigits : phoneDigits.replace(/^0+/, '');
+      if (nationalNumber.length !== country.nationalNumberLength) {
+        setMessage({ ok: false, text: 'Enter a valid phone number.' });
         return;
       }
-      phoneNumber = phone.trim();
+      phoneNumber = `${country.dialCode}${nationalNumber}`;
     }
     setBusy(method);
     try {
@@ -131,6 +145,8 @@ export default function MfaPanel({ mfa, onRefreshed, requiredText, hideRequiredB
     key: m,
     enabled: mfa.methods.includes(m),
   }));
+  const selectedCountry = COUNTRY_CODES.find((country) => country.code === countryIso)
+    || COUNTRY_CODES.find((country) => country.code === 'US');
 
   return (
     <section className="account-card" aria-labelledby="mfa-heading">
@@ -225,7 +241,7 @@ export default function MfaPanel({ mfa, onRefreshed, requiredText, hideRequiredB
                       </button>
                     </>
                   ) : (
-                    <button className="account-button primary" type="button" onClick={() => startEnable(row.key)} disabled={busy === row.key}>
+                    <button className="account-button primary" type="button" aria-label={row.key === 'totp' ? 'Set up Authenticator app' : `Turn on ${row.title}`} onClick={() => startEnable(row.key)} disabled={busy === row.key}>
                       {row.key === 'totp' ? 'Set up' : 'Turn on'}
                     </button>
                   )}
@@ -236,7 +252,21 @@ export default function MfaPanel({ mfa, onRefreshed, requiredText, hideRequiredB
           {!mfa.methods.includes('sms') && (
             <div className="password-form">
               <label htmlFor="mfa-sms-phone">Phone number (for text message codes)</label>
-              <input id="mfa-sms-phone" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+18645551234" autoComplete="tel" />
+              <div className="mfa-phone-input">
+                <label className="sr-only" htmlFor="mfa-country-code">Country code</label>
+                <select id="mfa-country-code" value={countryIso} onChange={(event) => { setCountryIso(event.target.value); setPhoneDigits(''); }}>
+                  {COUNTRY_CODES.map((country) => <option key={country.code} value={country.code}>{country.name} ({country.dialCode})</option>)}
+                </select>
+                <input
+                  id="mfa-sms-phone"
+                  value={formatNationalNumber(phoneDigits, selectedCountry.dialCode)}
+                  onChange={(event) => setPhoneDigits(event.target.value.replace(/\D/g, '').slice(0, selectedCountry.nationalNumberLength + (selectedCountry.dialCode === '+1' ? 0 : 1)))}
+                  placeholder={selectedCountry.code === 'US' ? '(864) 555-1234' : 'Phone number'}
+                  inputMode="tel"
+                  autoComplete="tel-national"
+                />
+              </div>
+              <small>The country code is added automatically when the number is saved.</small>
             </div>
           )}
           {mfa.enrolled && (

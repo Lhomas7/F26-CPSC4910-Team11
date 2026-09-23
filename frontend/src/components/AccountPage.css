@@ -198,7 +198,8 @@
 }
 
 .profile-form input,
-.password-form input {
+.password-form input,
+.password-form select {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: .5rem;
@@ -209,10 +210,66 @@
 }
 
 .profile-form input:focus,
-.password-form input:focus {
+.password-form input:focus,
+.password-form select:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
   outline: 0;
+}
+
+.mfa-phone-input {
+  display: grid;
+  gap: .5rem;
+  grid-template-columns: minmax(10rem, .8fr) minmax(12rem, 1.2fr);
+}
+
+.password-form > small {
+  color: var(--ink-2);
+  font-size: .7rem;
+}
+
+.account-password-input {
+  position: relative;
+}
+
+.account-password-input input {
+  padding-right: 4.25rem;
+}
+
+.account-password-input button {
+  background: transparent;
+  border: 0;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: .75rem;
+  font-weight: 700;
+  padding: .35rem .55rem;
+  position: absolute;
+  right: .25rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.account-password-input button:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.account-password-input button:focus-visible {
+  border-radius: .25rem;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: 0;
+}
+
+.account-password-input button:disabled {
+  cursor: progress;
+  opacity: .65;
+}
+
+@media (max-width: 36rem) {
+  .mfa-phone-input {
+    grid-template-columns: 1fr;
+  }
 }
 
 .profile-form small {

@@ -52,6 +52,8 @@ class RegistrationTests(APITestCase):
             'email': 'jamie@example.com',
             'username': 'jamie.rivera',
             'password': 'ExamplePassword123!',
+            'password_confirm': 'ExamplePassword123!',
+            'accepted_terms': True,
         }
         data.update(overrides)
         return data
@@ -129,6 +131,164 @@ class RegistrationTests(APITestCase):
 
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
             self.assertIn(field, response.data)
+
+    def test_registration_canonicalizes_user_entered_text(self):
+        response = self.client.post(
+            self.sponsor_url,
+            self.registration_data(
+                first_name='  Jamie\t  Lynn ',
+                last_name=' Rivera  ',
+                email='  JAMIE@EXAMPLE.COM ',
+                username='  ｊａｍｉｅ.rivera  ',
+                company_name='  Palmetto\n  Freight  ',
+            ),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = get_user_model().objects.get(username='jamie.rivera')
+        self.assertEqual(user.first_name, 'Jamie Lynn')
+        self.assertEqual(user.last_name, 'Rivera')
+        self.assertEqual(user.email, 'jamie@example.com')
+        self.assertEqual(user.sponsor_account.company.name, 'Palmetto Freight')
+
+    def test_registration_rejects_invisible_control_characters(self):
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(first_name='Jam\u200bie'),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data['first_name'][0],
+            'Control characters are not allowed.',
+        )
+
+    def test_registration_enforces_shared_username_format(self):
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(username='jamie rivera'),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('username', response.data)
+
+    def test_password_whitespace_is_not_silently_removed(self):
+        password = ' ExamplePassword123! '
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(password=password, password_confirm=password),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = get_user_model().objects.get(username='jamie.rivera')
+        self.assertTrue(user.check_password(password))
+        self.assertFalse(user.check_password(password.strip()))
+
+    def test_registration_accepts_accented_and_separated_names(self):
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(first_name='José', last_name="O'Brien-Smith"),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_registration_rejects_repeated_name_separators(self):
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(last_name='Smith--Jones'),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('last_name', response.data)
+
+    def test_registration_rejects_reserved_username(self):
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(username='admin'),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['username'][0], 'Choose a different username.')
+
+    def test_registration_rejects_password_confirmation_mismatch(self):
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(password_confirm='DifferentPassword456!'),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['password_confirm'][0], 'Passwords do not match.')
+
+    def test_registration_requires_terms_acceptance(self):
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(accepted_terms=False),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('accepted_terms', response.data)
+
+    def test_registration_returns_specific_password_policy_error(self):
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(
+                password='EXAMPLEPASSWORD12!',
+                password_confirm='EXAMPLEPASSWORD12!',
+            ),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data['password'][0],
+            'Password must contain at least three lowercase letters.',
+        )
+
+
+class ChangePasswordTests(APITestCase):
+    url = reverse('accounts:change-password')
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username='driver.one',
+            email='driver@example.com',
+            password='ExamplePassword123!',
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_requires_matching_confirmation(self):
+        response = self.client.post(
+            self.url,
+            {
+                'password': 'ValidSecurePassword22!',
+                'password_confirm': 'DifferentSecurePassword33!',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('password_confirm', response.data)
+
+    def test_changes_password_after_server_side_validation(self):
+        password = 'ValidSecurePassword22!'
+        response = self.client.post(
+            self.url,
+            {'password': password, 'password_confirm': password},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(password))
 
 
 class SelfProfileTests(APITestCase):
@@ -548,6 +708,7 @@ class AdminUserCreationTests(APITestCase):
             'role': 'driver',
             'sponsor_org_id': self.company.id,
             'password': 'ExamplePassword123!',
+            'password_confirm': 'ExamplePassword123!',
         }
         data.update(overrides)
         return data
@@ -852,6 +1013,41 @@ class AdminDriverDetailTests(APITestCase):
         self.assertIn('display_name', response.data)
         self.assertIn('username', response.data)
         self.assertIn('email', response.data)
+
+class MFAPhoneNumberValidationTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = get_user_model().objects.create_user(
+            username='phone.user',
+            password='ExamplePassword123!',
+        )
+
+    def setUp(self):
+        self.client.force_authenticate(self.user)
+
+    @patch('accounts.views.send_sms_code')
+    def test_accepts_normalized_international_phone_number(self, mock_send_sms):
+        response = self.client.post(
+            reverse('accounts:mfa-setup'),
+            {'method': 'sms', 'phone_number': '+18645551234'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user.mfa_settings.refresh_from_db()
+        self.assertEqual(self.user.mfa_settings.phone_number, '+18645551234')
+        mock_send_sms.assert_called_once()
+
+    def test_rejects_unformatted_or_incomplete_phone_number(self):
+        response = self.client.post(
+            reverse('accounts:mfa-setup'),
+            {'method': 'sms', 'phone_number': '(864) 555-1234'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('phone_number', response.data)
+
 
 class MFAEnrollmentTests(APITestCase):
 

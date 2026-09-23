@@ -9,16 +9,27 @@ from rest_framework import serializers
 
 from drivers.models import Driver
 
+from .input_cleaning import (
+    HumanTextField,
+    IdentifierField,
+    NameField,
+    NormalizedEmailField,
+    UsernameField,
+    validate_password_policy,
+)
 from .models import SponsorAccount, SponsorCompany
 from .services import get_account_type
 
 
 class RegistrationSerializer(serializers.Serializer):
-    username = serializers.CharField(max_length=150)
-    password = serializers.CharField(write_only=True)
-    first_name = serializers.CharField(max_length=150)
-    last_name = serializers.CharField(max_length=150)
-    email = serializers.EmailField(max_length=254)
+    username = UsernameField()
+    # Passwords are opaque secrets: never trim or Unicode-normalize them.
+    password = serializers.CharField(write_only=True, trim_whitespace=False)
+    password_confirm = serializers.CharField(write_only=True, trim_whitespace=False)
+    accepted_terms = serializers.BooleanField(write_only=True)
+    first_name = NameField()
+    last_name = NameField()
+    email = NormalizedEmailField(max_length=254)
 
     def validate_username(self, value):
         value = value.strip()
@@ -39,15 +50,22 @@ class RegistrationSerializer(serializers.Serializer):
         return value
     
     def validate_password(self, value):
-        if len(value) < 12:
-            raise serializers.ValidationError('Password must be at least 12 characters long.')
-        if not re.search(r'[A-Za-z]', value):
-            raise serializers.ValidationError('Password must contain at least one letter.')
-        if not re.search(r'[0-9]', value):
-            raise serializers.ValidationError('Password must contain at least one number.')
-        if not re.search(r'[^A-Za-z0-9]', value):
-            raise serializers.ValidationError('Password must contain at least one symbol.')
+        return validate_password_policy(value)
+
+    def validate_accepted_terms(self, value):
+        if not value:
+            raise serializers.ValidationError('You must accept the terms to create an account.')
         return value
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password_confirm']:
+            raise serializers.ValidationError({'password_confirm': 'Passwords do not match.'})
+        validate_password_policy(
+            attrs['password'],
+            username=attrs['username'],
+            email=attrs['email'],
+        )
+        return attrs
 
     def validate_first_name(self, value):
         value = ' '.join(value.split())
@@ -67,7 +85,7 @@ class DriverRegistrationSerializer(RegistrationSerializer):
 
 
 class SponsorRegistrationSerializer(RegistrationSerializer):
-    company_name = serializers.CharField(max_length=200)
+    company_name = HumanTextField(max_length=200)
 
     def validate_company_name(self, value):
         value = ' '.join(value.split())
@@ -77,14 +95,22 @@ class SponsorRegistrationSerializer(RegistrationSerializer):
 
 
 class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
-    password = serializers.CharField(write_only=True)
+    username = IdentifierField()
+    password = serializers.CharField(write_only=True, trim_whitespace=False)
 
 
 class MFASetupSerializer(serializers.Serializer):
     METHOD_CHOICES = [('totp', 'TOTP'), ('email', 'Email'), ('sms', 'SMS')]
     method = serializers.ChoiceField(choices=METHOD_CHOICES)
-    phone_number = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    phone_number = serializers.RegexField(
+        r'^\+[1-9]\d{7,14}$',
+        max_length=16,
+        required=False,
+        allow_blank=True,
+        error_messages={
+            'invalid': 'Enter a valid international phone number.'
+        },
+    )
     E164_RE = re.compile(r'^\+[1-9]\d{7,14}$')
 
     def validate_phone_number(self, value):
@@ -127,7 +153,7 @@ class MFAResetSerializer(serializers.Serializer):
 class MFADisableSerializer(serializers.Serializer):
     METHOD_CHOICES = [('totp', 'TOTP'), ('email', 'Email'), ('sms', 'SMS')]
     method = serializers.ChoiceField(choices=METHOD_CHOICES)
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, trim_whitespace=False)
 
 
 class LoginMFASerializer(serializers.Serializer):
@@ -187,6 +213,10 @@ class SponsorCompanySerializer(serializers.ModelSerializer):
 
 
 class AdminSponsorDetailSerializer(serializers.ModelSerializer):
+    first_name = NameField()
+    last_name = NameField()
+    username = UsernameField()
+    email = NormalizedEmailField(max_length=254)
     role = serializers.SerializerMethodField()
     sponsor_org = serializers.SerializerMethodField()
     sponsor_org_id = serializers.PrimaryKeyRelatedField(
@@ -259,7 +289,9 @@ class AdminSponsorDetailSerializer(serializers.ModelSerializer):
 
 
 class AdminDriverDetailSerializer(serializers.ModelSerializer):
-    display_name = serializers.CharField(source='driver_profile.name')
+    display_name = HumanTextField(source='driver_profile.name', max_length=200)
+    username = UsernameField()
+    email = NormalizedEmailField(max_length=254)
     role = serializers.SerializerMethodField()
     sponsor_org = serializers.SerializerMethodField()
     sponsor_org_id = serializers.PrimaryKeyRelatedField(
@@ -339,17 +371,10 @@ class AdminDriverDetailSerializer(serializers.ModelSerializer):
 class AdminUserCreateSerializer(serializers.Serializer):
     ROLE_CHOICES = ('driver', 'sponsor', 'admin')
 
-    first_name = serializers.CharField(max_length=150)
-    last_name = serializers.CharField(max_length=150)
-    username = serializers.RegexField(
-        r'^[A-Za-z0-9._-]+$',
-        max_length=30,
-        min_length=3,
-        error_messages={
-            'invalid': 'Use only letters, numbers, periods, dashes, or underscores.'
-        },
-    )
-    email = serializers.EmailField(max_length=254)
+    first_name = NameField()
+    last_name = NameField()
+    username = UsernameField()
+    email = NormalizedEmailField(max_length=254)
     role = serializers.ChoiceField(choices=ROLE_CHOICES)
     sponsor_org_id = serializers.PrimaryKeyRelatedField(
         queryset=SponsorCompany.objects.all(),
@@ -357,7 +382,8 @@ class AdminUserCreateSerializer(serializers.Serializer):
         required=False,
         allow_null=True,
     )
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, trim_whitespace=False)
+    password_confirm = serializers.CharField(write_only=True, trim_whitespace=False)
 
     def validate_first_name(self, value):
         value = ' '.join(value.split())
@@ -386,25 +412,16 @@ class AdminUserCreateSerializer(serializers.Serializer):
         return value
 
     def validate_password(self, value):
-        if len(value) < 12:
-            raise serializers.ValidationError(
-                'Password must be at least 12 characters long.'
-            )
-        if not re.search(r'[A-Za-z]', value):
-            raise serializers.ValidationError(
-                'Password must contain at least one letter.'
-            )
-        if not re.search(r'[0-9]', value):
-            raise serializers.ValidationError(
-                'Password must contain at least one number.'
-            )
-        if not re.search(r'[^A-Za-z0-9]', value):
-            raise serializers.ValidationError(
-                'Password must contain at least one symbol.'
-            )
-        return value
+        return validate_password_policy(value)
 
     def validate(self, attrs):
+        if attrs['password'] != attrs['password_confirm']:
+            raise serializers.ValidationError({'password_confirm': 'Passwords do not match.'})
+        validate_password_policy(
+            attrs['password'],
+            username=attrs['username'],
+            email=attrs['email'],
+        )
         role = attrs['role']
         sponsor_org = attrs.get('sponsor_org')
         if role == 'sponsor' and sponsor_org is None:
@@ -433,6 +450,7 @@ class AdminUserCreateSerializer(serializers.Serializer):
         role = validated_data.pop('role')
         sponsor_org = validated_data.pop('sponsor_org', None)
         password = validated_data.pop('password')
+        validated_data.pop('password_confirm')
         is_admin = role == 'admin'
         user = get_user_model()(
             **validated_data,
@@ -455,39 +473,33 @@ class AdminUserCreateSerializer(serializers.Serializer):
 
 
 class ChangePasswordSerializer(serializers.Serializer):
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, trim_whitespace=False)
+    password_confirm = serializers.CharField(write_only=True, trim_whitespace=False)
 
     def validate_password(self, value):
-        if len(value) < 12:
-            raise serializers.ValidationError(
-                'Password must be at least 12 characters long.'
-            )
-        if not re.search(r'[A-Za-z]', value):
-            raise serializers.ValidationError(
-                'Password must contain at least one letter.'
-            )
-        if not re.search(r'[0-9]', value):
-            raise serializers.ValidationError(
-                'Password must contain at least one number.'
-            )
-        if not re.search(r'[^A-Za-z0-9]', value):
-            raise serializers.ValidationError(
-                'Password must contain at least one symbol.'
-            )
-        return value
+        return validate_password_policy(value)
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password_confirm']:
+            raise serializers.ValidationError({'password_confirm': 'Passwords do not match.'})
+        user = self.context.get('user')
+        validate_password_policy(
+            attrs['password'],
+            username=user.username if user else '',
+            email=user.email if user else '',
+        )
+        if user is not None:
+            try:
+                django_validate_password(attrs['password'], user)
+            except DjangoValidationError as exc:
+                raise serializers.ValidationError({'password': list(exc.messages)})
+        return attrs
 
 
 class SelfProfileSerializer(serializers.ModelSerializer):
     # Profile data spans Django's User model and the role-specific related model
-    username = serializers.RegexField(
-        r'^[A-Za-z0-9._-]+$',
-        max_length=30,
-        min_length=3,
-        error_messages={
-            'invalid': 'Use only letters, numbers, periods, dashes, or underscores.'
-        },
-    )
-    name = serializers.CharField(max_length=200)
+    username = UsernameField()
+    name = HumanTextField(max_length=200)
     account_type = serializers.SerializerMethodField()
     company = serializers.SerializerMethodField()
     avatar_url = serializers.SerializerMethodField()
