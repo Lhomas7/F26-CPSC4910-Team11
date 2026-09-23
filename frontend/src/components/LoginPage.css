@@ -286,6 +286,33 @@
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
+.login-password-input {
+  position: relative;
+}
+
+.login-password-input .login-input {
+  padding-right: 4rem;
+}
+
+.login-password-input button {
+  background: transparent;
+  border: 0;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: .75rem;
+  font-weight: 700;
+  padding: .35rem;
+  position: absolute;
+  right: .4rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.login-password-input button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 .login-input-error {
   border-color: #b3372f;
   background: #fdf1f0;

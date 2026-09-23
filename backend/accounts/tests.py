@@ -853,6 +853,41 @@ class AdminDriverDetailTests(APITestCase):
         self.assertIn('username', response.data)
         self.assertIn('email', response.data)
 
+class MFAPhoneNumberValidationTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = get_user_model().objects.create_user(
+            username='phone.user',
+            password='ExamplePassword123!',
+        )
+
+    def setUp(self):
+        self.client.force_authenticate(self.user)
+
+    @patch('accounts.views.send_sms_code')
+    def test_accepts_normalized_international_phone_number(self, mock_send_sms):
+        response = self.client.post(
+            reverse('accounts:mfa-setup'),
+            {'method': 'sms', 'phone_number': '+18645551234'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user.mfa_settings.refresh_from_db()
+        self.assertEqual(self.user.mfa_settings.phone_number, '+18645551234')
+        mock_send_sms.assert_called_once()
+
+    def test_rejects_unformatted_or_incomplete_phone_number(self):
+        response = self.client.post(
+            reverse('accounts:mfa-setup'),
+            {'method': 'sms', 'phone_number': '(864) 555-1234'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('phone_number', response.data)
+
+
 class MFAEnrollmentTests(APITestCase):
 
     @classmethod

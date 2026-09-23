@@ -89,3 +89,28 @@ test('single-method MFA login stages, auto-requests the code, and shows the code
   expect(screen.getByLabelText('Verification code')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Verify and sign in' })).toBeInTheDocument();
 });
+
+test('shows and hides the sign-in password without changing its value', () => {
+  renderLoginPage();
+  const password = screen.getByLabelText('Password');
+  fireEvent.change(password, { target: { value: 'ExamplePassword123!' } });
+  expect(password).toHaveAttribute('type', 'password');
+  fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
+  expect(password).toHaveAttribute('type', 'text');
+  expect(password).toHaveValue('ExamplePassword123!');
+  fireEvent.click(screen.getByRole('button', { name: 'Hide password' }));
+  expect(password).toHaveAttribute('type', 'password');
+});
+
+test('provides independent password visibility controls during registration', () => {
+  renderLoginPage();
+  fireEvent.click(screen.getByRole('button', { name: 'Create Account' }));
+  fireEvent.click(screen.getByRole('button', { name: /Driver.*Earn points/i }));
+  const password = screen.getByLabelText('Password');
+  const confirmation = screen.getByLabelText('Confirm Password');
+  fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
+  expect(password).toHaveAttribute('type', 'text');
+  expect(confirmation).toHaveAttribute('type', 'password');
+  fireEvent.click(screen.getByRole('button', { name: 'Show confirm password' }));
+  expect(confirmation).toHaveAttribute('type', 'text');
+});

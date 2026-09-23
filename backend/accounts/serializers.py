@@ -84,7 +84,15 @@ class LoginSerializer(serializers.Serializer):
 class MFASetupSerializer(serializers.Serializer):
     METHOD_CHOICES = [('totp', 'TOTP'), ('email', 'Email'), ('sms', 'SMS')]
     method = serializers.ChoiceField(choices=METHOD_CHOICES)
-    phone_number = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    phone_number = serializers.RegexField(
+        r'^\+[1-9]\d{7,14}$',
+        max_length=16,
+        required=False,
+        allow_blank=True,
+        error_messages={
+            'invalid': 'Enter a valid international phone number.'
+        },
+    )
     E164_RE = re.compile(r'^\+[1-9]\d{7,14}$')
 
     def validate_phone_number(self, value):

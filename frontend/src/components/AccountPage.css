@@ -198,7 +198,8 @@
 }
 
 .profile-form input,
-.password-form input {
+.password-form input,
+.password-form select {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: .5rem;
@@ -209,10 +210,28 @@
 }
 
 .profile-form input:focus,
-.password-form input:focus {
+.password-form input:focus,
+.password-form select:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
   outline: 0;
+}
+
+.mfa-phone-input {
+  display: grid;
+  gap: .5rem;
+  grid-template-columns: minmax(10rem, .8fr) minmax(12rem, 1.2fr);
+}
+
+.password-form > small {
+  color: var(--ink-2);
+  font-size: .7rem;
+}
+
+@media (max-width: 36rem) {
+  .mfa-phone-input {
+    grid-template-columns: 1fr;
+  }
 }
 
 .profile-form small {

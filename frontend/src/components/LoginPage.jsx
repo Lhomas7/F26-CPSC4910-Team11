@@ -7,6 +7,33 @@ import './LoginPage.css';
 
 const ROLE_LABEL = { driver: 'Driver', sponsor: 'Sponsor' };
 
+function PasswordInput({ id, label, value, onChange, autoComplete, className = 'login-input' }) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="login-field">
+      <label htmlFor={id}>{label}</label>
+      <div className="login-password-input">
+        <input
+          id={id}
+          type={visible ? 'text' : 'password'}
+          className={className}
+          value={value}
+          onChange={onChange}
+          autoComplete={autoComplete}
+        />
+        <button
+          type="button"
+          onClick={() => setVisible((current) => !current)}
+          aria-label={`${visible ? 'Hide' : 'Show'} ${label.toLowerCase()}`}
+          aria-pressed={visible}
+        >
+          {visible ? 'Hide' : 'Show'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function LoginPage() {
   const { loading, user, signIn, completeMfaLogin, requestMfaLoginCode, signOut } = useAuth();
 
@@ -370,17 +397,14 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode }) {
         />
       </div>
 
-      <div className="login-field">
-        <label htmlFor="login-password">Password</label>
-        <input
-          id="login-password"
-          type="password"
-          className={fieldClass(error && !password)}
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          autoComplete="current-password"
-        />
-      </div>
+      <PasswordInput
+        id="login-password"
+        label="Password"
+        className={fieldClass(error && !password)}
+        value={password}
+        onChange={(event) => setPassword(event.target.value)}
+        autoComplete="current-password"
+      />
 
       <button className="login-btn" type="submit" disabled={busy}>
         {busy ? 'Signing in…' : 'Sign In'}
@@ -544,29 +568,9 @@ function RoleRegistrationForm({ role, onBack, onDone }) {
         />
       </div>
 
-      <div className="login-field">
-        <label htmlFor="reg-password">Password</label>
-        <input
-          id="reg-password"
-          type="password"
-          className="login-input"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          autoComplete="new-password"
-        />
-      </div>
+      <PasswordInput id="reg-password" label="Password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" />
 
-      <div className="login-field">
-        <label htmlFor="reg-password-confirm">Confirm Password</label>
-        <input
-          id="reg-password-confirm"
-          type="password"
-          className="login-input"
-          value={passwordConfirm}
-          onChange={(event) => setPasswordConfirm(event.target.value)}
-          autoComplete="new-password"
-        />
-      </div>
+      <PasswordInput id="reg-password-confirm" label="Confirm Password" value={passwordConfirm} onChange={(event) => setPasswordConfirm(event.target.value)} autoComplete="new-password" />
 
       {role === 'sponsor' && (
         <div className="login-field">
