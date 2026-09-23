@@ -236,6 +236,40 @@ class SelfProfileTests(APITestCase):
         self.assertEqual(self.other_user.username, 'driver.two')
         self.assertEqual(self.other_driver.name, 'Driver Two')
 
+    def test_driver_cannot_select_another_profile_with_query_or_body_ids(self):
+        self.client.force_authenticate(self.user)
+
+        get_response = self.client.get(self.url, {'user_id': self.other_user.id})
+        patch_response = self.client.patch(
+            f'{self.url}?user_id={self.other_user.id}',
+            {
+                'id': self.other_user.id,
+                'user_id': self.other_user.id,
+                'name': 'Still Driver One',
+            },
+            format='json',
+        )
+
+        self.assertEqual(get_response.data['id'], self.user.id)
+        self.assertEqual(patch_response.data['id'], self.user.id)
+        self.other_driver.refresh_from_db()
+        self.assertEqual(self.other_driver.name, 'Driver Two')
+
+    def test_rejects_username_outside_the_shared_account_rules(self):
+        self.client.force_authenticate(self.user)
+
+        invalid_characters = self.client.patch(
+            self.url, {'username': 'driver one'}, format='json'
+        )
+        too_short = self.client.patch(
+            self.url, {'username': 'ab'}, format='json'
+        )
+
+        self.assertEqual(invalid_characters.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('username', invalid_characters.data)
+        self.assertEqual(too_short.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('username', too_short.data)
+
     def test_rejects_duplicate_username_case_insensitively(self):
         self.client.force_authenticate(self.user)
 

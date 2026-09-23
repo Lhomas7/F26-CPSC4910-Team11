@@ -479,6 +479,14 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 class SelfProfileSerializer(serializers.ModelSerializer):
     # Profile data spans Django's User model and the role-specific related model
+    username = serializers.RegexField(
+        r'^[A-Za-z0-9._-]+$',
+        max_length=30,
+        min_length=3,
+        error_messages={
+            'invalid': 'Use only letters, numbers, periods, dashes, or underscores.'
+        },
+    )
     name = serializers.CharField(max_length=200)
     account_type = serializers.SerializerMethodField()
     company = serializers.SerializerMethodField()

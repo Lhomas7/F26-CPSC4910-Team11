@@ -64,6 +64,15 @@ test('shows server validation errors without discarding edits', async () => {
   expect(screen.getByLabelText('Username')).toHaveValue('existing.user');
 });
 
+test('rejects an invalid username before sending an update', async () => {
+  render(<AccountPage />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit profile' }));
+  fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'not a username' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+  expect(screen.getByRole('alert')).toHaveTextContent('3 to 30 characters');
+  expect(api.updateProfile).not.toHaveBeenCalled();
+});
+
 test('can retry after the profile fails to load', async () => {
   api.getProfile.mockRejectedValueOnce(new Error('Unavailable')).mockResolvedValueOnce(profile);
   render(<AccountPage />);

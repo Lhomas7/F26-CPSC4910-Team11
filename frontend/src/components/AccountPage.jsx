@@ -139,6 +139,10 @@ export default function AccountPage() {
       setFormError('Enter both a display name and username.');
       return;
     }
+    if (!/^[A-Za-z0-9._-]{3,30}$/.test(username)) {
+      setFormError('Username must be 3 to 30 characters using letters, numbers, periods, dashes, or underscores.');
+      return;
+    }
 
     setStatus('saving');
     setFormError('');
@@ -255,8 +259,8 @@ export default function AccountPage() {
                       <input id="profile-name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} maxLength="200" autoComplete="name" disabled={status === 'saving'} />
                       <small>Required. Shown to your sponsor and admins.</small>
                       <label htmlFor="profile-username">Username</label>
-                      <div className="username-input"><span aria-hidden="true">@</span><input id="profile-username" value={form.username} onChange={(event) => setForm({ ...form, username: event.target.value })} maxLength="150" autoComplete="username" autoCapitalize="none" spellCheck="false" disabled={status === 'saving'} /></div>
-                      <small>You&apos;ll use this username to sign in.</small>
+                      <div className="username-input"><span aria-hidden="true">@</span><input id="profile-username" value={form.username} onChange={(event) => setForm({ ...form, username: event.target.value })} maxLength="30" autoComplete="username" autoCapitalize="none" spellCheck="false" disabled={status === 'saving'} /></div>
+                      <small>3 to 30 letters, numbers, periods, dashes, or underscores.</small>
                       <p className="profile-section-label">Only an admin can change</p>
                       <div className="locked-fields">
                         <div><span>Account type</span><strong>{roleLabel}</strong></div>
