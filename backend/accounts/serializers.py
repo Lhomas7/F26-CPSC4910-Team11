@@ -258,6 +258,84 @@ class AdminSponsorDetailSerializer(serializers.ModelSerializer):
         return instance
 
 
+class AdminDriverDetailSerializer(serializers.ModelSerializer):
+    display_name = serializers.CharField(source='driver_profile.name')
+    role = serializers.SerializerMethodField()
+    sponsor_org = serializers.SerializerMethodField()
+    sponsor_org_id = serializers.PrimaryKeyRelatedField(
+        queryset=SponsorCompany.objects.all(),
+        source='driver_profile.sponsor',
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
+    profile_picture_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = get_user_model()
+        fields = (
+            'id', 'display_name', 'username', 'email', 'role', 'sponsor_org',
+            'sponsor_org_id', 'is_active', 'profile_picture_url',
+        )
+        read_only_fields = ('id', 'role', 'sponsor_org', 'profile_picture_url')
+
+    def get_role(self, user):
+        return 'driver'
+
+    def get_sponsor_org(self, user):
+        company = user.driver_profile.sponsor
+        return {'id': company.id, 'name': company.name} if company else None
+
+    def get_profile_picture_url(self, user):
+        picture = user.driver_profile.profile_picture
+        if not picture:
+            return None
+        request = self.context.get('request')
+        return request.build_absolute_uri(picture.url) if request else picture.url
+
+    def validate_display_name(self, value):
+        value = ' '.join(value.split())
+        if not value:
+            raise serializers.ValidationError('Name is required.')
+        return value
+
+    def validate_username(self, value):
+        value = value.strip()
+        if not re.fullmatch(r'[A-Za-z0-9._-]{3,30}', value):
+            raise serializers.ValidationError(
+                'Use 3 to 30 letters, numbers, periods, dashes, or underscores.'
+            )
+        users = get_user_model().objects.filter(username__iexact=value)
+        if self.instance:
+            users = users.exclude(pk=self.instance.pk)
+        if users.exists():
+            raise serializers.ValidationError('That username is already taken.')
+        return value
+
+    def validate_email(self, value):
+        value = value.strip().lower()
+        users = get_user_model().objects.filter(email__iexact=value)
+        if self.instance:
+            users = users.exclude(pk=self.instance.pk)
+        if users.exists():
+            raise serializers.ValidationError(
+                'An account already uses that email address.'
+            )
+        return value
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        driver_data = validated_data.pop('driver_profile', {})
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+        instance.save()
+        for field, value in driver_data.items():
+            setattr(instance.driver_profile, field, value)
+        if driver_data:
+            instance.driver_profile.save(update_fields=list(driver_data))
+        return instance
+
+
 class AdminUserCreateSerializer(serializers.Serializer):
     ROLE_CHOICES = ('driver', 'sponsor', 'admin')
 

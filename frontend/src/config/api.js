@@ -198,3 +198,11 @@ export function getAdminSponsor(userId) {
 export function updateAdminSponsor(userId, data) {
   return request(`/admin/sponsors/${userId}/`, { method: 'PATCH', body: data }).then(readJson);
 }
+
+export function getAdminDriver(userId) {
+  return request(`/admin/drivers/${userId}/`).then(readJson);
+}
+
+export function updateAdminDriver(userId, data) {
+  return request(`/admin/drivers/${userId}/`, { method: 'PATCH', body: data }).then(readJson);
+}

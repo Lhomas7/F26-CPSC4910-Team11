@@ -712,6 +712,113 @@ class AdminSponsorDetailTests(APITestCase):
         self.assertIn('username', response.data)
         self.assertIn('email', response.data)
 
+
+class AdminDriverDetailTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.company = SponsorCompany.objects.create(name='Palmetto Freight')
+        cls.other_company = SponsorCompany.objects.create(name='Blue Ridge Logistics')
+        cls.admin = get_user_model().objects.create_superuser(
+            username='driver.manager', password='ExamplePassword123!'
+        )
+        cls.driver_user = get_user_model().objects.create_user(
+            username='tasha.driver',
+            password='ExamplePassword123!',
+            email='tasha@example.com',
+        )
+        Driver.objects.create(
+            user=cls.driver_user,
+            name='Tasha Greene',
+            sponsor=cls.company,
+            status='approved',
+        )
+        cls.sponsor_user = get_user_model().objects.create_user(
+            username='ordinary.sponsor', password='ExamplePassword123!'
+        )
+        SponsorAccount.objects.create(user=cls.sponsor_user, company=cls.company)
+
+    def detail_url(self, user=None):
+        return reverse(
+            'accounts:admin-driver-detail',
+            kwargs={'user_id': (user or self.driver_user).id},
+        )
+
+    def test_admin_can_load_driver_details(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.get(self.detail_url())
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['display_name'], 'Tasha Greene')
+        self.assertEqual(response.data['role'], 'driver')
+        self.assertEqual(response.data['sponsor_org']['name'], 'Palmetto Freight')
+        self.assertIsNone(response.data['profile_picture_url'])
+
+    def test_non_admin_cannot_view_or_edit_driver(self):
+        self.client.force_authenticate(self.sponsor_user)
+
+        get_response = self.client.get(self.detail_url())
+        patch_response = self.client.patch(
+            self.detail_url(), {'display_name': 'Changed'}, format='json'
+        )
+
+        self.assertEqual(get_response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(patch_response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_sponsor_id_is_not_exposed_as_driver_detail(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.get(self.detail_url(self.sponsor_user))
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_admin_can_update_driver_and_remove_sponsor(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.patch(self.detail_url(), {
+            'display_name': 'Tasha Green',
+            'username': 'tasha.green',
+            'email': 'tasha.green@example.com',
+            'sponsor_org_id': None,
+            'is_active': False,
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.driver_user.refresh_from_db()
+        self.driver_user.driver_profile.refresh_from_db()
+        self.assertEqual(self.driver_user.driver_profile.name, 'Tasha Green')
+        self.assertIsNone(self.driver_user.driver_profile.sponsor)
+        self.assertFalse(self.driver_user.is_active)
+
+    def test_admin_can_reassign_driver_to_another_sponsor(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.patch(
+            self.detail_url(),
+            {'sponsor_org_id': self.other_company.id},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['sponsor_org']['name'], 'Blue Ridge Logistics')
+
+    def test_rejects_invalid_or_duplicate_identity_fields(self):
+        get_user_model().objects.create_user(
+            username='existing.user', email='existing@example.com'
+        )
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.patch(self.detail_url(), {
+            'display_name': '   ',
+            'username': 'EXISTING.USER',
+            'email': 'EXISTING@EXAMPLE.COM',
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('display_name', response.data)
+        self.assertIn('username', response.data)
+        self.assertIn('email', response.data)
+
 class MFAEnrollmentTests(APITestCase):
 
     @classmethod

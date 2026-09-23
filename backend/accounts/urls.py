@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    AdminDriverDetailView,
     AdminSponsorDetailView,
     AdminSponsorCompanyListView,
     AdminUserListView,
@@ -36,6 +37,11 @@ urlpatterns = [
         'admin/sponsors/<int:user_id>/',
         AdminSponsorDetailView.as_view(),
         name='admin-sponsor-detail',
+    ),
+    path(
+        'admin/drivers/<int:user_id>/',
+        AdminDriverDetailView.as_view(),
+        name='admin-driver-detail',
     ),
     path('accounts/driver/', DriverRegistrationView.as_view(), name='driver-register'),
     path('accounts/sponsor/', SponsorRegistrationView.as_view(), name='sponsor-register'),

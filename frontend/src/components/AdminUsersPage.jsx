@@ -137,7 +137,7 @@ export default function AdminUsersPage() {
                   <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Sponsor organization</th><th>Status</th></tr></thead>
                   <tbody>{visibleUsers.map((listedUser) => (
                     <tr key={listedUser.id}>
-                      <td data-label="Name"><div className="users-person"><span className={`users-avatar ${listedUser.role}`} aria-hidden="true">{initials(listedUser.display_name)}</span>{listedUser.role === 'sponsor' ? <Link className="users-name-link" to={`/users/sponsors/${listedUser.id}`}>{listedUser.display_name}</Link> : <strong>{listedUser.display_name}</strong>}</div></td>
+                      <td data-label="Name"><div className="users-person"><span className={`users-avatar ${listedUser.role}`} aria-hidden="true">{initials(listedUser.display_name)}</span>{listedUser.role === 'sponsor' ? <Link className="users-name-link" to={`/users/sponsors/${listedUser.id}`}>{listedUser.display_name}</Link> : listedUser.role === 'driver' ? <Link className="users-name-link" to={`/users/drivers/${listedUser.id}`}>{listedUser.display_name}</Link> : <strong>{listedUser.display_name}</strong>}</div></td>
                       <td data-label="Username" className="users-username">@{listedUser.username}</td>
                       <td data-label="Role"><span className={`users-role ${listedUser.role}`}>{ROLE_LABELS[listedUser.role]}</span></td>
                       <td data-label="Sponsor organization">{listedUser.sponsor_org?.name || (listedUser.role === 'driver' ? <i>Not assigned</i> : <span aria-label="Not applicable">—</span>)}</td>

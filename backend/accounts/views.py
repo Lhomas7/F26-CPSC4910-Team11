@@ -26,6 +26,7 @@ from drivers.models import Driver
 
 from .models import SponsorAccount, SponsorCompany
 from .serializers import (
+    AdminDriverDetailSerializer,
     AdminSponsorDetailSerializer,
     AdminUserCreateSerializer,
     AdminUserListSerializer,
@@ -442,6 +443,32 @@ class AdminSponsorDetailView(APIView):
             data=request.data,
             partial=True,
         )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
+class AdminDriverDetailView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get_object(self, user_id):
+        return get_object_or_404(
+            get_user_model().objects.select_related('driver_profile__sponsor'),
+            pk=user_id,
+            is_staff=False,
+            driver_profile__isnull=False,
+        )
+
+    def serializer(self, *args, **kwargs):
+        kwargs['context'] = {'request': self.request}
+        return AdminDriverDetailSerializer(*args, **kwargs)
+
+    def get(self, request, user_id):
+        return Response(self.serializer(self.get_object(user_id)).data)
+
+    def patch(self, request, user_id):
+        user = self.get_object(user_id)
+        serializer = self.serializer(user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
