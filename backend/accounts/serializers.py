@@ -186,6 +186,78 @@ class SponsorCompanySerializer(serializers.ModelSerializer):
         fields = ('id', 'name')
 
 
+class AdminSponsorDetailSerializer(serializers.ModelSerializer):
+    role = serializers.SerializerMethodField()
+    sponsor_org = serializers.SerializerMethodField()
+    sponsor_org_id = serializers.PrimaryKeyRelatedField(
+        queryset=SponsorCompany.objects.all(),
+        source='sponsor_account.company',
+        write_only=True,
+    )
+
+    class Meta:
+        model = get_user_model()
+        fields = (
+            'id', 'first_name', 'last_name', 'username', 'email', 'role',
+            'sponsor_org', 'sponsor_org_id', 'is_active',
+        )
+        read_only_fields = ('id', 'role', 'sponsor_org')
+
+    def get_role(self, user):
+        return 'sponsor'
+
+    def get_sponsor_org(self, user):
+        company = user.sponsor_account.company
+        return {'id': company.id, 'name': company.name}
+
+    def validate_first_name(self, value):
+        value = ' '.join(value.split())
+        if not value:
+            raise serializers.ValidationError('First name is required.')
+        return value
+
+    def validate_last_name(self, value):
+        value = ' '.join(value.split())
+        if not value:
+            raise serializers.ValidationError('Last name is required.')
+        return value
+
+    def validate_username(self, value):
+        value = value.strip()
+        if not re.fullmatch(r'[A-Za-z0-9._-]{3,30}', value):
+            raise serializers.ValidationError(
+                'Use 3 to 30 letters, numbers, periods, dashes, or underscores.'
+            )
+        users = get_user_model().objects.filter(username__iexact=value)
+        if self.instance:
+            users = users.exclude(pk=self.instance.pk)
+        if users.exists():
+            raise serializers.ValidationError('That username is already taken.')
+        return value
+
+    def validate_email(self, value):
+        value = value.strip().lower()
+        users = get_user_model().objects.filter(email__iexact=value)
+        if self.instance:
+            users = users.exclude(pk=self.instance.pk)
+        if users.exists():
+            raise serializers.ValidationError(
+                'An account already uses that email address.'
+            )
+        return value
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        sponsor_data = validated_data.pop('sponsor_account', {})
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+        instance.save()
+        if 'company' in sponsor_data:
+            instance.sponsor_account.company = sponsor_data['company']
+            instance.sponsor_account.save(update_fields=['company'])
+        return instance
+
+
 class AdminUserCreateSerializer(serializers.Serializer):
     ROLE_CHOICES = ('driver', 'sponsor', 'admin')
 

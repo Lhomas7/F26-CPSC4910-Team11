@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from './auth/AuthContext';
 import AccountPage from './components/AccountPage';
 import AdminUsersPage from './components/AdminUsersPage';
 import AddUserPage from './components/AddUserPage';
+import SponsorDetailPage from './components/SponsorDetailPage';
 import './App.css';
 
 function RequireAuth({ children }) {
@@ -103,6 +104,7 @@ function AppRoutes() {
         <Route path="/account" element={<RequireAuth><AccountPage /></RequireAuth>} />
         <Route path="/users" element={<RequireAuth><AdminUsersPage /></RequireAuth>} />
         <Route path="/users/new" element={<RequireAuth><AddUserPage /></RequireAuth>} />
+        <Route path="/users/sponsors/:userId" element={<RequireAuth><SponsorDetailPage /></RequireAuth>} />
         <Route path="/drivers/:driverId" element={<RequireAuth><DriverDetail /></RequireAuth>} />
         <Route path="/about" element={<AboutPage />} />
       </Route>

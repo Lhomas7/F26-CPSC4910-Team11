@@ -11,6 +11,7 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.utils.decorators import method_decorator
@@ -25,6 +26,7 @@ from drivers.models import Driver
 
 from .models import SponsorAccount, SponsorCompany
 from .serializers import (
+    AdminSponsorDetailSerializer,
     AdminUserCreateSerializer,
     AdminUserListSerializer,
     ChangePasswordSerializer,
@@ -417,6 +419,32 @@ class AdminSponsorCompanyListView(APIView):
     def get(self, request):
         companies = SponsorCompany.objects.order_by('name')
         return Response(SponsorCompanySerializer(companies, many=True).data)
+
+
+class AdminSponsorDetailView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get_object(self, user_id):
+        return get_object_or_404(
+            get_user_model().objects.select_related('sponsor_account__company'),
+            pk=user_id,
+            is_staff=False,
+            sponsor_account__isnull=False,
+        )
+
+    def get(self, request, user_id):
+        return Response(AdminSponsorDetailSerializer(self.get_object(user_id)).data)
+
+    def patch(self, request, user_id):
+        user = self.get_object(user_id)
+        serializer = AdminSponsorDetailSerializer(
+            user,
+            data=request.data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 
 @method_decorator(ensure_csrf_cookie, name='dispatch')

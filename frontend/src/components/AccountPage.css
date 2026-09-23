@@ -319,6 +319,10 @@
   padding-bottom: .8rem;
 }
 
+.password-form:last-child:has(> .account-card-footer:last-child) {
+  padding-bottom: 0;
+}
+
 .password-form .account-banner {
   margin: .75rem 0 0;
 }

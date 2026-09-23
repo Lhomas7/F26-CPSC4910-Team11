@@ -190,3 +190,11 @@ export function getAdminSponsorOrganizations() {
 export function createAdminUser(data) {
   return request('/admin/users/', { method: 'POST', body: data }).then(readJson);
 }
+
+export function getAdminSponsor(userId) {
+  return request(`/admin/sponsors/${userId}/`).then(readJson);
+}
+
+export function updateAdminSponsor(userId, data) {
+  return request(`/admin/sponsors/${userId}/`, { method: 'PATCH', body: data }).then(readJson);
+}
