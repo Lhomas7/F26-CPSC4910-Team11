@@ -130,6 +130,62 @@ class RegistrationTests(APITestCase):
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
             self.assertIn(field, response.data)
 
+    def test_registration_canonicalizes_user_entered_text(self):
+        response = self.client.post(
+            self.sponsor_url,
+            self.registration_data(
+                first_name='  Jamie\t  Lynn ',
+                last_name=' Rivera  ',
+                email='  JAMIE@EXAMPLE.COM ',
+                username='  ｊａｍｉｅ.rivera  ',
+                company_name='  Palmetto\n  Freight  ',
+            ),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = get_user_model().objects.get(username='jamie.rivera')
+        self.assertEqual(user.first_name, 'Jamie Lynn')
+        self.assertEqual(user.last_name, 'Rivera')
+        self.assertEqual(user.email, 'jamie@example.com')
+        self.assertEqual(user.sponsor_account.company.name, 'Palmetto Freight')
+
+    def test_registration_rejects_invisible_control_characters(self):
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(first_name='Jam\u200bie'),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data['first_name'][0],
+            'Control characters are not allowed.',
+        )
+
+    def test_registration_enforces_shared_username_format(self):
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(username='jamie rivera'),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('username', response.data)
+
+    def test_password_whitespace_is_not_silently_removed(self):
+        password = ' ExamplePassword123! '
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(password=password),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = get_user_model().objects.get(username='jamie.rivera')
+        self.assertTrue(user.check_password(password))
+        self.assertFalse(user.check_password(password.strip()))
+
 
 class SelfProfileTests(APITestCase):
     url = reverse('accounts:self-profile')
