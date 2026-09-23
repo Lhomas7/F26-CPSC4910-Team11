@@ -228,6 +228,44 @@
   font-size: .7rem;
 }
 
+.account-password-input {
+  position: relative;
+}
+
+.account-password-input input {
+  padding-right: 4.25rem;
+}
+
+.account-password-input button {
+  background: transparent;
+  border: 0;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: .75rem;
+  font-weight: 700;
+  padding: .35rem .55rem;
+  position: absolute;
+  right: .25rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.account-password-input button:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.account-password-input button:focus-visible {
+  border-radius: .25rem;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: 0;
+}
+
+.account-password-input button:disabled {
+  cursor: progress;
+  opacity: .65;
+}
+
 @media (max-width: 36rem) {
   .mfa-phone-input {
     grid-template-columns: 1fr;

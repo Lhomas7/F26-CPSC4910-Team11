@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import * as api from '../config/api';
 import MfaPanel from './MfaPanel';
+import PasswordPanel from './PasswordPanel';
 import './AccountPage.css';
 
 const ACCOUNT_LABELS = { driver: 'Driver', sponsor: 'Sponsor', admin: 'Admin' };
@@ -48,11 +49,6 @@ export default function AccountPage() {
   const [picturePreview, setPicturePreview] = useState('');
   const [formError, setFormError] = useState('');
   const [notice, setNotice] = useState('');
-  const [password, setPassword] = useState('');
-  const [passwordConfirm, setPasswordConfirm] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const [passwordSuccess, setPasswordSuccess] = useState('');
-  const [passwordBusy, setPasswordBusy] = useState(false);
 
   const loadProfile = useCallback(async () => {
     setStatus('loading');
@@ -167,38 +163,6 @@ export default function AccountPage() {
     }
   };
 
-  const validatePassword = () => {
-    if (!password) return 'Enter a new password.';
-    if (password.length < 12) return 'Password must be at least 12 characters long.';
-    if (!/[A-Za-z]/.test(password)) return 'Password must contain at least one letter.';
-    if (!/[0-9]/.test(password)) return 'Password must contain at least one number.';
-    if (!/[^A-Za-z0-9]/.test(password)) return 'Password must contain at least one symbol.';
-    if (password !== passwordConfirm) return 'Passwords do not match.';
-    return null;
-  };
-
-  const changePassword = async (event) => {
-    event.preventDefault();
-    setPasswordError('');
-    setPasswordSuccess('');
-    const problem = validatePassword();
-    if (problem) {
-      setPasswordError(problem);
-      return;
-    }
-    setPasswordBusy(true);
-    try {
-      await api.changePassword(password);
-      setPassword('');
-      setPasswordConfirm('');
-      setPasswordSuccess('Password changed successfully.');
-    } catch (error) {
-      setPasswordError(error.message || 'Password could not be changed.');
-    } finally {
-      setPasswordBusy(false);
-    }
-  };
-
   const roleLabel = profile && (ACCOUNT_LABELS[profile.account_type] || profile.account_type);
   const displayedPicture = removePicture ? '' : (picturePreview || profile?.avatar_url);
   const companyValue = profile?.account_type === 'admin'
@@ -275,18 +239,7 @@ export default function AccountPage() {
                 </form>
               )}
             </section>
-            <section className="account-card" aria-labelledby="password-heading">
-              <div className="account-card-header"><div><h2 id="password-heading">Password</h2><p>Change the password you use to sign in</p></div></div>
-              <form className="password-form" onSubmit={changePassword}>
-                <label htmlFor="new-password">New password</label>
-                <input id="new-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" disabled={passwordBusy} />
-                <label htmlFor="confirm-password">Confirm new password</label>
-                <input id="confirm-password" type="password" value={passwordConfirm} onChange={(event) => setPasswordConfirm(event.target.value)} autoComplete="new-password" disabled={passwordBusy} />
-                {passwordError && <p className="account-banner error" role="alert">{passwordError}</p>}
-                {passwordSuccess && <p className="account-banner success" role="status">{passwordSuccess}</p>}
-                <div className="account-card-footer"><button className="account-button primary" type="submit" disabled={passwordBusy}>{passwordBusy ? 'Changing password…' : 'Change password'}</button></div>
-              </form>
-            </section>
+            <PasswordPanel />
             <MfaPanel mfa={profile.mfa || { required: false, enrolled: false, methods: [] }} onRefreshed={refreshMfa} />
           </>
         )}
