@@ -1,0 +1,22 @@
+{$SITE_DOMAIN} {
+    encode gzip zstd
+
+    handle /api/* {
+        reverse_proxy web:8000
+    }
+    handle /admin/* {
+        reverse_proxy web:8000
+    }
+    handle /static/* {
+        reverse_proxy web:8000
+    }
+    handle /media/* {
+        root * /media
+        file_server
+    }
+    handle {
+        root * /usr/share/caddy
+        try_files {path} /index.html        # React Router SPA fallback
+        file_server
+    }
+}

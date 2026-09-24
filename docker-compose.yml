@@ -1,0 +1,42 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+    image: gooddriver-web:latest
+    env_file: ./web/.env
+    restart: unless-stopped
+    volumes:
+      - media:/app/media            # for future media storage (like pp's)
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/api/health/', timeout=5).close()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
+
+  webproxy:
+    image: caddy:2.9-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_DOMAIN: "${SITE_DOMAIN:-http://localhost}"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./frontend/build:/usr/share/caddy:ro
+      - media:/media:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+
+volumes:
+  media:
+  caddy_data:
+  caddy_config:

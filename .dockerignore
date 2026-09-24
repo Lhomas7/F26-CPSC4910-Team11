@@ -1,0 +1,62 @@
+# -----------------------------------------------------------------------------
+# Version control
+# -----------------------------------------------------------------------------
+.git
+.gitignore
+.gitattributes
+
+# -----------------------------------------------------------------------------
+# Frontend — the web image only needs backend/ + docker/entrypoint.sh.
+# The React bundle is built separately in CI and rsynced in as frontend/build;
+# it never needs to enter this image's build context at all.
+# -----------------------------------------------------------------------------
+frontend/
+!frontend/build          # keep this in case Caddy build/copy ever needs it directly
+
+# -----------------------------------------------------------------------------
+# Python
+# -----------------------------------------------------------------------------
+**/__pycache__/
+*.py[cod]
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# -----------------------------------------------------------------------------
+# Secrets and local env — never let these enter a build context or image layer
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!*.env.example
+backend/.env
+web/.env
+secret.json
+*.pem
+*.key
+
+# -----------------------------------------------------------------------------
+# Local data — must not get baked into the image; these are runtime volumes
+# -----------------------------------------------------------------------------
+backend/db.sqlite3
+backend/media/
+media/
+
+# -----------------------------------------------------------------------------
+# Docs, CI config, editor/OS cruft — irrelevant to the running container
+# -----------------------------------------------------------------------------
+.github/
+*.md
+!backend/README.md        # keep only if your app reads this at runtime; usually drop this line too
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# -----------------------------------------------------------------------------
+# Docker-in-Docker leftovers, logs
+# -----------------------------------------------------------------------------
+docker-compose.override.yml
+*.log
