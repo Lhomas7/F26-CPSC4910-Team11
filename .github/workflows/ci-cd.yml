@@ -197,6 +197,15 @@ jobs:
             --exclude 'backend/media' \
             ./ deploy@${HOST}:/opt/gooddriver/src/
 
+      # docker compose up -d does NOT reliably reload webproxy below:
+      # docker/Caddyfile is bind-mounted, and Compose only recreates a
+      # container when something in docker-compose.yml's declared config
+      # changes (image, env, mount paths) - it has no visibility into the
+      # CONTENT of a bind-mounted file. A Caddyfile edit with no other
+      # webproxy-relevant change can silently leave the old Caddy process
+      # running with its old, already-loaded config. A plain restart always
+      # re-reads the file on process start, regardless of what Compose
+      # thinks changed - that is why the step below uses restart, not up -d.
       - name: Build and start containers (waits for health)
         env:
           HOST: ${{ vars.EC2_HOST }}
@@ -209,15 +218,6 @@ jobs:
               docker tag gooddriver-web:latest gooddriver-web:previous || true
             docker compose build --pull
             docker compose up -d
-            # docker compose up -d does NOT reliably reload webproxy here:
-            # docker/Caddyfile is bind-mounted, and Compose only recreates a
-            # container when something in docker-compose.yml's declared
-            # config changes (image, env, mount paths) — it has no
-            # visibility into the CONTENT of a bind-mounted file. A Caddyfile
-            # edit with no other webproxy-relevant change can silently leave
-            # the old Caddy process running with its old, already-loaded
-            # config. `restart` always re-reads the file on process start,
-            # regardless of what Compose thinks changed.
             docker compose restart webproxy
           '
 
@@ -246,4 +246,4 @@ jobs:
           test -n "$asset" || { echo "::error::No SPA JS bundle referenced in index.html"; exit 1; }
           curl -fsS --retry 3 --retry-delay 5 -o main.js "${{ vars.HEALTH_URL }}${asset}"
           jssize=$(wc -c < main.js)
-          test "$jssize" -gt 1000 || { echo "::error::SPA JS bundle suspiciously small/empty ($jssize bytes)"; exit 1; }         test "$jssize" -gt 1000 || { echo "::error::SPA JS bundle suspiciously small/empty ($jssize bytes)"; exit 1; }
+          test "$jssize" -gt 1000 || { echo "::error::SPA JS bundle suspiciously small/empty ($jssize bytes)"; exit 1; }
