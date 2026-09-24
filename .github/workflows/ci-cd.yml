@@ -130,7 +130,7 @@ jobs:
           umask 177
           cat > web/.env <<EOF
           DJANGO_DEBUG=false
-          DJANGO_ALLOWED_HOSTS=${{ vars.EC2_HOST }}
+          DJANGO_ALLOWED_HOSTS=${{ vars.EC2_HOST }},127.0.0.1
           DJANGO_BEHIND_PROXY=true
           DJANGO_SECURE_SSL_REDIRECT=true
           DB_ENGINE=mysql
