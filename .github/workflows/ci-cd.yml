@@ -155,6 +155,14 @@ jobs:
           # HTTPS endpoint that doesn't exist yet on a bare IP. Flip to true
           # once Phase 2 (real domain, Caddy auto-TLS) is set up.
           DJANGO_SECURE_SSL_REDIRECT=false
+          # Same Phase-1/Phase-2 story as SECURE_SSL_REDIRECT above, but for
+          # cookies: settings.py defaults SESSION_COOKIE_SECURE (and, via it,
+          # CSRF_COOKIE_SECURE — not independently configurable, it mirrors
+          # this value) to true once DEBUG=false. Over plain HTTP the browser
+          # then silently refuses to store/send the sessionid cookie, so
+          # login succeeds but the very next request comes back 403 as if
+          # anonymous. Flip to true once Phase 2 (real domain + TLS) lands.
+          DJANGO_SESSION_COOKIE_SECURE=false
           DB_ENGINE=mysql
           DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
           DB_NAME=${{ secrets.DB_NAME }}
@@ -201,8 +209,16 @@ jobs:
               docker tag gooddriver-web:latest gooddriver-web:previous || true
             docker compose build --pull
             docker compose up -d
-            # mount the new SPA bundle and reload Caddy without bouncing the API:
-            docker compose up -d webproxy
+            # docker compose up -d does NOT reliably reload webproxy here:
+            # docker/Caddyfile is bind-mounted, and Compose only recreates a
+            # container when something in docker-compose.yml's declared
+            # config changes (image, env, mount paths) — it has no
+            # visibility into the CONTENT of a bind-mounted file. A Caddyfile
+            # edit with no other webproxy-relevant change can silently leave
+            # the old Caddy process running with its old, already-loaded
+            # config. `restart` always re-reads the file on process start,
+            # regardless of what Compose thinks changed.
+            docker compose restart webproxy
           '
 
       - name: Smoke test API
@@ -230,4 +246,4 @@ jobs:
           test -n "$asset" || { echo "::error::No SPA JS bundle referenced in index.html"; exit 1; }
           curl -fsS --retry 3 --retry-delay 5 -o main.js "${{ vars.HEALTH_URL }}${asset}"
           jssize=$(wc -c < main.js)
-          test "$jssize" -gt 1000 || { echo "::error::SPA JS bundle suspiciously small/empty ($jssize bytes)"; exit 1; }
+          test "$jssize" -gt 1000 || { echo "::error::SPA JS bundle suspiciously small/empty ($jssize bytes)"; exit 1; }         test "$jssize" -gt 1000 || { echo "::error::SPA JS bundle suspiciously small/empty ($jssize bytes)"; exit 1; }
