@@ -7,9 +7,27 @@
     handle /admin/* {
         reverse_proxy web:8000
     }
+
+    # CRA's compiled bundle (/static/js/*, /static/css/*, /static/media/*)
+    # and Django's own admin/app static files (also served under STATIC_URL
+    # = "static/") share the same /static/* prefix. Serve whichever one
+    # actually exists in the SPA build first; anything not found there
+    # (i.e. Django's own static files) falls through to Django. Without
+    # this split, every request under /static/* went straight to Django,
+    # which 404'd on the SPA's own JS/CSS since those files only ever
+    # exist in this mounted bundle, never in Django's STATIC_ROOT — the
+    # root cause of a blank page with a dead #root div on every route.
     handle /static/* {
-        reverse_proxy web:8000
+        root * /usr/share/caddy
+        @spa_asset file
+        handle @spa_asset {
+            file_server
+        }
+        handle {
+            reverse_proxy web:8000
+        }
     }
+
     handle /media/* {
         root * /media
         file_server
