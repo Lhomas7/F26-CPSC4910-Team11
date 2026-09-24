@@ -223,11 +223,11 @@ jobs:
 
       - name: Smoke test API
         run: |
-          curl -fsS --retry 12 --retry-delay 5 "${{ vars.HEALTH_URL }}/api/health/"
+          curl -fsS --retry 12 --retry-delay 5 --retry-connrefused "${{ vars.HEALTH_URL }}/api/health/"
 
       - name: Smoke test SPA
         run: |
-          curl -fsS --retry 6 --retry-delay 5 -o index.html "${{ vars.HEALTH_URL }}/"
+          curl -fsS --retry 6 --retry-delay 5 --retry-connrefused -o index.html "${{ vars.HEALTH_URL }}/"
           # Status 200 alone isn't enough: Caddy returns a bare 200 with an
           # EMPTY body for a request whose Host header doesn't match any
           # configured site (e.g. SITE_DOMAIN misconfigured/unset on the
@@ -244,6 +244,6 @@ jobs:
           # hashed asset referenced in index.html too, and confirm real size.
           asset=$(grep -oE '/static/js/main\.[a-zA-Z0-9]+\.js' index.html | head -1)
           test -n "$asset" || { echo "::error::No SPA JS bundle referenced in index.html"; exit 1; }
-          curl -fsS --retry 3 --retry-delay 5 -o main.js "${{ vars.HEALTH_URL }}${asset}"
+          curl -fsS --retry 3 --retry-delay 5 --retry-connrefused -o main.js "${{ vars.HEALTH_URL }}${asset}"
           jssize=$(wc -c < main.js)
           test "$jssize" -gt 1000 || { echo "::error::SPA JS bundle suspiciously small/empty ($jssize bytes)"; exit 1; }
