@@ -412,36 +412,6 @@
   width: 2.75rem;
 }
 
-.login-card-success {
-  text-align: left;
-}
-
-.login-session {
-  border: 1px solid var(--line);
-  border-radius: .5rem;
-  margin: 1rem 0;
-}
-
-.login-session div {
-  border-bottom: 1px solid var(--line);
-  display: flex;
-  font-size: .8125rem;
-  justify-content: space-between;
-  padding: .5625rem .875rem;
-}
-
-.login-session div:last-child {
-  border-bottom: 0;
-}
-
-.login-session dt {
-  color: var(--ink-2);
-}
-
-.login-session dd {
-  font-weight: 600;
-}
-
 .login-choice {
   text-align: left;
 }

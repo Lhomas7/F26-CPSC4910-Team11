@@ -13,7 +13,15 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-test('redirects an unauthenticated user to the login page', async () => {
+test('renders the welcome page at / for an unauthenticated visitor', async () => {
+  render(<App />);
+
+  expect(await screen.findByRole('heading', { level: 1, name: 'Welcome' })).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Create an account' })).toBeInTheDocument();
+});
+
+test('redirects an unauthenticated user to the login page when visiting /drivers', async () => {
+  window.history.pushState({}, '', '/drivers');
   render(<App />);
 
   await screen.findByRole('heading', { name: /sign in/i });

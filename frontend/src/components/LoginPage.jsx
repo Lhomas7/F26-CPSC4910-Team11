@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
 import * as api from '../config/api';
 import { useAuth } from '../auth/AuthContext';
@@ -41,13 +41,13 @@ function PasswordInput({ id, label, value, onChange, autoComplete, className = '
 }
 
 export default function LoginPage() {
-  const { loading, user, signIn, completeMfaLogin, requestMfaLoginCode, signOut } = useAuth();
+  const { loading, user, signIn, completeMfaLogin, requestMfaLoginCode } = useAuth();
 
   let content;
   if (loading) {
     content = <LoadingCard />;
   } else if (user) {
-    content = <LoggedInCard user={user} onSignOut={signOut} />;
+    content = <Navigate to="/" replace />;
   } else {
     content = <AuthCard onSignIn={signIn} onMfaComplete={completeMfaLogin} onRequestMfaCode={requestMfaLoginCode} />;
   }
@@ -98,38 +98,11 @@ function LoadingCard() {
   );
 }
 
-function LoggedInCard({ user, onSignOut }) {
-  const [signingOut, setSigningOut] = useState(false);
-
-  const submit = async () => {
-    setSigningOut(true);
-    try {
-      await onSignOut();
-    } catch {
-      setSigningOut(false);
-    }
-  };
-
-  return (
-    <div className="login-card login-card-success">
-      <div className="login-check" aria-hidden="true">✓</div>
-      <h2>Logged in successfully</h2>
-      <p className="login-sub">Your session is active.</p>
-      <dl className="login-session">
-        <div><dt>Username</dt><dd>{user.username}</dd></div>
-        <div><dt>Account type</dt><dd>{ROLE_LABEL[user.account_type] || user.account_type}</dd></div>
-        {user.company && <div><dt>Organization</dt><dd>{user.company}</dd></div>}
-        {user.name && <div><dt>Name</dt><dd>{user.name}</dd></div>}
-      </dl>
-      <button className="login-btn login-btn-outline" type="button" disabled={signingOut} onClick={submit}>
-        {signingOut ? 'Signing out…' : 'Sign out'}
-      </button>
-    </div>
-  );
-}
-
 function AuthCard({ onSignIn, onMfaComplete, onRequestMfaCode }) {
-  const [view, setView] = useState('signin');
+  const [searchParams] = useSearchParams();
+  const [view, setView] = useState(() => (
+    searchParams.get('tab') === 'register' ? 'signup' : 'signin'
+  ));
   const [role, setRole] = useState(null);
   const [notice, setNotice] = useState(null);
 

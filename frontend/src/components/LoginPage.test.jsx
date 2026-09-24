@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 import { useAuth } from '../auth/AuthContext';
 import * as api from '../config/api';
@@ -122,4 +122,26 @@ test('sign in form links to the forgot password page', () => {
   renderLoginPage();
 
   expect(screen.getByRole('link', { name: 'Forgot password?' })).toHaveAttribute('href', '/forgot-password');
+});
+
+test('a signed-in user is redirected to the welcome page', async () => {
+  useAuth.mockReturnValue({
+    loading: false,
+    user: { username: 'jamie.rivera', account_type: 'driver', name: 'Jamie Rivera' },
+    signIn: jest.fn(),
+    signOut: jest.fn(),
+    completeMfaLogin: jest.fn(),
+    requestMfaLoginCode: jest.fn(),
+  });
+
+  render(
+    <MemoryRouter initialEntries={['/login']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/" element={<div>Welcome</div>} />
+      </Routes>
+    </MemoryRouter>,
+  );
+
+  expect(await screen.findByText('Welcome')).toBeInTheDocument();
 });

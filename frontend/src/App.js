@@ -5,6 +5,7 @@ import LoginPage from './components/LoginPage';
 import ForgotPasswordPage from './components/ForgotPasswordPage';
 import ResetPasswordPage from './components/ResetPasswordPage';
 import MfaSetupWall from './components/MfaSetupWall';
+import WelcomePage from './components/WelcomePage';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import AccountPage from './components/AccountPage';
 import AdminUsersPage from './components/AdminUsersPage';
@@ -53,7 +54,7 @@ function SiteLayout() {
           <span className="brand-name">Good Driver</span>
         </Link>
         <nav className="site-nav" aria-label="Primary navigation">
-          <NavLink to="/" end>
+          <NavLink to="/drivers">
             <span className="nav-icon" aria-hidden="true" />
             Drivers
           </NavLink>
@@ -105,7 +106,8 @@ function AppRoutes() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password/:uid/:token" element={<ResetPasswordPage />} />
       <Route element={<SiteLayout />}>
-        <Route path="/" element={<RequireAuth><DriverList /></RequireAuth>} />
+        <Route path="/" element={<WelcomePage />} />
+        <Route path="/drivers" element={<RequireAuth><DriverList /></RequireAuth>} />
         <Route path="/account" element={<RequireAuth><AccountPage /></RequireAuth>} />
         <Route path="/users" element={<RequireAuth><AdminUsersPage /></RequireAuth>} />
         <Route path="/users/new" element={<RequireAuth><AddUserPage /></RequireAuth>} />
