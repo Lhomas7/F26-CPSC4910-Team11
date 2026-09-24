@@ -145,9 +145,16 @@ jobs:
           umask 177
           cat > web/.env <<EOF
           DJANGO_DEBUG=false
-          DJANGO_ALLOWED_HOSTS=${{ vars.EC2_HOST }}
+          DJANGO_ALLOWED_HOSTS=${{ vars.EC2_HOST }},127.0.0.1
+          # 127.0.0.1 is required: the Docker HEALTHCHECK hits the app from
+          # inside the container at http://127.0.0.1:8000, which Django
+          # rejects as a disallowed host without this.
           DJANGO_BEHIND_PROXY=true
-          DJANGO_SECURE_SSL_REDIRECT=true
+          # false until a real domain + TLS cert exist (Phase 1 in the plan's
+          # Domain + TLS section). true redirects every HTTP request to an
+          # HTTPS endpoint that doesn't exist yet on a bare IP. Flip to true
+          # once Phase 2 (real domain, Caddy auto-TLS) is set up.
+          DJANGO_SECURE_SSL_REDIRECT=false
           DB_ENGINE=mysql
           DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
           DB_NAME=${{ secrets.DB_NAME }}
