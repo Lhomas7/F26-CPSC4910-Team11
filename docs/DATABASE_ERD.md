@@ -69,6 +69,14 @@ erDiagram
         int user_id FK
     }
 
+    ACCOUNTS_MFABACKUPCODE {
+        bigint id PK
+        varchar code_hash
+        datetime created_at
+        datetime used_at "nullable"
+        int user_id FK
+    }
+
     ACCOUNTS_DRIVERNOTIFICATION {
         bigint id PK
         varchar message
@@ -99,16 +107,17 @@ erDiagram
     AUTH_USER ||--o| ACCOUNTS_SPONSORACCOUNT : "has sponsor account"
     AUTH_USER ||--o| ACCOUNTS_MFASETTINGS : "has MFA settings"
     AUTH_USER ||--o{ ACCOUNTS_MFACODE : "receives MFA codes"
+    AUTH_USER ||--o{ ACCOUNTS_MFABACKUPCODE : "has backup codes"
     ACCOUNTS_SPONSORCOMPANY ||--o{ ACCOUNTS_SPONSORACCOUNT : "employs"
     ACCOUNTS_SPONSORCOMPANY o|--o{ DRIVERS_DRIVER : "sponsors"
     DRIVERS_DRIVER ||--o{ ACCOUNTS_DRIVERNOTIFICATION : "receives"
 ```
 
-`accounts_loginattempt` deliberately stores a submitted username rather than a foreign key so failed attempts for nonexistent usernames can be recorded. `about_page_aboutpagerelease` is currently independent of the other application tables.
+`accounts_loginattempt` deliberately stores a submitted username rather than a foreign key so failed attempts for nonexistent usernames can be recorded. `accounts_mfabackupcode` rows are one-time-use: `used_at` is set the moment a code is consumed and the full set is replaced (old rows deleted) whenever backup codes are regenerated or every MFA method is disabled. `about_page_aboutpagerelease` is currently independent of the other application tables.
 
 ## Complete physical database
 
-This view adds Django's authorization, administration, migration, content-type, and session infrastructure. It represents all 18 tables currently present in the database.
+This view adds Django's authorization, administration, migration, content-type, and session infrastructure. It represents all 19 tables currently present in the database.
 
 ```mermaid
 erDiagram
@@ -233,6 +242,14 @@ erDiagram
         int user_id FK
     }
 
+    ACCOUNTS_MFABACKUPCODE {
+        bigint id PK
+        varchar code_hash
+        datetime created_at
+        datetime used_at "nullable"
+        int user_id FK
+    }
+
     ACCOUNTS_DRIVERNOTIFICATION {
         bigint id PK
         varchar message
@@ -263,6 +280,7 @@ erDiagram
     AUTH_USER ||--o| ACCOUNTS_SPONSORACCOUNT : "has sponsor account"
     AUTH_USER ||--o| ACCOUNTS_MFASETTINGS : "has MFA settings"
     AUTH_USER ||--o{ ACCOUNTS_MFACODE : "receives MFA codes"
+    AUTH_USER ||--o{ ACCOUNTS_MFABACKUPCODE : "has backup codes"
     ACCOUNTS_SPONSORCOMPANY ||--o{ ACCOUNTS_SPONSORACCOUNT : "employs"
     ACCOUNTS_SPONSORCOMPANY o|--o{ DRIVERS_DRIVER : "sponsors"
     DRIVERS_DRIVER ||--o{ ACCOUNTS_DRIVERNOTIFICATION : "receives"

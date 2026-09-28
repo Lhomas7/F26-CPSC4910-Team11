@@ -471,6 +471,26 @@
   padding: .2rem .5rem;
 }
 
+.mfa-backup-codes {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: .5rem;
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .85rem;
+  letter-spacing: .04em;
+  line-height: 1.7;
+  padding: .6rem .75rem;
+  resize: none;
+  width: 100%;
+}
+
+.mfa-backup-codes:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: 0;
+}
+
 .account-skeleton {
   animation: account-shimmer 1.2s linear infinite;
   background: linear-gradient(90deg, var(--line), var(--surface-2), var(--line));

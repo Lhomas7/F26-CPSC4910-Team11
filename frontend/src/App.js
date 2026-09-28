@@ -43,7 +43,11 @@ function AccountMenu({ user, onSignOut }) {
 
 function SiteLayout() {
   const { user, signOut } = useAuth();
-  const sponsorNeedsMfa = user && user.account_type === 'sponsor' && user.mfa && !user.mfa.enrolled;
+  const mfaWallNeeded = user
+    && (user.account_type === 'sponsor' || user.account_type === 'admin')
+    && user.mfa
+    && user.mfa.required
+    && !user.mfa.enrolled;
 
   return (
     <div className="app-shell">
@@ -79,7 +83,7 @@ function SiteLayout() {
           <AccountMenu user={user} onSignOut={signOut} />
         </header>
         <div className="app-content" id="main-content" tabIndex="-1">
-          {sponsorNeedsMfa ? (
+          {mfaWallNeeded ? (
             <MfaSetupWall />
           ) : (
             <>

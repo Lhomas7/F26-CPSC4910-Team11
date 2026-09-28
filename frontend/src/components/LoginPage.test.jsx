@@ -93,6 +93,63 @@ test('single-method MFA login stages, auto-requests the code, and shows the code
   expect(screen.getByRole('button', { name: 'Verify and sign in' })).toBeInTheDocument();
 });
 
+test('offers a backup code option and completes login with one when available', async () => {
+  const signIn = jest.fn().mockResolvedValue({
+    mfa: { required: true, enrolled: true, methods: ['totp'], backup_codes_remaining: 3 },
+  });
+  const completeMfaLogin = jest.fn().mockResolvedValue({ username: 'admin.one' });
+  useAuth.mockReturnValue({
+    loading: false,
+    user: null,
+    signIn,
+    signOut: jest.fn(),
+    completeMfaLogin,
+    requestMfaLoginCode: jest.fn(),
+  });
+
+  renderLoginPage();
+  fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'admin.one' } });
+  fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ExamplePassword123!' } });
+  const signInButton = screen.getAllByRole('button', { name: 'Sign In' })
+    .find((button) => button.type === 'submit');
+  fireEvent.click(signInButton);
+
+  await waitFor(() => expect(signIn).toHaveBeenCalledWith('admin.one', 'ExamplePassword123!'));
+  expect(await screen.findByText('Two-step verification')).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Use a backup code instead' }));
+  expect(screen.getByLabelText('Backup code')).toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText('Backup code'), { target: { value: 'ABCDE12345' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Verify and sign in' }));
+
+  await waitFor(() => expect(completeMfaLogin).toHaveBeenCalledWith('backup', 'ABCDE12345'));
+});
+
+test('does not offer a backup code option when none remain', async () => {
+  const signIn = jest.fn().mockResolvedValue({
+    mfa: { required: false, enrolled: true, methods: ['email'] },
+  });
+  useAuth.mockReturnValue({
+    loading: false,
+    user: null,
+    signIn,
+    signOut: jest.fn(),
+    completeMfaLogin: jest.fn(),
+    requestMfaLoginCode: jest.fn().mockResolvedValue({ detail: 'sent' }),
+  });
+
+  renderLoginPage();
+  fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'driver.one' } });
+  fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ExamplePassword123!' } });
+  const signInButton = screen.getAllByRole('button', { name: 'Sign In' })
+    .find((button) => button.type === 'submit');
+  fireEvent.click(signInButton);
+
+  expect(await screen.findByText('Two-step verification')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Use a backup code instead' })).not.toBeInTheDocument();
+});
+
 test('shows and hides the sign-in password without changing its value', () => {
   renderLoginPage();
   const password = screen.getByLabelText('Password');

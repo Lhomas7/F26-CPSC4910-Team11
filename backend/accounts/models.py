@@ -76,6 +76,22 @@ class MFACode(models.Model):
         ]
 
 
+class MFABackupCode(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='mfa_backup_codes',
+    )
+    code_hash = models.CharField(max_length=128)
+    created_at = models.DateTimeField(auto_now_add=True)
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['user', 'used_at'], name='mfabackup_user_used_idx'),
+        ]
+
+
 class DriverNotification(models.Model):
     driver = models.ForeignKey('drivers.Driver', on_delete=models.CASCADE, related_name='notifications')
     message = models.CharField(max_length=500)
