@@ -3,13 +3,15 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from accounts.permissions import MFAEnrolled
+
 from .models import Driver
 from .serializers import DriverSerializer
 
 
 class DriverViewSet(viewsets.ModelViewSet):
     serializer_class = DriverSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, MFAEnrolled]
 
     def get_queryset(self):
         user = self.request.user

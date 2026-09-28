@@ -28,11 +28,13 @@ from rest_framework.views import APIView
 from drivers.models import Driver
 
 from .models import SponsorAccount, SponsorCompany
+from .permissions import MFAEnrolled
 from .serializers import (
     AdminDriverDetailSerializer,
     AdminSponsorDetailSerializer,
     AdminUserCreateSerializer,
     AdminUserListSerializer,
+    BackupCodesRegenerateSerializer,
     ChangePasswordSerializer,
     DriverRegistrationSerializer,
     LoginMFASerializer,
@@ -51,6 +53,7 @@ from .serializers import (
 )
 from .services import (
     get_account_type,
+    get_mfa_allowed_methods,
     get_mfa_status,
     get_public_user,
     normalize_company_name,
@@ -58,7 +61,15 @@ from .services import (
 from .services.crypto import decrypt_secret, encrypt_secret
 from .services.delivery import send_email_code, send_sms_code
 from .services.login_audit import record_login_attempt
-from .services.mfa import create_mfa_code, get_or_create_mfa_settings, verify_code
+from .services.mfa import (
+    backup_codes_remaining,
+    clear_backup_codes,
+    create_mfa_code,
+    generate_backup_codes,
+    get_or_create_mfa_settings,
+    verify_backup_code,
+    verify_code,
+)
 from .services.notify import notify_driver_mfa_change, notify_password_reset
 from .services.password_reset import (
     find_resettable_users,
@@ -245,6 +256,8 @@ class LoginMFAView(AnonymousAPIView):
             if mfa is not None and mfa.totp_enabled and mfa.totp_secret_encrypted:
                 secret = decrypt_secret(mfa.totp_secret_encrypted)
                 verified = pyotp.TOTP(secret).verify(code)
+        elif method == 'backup':
+            verified = verify_backup_code(user, code)
         else:
             verified = verify_code(user, purpose='login', method=method, raw_code=code)
 
@@ -444,7 +457,7 @@ class SelfProfileView(APIView):
 
 
 class AdminUserListView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, MFAEnrolled]
 
     def get(self, request):
         role = request.query_params.get('role', '').strip().lower()
@@ -491,7 +504,7 @@ class AdminUserListView(APIView):
 
 
 class AdminSponsorCompanyListView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, MFAEnrolled]
 
     def get(self, request):
         companies = SponsorCompany.objects.order_by('name')
@@ -499,7 +512,7 @@ class AdminSponsorCompanyListView(APIView):
 
 
 class AdminSponsorDetailView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, MFAEnrolled]
 
     def get_object(self, user_id):
         return get_object_or_404(
@@ -525,7 +538,7 @@ class AdminSponsorDetailView(APIView):
 
 
 class AdminDriverDetailView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, MFAEnrolled]
 
     def get_object(self, user_id):
         return get_object_or_404(
@@ -571,6 +584,12 @@ class MFASetupView(APIView):
         serializer.is_valid(raise_exception=True)
         method = serializer.validated_data['method']
         user = request.user
+
+        if method not in get_mfa_allowed_methods(user):
+            return Response(
+                {'detail': f'{method.title()} is not available for this account type.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if method == 'totp':
             mfa = get_or_create_mfa_settings(user)
@@ -628,10 +647,14 @@ class MFAVerifyView(APIView):
                     {'detail': 'Invalid code.'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+            was_enrolled = mfa.any_enabled
             mfa.totp_enabled = True
             mfa.save(update_fields=['totp_enabled'])
             notify_method_change(user, 'totp', 'enabled')
-            return Response({'detail': 'TOTP enabled.'})
+            response = {'detail': 'TOTP enabled.'}
+            if not was_enrolled:
+                response['backup_codes'] = generate_backup_codes(user)
+            return Response(response)
 
         if not verify_code(user, purpose='enroll', method=method, raw_code=code):
             return Response(
@@ -639,11 +662,15 @@ class MFAVerifyView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         mfa = get_or_create_mfa_settings(user)
+        was_enrolled = mfa.any_enabled
         field = f'{method}_enabled'
         setattr(mfa, field, True)
         mfa.save(update_fields=[field])
         notify_method_change(user, method, 'enabled')
-        return Response({'detail': f'{method.title()} enabled.'})
+        response = {'detail': f'{method.title()} enabled.'}
+        if not was_enrolled:
+            response['backup_codes'] = generate_backup_codes(user)
+        return Response(response)
 
 
 class MFARequestCodeView(APIView):
@@ -700,22 +727,34 @@ class MFAResetView(APIView):
                 {'detail': 'TOTP is not enabled.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if not getattr(mfa, f'{method}_enabled', False):
-            return Response(
-                {'detail': f'{method.title()} is not enabled as a fallback.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if method == 'sms' and not mfa.phone_number:
-            return Response(
-                {'detail': 'No phone number on file.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
 
-        if not verify_code(user, purpose='reset', method=method, raw_code=code):
-            return Response(
-                {'detail': 'Invalid fallback code.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        if method == 'backup':
+            if backup_codes_remaining(user) < 1:
+                return Response(
+                    {'detail': 'No backup codes remaining.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if not verify_backup_code(user, code):
+                return Response(
+                    {'detail': 'Invalid fallback code.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        else:
+            if not getattr(mfa, f'{method}_enabled', False):
+                return Response(
+                    {'detail': f'{method.title()} is not enabled as a fallback.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if method == 'sms' and not mfa.phone_number:
+                return Response(
+                    {'detail': 'No phone number on file.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if not verify_code(user, purpose='reset', method=method, raw_code=code):
+                return Response(
+                    {'detail': 'Invalid fallback code.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         new_secret = pyotp.random_base32()
         mfa.totp_secret_encrypted = encrypt_secret(new_secret)
@@ -765,12 +804,39 @@ class MFADisableView(APIView):
             setattr(mfa, field, False)
             mfa.save(update_fields=[field])
 
+        if not mfa.any_enabled:
+            clear_backup_codes(user)
+
         notify_method_change(user, method, 'disabled')
         return Response({'detail': f'{method.title()} disabled.'})
 
 
-class SponsorMFASettingsView(APIView):
+class MFABackupCodesRegenerateView(APIView):
     permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = BackupCodesRegenerateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = request.user
+
+        if not user.check_password(serializer.validated_data['password']):
+            return Response(
+                {'detail': 'Incorrect password.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        mfa = getattr(user, 'mfa_settings', None)
+        if mfa is None or not mfa.any_enabled:
+            return Response(
+                {'detail': 'Set up a two-factor method before generating backup codes.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response({'backup_codes': generate_backup_codes(user)})
+
+
+class SponsorMFASettingsView(APIView):
+    permission_classes = [IsAuthenticated, MFAEnrolled]
 
     def get(self, request):
         user = request.user

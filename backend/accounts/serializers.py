@@ -145,9 +145,15 @@ class MFARequestCodeSerializer(serializers.Serializer):
 
 
 class MFAResetSerializer(serializers.Serializer):
-    METHOD_CHOICES = [('email', 'Email'), ('sms', 'SMS')]
+    METHOD_CHOICES = [('email', 'Email'), ('sms', 'SMS'), ('backup', 'Backup code')]
     fallback_method = serializers.ChoiceField(choices=METHOD_CHOICES)
-    fallback_code = serializers.CharField(max_length=6, min_length=6)
+    fallback_code = serializers.CharField(max_length=20, trim_whitespace=True)
+
+    def validate(self, attrs):
+        validate_code_for_method(
+            attrs['fallback_method'], attrs['fallback_code'], field_name='fallback_code'
+        )
+        return attrs
 
 
 class MFADisableSerializer(serializers.Serializer):
@@ -156,10 +162,29 @@ class MFADisableSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, trim_whitespace=False)
 
 
+class BackupCodesRegenerateSerializer(serializers.Serializer):
+    password = serializers.CharField(write_only=True, trim_whitespace=False)
+
+
+def validate_code_for_method(method, code, field_name='code'):
+    """A 6-digit code for totp/email/sms, or a 10-character backup code."""
+    if method == 'backup':
+        normalized = ''.join(ch for ch in (code or '').upper() if ch.isalnum())
+        if len(normalized) != 10:
+            raise serializers.ValidationError({field_name: 'Enter a 10-character backup code.'})
+        return
+    if not (code or '').isdigit() or len(code or '') != 6:
+        raise serializers.ValidationError({field_name: 'Enter the 6-digit code.'})
+
+
 class LoginMFASerializer(serializers.Serializer):
-    METHOD_CHOICES = [('totp', 'TOTP'), ('email', 'Email'), ('sms', 'SMS')]
+    METHOD_CHOICES = [('totp', 'TOTP'), ('email', 'Email'), ('sms', 'SMS'), ('backup', 'Backup code')]
     method = serializers.ChoiceField(choices=METHOD_CHOICES)
-    code = serializers.CharField(max_length=6, min_length=6)
+    code = serializers.CharField(max_length=20, trim_whitespace=True)
+
+    def validate(self, attrs):
+        validate_code_for_method(attrs['method'], attrs['code'])
+        return attrs
 
 
 class LoginMFARequestCodeSerializer(serializers.Serializer):
