@@ -160,11 +160,17 @@ function AuthCard({ onSignIn, onMfaComplete, onRequestMfaCode }) {
   );
 }
 
-const METHOD_LABEL = { totp: 'Authenticator app', email: 'Email code', sms: 'Text message' };
+const METHOD_LABEL = {
+  totp: 'Authenticator app',
+  email: 'Email code',
+  sms: 'Text message',
+  backup: 'Backup code',
+};
 
 function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode }) {
   const [step, setStep] = useState('creds');
   const [mfaMethods, setMfaMethods] = useState([]);
+  const [backupAvailable, setBackupAvailable] = useState(false);
   const [method, setMethod] = useState(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -210,6 +216,7 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode }) {
       if (result && result.mfa && result.mfa.methods && result.mfa.methods.length > 0) {
         const methods = result.mfa.methods;
         setMfaMethods(methods);
+        setBackupAvailable((result.mfa.backup_codes_remaining || 0) > 0);
         setPassword('');
         setCode('');
         if (methods.length === 1) {
@@ -235,7 +242,7 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode }) {
     setCode('');
     setError(null);
     setStep('code');
-    if (chosen !== 'totp') await sendLoginCode(chosen);
+    if (chosen !== 'totp' && chosen !== 'backup') await sendLoginCode(chosen);
   };
 
   const submitCode = async (event) => {
@@ -261,9 +268,16 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode }) {
   };
 
   const resend = () => {
-    if (method && method !== 'totp' && !sendingCode && cooldown <= 0) {
+    if (method && method !== 'totp' && method !== 'backup' && !sendingCode && cooldown <= 0) {
       sendLoginCode(method);
     }
+  };
+
+  const useBackupCode = () => {
+    setMethod('backup');
+    setCode('');
+    setError(null);
+    setStep('code');
   };
 
   const backToCredentials = () => {
@@ -309,6 +323,12 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode }) {
           ))}
         </div>
 
+        {backupAvailable && (
+          <button className="login-btn login-btn-outline" type="button" onClick={useBackupCode} disabled={busy}>
+            Use a backup code instead
+          </button>
+        )}
+
         <button className="login-btn login-btn-outline" type="button" onClick={backToCredentials} disabled={busy}>
           Back
         </button>
@@ -321,27 +341,29 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode }) {
       <form className="login-form" onSubmit={submitCode} noValidate>
         <h2>Two-step verification</h2>
         <p className="login-sub">
-          {method && method !== 'totp'
-            ? `Your ${method === 'sms' ? 'text message' : 'email'} code was sent to your ${method === 'sms' ? 'phone' : 'account email'}. Your sign-in times out after 5 minutes, so re-enter your password if it expires.`
-            : 'Enter the code from your authenticator app. Your sign-in times out after 5 minutes, so re-enter your password if it expires.'}
+          {method === 'backup'
+            ? 'Enter one of your saved backup codes.'
+            : method && method !== 'totp'
+              ? `Your ${method === 'sms' ? 'text message' : 'email'} code was sent to your ${method === 'sms' ? 'phone' : 'account email'}. Your sign-in times out after 5 minutes, so re-enter your password if it expires.`
+              : 'Enter the code from your authenticator app. Your sign-in times out after 5 minutes, so re-enter your password if it expires.'}
         </p>
 
         {error && <p className="login-alert login-alert-error" role="alert">{error}</p>}
 
-        {method && method !== 'totp' && (
+        {method && method !== 'totp' && method !== 'backup' && (
           <button className="login-btn login-btn-outline" type="button" onClick={resend} disabled={sendingCode || cooldown > 0}>
             {sendingCode ? 'Sending…' : cooldown > 0 ? `Resend code (${cooldown}s)` : 'Resend code'}
           </button>
         )}
 
         <div className="login-field">
-          <label htmlFor="login-mfa-code">Verification code</label>
+          <label htmlFor="login-mfa-code">{method === 'backup' ? 'Backup code' : 'Verification code'}</label>
           <input
             id="login-mfa-code"
             className={fieldClass(error && !code.trim())}
             value={code}
             onChange={(event) => setCode(event.target.value)}
-            inputMode="numeric"
+            inputMode={method === 'backup' ? 'text' : 'numeric'}
             autoComplete="one-time-code"
           />
         </div>
@@ -349,6 +371,11 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode }) {
         <button className="login-btn" type="submit" disabled={busy}>
           {busy ? 'Verifying…' : 'Verify and sign in'}
         </button>
+        {backupAvailable && method !== 'backup' && (
+          <button className="login-btn login-btn-outline" type="button" onClick={useBackupCode} disabled={busy}>
+            Use a backup code instead
+          </button>
+        )}
         <button className="login-btn login-btn-outline" type="button" onClick={backFromCode} disabled={busy}>
           Back
         </button>

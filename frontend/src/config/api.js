@@ -170,6 +170,13 @@ export function mfaDisable(method, password) {
   return request('/mfa/disable/', { method: 'POST', body: { method, password } }).then(readJson);
 }
 
+export function mfaBackupCodesRegenerate(password) {
+  return request('/mfa/backup-codes/regenerate/', {
+    method: 'POST',
+    body: { password },
+  }).then(readJson);
+}
+
 export function loginMfa(method, code) {
   return request('/login/mfa/', { method: 'POST', body: { method, code } }).then(readJson);
 }
