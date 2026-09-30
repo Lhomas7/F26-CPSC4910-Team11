@@ -53,8 +53,29 @@ export function AuthProvider({ children }) {
     setState({ loading: false, user });
   }, []);
 
+  const startImpersonation = useCallback(async (userId) => {
+    const user = await api.startAdminImpersonation(userId);
+    setState({ loading: false, user });
+    return user;
+  }, []);
+
+  const stopImpersonation = useCallback(async () => {
+    const user = await api.stopAdminImpersonation();
+    setState({ loading: false, user });
+    return user;
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ ...state, signIn, completeMfaLogin, requestMfaLoginCode, signOut, updateUser }}>
+    <AuthContext.Provider value={{
+      ...state,
+      signIn,
+      completeMfaLogin,
+      requestMfaLoginCode,
+      signOut,
+      updateUser,
+      startImpersonation,
+      stopImpersonation,
+    }}>
       {children}
     </AuthContext.Provider>
   );

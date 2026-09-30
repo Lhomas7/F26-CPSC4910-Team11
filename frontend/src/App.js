@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BrowserRouter, Link, NavLink, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { DriverList, DriverDetail } from './components/Drivers';
 import AboutPage from './components/AboutPage';
@@ -43,8 +44,22 @@ function AccountMenu({ user, onSignOut }) {
 }
 
 function SiteLayout() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, stopImpersonation } = useAuth();
+  const [endingViewAs, setEndingViewAs] = useState(false);
+  const [viewAsError, setViewAsError] = useState('');
   const sponsorNeedsMfa = user && user.account_type === 'sponsor' && user.mfa && !user.mfa.enrolled;
+
+  const stopViewingAs = async () => {
+    setEndingViewAs(true);
+    setViewAsError('');
+    try {
+      await stopImpersonation();
+    } catch (error) {
+      setViewAsError(error.message || 'Could not return to your admin account.');
+    } finally {
+      setEndingViewAs(false);
+    }
+  };
 
   return (
     <div className="app-shell">
@@ -76,6 +91,18 @@ function SiteLayout() {
         </nav>
       </aside>
       <div className="app-main">
+        {user?.impersonation?.active && (
+          <div className="impersonation-banner" role="status">
+            <span>
+              <strong>Viewing as {user.name || user.username}</strong>
+              {' '}({user.account_type}). You are still signed in as {user.impersonation.admin.name}.
+            </span>
+            {viewAsError && <span className="impersonation-error">{viewAsError}</span>}
+            <button type="button" onClick={stopViewingAs} disabled={endingViewAs}>
+              {endingViewAs ? 'Returning…' : 'Return to admin account'}
+            </button>
+          </div>
+        )}
         <header className="app-topbar">
           <AccountMenu user={user} onSignOut={signOut} />
         </header>
