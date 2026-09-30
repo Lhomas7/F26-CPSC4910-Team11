@@ -29,6 +29,7 @@ from drivers.models import Driver
 
 from .models import SponsorAccount, SponsorCompany
 from .serializers import (
+    AdminAccountDetailSerializer,
     AdminDriverDetailSerializer,
     AdminSponsorDetailSerializer,
     AdminUserCreateSerializer,
@@ -496,6 +497,32 @@ class AdminSponsorCompanyListView(APIView):
     def get(self, request):
         companies = SponsorCompany.objects.order_by('name')
         return Response(SponsorCompanySerializer(companies, many=True).data)
+
+
+class AdminAccountDetailView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get_object(self, request, user_id):
+        # Self-service profile editing has its own endpoint. Keeping this route
+        # other-admin-only prevents accidental self-deactivation or lockout.
+        return get_object_or_404(
+            get_user_model().objects.filter(is_staff=True).exclude(pk=request.user.pk),
+            pk=user_id,
+        )
+
+    def get(self, request, user_id):
+        return Response(AdminAccountDetailSerializer(self.get_object(request, user_id)).data)
+
+    def patch(self, request, user_id):
+        account = self.get_object(request, user_id)
+        serializer = AdminAccountDetailSerializer(
+            account,
+            data=request.data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 
 class AdminSponsorDetailView(APIView):

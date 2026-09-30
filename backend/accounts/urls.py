@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    AdminAccountDetailView,
     AdminDriverDetailView,
     AdminSponsorDetailView,
     AdminSponsorCompanyListView,
@@ -35,6 +36,11 @@ urlpatterns = [
         name='admin-sponsor-company-list',
     ),
     path('admin/users/', AdminUserListView.as_view(), name='admin-user-list'),
+    path(
+        'admin/admins/<int:user_id>/',
+        AdminAccountDetailView.as_view(),
+        name='admin-account-detail',
+    ),
     path(
         'admin/sponsors/<int:user_id>/',
         AdminSponsorDetailView.as_view(),
