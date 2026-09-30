@@ -81,3 +81,34 @@ class DriverNotification(models.Model):
     message = models.CharField(max_length=500)
     read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class AdminImpersonationEvent(models.Model):
+    """Append-only audit record for an administrator's view-as session."""
+
+    ACTION_CHOICES = [
+        ('start', 'Started'),
+        ('stop', 'Stopped'),
+        ('expire', 'Expired'),
+    ]
+    ROLE_CHOICES = [('driver', 'Driver'), ('sponsor', 'Sponsor')]
+
+    admin = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='impersonation_events_started',
+    )
+    target = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='impersonation_events_received',
+    )
+    target_role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    action = models.CharField(max_length=10, choices=ACTION_CHOICES)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('-created_at',)

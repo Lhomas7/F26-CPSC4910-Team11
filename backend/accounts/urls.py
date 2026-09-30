@@ -2,6 +2,8 @@ from django.urls import path
 
 from .views import (
     AdminAccountDetailView,
+    AdminImpersonationStartView,
+    AdminImpersonationStopView,
     AdminDriverDetailView,
     AdminSponsorDetailView,
     AdminSponsorCompanyListView,
@@ -30,6 +32,16 @@ from .views import (
 app_name = 'accounts'
 
 urlpatterns = [
+    path(
+        'admin/impersonation/<int:user_id>/',
+        AdminImpersonationStartView.as_view(),
+        name='admin-impersonation-start',
+    ),
+    path(
+        'admin/impersonation/stop/',
+        AdminImpersonationStopView.as_view(),
+        name='admin-impersonation-stop',
+    ),
     path(
         'admin/sponsor-organizations/',
         AdminSponsorCompanyListView.as_view(),

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import LoginAttempt, SponsorAccount, SponsorCompany
+from .models import AdminImpersonationEvent, LoginAttempt, SponsorAccount, SponsorCompany
 
 
 @admin.register(SponsorCompany)
@@ -27,4 +27,22 @@ class LoginAttemptAdmin(admin.ModelAdmin):
         return False
 
     def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(AdminImpersonationEvent)
+class AdminImpersonationEventAdmin(admin.ModelAdmin):
+    list_display = ('admin', 'action', 'target', 'target_role', 'ip_address', 'created_at')
+    list_filter = ('action', 'target_role')
+    search_fields = ('admin__username', 'target__username')
+    date_hierarchy = 'created_at'
+
+    # These security audit rows are written only by the application.
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
         return False

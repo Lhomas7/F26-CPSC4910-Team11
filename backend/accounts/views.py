@@ -27,7 +27,14 @@ from rest_framework.views import APIView
 
 from drivers.models import Driver
 
-from .models import SponsorAccount, SponsorCompany
+from .middleware import (
+    IMPERSONATION_STARTED_KEY,
+    IMPERSONATION_TARGET_KEY,
+    clear_impersonation,
+    client_ip,
+    impersonation_details,
+)
+from .models import AdminImpersonationEvent, SponsorAccount, SponsorCompany
 from .serializers import (
     AdminAccountDetailSerializer,
     AdminDriverDetailSerializer,
@@ -339,7 +346,78 @@ class MeView(APIView):
         public_user = get_public_user(user)
         if public_user is None:
             return Response({'authenticated': False})
+        if getattr(request, 'impersonation_active', False):
+            public_user['impersonation'] = impersonation_details(request, user)
         return Response({'authenticated': True, 'user': public_user})
+
+
+class AdminImpersonationStartView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, user_id):
+        if request.session.get(IMPERSONATION_TARGET_KEY):
+            return Response(
+                {'detail': 'Stop the current view-as session before starting another.'},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        target = get_object_or_404(get_user_model(), pk=user_id)
+        target_role = get_account_type(target)
+        if target_role not in ('driver', 'sponsor'):
+            return Response(
+                {'detail': 'Administrators can only view as a driver or sponsor.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not target.is_active:
+            return Response(
+                {'detail': 'An inactive account cannot be viewed as.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        started_at = timezone.now()
+        request.session[IMPERSONATION_TARGET_KEY] = target.id
+        request.session[IMPERSONATION_STARTED_KEY] = started_at.isoformat()
+        AdminImpersonationEvent.objects.create(
+            admin=request.user,
+            target=target,
+            target_role=target_role,
+            action='start',
+            ip_address=client_ip(request),
+        )
+
+        public_user = get_public_user(target)
+        public_user['impersonation'] = impersonation_details(
+            request,
+            target,
+            admin=request.user,
+        )
+        return Response(public_user)
+
+
+class AdminImpersonationStopView(APIView):
+    permission_classes = ()
+
+    def post(self, request):
+        admin = getattr(request, 'real_user', request.user)
+        target_id = request.session.get(IMPERSONATION_TARGET_KEY)
+        if not admin.is_authenticated or not admin.is_staff or not target_id:
+            return Response(
+                {'detail': 'No active view-as session was found.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        target = get_user_model().objects.filter(pk=target_id).first()
+        target_role = get_account_type(target) if target else None
+        clear_impersonation(request.session)
+        if target and target_role in ('driver', 'sponsor'):
+            AdminImpersonationEvent.objects.create(
+                admin=admin,
+                target=target,
+                target_role=target_role,
+                action='stop',
+                ip_address=client_ip(request),
+            )
+        return Response(get_public_user(admin))
 
 
 class LogoutView(APIView):
