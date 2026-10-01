@@ -305,6 +305,21 @@ class ChangePasswordTests(APITestCase):
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password(password))
 
+    def test_rejects_reusing_the_current_password(self):
+        response = self.client.post(
+            self.url,
+            {
+                'password': 'ExamplePassword123!',
+                'password_confirm': 'ExamplePassword123!',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('password', response.data)
+
+
+
 
 class SelfProfileTests(APITestCase):
     url = reverse('accounts:self-profile')
@@ -2535,6 +2550,60 @@ class PasswordResetTests(APITestCase):
         self.confirm(uid, token)
 
         self.assertFalse(self.client.get(reverse('accounts:me')).data['authenticated'])
+
+    def test_confirm_rejects_reusing_the_current_password(self):
+        uid, token = self.issue_link()
+
+        response = self.confirm(uid, token, password='ExamplePassword123!')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('password', response.data)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('ExamplePassword123!'))
+
+class PasswordResetExcludesAdminsTests(APITestCase):
+    request_url = reverse('accounts:password-reset')
+
+    def setUp(self):
+        cache.clear()
+        mail.outbox = []
+
+    def test_staff_account_email_sends_no_reset_link(self):
+        get_user_model().objects.create_user(
+            username='admin.one',
+            email='admin@example.com',
+            password='ExamplePassword123!',
+            is_staff=True,
+        )
+
+        response = self.client.post(self.request_url, {'email': 'admin@example.com'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_superuser_account_email_sends_no_reset_link(self):
+        get_user_model().objects.create_superuser(
+            username='super.one',
+            email='super@example.com',
+            password='ExamplePassword123!',
+        )
+
+        response = self.client.post(self.request_url, {'email': 'super@example.com'}, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_driver_account_is_unaffected(self):
+        user = get_user_model().objects.create_user(
+            username='driver.one',
+            email='driver@example.com',
+            password='ExamplePassword123!',
+        )
+        Driver.objects.create(user=user, name='Driver One', status='approved')
+
+        response = self.client.post(self.request_url, {'email': 'driver@example.com'}, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(mail.outbox), 1)
 
 
 class AdminImpersonationTests(APITestCase):
