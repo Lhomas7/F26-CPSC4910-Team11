@@ -1172,7 +1172,7 @@ class MFAPhoneNumberValidationTests(APITestCase):
     def setUp(self):
         self.client.force_authenticate(self.user)
 
-    @patch('accounts.views.send_sms_code')
+    @patch('accounts.views.mfa.send_sms_code')
     def test_accepts_normalized_international_phone_number(self, mock_send_sms):
         response = self.client.post(
             reverse('accounts:mfa-setup'),
@@ -1217,7 +1217,7 @@ class MFAEnrollmentTests(APITestCase):
         cache.clear()
         self.client.force_authenticate(self.user)
 
-    @patch('accounts.views.send_email_code')
+    @patch('accounts.views.mfa.send_email_code')
     def test_email_method_stays_disabled_until_correct_enroll_code(self, mock_send_email):
         mock_send_email.side_effect = lambda user, code: None
         response = self.client.post(
@@ -1388,7 +1388,7 @@ class BackupCodeTests(APITestCase):
         cache.clear()
         self.client.force_authenticate(self.user)
 
-    @patch('accounts.views.send_email_code')
+    @patch('accounts.views.mfa.send_email_code')
     def enable_email(self, mock_send_email):
         mock_send_email.side_effect = lambda user, code: None
         self.client.post(
@@ -1412,7 +1412,7 @@ class BackupCodeTests(APITestCase):
         self.assertEqual(len(set(codes)), 10)
         self.assertEqual(backup_codes_remaining(self.user), 10)
 
-    @patch('accounts.views.send_sms_code')
+    @patch('accounts.views.mfa.send_sms_code')
     def test_enabling_a_second_method_does_not_reissue_backup_codes(self, mock_send_sms):
         mock_send_sms.side_effect = lambda phone, code: None
         self.enable_email()
@@ -1658,7 +1658,7 @@ class MFALoginTests(APITestCase):
         me = self.client.get(reverse('accounts:me'))
         self.assertEqual(me.data, {'authenticated': False})
 
-    @patch('accounts.views.send_email_code')
+    @patch('accounts.views.authentication.send_email_code')
     def test_login_mfa_correct_code_logs_in(self, mock_send_email):
         mock_send_email.side_effect = lambda user, code: None
         self.mfa.email_enabled = True
@@ -1681,7 +1681,7 @@ class MFALoginTests(APITestCase):
         self.assertIn('id', response.data)
         self.assertEqual(response.data['username'], 'driver.one')
 
-    @patch('accounts.views.send_email_code')
+    @patch('accounts.views.authentication.send_email_code')
     def test_wrong_code_increments_attempts_and_sixth_rejected(self, mock_send_email):
         mock_send_email.side_effect = lambda user, code: None
         self.mfa.email_enabled = True
@@ -1710,8 +1710,8 @@ class MFALoginTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
 
-    @patch('accounts.views.send_sms_code')
-    @patch('accounts.views.send_email_code')
+    @patch('accounts.views.authentication.send_sms_code')
+    @patch('accounts.views.authentication.send_email_code')
     def test_login_with_mfa_sends_no_codes(self, mock_send_email, mock_send_sms):
         mock_send_email.side_effect = lambda user, code: None
         mock_send_sms.side_effect = lambda phone, code: None
@@ -1806,8 +1806,8 @@ class LoginMFARequestCodeTests(APITestCase):
         response = self.client.post(self.url, {'method': 'totp'}, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    @patch('accounts.views.send_sms_code')
-    @patch('accounts.views.send_email_code')
+    @patch('accounts.views.authentication.send_sms_code')
+    @patch('accounts.views.authentication.send_email_code')
     def test_only_selected_method_is_delivered(self, mock_send_email, mock_send_sms):
         mock_send_email.side_effect = lambda user, code: None
         mock_send_sms.side_effect = lambda phone, code: None
@@ -1827,7 +1827,7 @@ class LoginMFARequestCodeTests(APITestCase):
         mock_send_sms.assert_called_once_with('+18645551234', mock_send_sms.call_args[0][1])
         mock_send_email.assert_not_called()
 
-    @patch('accounts.views.send_email_code')
+    @patch('accounts.views.authentication.send_email_code')
     def test_rejected_on_second_call_within_30_seconds(self, mock_send_email):
         mock_send_email.side_effect = lambda user, code: None
         self.mfa.email_enabled = True
@@ -1859,7 +1859,7 @@ class MFACodeInvalidationTests(APITestCase):
     def setUp(self):
         cache.clear()
 
-    @patch('accounts.views.send_email_code')
+    @patch('accounts.views.mfa.send_email_code')
     def test_resending_an_enroll_code_invalidates_the_previous_one(self, mock_send_email):
         mock_send_email.side_effect = lambda user, code: None
         self.client.force_authenticate(self.user)
@@ -1894,7 +1894,7 @@ class MFACodeInvalidationTests(APITestCase):
         )
         self.assertEqual(fresh.status_code, status.HTTP_200_OK)
 
-    @patch('accounts.views.send_email_code')
+    @patch('accounts.views.authentication.send_email_code')
     def test_resending_a_login_code_invalidates_the_previous_one(self, mock_send_email):
         mock_send_email.side_effect = lambda user, code: None
         mfa, _ = MFASettings.objects.get_or_create(user=self.user)
@@ -1928,7 +1928,7 @@ class MFACodeInvalidationTests(APITestCase):
         )
         self.assertEqual(fresh.status_code, status.HTTP_200_OK)
 
-    @patch('accounts.views.send_email_code')
+    @patch('accounts.views.mfa.send_email_code')
     def test_a_used_code_cannot_be_used_again(self, mock_send_email):
         mock_send_email.side_effect = lambda user, code: None
         self.client.force_authenticate(self.user)
@@ -1976,7 +1976,7 @@ class MFAResetTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    @patch('accounts.views.send_email_code')
+    @patch('accounts.views.mfa.send_email_code')
     def test_reset_succeeds_and_rotates_secret(self, mock_send_email):
         mock_send_email.side_effect = lambda user, code: None
         original_secret = pyotp.random_base32()
@@ -2151,7 +2151,7 @@ class MFANotificationTests(MailAssertMixin, APITestCase):
         cache.clear()
 
     def enable_email(self):
-        with patch('accounts.views.send_email_code') as mock_send_email:
+        with patch('accounts.views.mfa.send_email_code') as mock_send_email:
             mock_send_email.side_effect = lambda user, code: None
             self.client.post(
                 reverse('accounts:mfa-request-code'),
@@ -2201,7 +2201,7 @@ class MFANotificationTests(MailAssertMixin, APITestCase):
         SponsorAccount.objects.create(user=sponsor_user, company=self.sponsor)
         self.client.force_authenticate(sponsor_user)
 
-        with patch('accounts.views.send_email_code') as mock_send_email:
+        with patch('accounts.views.mfa.send_email_code') as mock_send_email:
             mock_send_email.side_effect = lambda user, code: None
             self.client.post(
                 reverse('accounts:mfa-request-code'),
@@ -2236,7 +2236,7 @@ class MFARequestCodeThrottleTests(APITestCase):
         cache.clear()
         self.client.force_authenticate(self.user)
 
-    @patch('accounts.views.send_email_code')
+    @patch('accounts.views.mfa.send_email_code')
     def test_rejected_on_second_call_within_30_seconds(self, mock_send_email):
         mock_send_email.side_effect = lambda user, code: None
         request_data = {'purpose': 'enroll', 'method': 'email'}
@@ -2459,9 +2459,12 @@ class PasswordResetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(len(mail.outbox), 0)
 
-    @patch('accounts.views.send_password_reset_email', side_effect=RuntimeError('smtp down'))
+    @patch(
+        'accounts.views.authentication.send_password_reset_email',
+        side_effect=RuntimeError('smtp down'),
+    )
     def test_delivery_failure_does_not_change_the_response(self, _send):
-        with self.assertLogs('accounts.views', level='ERROR'):
+        with self.assertLogs('accounts.views.authentication', level='ERROR'):
             response = self.request_reset()
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)

@@ -1,6 +1,6 @@
 from django.urls import path
 
-from ..views import DriverRegistrationView, SponsorRegistrationView
+from ..views.registration import DriverRegistrationView, SponsorRegistrationView
 
 urlpatterns = [
     path('accounts/driver/', DriverRegistrationView.as_view(), name='driver-register'),
