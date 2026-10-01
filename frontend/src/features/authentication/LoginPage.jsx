@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
 import * as api from '../../api';
+import RoadTruck from '../../components/RoadTruck';
 import { useAuth } from '../../auth/AuthContext';
 import {
   validateEmail,
@@ -68,15 +69,7 @@ export default function LoginPage() {
             <li>A full history of every point change and why</li>
           </ul>
         </div>
-        <div className="login-lane" aria-hidden="true">
-          <div className="login-truck">
-            <span className="login-trailer" />
-            <span className="login-cab" />
-            <span className="login-wheel login-wheel-a" />
-            <span className="login-wheel login-wheel-b" />
-            <span className="login-wheel login-wheel-c" />
-          </div>
-        </div>
+        <RoadTruck className="login-lane" />
         <div className="login-road-foot">
           <span>Team 11, v0.1.0 (Sprint 1)</span>
           <Link to="/about">About this app</Link>

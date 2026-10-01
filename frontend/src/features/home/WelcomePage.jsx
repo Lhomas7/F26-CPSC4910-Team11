@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useAuth } from '../../auth/AuthContext';
+import RoadTruck from '../../components/RoadTruck';
 import './WelcomePage.css';
 
 export default function WelcomePage() {
@@ -60,15 +61,7 @@ export default function WelcomePage() {
             <li>A full history of every point change and why</li>
           </ul>
 
-          <div className="welcome-lane" aria-hidden="true">
-            <div className="welcome-truck">
-              <span className="welcome-trailer" />
-              <span className="welcome-cab" />
-              <span className="welcome-wheel welcome-wheel-a" />
-              <span className="welcome-wheel welcome-wheel-b" />
-              <span className="welcome-wheel welcome-wheel-c" />
-            </div>
-          </div>
+          <RoadTruck className="welcome-lane" />
         </section>
       </main>
     </div>

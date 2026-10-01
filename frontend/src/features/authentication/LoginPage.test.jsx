@@ -33,8 +33,8 @@ function renderLoginPage() {
 test('renders the animated truck structure in the road lane', () => {
   const { container } = renderLoginPage();
 
-  expect(container.querySelector('.login-truck')).toBeInTheDocument();
-  expect(container.querySelector('.login-cab')).toBeInTheDocument();
+  expect(container.querySelector('.login-lane .road-truck-loop')).toBeInTheDocument();
+  expect(container.querySelector('.road-truck-cab')).toBeInTheDocument();
 });
 
 test('driver registration sends separate name and email fields', async () => {

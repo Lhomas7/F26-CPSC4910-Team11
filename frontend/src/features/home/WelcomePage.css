@@ -113,73 +113,8 @@
   width: 14px;
 }
 
-/* Truck / road lane (same construction as .road-lane / .login-truck) */
 .welcome-lane {
-  border-top: 1px solid rgb(255 255 255 / 8%);
-  height: 2.5rem;
   margin: 1.5rem -1.875rem 0;
-  position: relative;
-}
-
-.welcome-lane::before {
-  background: repeating-linear-gradient(to right, var(--stripe) 0 2.375rem, transparent 2.375rem 4.375rem);
-  content: '';
-  height: 4px;
-  left: 0;
-  margin-top: -2px;
-  position: absolute;
-  right: 0;
-  top: 50%;
-}
-
-.welcome-truck {
-  height: 1.125rem;
-  left: 1.125rem;
-  position: absolute;
-  top: calc(50% - .5625rem);
-  width: 2.875rem;
-}
-
-.welcome-trailer {
-  background: #e8ebe7;
-  border-radius: .125rem;
-  height: .875rem;
-  left: 0;
-  position: absolute;
-  top: 0;
-  width: 2rem;
-}
-
-.welcome-cab {
-  background: #3fae86;
-  border-radius: .125rem .25rem .125rem .125rem;
-  height: .6875rem;
-  left: 2.0625rem;
-  position: absolute;
-  top: .1875rem;
-  width: .8125rem;
-}
-
-.welcome-wheel {
-  background: #111;
-  border: 1px solid #555;
-  border-radius: 50%;
-  bottom: 0;
-  height: .375rem;
-  position: absolute;
-  width: .375rem;
-}
-
-.welcome-wheel-a {
-  left: .1875rem;
-}
-
-.welcome-wheel-b {
-  left: 1.25rem;
-}
-
-.welcome-wheel-c {
-  left: 2.3125rem;
 }
 
 @media (max-width: 53.75rem) {

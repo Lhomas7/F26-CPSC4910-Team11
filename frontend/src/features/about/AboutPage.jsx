@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { API_URL } from '../../api';
+import RoadTruck from '../../components/RoadTruck';
 import './AboutPage.css';
 
 function formatReleaseDate(releaseDate) {
@@ -98,15 +99,7 @@ export default function AboutPage() {
                 <li>Version <b>{ready ? release.version_number : <span className="skeleton">Loading</span>}</b></li>
                 <li>Released <b>{ready ? formatReleaseDate(release.release_date) : <span className="skeleton">Loading date</span>}</b></li>
               </ul>
-              <div className="road-lane" aria-hidden="true">
-                <div className={`truck ${ready ? 'truck-arrived' : ''}`}>
-                  <span className="truck-trailer" />
-                  <span className="truck-cab" />
-                  <span className="truck-wheel truck-wheel-one" />
-                  <span className="truck-wheel truck-wheel-two" />
-                  <span className="truck-wheel truck-wheel-three" />
-                </div>
-              </div>
+              <RoadTruck className="about-lane" mode="arrive" arrived={Boolean(ready)} />
             </section>
 
             <div className="about-grid">
