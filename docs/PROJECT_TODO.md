@@ -401,12 +401,15 @@ React is not traditional MVC. Organize the frontend by feature while separating 
 ```text
 frontend/src/
 ├── api/
+│   ├── index.js
 │   ├── client.js
 │   ├── accounts.js
+│   ├── adminUsers.js
+│   ├── authentication.js
 │   ├── drivers.js
-│   └── sponsors.js
 ├── app/
 │   ├── AppLayout.jsx
+│   ├── AppLayout.css
 │   └── AppRoutes.jsx
 ├── auth/
 ├── components/
@@ -416,17 +419,21 @@ frontend/src/
 ├── features/
 │   ├── about/
 │   ├── accounts/
+│   ├── admin-users/
 │   ├── authentication/
 │   ├── drivers/
+│   ├── home/
 │   └── sponsors/
 ├── hooks/
 ├── styles/
 └── utils/
 ```
 
-- [ ] Break `App.js` into routing and layout modules.
-- [ ] Split `config/api.js` by domain.
-- [ ] Place each feature page beside its tests and styles.
+- [x] Break `App.js` into routing and layout modules.
+- [x] Split the legacy `config/api.js` module into a shared client and domain modules.
+- [x] Place each feature page beside its tests and styles.
+- [ ] Rename the legacy combined `Drivers.jsx` module into separate list and detail pages.
+- [ ] Add feature entry points where they improve import readability without hiding ownership.
 - [ ] Extract the shared driver/sponsor admin-account detail UI.
 - [ ] Extract reusable loading, error, forbidden, empty, and not-found states.
 - [ ] Extract reusable form fields and field-error components.
@@ -573,4 +580,4 @@ A story is complete only when all applicable items are satisfied:
 
 ---
 
-_Last reviewed: 2026-09-23_
+_Last reviewed: 2026-10-01_
