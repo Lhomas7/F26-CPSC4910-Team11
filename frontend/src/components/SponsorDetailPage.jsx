@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import { useAuth } from '../auth/AuthContext';
 import * as api from '../config/api';
@@ -26,7 +26,8 @@ function formFrom(account) {
 }
 
 export default function SponsorDetailPage() {
-  const { user } = useAuth();
+  const { user, startImpersonation } = useAuth();
+  const navigate = useNavigate();
   const { userId } = useParams();
   const [account, setAccount] = useState(null);
   const [organizations, setOrganizations] = useState([]);
@@ -35,6 +36,19 @@ export default function SponsorDetailPage() {
   const [editing, setEditing] = useState(false);
   const [errors, setErrors] = useState({});
   const [notice, setNotice] = useState('');
+  const [viewingAs, setViewingAs] = useState(false);
+
+  const viewAsSponsor = async () => {
+    setViewingAs(true);
+    setErrors({});
+    try {
+      await startImpersonation(userId);
+      navigate('/');
+    } catch (error) {
+      setErrors({ detail: error.message });
+      setViewingAs(false);
+    }
+  };
 
   const load = useCallback(async () => {
     if (user?.account_type !== 'admin') return;
@@ -116,8 +130,9 @@ export default function SponsorDetailPage() {
         <section className="sponsor-detail-card">
           <div className="sponsor-detail-card-head">
             <div className="sponsor-detail-person"><span className="sponsor-detail-avatar" aria-hidden="true">{initials(account)}</span><div><h2>{name}</h2><p>@{account.username} <span>Sponsor</span> · {account.is_active ? 'Active' : 'Inactive'}</p></div></div>
-            {!editing && <button type="button" onClick={() => { setNotice(''); setEditing(true); }}>Edit account</button>}
+            {!editing && <div className="sponsor-detail-header-actions"><button type="button" onClick={viewAsSponsor} disabled={viewingAs || !account.is_active}>{viewingAs ? 'Opening…' : 'View as sponsor'}</button><button type="button" onClick={() => { setNotice(''); setEditing(true); }}>Edit account</button></div>}
           </div>
+          {errors.detail && !editing && <p className="sponsor-detail-error" role="alert">{errors.detail}</p>}
           {notice && <p className="sponsor-detail-notice" role="status">{notice}</p>}
           {!editing ? (
             <dl className="sponsor-detail-view">

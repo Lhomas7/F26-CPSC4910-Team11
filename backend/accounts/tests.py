@@ -24,6 +24,7 @@ from rest_framework.test import APITestCase
 from drivers.models import Driver
 
 from .models import (
+    AdminImpersonationEvent,
     DriverNotification,
     LoginAttempt,
     MFABackupCode,
@@ -32,6 +33,7 @@ from .models import (
     SponsorAccount,
     SponsorCompany,
 )
+from .middleware import IMPERSONATION_STARTED_KEY
 from .services.crypto import decrypt_secret, encrypt_secret
 from .services.mfa import backup_codes_remaining, create_mfa_code
 
@@ -845,6 +847,104 @@ class AdminUserCreationTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('sponsor_org_id', response.data)
+
+
+class AdminAccountDetailTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.admin = get_user_model().objects.create_superuser(
+            username='admin.manager',
+            password='ExamplePassword123!',
+            email='manager@example.com',
+        )
+        cls.other_admin = get_user_model().objects.create_superuser(
+            username='other.admin',
+            password='ExamplePassword123!',
+            first_name='Other',
+            last_name='Administrator',
+            email='other@example.com',
+        )
+        cls.driver_user = get_user_model().objects.create_user(
+            username='ordinary.driver',
+            password='ExamplePassword123!',
+        )
+        Driver.objects.create(user=cls.driver_user, name='Ordinary Driver')
+
+    def detail_url(self, user=None):
+        return reverse(
+            'accounts:admin-account-detail',
+            kwargs={'user_id': (user or self.other_admin).id},
+        )
+
+    def test_admin_can_review_another_admin(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.get(self.detail_url())
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['role'], 'admin')
+        self.assertEqual(response.data['email'], 'other@example.com')
+
+    def test_admin_can_update_another_admin_identity_and_status(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.patch(self.detail_url(), {
+            'first_name': 'Updated',
+            'last_name': 'Administrator',
+            'username': 'updated.admin',
+            'email': 'updated@example.com',
+            'is_active': False,
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.other_admin.refresh_from_db()
+        self.assertEqual(self.other_admin.first_name, 'Updated')
+        self.assertEqual(self.other_admin.username, 'updated.admin')
+        self.assertFalse(self.other_admin.is_active)
+        self.assertTrue(self.other_admin.is_staff)
+        self.assertTrue(self.other_admin.is_superuser)
+
+    def test_admin_cannot_use_other_admin_route_on_self(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.patch(
+            self.detail_url(self.admin),
+            {'is_active': False},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.admin.refresh_from_db()
+        self.assertTrue(self.admin.is_active)
+
+    def test_non_admin_cannot_review_or_update_admin(self):
+        self.client.force_authenticate(self.driver_user)
+
+        get_response = self.client.get(self.detail_url())
+        patch_response = self.client.patch(
+            self.detail_url(),
+            {'first_name': 'Changed'},
+            format='json',
+        )
+
+        self.assertEqual(get_response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(patch_response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_rejects_duplicate_admin_identity_fields(self):
+        get_user_model().objects.create_user(
+            username='existing.user',
+            email='existing@example.com',
+        )
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.patch(self.detail_url(), {
+            'username': 'EXISTING.USER',
+            'email': 'EXISTING@EXAMPLE.COM',
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('username', response.data)
+        self.assertIn('email', response.data)
 
 
 class AdminSponsorDetailTests(APITestCase):
@@ -2435,6 +2535,105 @@ class PasswordResetTests(APITestCase):
         self.confirm(uid, token)
 
         self.assertFalse(self.client.get(reverse('accounts:me')).data['authenticated'])
+
+
+class AdminImpersonationTests(APITestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.admin = User.objects.create_user(
+            username='admin.viewer',
+            password='ExamplePassword123!',
+            first_name='Avery',
+            last_name='Admin',
+            is_staff=True,
+        )
+        self.driver_user = User.objects.create_user(
+            username='driver.target',
+            password='ExamplePassword123!',
+            email='driver@example.com',
+        )
+        Driver.objects.create(user=self.driver_user, name='Drew Driver')
+        self.company = SponsorCompany.objects.create(name='Palmetto Freight')
+        self.sponsor_user = User.objects.create_user(
+            username='sponsor.target',
+            password='ExamplePassword123!',
+            first_name='Sam',
+            last_name='Sponsor',
+        )
+        SponsorAccount.objects.create(user=self.sponsor_user, company=self.company)
+        self.client.login(username='admin.viewer', password='ExamplePassword123!')
+
+    def start(self, user):
+        return self.client.post(
+            reverse('accounts:admin-impersonation-start', args=[user.id]),
+            {},
+            format='json',
+        )
+
+    def test_admin_can_view_as_driver_then_return_to_admin(self):
+        started = self.start(self.driver_user)
+
+        self.assertEqual(started.status_code, status.HTTP_200_OK)
+        self.assertEqual(started.data['account_type'], 'driver')
+        self.assertTrue(started.data['impersonation']['active'])
+        self.assertEqual(self.client.get(reverse('accounts:me')).data['user']['id'], self.driver_user.id)
+
+        stopped = self.client.post(reverse('accounts:admin-impersonation-stop'))
+        self.assertEqual(stopped.status_code, status.HTTP_200_OK)
+        self.assertEqual(stopped.data['id'], self.admin.id)
+        self.assertEqual(stopped.data['account_type'], 'admin')
+        self.assertEqual(
+            list(AdminImpersonationEvent.objects.values_list('action', flat=True).order_by('created_at')),
+            ['start', 'stop'],
+        )
+
+    def test_admin_can_view_as_sponsor(self):
+        response = self.start(self.sponsor_user)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['account_type'], 'sponsor')
+        self.assertEqual(response.data['company'], self.company.name)
+
+    def test_non_admin_and_invalid_targets_are_rejected(self):
+        other_admin = get_user_model().objects.create_user(
+            username='other.admin',
+            password='ExamplePassword123!',
+            is_staff=True,
+        )
+        self.assertEqual(self.start(other_admin).status_code, status.HTTP_400_BAD_REQUEST)
+        self.driver_user.is_active = False
+        self.driver_user.save(update_fields=['is_active'])
+        self.assertEqual(self.start(self.driver_user).status_code, status.HTTP_400_BAD_REQUEST)
+
+        self.client.logout()
+        self.client.login(username='sponsor.target', password='ExamplePassword123!')
+        self.assertEqual(self.start(self.driver_user).status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_sensitive_account_mutations_are_blocked_while_viewing_as(self):
+        self.start(self.driver_user)
+
+        response = self.client.post(
+            reverse('accounts:change-password'),
+            {'password': 'AnotherPassword123!', 'password_confirm': 'AnotherPassword123!'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.driver_user.refresh_from_db()
+        self.assertTrue(self.driver_user.check_password('ExamplePassword123!'))
+
+    def test_expired_session_returns_to_admin_and_is_audited(self):
+        self.start(self.driver_user)
+        session = self.client.session
+        session[IMPERSONATION_STARTED_KEY] = (timezone.now() - timedelta(hours=1)).isoformat()
+        session.save()
+
+        response = self.client.get(reverse('accounts:me'))
+
+        self.assertEqual(response.data['user']['id'], self.admin.id)
+        self.assertTrue(
+            AdminImpersonationEvent.objects.filter(action='expire', target=self.driver_user).exists()
+        )
 
 
 class HealthCheckTests(APITestCase):

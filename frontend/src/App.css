@@ -292,3 +292,36 @@ body {
     display: none;
   }
 }
+/* A view-as session must remain unmistakable and easy to exit on every page. */
+.impersonation-banner {
+  align-items: center;
+  background: #fff3cd;
+  border-bottom: 1px solid #d4a72c;
+  color: #4f3b00;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+  justify-content: space-between;
+  padding: .7rem 1rem;
+}
+
+.impersonation-banner button {
+  background: #4f3b00;
+  border: 0;
+  border-radius: .4rem;
+  color: white;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: .45rem .75rem;
+}
+
+.impersonation-banner button:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.impersonation-error {
+  color: #9f241d;
+  font-weight: 700;
+}

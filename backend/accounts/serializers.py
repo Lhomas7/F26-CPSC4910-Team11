@@ -237,6 +237,45 @@ class SponsorCompanySerializer(serializers.ModelSerializer):
         fields = ('id', 'name')
 
 
+class AdminAccountDetailSerializer(serializers.ModelSerializer):
+    """Editable identity fields for an administrator other than the caller."""
+
+    first_name = NameField()
+    last_name = NameField()
+    username = UsernameField()
+    email = NormalizedEmailField(max_length=254)
+    role = serializers.SerializerMethodField()
+
+    class Meta:
+        model = get_user_model()
+        fields = (
+            'id', 'first_name', 'last_name', 'username', 'email', 'role',
+            'is_active',
+        )
+        read_only_fields = ('id', 'role')
+
+    def get_role(self, user):
+        return 'admin'
+
+    def validate_username(self, value):
+        users = get_user_model().objects.filter(username__iexact=value)
+        if self.instance:
+            users = users.exclude(pk=self.instance.pk)
+        if users.exists():
+            raise serializers.ValidationError('That username is already taken.')
+        return value
+
+    def validate_email(self, value):
+        users = get_user_model().objects.filter(email__iexact=value)
+        if self.instance:
+            users = users.exclude(pk=self.instance.pk)
+        if users.exists():
+            raise serializers.ValidationError(
+                'An account already uses that email address.'
+            )
+        return value
+
+
 class AdminSponsorDetailSerializer(serializers.ModelSerializer):
     first_name = NameField()
     last_name = NameField()
