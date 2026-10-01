@@ -19,10 +19,19 @@ def find_resettable_users(email):
     Superusers/staff count as application administrators. Accounts with an
     unusable password (never set, or disabled) cannot be reset by email.
     """
+
+    """Active, non-admin application accounts that use this email address.
+
+    Accounts with an unusable password (never set, or disabled) cannot be reset
+    by email. Admin accounts (is_staff/is_superuser) are deliberately excluded:
+    a compromised inbox must not be able to reach a privileged account this way,
+    the same reasoning that already restricts admin MFA to the authenticator app
+    only (see ROLE_MFA_CONFIG). An admin's password is reset by another admin
+    through the Django admin, or via `manage.py changepassword` on the server."""
     users = get_user_model().objects.filter(email__iexact=email, is_active=True)
     return [
         user for user in users
-        if user.has_usable_password() and get_account_type(user) is not None
+        if user.has_usable_password() and (get_account_type(user) is not None) and not (user.is_staff or user.is_superuser)
     ]
 
 
