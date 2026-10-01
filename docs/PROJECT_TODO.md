@@ -461,7 +461,7 @@ frontend/src/
 
 ### Backend reorganization
 
-- [ ] Split account serializers by authentication, self-profile, admin management, and MFA.
+- [x] Split account serializers by registration, authentication, self-profile/passwords, admin management, and MFA.
 - [ ] Split account views by authentication, self-profile, admin management, and MFA.
 - [x] Split account URL modules by feature while preserving public route names.
 - [ ] Move multi-model business rules into service functions.
