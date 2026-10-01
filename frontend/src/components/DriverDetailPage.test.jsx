@@ -10,13 +10,15 @@ jest.mock('../config/api');
 
 const account = { id: 5, display_name: 'Tasha Greene', username: 'tasha.driver', email: 'tasha@example.com', role: 'driver', sponsor_org: { id: 7, name: 'Palmetto Freight' }, is_active: true, profile_picture_url: null };
 const organizations = [{ id: 7, name: 'Palmetto Freight' }, { id: 9, name: 'Blue Ridge Logistics' }];
+const startImpersonation = jest.fn();
 
 function renderPage() {
   return render(<MemoryRouter initialEntries={['/users/drivers/5']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><Routes><Route path="/users/drivers/:userId" element={<DriverDetailPage />} /></Routes></MemoryRouter>);
 }
 
 beforeEach(() => {
-  useAuth.mockReturnValue({ user: { account_type: 'admin' } });
+  useAuth.mockReturnValue({ user: { account_type: 'admin' }, startImpersonation });
+  startImpersonation.mockResolvedValue({ account_type: 'driver' });
   api.getAdminDriver.mockResolvedValue(account);
   api.getAdminSponsorOrganizations.mockResolvedValue(organizations);
 });
@@ -42,6 +44,12 @@ test('edits, unassigns, and deactivates a driver account', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
   await waitFor(() => expect(api.updateAdminDriver).toHaveBeenCalledWith('5', expect.objectContaining({ display_name: 'Tasha Green', sponsor_org_id: null, is_active: false })));
   expect(await screen.findByText('Driver account saved.')).toBeInTheDocument();
+});
+
+test('starts a view-as session for the driver', async () => {
+  renderPage();
+  fireEvent.click(await screen.findByRole('button', { name: 'View as driver' }));
+  await waitFor(() => expect(startImpersonation).toHaveBeenCalledWith('5'));
 });
 
 test('shows duplicate username errors while retaining edits', async () => {

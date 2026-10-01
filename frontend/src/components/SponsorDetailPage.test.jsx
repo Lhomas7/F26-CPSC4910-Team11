@@ -10,13 +10,15 @@ jest.mock('../config/api');
 
 const account = { id: 8, first_name: 'Dana', last_name: 'Whitfield', username: 'dana.sponsor', email: 'dana@example.com', role: 'sponsor', sponsor_org: { id: 7, name: 'Palmetto Freight' }, is_active: true };
 const organizations = [{ id: 7, name: 'Palmetto Freight' }, { id: 9, name: 'Blue Ridge Logistics' }];
+const startImpersonation = jest.fn();
 
 function renderPage() {
   return render(<MemoryRouter initialEntries={['/users/sponsors/8']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><Routes><Route path="/users/sponsors/:userId" element={<SponsorDetailPage />} /></Routes></MemoryRouter>);
 }
 
 beforeEach(() => {
-  useAuth.mockReturnValue({ user: { account_type: 'admin' } });
+  useAuth.mockReturnValue({ user: { account_type: 'admin' }, startImpersonation });
+  startImpersonation.mockResolvedValue({ account_type: 'sponsor' });
   api.getAdminSponsor.mockResolvedValue(account);
   api.getAdminSponsorOrganizations.mockResolvedValue(organizations);
 });
@@ -41,6 +43,12 @@ test('edits and saves the sponsor account', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
   await waitFor(() => expect(api.updateAdminSponsor).toHaveBeenCalledWith('8', expect.objectContaining({ first_name: 'Danielle', sponsor_org_id: 9, is_active: false })));
   expect(await screen.findByText('Sponsor account saved.')).toBeInTheDocument();
+});
+
+test('starts a view-as session for the sponsor', async () => {
+  renderPage();
+  fireEvent.click(await screen.findByRole('button', { name: 'View as sponsor' }));
+  await waitFor(() => expect(startImpersonation).toHaveBeenCalledWith('8'));
 });
 
 test('shows server validation errors and stays in edit mode', async () => {

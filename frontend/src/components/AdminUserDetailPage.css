@@ -44,6 +44,11 @@
   padding: 1rem 1.25rem;
 }
 
+.sponsor-detail-header-actions {
+  display: flex;
+  gap: .5rem;
+}
+
 .sponsor-detail-card button,
 .sponsor-detail-state button,
 .sponsor-detail-state a {
