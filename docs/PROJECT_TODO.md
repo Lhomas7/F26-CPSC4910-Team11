@@ -464,6 +464,7 @@ frontend/src/
 - [x] Split account serializers by registration, authentication, self-profile/passwords, admin management, and MFA.
 - [x] Split account views by registration, authentication/password recovery, self-profile, admin management/impersonation, and MFA.
 - [x] Split account URL modules by feature while preserving public route names.
+- [x] Split account tests into feature-focused modules while preserving Django test discovery.
 - [ ] Move multi-model business rules into service functions.
 - [ ] Standardize API names and error responses.
 - [ ] Add API versioning such as `/api/v1/` before external consumers depend on current paths.
