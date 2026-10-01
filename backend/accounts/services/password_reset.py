@@ -14,12 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 def find_resettable_users(email):
-    """Active application accounts that use this email address.
-
-    Superusers/staff count as application administrators. Accounts with an
-    unusable password (never set, or disabled) cannot be reset by email.
-    """
-
     """Active, non-admin application accounts that use this email address.
 
     Accounts with an unusable password (never set, or disabled) cannot be reset
