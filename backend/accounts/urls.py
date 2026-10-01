@@ -16,6 +16,7 @@ from .views import (
     LoginView,
     LogoutView,
     MeView,
+    MFABackupCodesRegenerateView,
     MFADisableView,
     MFARequestCodeView,
     MFAResetView,
@@ -85,5 +86,10 @@ urlpatterns = [
     path('mfa/request-code/', MFARequestCodeView.as_view(), name='mfa-request-code'),
     path('mfa/reset/', MFAResetView.as_view(), name='mfa-reset'),
     path('mfa/disable/', MFADisableView.as_view(), name='mfa-disable'),
+    path(
+        'mfa/backup-codes/regenerate/',
+        MFABackupCodesRegenerateView.as_view(),
+        name='mfa-backup-codes-regenerate',
+    ),
     path('sponsor/mfa/settings/', SponsorMFASettingsView.as_view(), name='sponsor-mfa-settings'),
 ]

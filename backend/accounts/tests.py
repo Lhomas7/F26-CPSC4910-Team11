@@ -27,6 +27,7 @@ from .models import (
     AdminImpersonationEvent,
     DriverNotification,
     LoginAttempt,
+    MFABackupCode,
     MFACode,
     MFASettings,
     SponsorAccount,
@@ -34,7 +35,16 @@ from .models import (
 )
 from .middleware import IMPERSONATION_STARTED_KEY
 from .services.crypto import decrypt_secret, encrypt_secret
-from .services.mfa import create_mfa_code
+from .services.mfa import backup_codes_remaining, create_mfa_code
+
+
+def enroll_totp(user):
+    """Give a user an enabled TOTP method, satisfying the MFAEnrolled permission."""
+    mfa, _ = MFASettings.objects.get_or_create(user=user)
+    mfa.totp_enabled = True
+    mfa.totp_secret_encrypted = encrypt_secret(pyotp.random_base32())
+    mfa.save(update_fields=['totp_enabled', 'totp_secret_encrypted'])
+    return mfa
 
 
 class MailAssertMixin:
@@ -370,7 +380,14 @@ class SelfProfileTests(APITestCase):
                 'account_type': 'driver',
                 'company': 'Palmetto Freight',
                 'avatar_url': None,
-                'mfa': {'required': False, 'enrolled': False, 'methods': []},
+                'mfa': {
+                    'required': False,
+                    'enrolled': False,
+                    'methods': [],
+                    'default_method': 'email',
+                    'allowed_methods': ['email', 'sms', 'totp'],
+                    'backup_codes_remaining': 0,
+                },
             },
         )
 
@@ -577,7 +594,14 @@ class AdminSelfProfileTests(APITestCase):
             'account_type': 'admin',
             'company': None,
             'avatar_url': None,
-            'mfa': {'required': False, 'enrolled': False, 'methods': []},
+            'mfa': {
+                'required': True,
+                'enrolled': False,
+                'methods': [],
+                'default_method': 'totp',
+                'allowed_methods': ['totp'],
+                'backup_codes_remaining': 0,
+            },
         })
 
         patch_response = self.client.patch(
@@ -624,6 +648,7 @@ class AdminUserListTests(APITestCase):
             first_name='Directory',
             last_name='Admin',
         )
+        enroll_totp(cls.admin)
         cls.driver_user = get_user_model().objects.create_user(
             username='marcus.driver',
             password='ExamplePassword123!',
@@ -698,6 +723,7 @@ class AdminUserCreationTests(APITestCase):
             username='creator.admin',
             password='ExamplePassword123!',
         )
+        enroll_totp(cls.admin)
         cls.driver_user = get_user_model().objects.create_user(
             username='ordinary.driver',
             password='ExamplePassword123!',
@@ -929,6 +955,7 @@ class AdminSponsorDetailTests(APITestCase):
         cls.admin = get_user_model().objects.create_superuser(
             username='sponsor.manager', password='ExamplePassword123!'
         )
+        enroll_totp(cls.admin)
         cls.sponsor_user = get_user_model().objects.create_user(
             username='dana.sponsor',
             password='ExamplePassword123!',
@@ -1019,6 +1046,7 @@ class AdminDriverDetailTests(APITestCase):
         cls.admin = get_user_model().objects.create_superuser(
             username='driver.manager', password='ExamplePassword123!'
         )
+        enroll_totp(cls.admin)
         cls.driver_user = get_user_model().objects.create_user(
             username='tasha.driver',
             password='ExamplePassword123!',
@@ -1124,6 +1152,7 @@ class MFAPhoneNumberValidationTests(APITestCase):
             username='phone.user',
             password='ExamplePassword123!',
         )
+        Driver.objects.create(user=cls.user, name='Phone User')
 
     def setUp(self):
         self.client.force_authenticate(self.user)
@@ -1249,6 +1278,313 @@ class MFAEnrollmentTests(APITestCase):
         self.assertTrue(mfa.totp_enabled)
 
 
+class RoleMFAPolicyTests(APITestCase):
+    """Each role gets its own default/allowed MFA methods (accounts/services/__init__.py)."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.company = SponsorCompany.objects.create(name='Acme Co')
+        cls.admin = get_user_model().objects.create_superuser(
+            username='policy.admin', password='ExamplePassword123!'
+        )
+        cls.sponsor_user = get_user_model().objects.create_user(
+            username='policy.sponsor', password='ExamplePassword123!'
+        )
+        SponsorAccount.objects.create(user=cls.sponsor_user, company=cls.company)
+        cls.driver_user = get_user_model().objects.create_user(
+            username='policy.driver', password='ExamplePassword123!'
+        )
+        Driver.objects.create(user=cls.driver_user, name='Policy Driver', sponsor=cls.company)
+
+    def setUp(self):
+        cache.clear()
+
+    def status_for(self, user):
+        self.client.force_authenticate(user)
+        response = self.client.get(reverse('accounts:mfa-status'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        return response.data['mfa']
+
+    def test_admin_requires_totp_only(self):
+        mfa = self.status_for(self.admin)
+        self.assertTrue(mfa['required'])
+        self.assertEqual(mfa['default_method'], 'totp')
+        self.assertEqual(mfa['allowed_methods'], ['totp'])
+
+    def test_sponsor_defaults_to_totp_but_may_opt_into_others(self):
+        mfa = self.status_for(self.sponsor_user)
+        self.assertTrue(mfa['required'])
+        self.assertEqual(mfa['default_method'], 'totp')
+        self.assertEqual(mfa['allowed_methods'], ['totp', 'email', 'sms'])
+
+    def test_driver_defaults_to_email_and_is_not_required_by_default(self):
+        mfa = self.status_for(self.driver_user)
+        self.assertFalse(mfa['required'])
+        self.assertEqual(mfa['default_method'], 'email')
+        self.assertEqual(mfa['allowed_methods'], ['email', 'sms', 'totp'])
+
+    def test_driver_required_when_sponsor_company_opts_in(self):
+        self.company.driver_mfa_required = True
+        self.company.save(update_fields=['driver_mfa_required'])
+
+        mfa = self.status_for(self.driver_user)
+        self.assertTrue(mfa['required'])
+
+    def test_admin_setup_rejects_email_and_sms(self):
+        self.client.force_authenticate(self.admin)
+
+        email_response = self.client.post(
+            reverse('accounts:mfa-setup'), {'method': 'email'}, format='json'
+        )
+        sms_response = self.client.post(
+            reverse('accounts:mfa-setup'),
+            {'method': 'sms', 'phone_number': '+18645551234'},
+            format='json',
+        )
+
+        self.assertEqual(email_response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(sms_response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(MFASettings.objects.filter(user=self.admin, email_enabled=True).exists())
+
+    def test_admin_setup_accepts_totp(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.post(
+            reverse('accounts:mfa-setup'), {'method': 'totp'}, format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('qr_code', response.data)
+
+
+class BackupCodeTests(APITestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.company = SponsorCompany.objects.create(name='Acme Co')
+        cls.user = get_user_model().objects.create_user(
+            username='driver.one',
+            password='ExamplePassword123!',
+            email='driver@example.com',
+        )
+        cls.driver = Driver.objects.create(user=cls.user, name='Driver One', sponsor=cls.company)
+
+    def setUp(self):
+        cache.clear()
+        self.client.force_authenticate(self.user)
+
+    @patch('accounts.views.send_email_code')
+    def enable_email(self, mock_send_email):
+        mock_send_email.side_effect = lambda user, code: None
+        self.client.post(
+            reverse('accounts:mfa-request-code'),
+            {'purpose': 'enroll', 'method': 'email'},
+            format='json',
+        )
+        raw_code = mock_send_email.call_args[0][1]
+        return self.client.post(
+            reverse('accounts:mfa-verify'),
+            {'method': 'email', 'code': raw_code},
+            format='json',
+        )
+
+    def test_enabling_the_first_method_returns_ten_one_time_backup_codes(self):
+        response = self.enable_email()
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        codes = response.data['backup_codes']
+        self.assertEqual(len(codes), 10)
+        self.assertEqual(len(set(codes)), 10)
+        self.assertEqual(backup_codes_remaining(self.user), 10)
+
+    @patch('accounts.views.send_sms_code')
+    def test_enabling_a_second_method_does_not_reissue_backup_codes(self, mock_send_sms):
+        mock_send_sms.side_effect = lambda phone, code: None
+        self.enable_email()
+
+        self.client.post(
+            reverse('accounts:mfa-setup'),
+            {'method': 'sms', 'phone_number': '+18645551234'},
+            format='json',
+        )
+        raw_code = mock_send_sms.call_args[0][1]
+        response = self.client.post(
+            reverse('accounts:mfa-verify'),
+            {'method': 'sms', 'code': raw_code},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertNotIn('backup_codes', response.data)
+        self.assertEqual(backup_codes_remaining(self.user), 10)
+
+    def test_backup_code_is_single_use(self):
+        codes = self.enable_email().data['backup_codes']
+        code = codes[0]
+        # Drop the forced auth used to reach the authenticated setup endpoints
+        # above, so the requests below exercise the real anonymous login flow.
+        self.client.force_authenticate(user=None)
+
+        login = self.client.post(
+            reverse('accounts:login'),
+            {'username': 'driver.one', 'password': 'ExamplePassword123!'},
+            format='json',
+        )
+        self.assertTrue(login.data['mfa']['enrolled'])
+
+        first = self.client.post(
+            reverse('accounts:login-mfa'), {'method': 'backup', 'code': code}, format='json'
+        )
+        self.assertEqual(first.status_code, status.HTTP_200_OK)
+        self.assertEqual(backup_codes_remaining(self.user), 9)
+
+        self.client.post(reverse('accounts:logout'))
+        self.client.post(
+            reverse('accounts:login'),
+            {'username': 'driver.one', 'password': 'ExamplePassword123!'},
+            format='json',
+        )
+        second = self.client.post(
+            reverse('accounts:login-mfa'), {'method': 'backup', 'code': code}, format='json'
+        )
+        self.assertEqual(second.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_backup_code_accepted_with_dashes_or_lowercase(self):
+        code = self.enable_email().data['backup_codes'][0]
+        messy = '-'.join([code.lower()[:5], code.lower()[5:]])
+        self.client.force_authenticate(user=None)
+        self.client.post(
+            reverse('accounts:login'),
+            {'username': 'driver.one', 'password': 'ExamplePassword123!'},
+            format='json',
+        )
+
+        response = self.client.post(
+            reverse('accounts:login-mfa'), {'method': 'backup', 'code': messy}, format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_regenerate_requires_correct_password_and_replaces_codes(self):
+        original_codes = set(self.enable_email().data['backup_codes'])
+
+        wrong_password = self.client.post(
+            reverse('accounts:mfa-backup-codes-regenerate'),
+            {'password': 'wrongpassword!'},
+            format='json',
+        )
+        self.assertEqual(wrong_password.status_code, status.HTTP_400_BAD_REQUEST)
+
+        response = self.client.post(
+            reverse('accounts:mfa-backup-codes-regenerate'),
+            {'password': 'ExamplePassword123!'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        new_codes = set(response.data['backup_codes'])
+        self.assertEqual(len(new_codes), 10)
+        self.assertTrue(original_codes.isdisjoint(new_codes))
+        self.assertEqual(backup_codes_remaining(self.user), 10)
+
+    def test_regenerate_rejected_before_any_method_is_enabled(self):
+        response = self.client.post(
+            reverse('accounts:mfa-backup-codes-regenerate'),
+            {'password': 'ExamplePassword123!'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_disabling_the_last_method_clears_backup_codes(self):
+        self.enable_email()
+        self.assertEqual(backup_codes_remaining(self.user), 10)
+
+        response = self.client.post(
+            reverse('accounts:mfa-disable'),
+            {'method': 'email', 'password': 'ExamplePassword123!'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(backup_codes_remaining(self.user), 0)
+
+    def test_backup_code_recovers_a_lost_authenticator_via_reset(self):
+        # Mirrors an admin: TOTP-only, no email/SMS fallback, relies on backup codes.
+        admin = get_user_model().objects.create_superuser(
+            username='locked.admin', password='ExamplePassword123!'
+        )
+        self.client.force_authenticate(admin)
+        setup = self.client.post(
+            reverse('accounts:mfa-setup'), {'method': 'totp'}, format='json'
+        )
+        secret = setup.data['manual_key']
+        verify = self.client.post(
+            reverse('accounts:mfa-verify'),
+            {'method': 'totp', 'code': pyotp.TOTP(secret).now()},
+            format='json',
+        )
+        backup_code = verify.data['backup_codes'][0]
+        original_secret = secret
+
+        response = self.client.post(
+            reverse('accounts:mfa-reset'),
+            {'fallback_method': 'backup', 'fallback_code': backup_code},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('manual_key', response.data)
+        self.assertNotEqual(response.data['manual_key'], original_secret)
+        self.assertEqual(backup_codes_remaining(admin), 9)
+
+
+class MFAEnrolledPermissionTests(APITestCase):
+    """Backend enforcement: privileged endpoints 403 until MFA is enrolled."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.company = SponsorCompany.objects.create(name='Acme Co')
+        cls.admin = get_user_model().objects.create_superuser(
+            username='gate.admin', password='ExamplePassword123!'
+        )
+        cls.sponsor_user = get_user_model().objects.create_user(
+            username='gate.sponsor', password='ExamplePassword123!'
+        )
+        SponsorAccount.objects.create(user=cls.sponsor_user, company=cls.company)
+
+    def test_admin_endpoint_blocked_until_admin_enrolls(self):
+        self.client.force_authenticate(self.admin)
+
+        before = self.client.get(reverse('accounts:admin-user-list'))
+        self.assertEqual(before.status_code, status.HTTP_403_FORBIDDEN)
+
+        enroll_totp(self.admin)
+
+        after = self.client.get(reverse('accounts:admin-user-list'))
+        self.assertEqual(after.status_code, status.HTTP_200_OK)
+
+    def test_sponsor_endpoint_blocked_until_sponsor_enrolls(self):
+        self.client.force_authenticate(self.sponsor_user)
+
+        before = self.client.get(reverse('accounts:sponsor-mfa-settings'))
+        self.assertEqual(before.status_code, status.HTTP_403_FORBIDDEN)
+
+        enroll_totp(self.sponsor_user)
+
+        after = self.client.get(reverse('accounts:sponsor-mfa-settings'))
+        self.assertEqual(after.status_code, status.HTTP_200_OK)
+
+    def test_self_service_endpoints_stay_reachable_before_enrollment(self):
+        self.client.force_authenticate(self.admin)
+
+        me = self.client.get(reverse('accounts:me'))
+        profile = self.client.get(reverse('accounts:self-profile'))
+        mfa_status = self.client.get(reverse('accounts:mfa-status'))
+
+        self.assertEqual(me.status_code, status.HTTP_200_OK)
+        self.assertEqual(profile.status_code, status.HTTP_200_OK)
+        self.assertEqual(mfa_status.status_code, status.HTTP_200_OK)
+
+
 class MFALoginTests(APITestCase):
     login_url = reverse('accounts:login')
     mfa_login_url = reverse('accounts:login-mfa')
@@ -1294,7 +1630,14 @@ class MFALoginTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
             response.data,
-            {'mfa': {'required': False, 'enrolled': True, 'methods': ['email']}},
+            {'mfa': {
+                'required': False,
+                'enrolled': True,
+                'methods': ['email'],
+                'default_method': 'email',
+                'allowed_methods': ['email', 'sms', 'totp'],
+                'backup_codes_remaining': 0,
+            }},
         )
 
         me = self.client.get(reverse('accounts:me'))
@@ -1483,6 +1826,116 @@ class LoginMFARequestCodeTests(APITestCase):
         self.assertEqual(second.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
 
 
+class MFACodeInvalidationTests(APITestCase):
+    """A resent code retires the code it replaces (accounts/services/mfa.py)."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.sponsor = SponsorCompany.objects.create(name='Acme Co')
+        cls.user = get_user_model().objects.create_user(
+            username='driver.one',
+            password='ExamplePassword123!',
+            email='driver@example.com',
+        )
+        cls.driver = Driver.objects.create(
+            user=cls.user, name='Driver One', sponsor=cls.sponsor, status='approved',
+        )
+
+    def setUp(self):
+        cache.clear()
+
+    @patch('accounts.views.send_email_code')
+    def test_resending_an_enroll_code_invalidates_the_previous_one(self, mock_send_email):
+        mock_send_email.side_effect = lambda user, code: None
+        self.client.force_authenticate(self.user)
+
+        self.client.post(
+            reverse('accounts:mfa-request-code'),
+            {'purpose': 'enroll', 'method': 'email'},
+            format='json',
+        )
+        old_code = mock_send_email.call_args[0][1]
+
+        cache.clear()
+        self.client.post(
+            reverse('accounts:mfa-request-code'),
+            {'purpose': 'enroll', 'method': 'email'},
+            format='json',
+        )
+        new_code = mock_send_email.call_args[0][1]
+        self.assertNotEqual(old_code, new_code)
+
+        stale = self.client.post(
+            reverse('accounts:mfa-verify'),
+            {'method': 'email', 'code': old_code},
+            format='json',
+        )
+        self.assertEqual(stale.status_code, status.HTTP_400_BAD_REQUEST)
+
+        fresh = self.client.post(
+            reverse('accounts:mfa-verify'),
+            {'method': 'email', 'code': new_code},
+            format='json',
+        )
+        self.assertEqual(fresh.status_code, status.HTTP_200_OK)
+
+    @patch('accounts.views.send_email_code')
+    def test_resending_a_login_code_invalidates_the_previous_one(self, mock_send_email):
+        mock_send_email.side_effect = lambda user, code: None
+        mfa, _ = MFASettings.objects.get_or_create(user=self.user)
+        mfa.email_enabled = True
+        mfa.save(update_fields=['email_enabled'])
+
+        self.client.post(
+            reverse('accounts:login'),
+            {'username': 'driver.one', 'password': 'ExamplePassword123!'},
+            format='json',
+        )
+        self.client.post(
+            reverse('accounts:login-mfa-request-code'), {'method': 'email'}, format='json',
+        )
+        old_code = mock_send_email.call_args[0][1]
+
+        cache.clear()
+        self.client.post(
+            reverse('accounts:login-mfa-request-code'), {'method': 'email'}, format='json',
+        )
+        new_code = mock_send_email.call_args[0][1]
+        self.assertNotEqual(old_code, new_code)
+
+        stale = self.client.post(
+            reverse('accounts:login-mfa'), {'method': 'email', 'code': old_code}, format='json',
+        )
+        self.assertEqual(stale.status_code, status.HTTP_400_BAD_REQUEST)
+
+        fresh = self.client.post(
+            reverse('accounts:login-mfa'), {'method': 'email', 'code': new_code}, format='json',
+        )
+        self.assertEqual(fresh.status_code, status.HTTP_200_OK)
+
+    @patch('accounts.views.send_email_code')
+    def test_a_used_code_cannot_be_used_again(self, mock_send_email):
+        mock_send_email.side_effect = lambda user, code: None
+        self.client.force_authenticate(self.user)
+
+        self.client.post(
+            reverse('accounts:mfa-request-code'),
+            {'purpose': 'enroll', 'method': 'email'},
+            format='json',
+        )
+        code = mock_send_email.call_args[0][1]
+
+        first = self.client.post(
+            reverse('accounts:mfa-verify'), {'method': 'email', 'code': code}, format='json',
+        )
+        self.assertEqual(first.status_code, status.HTTP_200_OK)
+
+        second = self.client.post(
+            reverse('accounts:mfa-verify'), {'method': 'email', 'code': code}, format='json',
+        )
+        self.assertEqual(second.status_code, status.HTTP_400_BAD_REQUEST)
+
+
 class MFAResetTests(APITestCase):
 
     def setUp(self):
@@ -1581,6 +2034,7 @@ class SponsorMFATests(MailAssertMixin, APITestCase):
         )
         cls.sponsor = SponsorCompany.objects.create(name='Acme Co')
         SponsorAccount.objects.create(user=cls.sponsor_user, company=cls.sponsor)
+        enroll_totp(cls.sponsor_user)
 
         cls.driver_user = get_user_model().objects.create_user(
             username='driver.one',

@@ -6,9 +6,12 @@ import MfaPanel from './MfaPanel';
 import './AccountPage.css';
 import './MfaSetupWall.css';
 
+const ACCOUNT_LABELS = { admin: 'administrator', sponsor: 'sponsor' };
+
 export default function MfaSetupWall() {
   const { user, updateUser } = useAuth();
   const [mfa, setMfa] = useState(null);
+  const roleLabel = ACCOUNT_LABELS[user?.account_type] || 'account';
 
   const refresh = useCallback(async () => {
     try {
@@ -34,10 +37,11 @@ export default function MfaSetupWall() {
   return (
     <div className="mfa-wall">
       <header className="mfa-wall-heading">
-        <h1>Finish setting up your sponsor account</h1>
+        <h1>Finish setting up your {roleLabel} account</h1>
         <p>
-          Sponsor accounts require two-factor authentication. Enable at least one
-          method below before you can continue into the app.
+          {`${roleLabel[0].toUpperCase()}${roleLabel.slice(1)}`} accounts require
+          two-factor authentication. Set it up below before you can continue into
+          the app.
         </p>
       </header>
 
@@ -46,7 +50,7 @@ export default function MfaSetupWall() {
           mfa={mfa}
           onRefreshed={refresh}
           hideRequiredBanner
-          requiredText="Sponsor accounts require two-factor authentication."
+          requiredText={`${roleLabel[0].toUpperCase()}${roleLabel.slice(1)} accounts require two-factor authentication.`}
         />
       ) : (
         <p>Loading your security settings…</p>
