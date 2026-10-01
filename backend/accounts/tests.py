@@ -305,6 +305,21 @@ class ChangePasswordTests(APITestCase):
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password(password))
 
+    def test_rejects_reusing_the_current_password(self):
+        response = self.client.post(
+            self.url,
+            {
+                'password': 'ExamplePassword123!',
+                'password_confirm': 'ExamplePassword123!',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('password', response.data)
+
+
+
 
 class SelfProfileTests(APITestCase):
     url = reverse('accounts:self-profile')
@@ -2535,6 +2550,16 @@ class PasswordResetTests(APITestCase):
         self.confirm(uid, token)
 
         self.assertFalse(self.client.get(reverse('accounts:me')).data['authenticated'])
+
+    def test_confirm_rejects_reusing_the_current_password(self):
+        uid, token = self.issue_link()
+
+        response = self.confirm(uid, token, password='ExamplePassword123!')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('password', response.data)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('ExamplePassword123!'))
 
 
 class AdminImpersonationTests(APITestCase):
