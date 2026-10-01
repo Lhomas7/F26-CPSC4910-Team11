@@ -7,6 +7,12 @@ from .models import AboutPageRelease
 
 
 class SeedAboutPageCommandTests(TestCase):
+    def setUp(self):
+        # The Sprint 3 data migration seeds a row when the test database is
+        # built, so it persists across every test. Clear it here so these
+        # tests only see what they create themselves.
+        AboutPageRelease.objects.all().delete()
+
     def test_creates_initial_release(self):
         output = StringIO()
 
