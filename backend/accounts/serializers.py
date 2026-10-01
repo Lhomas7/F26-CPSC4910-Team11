@@ -547,6 +547,12 @@ class ChangePasswordSerializer(serializers.Serializer):
         if attrs['password'] != attrs['password_confirm']:
             raise serializers.ValidationError({'password_confirm': 'Passwords do not match.'})
         user = self.context.get('user')
+        # helps clear up attempts to reset password to previous ones 
+        if user is not None and user.check_password(attrs['password']):
+            raise serializers.ValidationError(
+                {'password': 'Choose a different password than your current one.'}
+            )
+
         validate_password_policy(
             attrs['password'],
             username=user.username if user else '',
