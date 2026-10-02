@@ -344,12 +344,12 @@ body {
   }
 
   .app-topbar {
-    align-items: flex-start;
+    align-items: center;
     padding: .65rem 1rem;
   }
 
   .page-header {
-    align-items: flex-start;
+    align-items: center;
   }
 
   .page-header p {
@@ -363,22 +363,20 @@ body {
 
 @media (max-width: 38rem) {
   .app-topbar {
-    flex-wrap: wrap;
-    gap: .55rem;
+    gap: .75rem;
+    padding: .65rem .85rem;
   }
 
   .app-topbar-page {
-    flex-basis: 100%;
-    order: 2;
+    overflow: hidden;
   }
 
   .app-topbar-account {
     margin-left: auto;
-    order: 1;
   }
 
-  .page-header-actions {
-    align-self: center;
+  .topbar-user {
+    max-width: 7rem;
   }
 }
 /* A view-as session must remain unmistakable and easy to exit on every page. */

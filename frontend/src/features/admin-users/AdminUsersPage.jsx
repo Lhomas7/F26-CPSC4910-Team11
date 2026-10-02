@@ -88,7 +88,6 @@ export default function AdminUsersPage() {
       <PageHeader
         title="Users"
         subtitle="Find and manage driver, sponsor, and admin accounts"
-        actions={<Link className="users-button primary" to="/users/new">+ Add user</Link>}
       />
       <main className="users-content" aria-busy={status === 'loading'}>
         <p className="sr-only" role="status" aria-live="polite">
@@ -107,6 +106,7 @@ export default function AdminUsersPage() {
             <span className="users-road" aria-hidden="true" />
             <h2>No users yet</h2>
             <p>Drivers, sponsors, and other administrators will appear here.</p>
+            <Link className="users-button primary" to="/users/new">+ Add user</Link>
           </section>
         )}
         {status === 'ready' && users.length > 0 && (
@@ -125,6 +125,7 @@ export default function AdminUsersPage() {
                   </button>
                 ))}
               </div>
+              <Link className="users-button primary users-toolbar-action" to="/users/new">+ Add user</Link>
             </div>
             <p className="users-count">{query || role !== 'all' ? `Showing ${visibleUsers.length} of ${users.length} users` : `${users.length} users`}</p>
             {visibleUsers.length === 0 ? (
