@@ -42,7 +42,7 @@ export default function LoginPage() {
     <div className="login-page">
       <aside className="login-road">
         <div className="login-brand">
-          <BrandMark className="login-brand-mark" />
+          <BrandMark className="login-brand-mark" onDark />
           <span className="login-brand-name">Good Driver</span>
         </div>
         <div className="login-pitch">

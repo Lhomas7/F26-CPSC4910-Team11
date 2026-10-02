@@ -10,5 +10,12 @@ test('renders a decorative mark with an optional extra class', () => {
   const mark = container.querySelector('.brand-mark');
 
   expect(mark).toHaveClass('login-brand-mark');
+  expect(mark).not.toHaveClass('brand-mark-on-dark');
   expect(mark).toHaveAttribute('aria-hidden', 'true');
+});
+
+test('adds the outlined style for dark backgrounds', () => {
+  const { container } = render(<BrandMark onDark />);
+
+  expect(container.querySelector('.brand-mark')).toHaveClass('brand-mark-on-dark');
 });

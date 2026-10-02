@@ -20,9 +20,7 @@
   gap: .65rem;
 }
 
-/* Lighter than --road so the mark stands out on the dark road panel. */
 .login-brand-mark {
-  background: #3a403c;
   height: 2rem;
   width: 2rem;
 }
