@@ -1,0 +1,18 @@
+.avatar {
+  align-items: center;
+  background: var(--accent-soft);
+  border-radius: 50%;
+  color: var(--accent);
+  display: flex;
+  flex-shrink: 0;
+  font-weight: 800;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.avatar img {
+  border-radius: inherit;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}

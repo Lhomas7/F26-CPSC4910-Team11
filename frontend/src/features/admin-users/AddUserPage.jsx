@@ -5,6 +5,8 @@ import { useAuth } from '../../auth/AuthContext';
 import * as api from '../../api';
 import PageHeader from '../../app/PageHeader';
 import PasswordInput from '../../components/PasswordInput';
+import Skeleton from '../../components/Skeleton';
+import StatePanel from '../../components/StatePanel';
 import {
   validateEmail,
   validateName,
@@ -119,7 +121,7 @@ export default function AddUserPage() {
   const selectedOrganization = organizations.find((org) => String(org.id) === String(form.sponsor_org_id));
 
   if (user?.account_type !== 'admin' || status === 'forbidden') {
-    return <main className="add-user-page"><section className="add-user-state"><h1>You don&apos;t have access to this page</h1><p>Only administrators can create user accounts.</p><Link className="add-user-button" to="/account">Go to my account</Link></section></main>;
+    return <main className="add-user-page"><StatePanel headingLevel={1} title="You don't have access to this page"><p>Only administrators can create user accounts.</p><Link className="add-user-button" to="/account">Go to my account</Link></StatePanel></main>;
   }
 
   return (
@@ -127,16 +129,14 @@ export default function AddUserPage() {
       <PageHeader title="Add user" breadcrumb={<><Link to="/users">Users</Link> / Add user</>} />
       <main className="add-user-content" aria-busy={status === 'loading' || status === 'saving'}>
         <p className="sr-only" role="status" aria-live="polite">{status === 'loading' ? 'Loading the form' : status === 'saving' ? 'Creating account' : ''}</p>
-        {status === 'loading' && <section className="add-user-state" aria-label="Loading the form"><span className="add-user-skeleton wide" /><span className="add-user-skeleton block" /><span className="add-user-skeleton" /></section>}
-        {status === 'error' && <section className="add-user-state error" role="alert"><h2>The form couldn&apos;t be loaded</h2><p>The sponsor organization list didn&apos;t come back from the server.</p><button className="add-user-button primary" type="button" onClick={loadOrganizations}>Try again</button></section>}
+        {status === 'loading' && <section className="add-user-loading" aria-label="Loading the form"><Skeleton className="add-user-skeleton wide" /><Skeleton className="add-user-skeleton block" /><Skeleton className="add-user-skeleton" /></section>}
+        {status === 'error' && <StatePanel tone="error" title="The form couldn't be loaded"><p>The sponsor organization list didn&apos;t come back from the server.</p><button className="add-user-button primary" type="button" onClick={loadOrganizations}>Try again</button></StatePanel>}
         {status === 'created' && created && (
-          <section className="add-user-state success">
-            <span className="add-user-check" aria-hidden="true">✓</span>
-            <h2>{ROLE_LABELS[created.role]} account created</h2>
+          <StatePanel tone="success" icon={<span className="add-user-check" aria-hidden="true">✓</span>} title={`${ROLE_LABELS[created.role]} account created`}>
             <p>{created.display_name} can sign in as @{created.username} with the temporary password.</p>
             <dl className="add-user-summary"><div><dt>Name</dt><dd>{created.display_name}</dd></div><div><dt>Username</dt><dd>@{created.username}</dd></div><div><dt>Account type</dt><dd>{ROLE_LABELS[created.role]}</dd></div><div><dt>Sponsor organization</dt><dd>{created.sponsor_org?.name || (created.role === 'driver' ? 'Not assigned' : 'Not applicable')}</dd></div></dl>
             <div className="add-user-actions"><button className="add-user-button primary" type="button" onClick={addAnother}>Add another user</button><Link className="add-user-button" to="/users">Back to users</Link></div>
-          </section>
+          </StatePanel>
         )}
         {(status === 'ready' || status === 'saving') && (
           <form className="add-user-card" onSubmit={submit} noValidate>

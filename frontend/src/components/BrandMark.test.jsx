@@ -1,3 +1,6 @@
+// Decorative, aria-hidden markup has no role or text to query, so these tests
+// look up elements by class.
+/* eslint-disable testing-library/no-container, testing-library/no-node-access */
 import { render } from '@testing-library/react';
 
 import BrandMark from './BrandMark';

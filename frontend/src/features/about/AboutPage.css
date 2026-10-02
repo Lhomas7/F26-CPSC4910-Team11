@@ -77,7 +77,7 @@
 }
 
 .about-card,
-.state-panel {
+.about-state {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: .625rem;
@@ -85,7 +85,7 @@
 }
 
 .about-card h3,
-.state-panel h2 {
+.about-state h2 {
   align-items: center;
   display: flex;
   font-size: .875rem;
@@ -159,26 +159,16 @@
   width: 1.625rem;
 }
 
-.state-panel {
+.about-state {
   margin-bottom: 1.25rem;
 }
 
-.state-panel p {
-  color: var(--ink-2);
+.about-state p {
   margin: .25rem 0 0;
   max-width: 64ch;
 }
 
-.state-panel-error {
-  background: #fbeae8;
-  border-color: #dfaaa6;
-}
-
-.state-panel-error h2 {
-  color: #9e2f29;
-}
-
-.state-panel button {
+.about-state button {
   background: var(--accent);
   border: 1px solid var(--accent);
   border-radius: .45rem;
@@ -189,13 +179,13 @@
   padding: .45rem .875rem;
 }
 
-.skeleton {
-  animation: skeleton-shimmer 1.2s linear infinite;
-  background: linear-gradient(90deg, #3a403c, #4a514c, #3a403c);
-  background-size: 200% 100%;
+/* Inline placeholders sized by their "Loading…" text, darker to sit on the road panel. */
+.about-skeleton {
+  background-image: linear-gradient(90deg, #3a403c, #4a514c, #3a403c);
   border-radius: .35rem;
   color: transparent;
   display: inline-block;
+  height: auto;
   min-width: 6ch;
 }
 
@@ -216,33 +206,13 @@
   width: 30ch;
 }
 
-@keyframes skeleton-shimmer {
-  to {
-    background-position: -200% 0;
-  }
-}
-
 @media (prefers-color-scheme: dark) {
   .points-steps li::before {
     background: #3a2f1a;
     color: #f3d49a;
   }
-
-  .state-panel-error {
-    background: #3b2220;
-    border-color: #7c3c37;
-  }
-
-  .state-panel-error h2 {
-    color: #e5766e;
-  }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .skeleton {
-    animation: none;
-  }
-}
 
 @media (max-width: 53.75rem) {
   .about-content {

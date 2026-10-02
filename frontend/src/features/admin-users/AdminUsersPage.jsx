@@ -4,15 +4,13 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import * as api from '../../api';
 import PageHeader from '../../app/PageHeader';
+import Avatar from '../../components/Avatar';
+import Skeleton from '../../components/Skeleton';
+import StatePanel from '../../components/StatePanel';
 import SelectMenu from '../../components/SelectMenu';
 import './AdminUsersPage.css';
 
 const ROLE_LABELS = { driver: 'Driver', sponsor: 'Sponsor', admin: 'Admin' };
-
-function initials(name) {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2)
-    .map((part) => part[0].toUpperCase()).join('') || '?';
-}
 
 function DirectorySkeleton() {
   return (
@@ -20,10 +18,10 @@ function DirectorySkeleton() {
       <div className="users-skeleton-heading" />
       {Array.from({ length: 5 }, (_, index) => (
         <div className="users-skeleton-row" key={index}>
-          <span className="users-skeleton circle" />
-          <span className="users-skeleton wide" />
-          <span className="users-skeleton" />
-          <span className="users-skeleton" />
+          <Skeleton className="users-skeleton circle" />
+          <Skeleton className="users-skeleton wide" />
+          <Skeleton className="users-skeleton" />
+          <Skeleton className="users-skeleton" />
         </div>
       ))}
     </div>
@@ -94,10 +92,9 @@ export default function AdminUsersPage() {
   if (user?.account_type !== 'admin' || status === 'forbidden') {
     return (
       <main className="users-page">
-        <section className="users-state">
-          <h1>You don&apos;t have access to this page</h1>
+        <StatePanel headingLevel={1} title="You don't have access to this page">
           <p>Only administrators can view and manage user accounts.</p>
-        </section>
+        </StatePanel>
       </main>
     );
   }
@@ -114,19 +111,16 @@ export default function AdminUsersPage() {
         </p>
         {status === 'loading' && <DirectorySkeleton />}
         {status === 'error' && (
-          <section className="users-state error" role="alert">
-            <h2>Users couldn&apos;t be loaded</h2>
+          <StatePanel tone="error" title="Users couldn't be loaded">
             <p>The server didn&apos;t send back the user list. Check your connection and try again.</p>
             <button className="users-button primary" type="button" onClick={loadUsers}>Try again</button>
-          </section>
+          </StatePanel>
         )}
         {status === 'ready' && users.length === 0 && (
-          <section className="users-state">
-            <span className="users-road" aria-hidden="true" />
-            <h2>No users yet</h2>
+          <StatePanel icon={<span className="users-road" aria-hidden="true" />} title="No users yet">
             <p>Drivers, sponsors, and other administrators will appear here.</p>
             <Link className="users-button primary" to="/users/new">+ Add user</Link>
-          </section>
+          </StatePanel>
         )}
         {status === 'ready' && users.length > 0 && (
           <section aria-labelledby="user-directory-heading">
@@ -161,18 +155,17 @@ export default function AdminUsersPage() {
             </div>
             <p className="users-count">{query || role !== 'all' || organization !== 'all' ? `Showing ${visibleUsers.length} of ${users.length} users` : `${users.length} users`}</p>
             {visibleUsers.length === 0 ? (
-              <section className="users-state compact">
-                <h2>No users match</h2>
+              <StatePanel className="users-state-compact" title="No users match">
                 <p>Try another name or username, or clear the filters.</p>
                 <button className="users-button" type="button" onClick={clearFilters}>Clear search and filters</button>
-              </section>
+              </StatePanel>
             ) : (
               <div className="users-table-card">
                 <table>
                   <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Sponsor organization</th><th>Status</th></tr></thead>
                   <tbody>{visibleUsers.map((listedUser) => (
                     <tr key={listedUser.id}>
-                      <td data-label="Name"><div className="users-person"><span className={`users-avatar ${listedUser.role}`} aria-hidden="true">{initials(listedUser.display_name)}</span>{listedUser.role === 'sponsor' ? <Link className="users-name-link" to={`/users/sponsors/${listedUser.id}`}>{listedUser.display_name}</Link> : listedUser.role === 'driver' ? <Link className="users-name-link" to={`/users/drivers/${listedUser.id}`}>{listedUser.display_name}</Link> : listedUser.id !== user.id ? <Link className="users-name-link" to={`/users/admins/${listedUser.id}`}>{listedUser.display_name}</Link> : <strong>{listedUser.display_name} (you)</strong>}</div></td>
+                      <td data-label="Name"><div className="users-person"><Avatar className={`users-avatar ${listedUser.role}`} name={listedUser.display_name} />{listedUser.role === 'sponsor' ? <Link className="users-name-link" to={`/users/sponsors/${listedUser.id}`}>{listedUser.display_name}</Link> : listedUser.role === 'driver' ? <Link className="users-name-link" to={`/users/drivers/${listedUser.id}`}>{listedUser.display_name}</Link> : listedUser.id !== user.id ? <Link className="users-name-link" to={`/users/admins/${listedUser.id}`}>{listedUser.display_name}</Link> : <strong>{listedUser.display_name} (you)</strong>}</div></td>
                       <td data-label="Username" className="users-username">@{listedUser.username}</td>
                       <td data-label="Role"><span className={`users-role ${listedUser.role}`}>{ROLE_LABELS[listedUser.role]}</span></td>
                       <td data-label="Sponsor organization">{listedUser.sponsor_org?.name || (listedUser.role === 'driver' ? <i>Not assigned</i> : <span aria-label="Not applicable">—</span>)}</td>

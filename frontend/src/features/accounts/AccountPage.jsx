@@ -3,6 +3,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import * as api from '../../api';
 import PageHeader from '../../app/PageHeader';
+import Avatar from '../../components/Avatar';
+import Skeleton from '../../components/Skeleton';
+import StatePanel from '../../components/StatePanel';
 import MfaPanel from './MfaPanel';
 import PasswordPanel from './PasswordPanel';
 import './AccountPage.css';
@@ -11,31 +14,18 @@ const ACCOUNT_LABELS = { driver: 'Driver', sponsor: 'Sponsor', admin: 'Admin' };
 const PROFILE_PICTURE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const PROFILE_PICTURE_LIMIT = 2 * 1024 * 1024;
 
-function initials(name) {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2)
-    .map((part) => part[0].toUpperCase()).join('') || '?';
-}
-
 function ProfileSkeleton() {
   return (
     <section className="account-card" aria-label="Loading your profile">
-      <div className="account-card-header"><span className="account-skeleton account-skeleton-heading" /></div>
+      <div className="account-card-header"><Skeleton className="account-skeleton account-skeleton-heading" /></div>
       <div className="profile-layout">
-        <span className="account-skeleton account-skeleton-avatar" />
+        <Skeleton className="account-skeleton account-skeleton-avatar" />
         <div className="account-skeleton-lines">
-          <span className="account-skeleton" /><span className="account-skeleton short" />
-          <span className="account-skeleton shorter" /><span className="account-skeleton short" />
+          <Skeleton className="account-skeleton" /><Skeleton className="account-skeleton short" />
+          <Skeleton className="account-skeleton shorter" /><Skeleton className="account-skeleton short" />
         </div>
       </div>
     </section>
-  );
-}
-
-function Avatar({ name, src }) {
-  return (
-    <div className="account-avatar" aria-label={`Profile picture for ${name}`}>
-      {src ? <img src={src} alt="" /> : initials(name)}
-    </div>
   );
 }
 
@@ -177,11 +167,10 @@ export default function AccountPage() {
         <p className="sr-only" role="status" aria-live="polite">{status === 'loading' ? 'Loading your profile' : ''}</p>
         {status === 'loading' && <ProfileSkeleton />}
         {status === 'error' && (
-          <section className="account-state account-state-error" role="alert">
-            <h2>Your profile couldn&apos;t be loaded</h2>
+          <StatePanel className="account-state" tone="error" title="Your profile couldn't be loaded">
             <p>The server didn&apos;t send back your account details. Check your connection and try again.</p>
             <button className="account-button primary" type="button" onClick={loadProfile}>Try again</button>
-          </section>
+          </StatePanel>
         )}
         {profile && status !== 'loading' && status !== 'error' && (
           <>
@@ -194,7 +183,7 @@ export default function AccountPage() {
               {formError && <p className="account-banner error" role="alert">{formError}</p>}
               {!editing ? (
                 <div className="profile-layout">
-                  <Avatar name={profile.name} src={profile.avatar_url} />
+                  <Avatar className="account-avatar" name={profile.name} src={profile.avatar_url} label={`Profile picture for ${profile.name}`} />
                   <dl className="profile-details">
                     <div><dt>Display name</dt><dd>{profile.name}</dd></div>
                     <div><dt>Username</dt><dd>@{profile.username}</dd></div>
@@ -206,7 +195,7 @@ export default function AccountPage() {
                 <form onSubmit={saveProfile} noValidate>
                   <div className="profile-layout">
                     <div className="profile-picture-editor">
-                      <Avatar name={form.name || profile.name} src={displayedPicture} />
+                      <Avatar className="account-avatar" name={form.name || profile.name} src={displayedPicture} label={`Profile picture for ${form.name || profile.name}`} />
                       {profile.account_type === 'driver' && (
                         <div className="profile-picture-actions">
                           <label className="account-button" htmlFor="profile-picture">Choose picture</label>

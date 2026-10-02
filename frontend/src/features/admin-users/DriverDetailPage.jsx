@@ -4,12 +4,9 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import * as api from '../../api';
 import PageHeader from '../../app/PageHeader';
+import Avatar from '../../components/Avatar';
+import StatePanel from '../../components/StatePanel';
 import './AdminUserDetailPage.css';
-
-function initials(name) {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2)
-    .map((part) => part[0].toUpperCase()).join('') || '?';
-}
 
 function formFrom(account) {
   return {
@@ -110,10 +107,10 @@ export default function DriverDetailPage() {
     }
   };
 
-  if (user?.account_type !== 'admin' || status === 'forbidden') return <main className="sponsor-detail-page"><section className="sponsor-detail-state"><h1>You don&apos;t have access to this page</h1><p>Only administrators can view and edit driver accounts.</p></section></main>;
+  if (user?.account_type !== 'admin' || status === 'forbidden') return <main className="sponsor-detail-page"><StatePanel className="sponsor-detail-state" headingLevel={1} title="You don't have access to this page"><p>Only administrators can view and edit driver accounts.</p></StatePanel></main>;
   if (status === 'loading') return <main className="sponsor-detail-page"><p role="status">Loading driver account…</p><section className="sponsor-detail-card sponsor-detail-skeleton" aria-label="Loading the account" /></main>;
-  if (status === 'error') return <main className="sponsor-detail-page"><section className="sponsor-detail-state error" role="alert"><h1>This account couldn&apos;t be loaded</h1><p>Check your connection and try again.</p><button type="button" onClick={load}>Try again</button></section></main>;
-  if (status === 'not-found') return <main className="sponsor-detail-page"><section className="sponsor-detail-state"><h1>That driver account doesn&apos;t exist</h1><p>It may have been removed, or the link may be wrong.</p><Link to="/users">Back to users</Link></section></main>;
+  if (status === 'error') return <main className="sponsor-detail-page"><StatePanel className="sponsor-detail-state" headingLevel={1} tone="error" title="This account couldn't be loaded"><p>Check your connection and try again.</p><button type="button" onClick={load}>Try again</button></StatePanel></main>;
+  if (status === 'not-found') return <main className="sponsor-detail-page"><StatePanel className="sponsor-detail-state" headingLevel={1} title="That driver account doesn't exist"><p>It may have been removed, or the link may be wrong.</p><Link to="/users">Back to users</Link></StatePanel></main>;
 
   return (
     <div className="sponsor-detail-page">
@@ -121,7 +118,7 @@ export default function DriverDetailPage() {
       <main className="sponsor-detail-content">
         <section className="sponsor-detail-card">
           <div className="sponsor-detail-card-head">
-            <div className="sponsor-detail-person">{account.profile_picture_url ? <span className="sponsor-detail-avatar"><img src={account.profile_picture_url} alt="" /></span> : <span className="sponsor-detail-avatar" aria-hidden="true">{initials(account.display_name)}</span>}<div><h2>{account.display_name}</h2><p>@{account.username} <span>Driver</span> · {account.is_active ? 'Active' : 'Inactive'}</p></div></div>
+            <div className="sponsor-detail-person"><Avatar className="sponsor-detail-avatar" name={account.display_name} src={account.profile_picture_url} /><div><h2>{account.display_name}</h2><p>@{account.username} <span>Driver</span> · {account.is_active ? 'Active' : 'Inactive'}</p></div></div>
             {!editing && <div className="sponsor-detail-header-actions"><button type="button" onClick={viewAsDriver} disabled={viewingAs || !account.is_active}>{viewingAs ? 'Opening…' : 'View as driver'}</button><button type="button" onClick={() => { setNotice(''); setEditing(true); }}>Edit account</button></div>}
           </div>
           {errors.detail && !editing && <p className="sponsor-detail-error" role="alert">{errors.detail}</p>}

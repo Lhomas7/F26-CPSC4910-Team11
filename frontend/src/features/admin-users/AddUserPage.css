@@ -8,7 +8,7 @@
 }
 
 .add-user-card,
-.add-user-state {
+.add-user-loading {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: .7rem;
@@ -186,28 +186,8 @@
   padding: .6rem .75rem;
 }
 
-.add-user-state {
+.add-user-loading {
   padding: 1.5rem;
-}
-
-.add-user-state h1,
-.add-user-state h2 {
-  font-size: 1rem;
-  margin: 0;
-}
-
-.add-user-state p {
-  color: var(--ink-2);
-  margin: .25rem 0 1rem;
-}
-
-.add-user-state.error {
-  background: #fbeae8;
-  border-color: #dfaaa6;
-}
-
-.add-user-state.success {
-  border-color: var(--accent);
 }
 
 .add-user-check {
@@ -256,12 +236,6 @@
 }
 
 .add-user-skeleton {
-  animation: add-user-shimmer 1.2s linear infinite;
-  background: linear-gradient(90deg, var(--line), var(--surface-2), var(--line));
-  background-size: 200% 100%;
-  border-radius: .3rem;
-  display: block;
-  height: .8rem;
   margin-bottom: .8rem;
   width: 55%;
 }
@@ -275,15 +249,8 @@
   width: 100%;
 }
 
-@keyframes add-user-shimmer {
-  to {
-    background-position: -200% 0;
-  }
-}
-
 @media (prefers-color-scheme: dark) {
-  .add-user-banner,
-  .add-user-state.error {
+  .add-user-banner {
     background: #3b2220;
     border-color: #7c3c37;
     color: #e5766e;
@@ -291,12 +258,6 @@
 
   .add-user-field small.error {
     color: #e5766e;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .add-user-skeleton {
-    animation: none;
   }
 }
 
