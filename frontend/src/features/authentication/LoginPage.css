@@ -206,6 +206,11 @@
   margin-top: .15rem;
 }
 
+.login-consent a {
+  color: var(--accent);
+  font-weight: 700;
+}
+
 .login-input-error {
   border-color: #b3372f;
   background: #fdf1f0;

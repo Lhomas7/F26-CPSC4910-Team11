@@ -556,7 +556,12 @@ function RoleRegistrationForm({ role, onBack, onDone }) {
           checked={acceptedTerms}
           onChange={(event) => setAcceptedTerms(event.target.checked)}
         />
-        <span>I agree to the program terms and privacy notice.</span>
+        <span>
+          I agree to the{' '}
+          <Link to="/terms" target="_blank" rel="noreferrer">Terms of Service</Link>
+          {' '}and acknowledge the{' '}
+          <Link to="/privacy" target="_blank" rel="noreferrer">Privacy Notice</Link>.
+        </span>
       </label>
 
       {role === 'sponsor' && (

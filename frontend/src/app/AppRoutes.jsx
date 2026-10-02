@@ -11,6 +11,7 @@ import SponsorDetailPage from '../features/admin-users/SponsorDetailPage';
 import ForgotPasswordPage from '../features/authentication/ForgotPasswordPage';
 import LoginPage from '../features/authentication/LoginPage';
 import ResetPasswordPage from '../features/authentication/ResetPasswordPage';
+import { PrivacyPage, TermsPage } from '../features/legal/LegalPage';
 import { DriverDetail, DriverList } from '../features/drivers/Drivers';
 import WelcomePage from '../features/home/WelcomePage';
 import { AppLayout } from './AppLayout';
@@ -30,6 +31,8 @@ export function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password/:uid/:token" element={<ResetPasswordPage />} />
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
       <Route element={<AppLayout />}>
         <Route path="/" element={<WelcomePage />} />
         <Route path="/drivers" element={<RequireAuth><DriverList /></RequireAuth>} />

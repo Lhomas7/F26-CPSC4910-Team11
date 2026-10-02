@@ -48,7 +48,7 @@ test('driver registration sends separate name and email fields', async () => {
   fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'jamie.rivera' } });
   fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ExamplePassword123!' } });
   fireEvent.change(screen.getByLabelText('Confirm Password'), { target: { value: 'ExamplePassword123!' } });
-  fireEvent.click(screen.getByRole('checkbox', { name: /program terms/i }));
+  fireEvent.click(screen.getByRole('checkbox', { name: /Terms of Service/i }));
   fireEvent.click(screen.getByRole('button', { name: 'Create Driver Account' }));
 
   await waitFor(() => {
@@ -62,6 +62,17 @@ test('driver registration sends separate name and email fields', async () => {
       accepted_terms: true,
     });
   });
+});
+
+test('registration links to the terms and privacy notice without losing form state', () => {
+  renderLoginPage();
+  fireEvent.click(screen.getByRole('button', { name: 'Create Account' }));
+  fireEvent.click(screen.getByRole('button', { name: /Driver.*Earn points/i }));
+
+  expect(screen.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute('href', '/terms');
+  expect(screen.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute('target', '_blank');
+  expect(screen.getByRole('link', { name: 'Privacy Notice' })).toHaveAttribute('href', '/privacy');
+  expect(screen.getByRole('link', { name: 'Privacy Notice' })).toHaveAttribute('target', '_blank');
 });
 
 test('single-method MFA login stages, auto-requests the code, and shows the code entry screen', async () => {
