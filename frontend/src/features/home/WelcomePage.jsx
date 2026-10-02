@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 
 import { useAuth } from '../../auth/AuthContext';
 import PageHeader from '../../app/PageHeader';
+import ProgramPerks from '../../components/ProgramPerks';
 import RoadTruck from '../../components/RoadTruck';
 import './WelcomePage.css';
 
@@ -53,11 +54,7 @@ export default function WelcomePage() {
             </div>
           )}
 
-          <ul className="welcome-perks">
-            <li>Points from your sponsor for safe driving</li>
-            <li>A catalog of rewards picked by your sponsor</li>
-            <li>A full history of every point change and why</li>
-          </ul>
+          <ProgramPerks />
 
           <RoadTruck className="welcome-lane" />
         </section>

@@ -4,6 +4,7 @@ import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import * as api from '../../api';
 import BrandMark from '../../components/BrandMark';
 import PasswordInput from '../../components/PasswordInput';
+import ProgramPerks from '../../components/ProgramPerks';
 import RoadTruck from '../../components/RoadTruck';
 import { useAuth } from '../../auth/AuthContext';
 import {
@@ -47,11 +48,7 @@ export default function LoginPage() {
         <div className="login-pitch">
           <h1>Safe miles add up to real rewards.</h1>
           <p>Your sponsor company gives you points for driving well. Sign in to check your balance and see what you can redeem.</p>
-          <ul className="login-perks">
-            <li>Points from your sponsor for safe driving</li>
-            <li>A catalog of rewards picked by your sponsor</li>
-            <li>A full history of every point change and why</li>
-          </ul>
+          <ProgramPerks className="login-perks" />
         </div>
         <RoadTruck className="login-lane" />
         <div className="login-road-foot">

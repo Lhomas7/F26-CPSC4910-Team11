@@ -51,31 +51,6 @@
   max-width: 42ch;
 }
 
-.login-perks {
-  display: grid;
-  gap: .625rem;
-  list-style: none;
-  margin-top: 1.5rem;
-}
-
-.login-perks li {
-  align-items: baseline;
-  color: #dfe3df;
-  display: flex;
-  font-size: .875rem;
-  gap: .625rem;
-}
-
-.login-perks li::before {
-  background: var(--stripe);
-  border-radius: .125rem;
-  content: '';
-  flex-shrink: 0;
-  height: 4px;
-  transform: translateY(-3px);
-  width: 14px;
-}
-
 .login-lane {
   --truck-start: 2.75rem;
   margin: 0 -2.75rem;

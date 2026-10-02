@@ -69,32 +69,6 @@
   text-decoration: underline;
 }
 
-.welcome-perks {
-  display: grid;
-  gap: .625rem;
-  list-style: none;
-  margin: 1.5rem 0 0;
-  padding: 0;
-}
-
-.welcome-perks li {
-  align-items: baseline;
-  color: #dfe3df;
-  display: flex;
-  font-size: .875rem;
-  gap: .625rem;
-}
-
-.welcome-perks li::before {
-  background: var(--stripe);
-  border-radius: .125rem;
-  content: '';
-  flex-shrink: 0;
-  height: 4px;
-  transform: translateY(-3px);
-  width: 14px;
-}
-
 .welcome-lane {
   margin: 1.5rem -1.875rem 0;
 }
