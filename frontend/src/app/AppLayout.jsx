@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 
 import { useAuth } from '../auth/AuthContext';
+import BrandMark from '../components/BrandMark';
 import { AccountIcon, ChevronDownIcon, SignOutIcon, UserIcon } from '../components/Icons';
 import MfaSetupWall from '../features/accounts/MfaSetupWall';
 import './AppLayout.css';
@@ -139,7 +140,7 @@ export function AppLayout() {
       <a className="skip-link" href="#main-content">Skip to content</a>
       <aside className="site-sidebar">
         <Link className="brand" to="/" aria-label="Good Driver home">
-          <span className="brand-mark" aria-hidden="true" />
+          <BrandMark />
           <span className="brand-name">Good Driver</span>
         </Link>
         <nav className="site-nav" aria-label="Primary navigation">

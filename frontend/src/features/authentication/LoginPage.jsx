@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
 import * as api from '../../api';
+import BrandMark from '../../components/BrandMark';
 import RoadTruck from '../../components/RoadTruck';
 import { useAuth } from '../../auth/AuthContext';
 import {
@@ -57,7 +58,7 @@ export default function LoginPage() {
     <div className="login-page">
       <aside className="login-road">
         <div className="login-brand">
-          <span className="login-brand-mark" aria-hidden="true" />
+          <BrandMark className="login-brand-mark" />
           <span className="login-brand-name">Good Driver</span>
         </div>
         <div className="login-pitch">

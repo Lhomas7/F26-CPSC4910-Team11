@@ -20,23 +20,11 @@
   gap: .65rem;
 }
 
+/* Lighter than --road so the mark stands out on the dark road panel. */
 .login-brand-mark {
   background: #3a403c;
-  border-radius: .45rem;
   height: 2rem;
-  overflow: hidden;
-  position: relative;
   width: 2rem;
-}
-
-.login-brand-mark::after {
-  background: repeating-linear-gradient(to bottom, var(--stripe) 0 .3rem, transparent .3rem .55rem);
-  bottom: .2rem;
-  content: '';
-  left: calc(50% - .1rem);
-  position: absolute;
-  top: .2rem;
-  width: .2rem;
 }
 
 .login-brand-name {
