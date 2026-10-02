@@ -54,12 +54,16 @@ The ASCII-only name pattern was rejected because it would exclude common names s
 ## Source locations
 
 - Backend normalization and patterns: `backend/accounts/input_cleaning.py`
-- Backend API serializers: `backend/accounts/serializers.py`
+- Backend API serializers: `backend/accounts/serializers/`
 - Frontend validation helpers: `frontend/src/utils/accountValidation.js`
-- Public account form: `frontend/src/components/LoginPage.jsx`
-- Administrator account form: `frontend/src/components/AddUserPage.jsx`
-- Password-change panel: `frontend/src/components/PasswordPanel.jsx`
+- Public registration and login forms: `frontend/src/features/authentication/LoginPage.jsx`
+- Administrator account form: `frontend/src/features/admin-users/AddUserPage.jsx`
+- Password-change panel: `frontend/src/features/accounts/PasswordPanel.jsx`
 
 ## Out of scope
 
 Date of birth, postal code, and mailing address are not collected by the current application and have no acceptance rules here.
+
+---
+
+_Last reviewed against the feature-based frontend and backend structure: 2026-10-01._

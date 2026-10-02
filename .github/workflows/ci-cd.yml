@@ -143,6 +143,7 @@ jobs:
       - name: Write runtime env (.env, chmod 600)
         run: |
           umask 177
+          mkdir -p web
           cat > web/.env <<EOF
           DJANGO_DEBUG=false
           DJANGO_ALLOWED_HOSTS=${{ vars.EC2_HOST }},127.0.0.1

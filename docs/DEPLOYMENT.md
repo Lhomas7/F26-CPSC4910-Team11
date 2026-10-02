@@ -3,8 +3,10 @@
 This document covers how the Django backend is configured for a deployed
 environment, how secrets reach it, and what is still undecided.
 
-> **Deployment status:** the application is not deployed yet.
-> Record the URL here once it is: _Staging: TBD · Production: TBD_
+> **Deployment status:** automated production deployment to a Docker Compose
+> host on EC2 is configured in `.github/workflows/ci-cd.yml`. The public URL and
+> the result of the latest deployment are environment-owned values; verify them
+> in the GitHub `production` environment before treating a release as live.
 
 ## How configuration works
 
@@ -51,6 +53,27 @@ the React build). If they must be separate:
   `DJANGO_COOKIE_DOMAIN=.example.com` so both can see the cookies.
 - Build the frontend with `REACT_APP_API_URL=https://api.example.com/api`.
 - Fully different domains would need `SameSite=None`; avoid that if you can.
+
+## Current CI/CD path
+
+The checked-in workflow runs on pull requests, pushes to `main`, and manual
+dispatches. Pull requests run validation only; pushes to `main` and manual runs
+also deploy.
+
+1. Test Django with Python 3.12 and SQLite, including system, migration, and
+   deployment checks.
+2. Test and build React with Node 20 and `REACT_APP_API_URL=/api`.
+3. Scan the repository with Gitleaks.
+4. Read deployment configuration from the GitHub `production` environment.
+5. Copy the repository and generated environment files to `/opt/gooddriver/src`
+   on EC2 over SSH.
+6. Build and start the Django/Gunicorn and Caddy containers with Docker Compose.
+7. Run API, HTML, and compiled JavaScript smoke tests.
+
+The current AWS account cannot create the IAM role required by the optional
+Secrets Manager path below. Consequently, the active workflow injects runtime
+values from GitHub environment secrets into `web/.env` on the runner, protects
+that file with mode `600`, and ships it to EC2. Never commit `web/.env`.
 
 ## AWS Secrets Manager
 
@@ -110,16 +133,23 @@ Smoke test after every deploy: `GET /api/health/` returns `{"status": "ok"}`
 
 ## Still open
 
-- **Deploy target and workflow.** No hosting target has been chosen (EC2, Elastic
-  Beanstalk, ECS/App Runner, ...), so there is no `deploy.yml` yet. CI lives in
-  `.github/workflows/ci.yml`. The plan in `docs/PROJECT_TODO.md` (staging first,
-  GitHub environments, OIDC to AWS) still applies.
-- **Frontend hosting.** Build with `REACT_APP_API_URL` set, then host the static
-  `frontend/build/` output (S3 + CloudFront, or the same server as the API).
-- **Uploaded profile pictures.** Django serves `/media/` only in debug mode, and a
-  container's disk is usually ephemeral. Profile pictures need object storage (for
-  example S3 via `django-storages`) before production use.
+- **Staging and release gates.** The workflow currently deploys directly to the
+  GitHub `production` environment after CI. Add staging, required approval, and
+  tag/release-based promotion before relying on it for mature releases.
+- **Domain and TLS.** The Caddy configuration supports automatic HTTPS once
+  `SITE_DOMAIN` is a real domain. Until then, the workflow explicitly supports a
+  bare-IP HTTP phase with secure redirects/cookies disabled.
+- **Uploaded profile pictures.** Docker Compose stores `/app/media` in a named
+  volume on the single EC2 host and Caddy serves `/media/`. This survives
+  container replacement but is not multi-host or disaster-recovery storage;
+  object storage such as S3 is still recommended.
 - **Email and SMS providers.** The default console backends only print messages.
-  Configure real SMTP/SES and Twilio values (via the secret) or password-reset and
-  MFA emails will never reach users.
+  Configure real SMTP/SES and Twilio values through GitHub environment secrets or
+  Secrets Manager, then add them to the generated runtime environment.
+- **AWS identity.** Move from SSH and long-lived deployment material to GitHub
+  OIDC and a least-privilege AWS role when the account permits IAM role creation.
 - **Rotation.** Document who owns each secret and how often it rotates.
+
+---
+
+_Last reviewed against the Docker Compose and GitHub Actions configuration: 2026-10-01._
