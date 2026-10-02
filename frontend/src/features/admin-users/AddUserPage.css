@@ -134,26 +134,6 @@
   color: #b3372f;
 }
 
-.add-user-password {
-  position: relative;
-}
-
-.add-user-password input {
-  padding-right: 3.5rem;
-}
-
-.add-user-password button {
-  background: transparent;
-  border: 0;
-  color: var(--accent);
-  cursor: pointer;
-  font-size: .72rem;
-  font-weight: 700;
-  position: absolute;
-  right: .35rem;
-  top: .45rem;
-}
-
 .add-user-note {
   border-left: 2px solid var(--line);
   color: var(--ink-2);

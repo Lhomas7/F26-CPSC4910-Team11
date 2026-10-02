@@ -1,32 +1,15 @@
 import { useState } from 'react';
 
 import * as api from '../../api';
+import PasswordInput from '../../components/PasswordInput';
 import { validatePassword } from '../../utils/accountValidation';
 
 
-function PasswordField({ id, label, value, onChange, visible, onToggle, disabled }) {
+function PasswordField({ id, label, ...inputProps }) {
   return (
     <>
       <label htmlFor={id}>{label}</label>
-      <div className="account-password-input">
-        <input
-          id={id}
-          type={visible ? 'text' : 'password'}
-          value={value}
-          onChange={onChange}
-          autoComplete="new-password"
-          disabled={disabled}
-        />
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-label={`${visible ? 'Hide' : 'Show'} ${label.toLowerCase()}`}
-          aria-pressed={visible}
-          disabled={disabled}
-        >
-          {visible ? 'Hide' : 'Show'}
-        </button>
-      </div>
+      <PasswordInput id={id} label={label} autoComplete="new-password" {...inputProps} />
     </>
   );
 }
@@ -114,7 +97,7 @@ export default function PasswordPanel() {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             visible={passwordVisible}
-            onToggle={() => setPasswordVisible((current) => !current)}
+            onToggleVisible={() => setPasswordVisible((current) => !current)}
             disabled={busy}
           />
           <small>Use 12+ characters with 3 lowercase letters, 2 uppercase letters, 2 numbers, and an approved symbol.</small>
@@ -124,7 +107,7 @@ export default function PasswordPanel() {
             value={confirmation}
             onChange={(event) => setConfirmation(event.target.value)}
             visible={confirmationVisible}
-            onToggle={() => setConfirmationVisible((current) => !current)}
+            onToggleVisible={() => setConfirmationVisible((current) => !current)}
             disabled={busy}
           />
           {error && <p className="account-banner error" role="alert">{error}</p>}

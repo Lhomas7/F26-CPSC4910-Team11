@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
 import * as api from '../../api';
 import BrandMark from '../../components/BrandMark';
+import PasswordInput from '../../components/PasswordInput';
 import RoadTruck from '../../components/RoadTruck';
 import { useAuth } from '../../auth/AuthContext';
 import {
@@ -15,29 +16,11 @@ import './LoginPage.css';
 
 const ROLE_LABEL = { driver: 'Driver', sponsor: 'Sponsor' };
 
-function PasswordInput({ id, label, value, onChange, autoComplete, className = 'login-input' }) {
-  const [visible, setVisible] = useState(false);
+function PasswordField({ id, label, className = 'login-input', ...inputProps }) {
   return (
     <div className="login-field">
       <label htmlFor={id}>{label}</label>
-      <div className="login-password-input">
-        <input
-          id={id}
-          type={visible ? 'text' : 'password'}
-          className={className}
-          value={value}
-          onChange={onChange}
-          autoComplete={autoComplete}
-        />
-        <button
-          type="button"
-          onClick={() => setVisible((current) => !current)}
-          aria-label={`${visible ? 'Hide' : 'Show'} ${label.toLowerCase()}`}
-          aria-pressed={visible}
-        >
-          {visible ? 'Hide' : 'Show'}
-        </button>
-      </div>
+      <PasswordInput id={id} label={label} className={className} {...inputProps} />
     </div>
   );
 }
@@ -397,7 +380,7 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode }) {
         />
       </div>
 
-      <PasswordInput
+      <PasswordField
         id="login-password"
         label="Password"
         className={fieldClass(error && !password)}
@@ -563,9 +546,9 @@ function RoleRegistrationForm({ role, onBack, onDone }) {
         />
       </div>
 
-      <PasswordInput id="reg-password" label="Password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" />
+      <PasswordField id="reg-password" label="Password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" />
 
-      <PasswordInput id="reg-password-confirm" label="Confirm Password" value={passwordConfirm} onChange={(event) => setPasswordConfirm(event.target.value)} autoComplete="new-password" />
+      <PasswordField id="reg-password-confirm" label="Confirm Password" value={passwordConfirm} onChange={(event) => setPasswordConfirm(event.target.value)} autoComplete="new-password" />
 
       <label className="login-consent">
         <input
