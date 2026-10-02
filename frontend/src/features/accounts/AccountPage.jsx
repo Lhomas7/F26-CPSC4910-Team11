@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '../../auth/AuthContext';
 import * as api from '../../api';
+import PageHeader from '../../app/PageHeader';
 import MfaPanel from './MfaPanel';
 import PasswordPanel from './PasswordPanel';
 import './AccountPage.css';
@@ -171,7 +172,7 @@ export default function AccountPage() {
 
   return (
     <div className="account-page">
-      <header className="account-heading"><h1>My account</h1><p>Your profile and sign-in details</p></header>
+      <PageHeader title="My account" subtitle="Your profile and sign-in details" />
       <main className="account-content" aria-busy={status === 'loading' || status === 'saving'}>
         <p className="sr-only" role="status" aria-live="polite">{status === 'loading' ? 'Loading your profile' : ''}</p>
         {status === 'loading' && <ProfileSkeleton />}

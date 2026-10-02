@@ -4,6 +4,7 @@ import { Link, NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import MfaSetupWall from '../features/accounts/MfaSetupWall';
 import './AppLayout.css';
+import { PageHeaderTargetProvider } from './PageHeader';
 
 function AccountMenu({ user, onSignOut }) {
   if (user) {
@@ -28,6 +29,7 @@ export function AppLayout() {
   const { user, signOut, stopImpersonation } = useAuth();
   const [endingViewAs, setEndingViewAs] = useState(false);
   const [viewAsError, setViewAsError] = useState('');
+  const [pageHeaderTarget, setPageHeaderTarget] = useState(null);
   const mfaWallNeeded = user
     && (user.account_type === 'sponsor' || user.account_type === 'admin')
     && user.mfa
@@ -89,23 +91,28 @@ export function AppLayout() {
           </div>
         )}
         <header className="app-topbar">
-          <AccountMenu user={user} onSignOut={signOut} />
+          <div className="app-topbar-page" ref={setPageHeaderTarget} />
+          <div className="app-topbar-account">
+            <AccountMenu user={user} onSignOut={signOut} />
+          </div>
         </header>
         <div className="app-content" id="main-content" tabIndex="-1">
-          {mfaWallNeeded ? (
-            <MfaSetupWall />
-          ) : (
-            <>
-              {user && user.mfa && user.mfa.required && !user.mfa.enrolled && (
-                <div className="mfa-required-banner">
-                  Your sponsor requires two-factor authentication. Set it up to keep
-                  signing in without interruption.{' '}
-                  <Link to="/account">Set up now</Link>
-                </div>
-              )}
-              <Outlet />
-            </>
-          )}
+          <PageHeaderTargetProvider target={pageHeaderTarget}>
+            {mfaWallNeeded ? (
+              <MfaSetupWall />
+            ) : (
+              <>
+                {user && user.mfa && user.mfa.required && !user.mfa.enrolled && (
+                  <div className="mfa-required-banner">
+                    Your sponsor requires two-factor authentication. Set it up to keep
+                    signing in without interruption.{' '}
+                    <Link to="/account">Set up now</Link>
+                  </div>
+                )}
+                <Outlet />
+              </>
+            )}
+          </PageHeaderTargetProvider>
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import { useAuth } from '../../auth/AuthContext';
 import * as api from '../../api';
+import PageHeader from '../../app/PageHeader';
 import './AdminUserDetailPage.css';
 
 function initials(name) {
@@ -116,7 +117,7 @@ export default function DriverDetailPage() {
 
   return (
     <div className="sponsor-detail-page">
-      <header className="sponsor-detail-heading"><p><Link to="/users">Users</Link> / {account.display_name}</p><h1>Driver account</h1></header>
+      <PageHeader title="Driver account" breadcrumb={<><Link to="/users">Users</Link> / {account.display_name}</>} />
       <main className="sponsor-detail-content">
         <section className="sponsor-detail-card">
           <div className="sponsor-detail-card-head">

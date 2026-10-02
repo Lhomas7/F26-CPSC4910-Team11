@@ -2,27 +2,6 @@
   min-height: 100%;
 }
 
-.sponsor-detail-heading {
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
-  padding: .7rem 1.75rem;
-}
-
-.sponsor-detail-heading h1 {
-  font-size: 1.075rem;
-  margin: .1rem 0 0;
-}
-
-.sponsor-detail-heading p {
-  color: var(--ink-2);
-  font-size: .75rem;
-  margin: 0;
-}
-
-.sponsor-detail-heading a {
-  color: var(--accent);
-}
-
 .sponsor-detail-content {
   max-width: 54rem;
   padding: 1.5rem 1.75rem 4rem;
@@ -280,7 +259,6 @@
 }
 
 @media (max-width: 42rem) {
-  .sponsor-detail-heading,
   .sponsor-detail-content {
     padding-left: 1rem;
     padding-right: 1rem;

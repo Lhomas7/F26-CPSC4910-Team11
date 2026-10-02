@@ -2,29 +2,6 @@
   min-height: 100%;
 }
 
-.add-user-heading {
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
-  min-height: 4rem;
-  padding: .55rem 1.75rem;
-}
-
-.add-user-heading h1 {
-  font-size: 1.075rem;
-  margin: .1rem 0 0;
-}
-
-.add-user-heading p {
-  color: var(--ink-2);
-  font-size: .72rem;
-  margin: 0;
-}
-
-.add-user-heading a {
-  color: var(--ink-2);
-  text-decoration: none;
-}
-
 .add-user-content {
   max-width: 48rem;
   padding: 1.5rem 1.75rem 3rem;
@@ -344,7 +321,6 @@
 }
 
 @media (max-width: 53.75rem) {
-  .add-user-heading,
   .add-user-content {
     padding-left: 1rem;
     padding-right: 1rem;

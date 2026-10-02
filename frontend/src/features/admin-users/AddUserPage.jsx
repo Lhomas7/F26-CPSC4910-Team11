@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 
 import { useAuth } from '../../auth/AuthContext';
 import * as api from '../../api';
+import PageHeader from '../../app/PageHeader';
 import {
   validateEmail,
   validateName,
@@ -122,7 +123,7 @@ export default function AddUserPage() {
 
   return (
     <div className="add-user-page">
-      <header className="add-user-heading"><p><Link to="/users">Users</Link> / Add user</p><h1>Add user</h1></header>
+      <PageHeader title="Add user" breadcrumb={<><Link to="/users">Users</Link> / Add user</>} />
       <main className="add-user-content" aria-busy={status === 'loading' || status === 'saving'}>
         <p className="sr-only" role="status" aria-live="polite">{status === 'loading' ? 'Loading the form' : status === 'saving' ? 'Creating account' : ''}</p>
         {status === 'loading' && <section className="add-user-state" aria-label="Loading the form"><span className="add-user-skeleton wide" /><span className="add-user-skeleton block" /><span className="add-user-skeleton" /></section>}

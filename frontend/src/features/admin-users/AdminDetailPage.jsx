@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 
 import { useAuth } from '../../auth/AuthContext';
 import * as api from '../../api';
+import PageHeader from '../../app/PageHeader';
 import { validateEmail, validateName, validateUsername } from '../../utils/accountValidation';
 import './AdminUserDetailPage.css';
 
@@ -109,7 +110,7 @@ export default function AdminDetailPage() {
   const name = fullName(account);
   return (
     <div className="sponsor-detail-page">
-      <header className="sponsor-detail-heading"><p><Link to="/users">Users</Link> / {name}</p><h1>Administrator account</h1></header>
+      <PageHeader title="Administrator account" breadcrumb={<><Link to="/users">Users</Link> / {name}</>} />
       <main className="sponsor-detail-content">
         <section className="sponsor-detail-card">
           <div className="sponsor-detail-card-head">

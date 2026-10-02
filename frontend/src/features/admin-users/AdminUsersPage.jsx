@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 
 import { useAuth } from '../../auth/AuthContext';
 import * as api from '../../api';
+import PageHeader from '../../app/PageHeader';
 import './AdminUsersPage.css';
 
 const ROLE_LABELS = { driver: 'Driver', sponsor: 'Sponsor', admin: 'Admin' };
@@ -84,10 +85,11 @@ export default function AdminUsersPage() {
 
   return (
     <div className="users-page">
-      <header className="users-heading">
-        <div><h1>Users</h1><p>Find and manage driver, sponsor, and admin accounts</p></div>
-        <Link className="users-button primary" to="/users/new">+ Add user</Link>
-      </header>
+      <PageHeader
+        title="Users"
+        subtitle="Find and manage driver, sponsor, and admin accounts"
+        actions={<Link className="users-button primary" to="/users/new">+ Add user</Link>}
+      />
       <main className="users-content" aria-busy={status === 'loading'}>
         <p className="sr-only" role="status" aria-live="polite">
           {status === 'loading' ? 'Loading users' : `${visibleUsers.length} users shown`}

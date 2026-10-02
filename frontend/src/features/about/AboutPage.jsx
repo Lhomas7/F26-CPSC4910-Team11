@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { API_URL } from '../../api';
+import PageHeader from '../../app/PageHeader';
 import RoadTruck from '../../components/RoadTruck';
 import './AboutPage.css';
 
@@ -58,10 +59,7 @@ export default function AboutPage() {
 
   return (
     <div className="about-layout">
-      <header className="about-topbar">
-        <h1>About</h1>
-        <p>Product and release information</p>
-      </header>
+      <PageHeader title="About" subtitle="Product and release information" />
 
       <main className="about-content" aria-busy={status === 'loading'}>
         <p className="sr-only" role="status" aria-live="polite">

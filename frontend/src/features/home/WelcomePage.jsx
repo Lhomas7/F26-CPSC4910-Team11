@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useAuth } from '../../auth/AuthContext';
+import PageHeader from '../../app/PageHeader';
 import RoadTruck from '../../components/RoadTruck';
 import './WelcomePage.css';
 
@@ -16,10 +17,7 @@ export default function WelcomePage() {
 
   return (
     <div className="welcome-page">
-      <header className="welcome-heading">
-        <h1>Welcome</h1>
-        <p>Good Driver Incentive Program — safe miles add up to real rewards</p>
-      </header>
+      <PageHeader title="Welcome" subtitle="Good Driver Incentive Program — safe miles add up to real rewards" />
 
       <main className="welcome-content">
         <section className="welcome-hero" aria-labelledby="welcome-title">

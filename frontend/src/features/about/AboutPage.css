@@ -2,24 +2,6 @@
   min-height: 100vh;
 }
 
-.about-topbar {
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
-  min-height: 4rem;
-  padding: .7rem 1.75rem;
-}
-
-.about-topbar h1 {
-  font-size: 1.075rem;
-  margin: 0;
-}
-
-.about-topbar p {
-  color: var(--ink-2);
-  font-size: .75rem;
-  margin: .1rem 0 0;
-}
-
 .about-content {
   max-width: 67.5rem;
   padding: 1.5rem 1.75rem 2.5rem;
@@ -263,8 +245,7 @@
 }
 
 @media (max-width: 53.75rem) {
-  .about-content,
-  .about-topbar {
+  .about-content {
     padding-left: 1rem;
     padding-right: 1rem;
   }

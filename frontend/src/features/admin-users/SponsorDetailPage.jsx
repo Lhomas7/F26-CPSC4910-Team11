@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import { useAuth } from '../../auth/AuthContext';
 import * as api from '../../api';
+import PageHeader from '../../app/PageHeader';
 import './AdminUserDetailPage.css';
 
 function fullName(account) {
@@ -125,7 +126,7 @@ export default function SponsorDetailPage() {
   const name = fullName(account);
   return (
     <div className="sponsor-detail-page">
-      <header className="sponsor-detail-heading"><p><Link to="/users">Users</Link> / {name}</p><h1>Sponsor account</h1></header>
+      <PageHeader title="Sponsor account" breadcrumb={<><Link to="/users">Users</Link> / {name}</>} />
       <main className="sponsor-detail-content">
         <section className="sponsor-detail-card">
           <div className="sponsor-detail-card-head">

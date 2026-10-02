@@ -2,24 +2,6 @@
   min-height: 100%;
 }
 
-.account-heading {
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
-  min-height: 4rem;
-  padding: .7rem 1.75rem;
-}
-
-.account-heading h1 {
-  font-size: 1.075rem;
-  margin: 0;
-}
-
-.account-heading p {
-  color: var(--ink-2);
-  font-size: .75rem;
-  margin: .1rem 0 0;
-}
-
 .account-content {
   display: grid;
   gap: 1rem;
@@ -548,7 +530,6 @@
 }
 
 @media (max-width: 53.75rem) {
-  .account-heading,
   .account-content {
     padding-left: 1rem;
     padding-right: 1rem;

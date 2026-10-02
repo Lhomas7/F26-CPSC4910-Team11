@@ -203,10 +203,61 @@ body {
   background: var(--surface);
   border-bottom: 1px solid var(--line);
   display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
+  gap: 1.25rem;
+  justify-content: space-between;
   min-height: 4rem;
-  padding: .625rem 1.25rem;
+  padding: .65rem 1.5rem;
+}
+
+.app-topbar-page {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-topbar-account {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: .6rem;
+  min-width: 0;
+}
+
+.page-header {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.page-header-copy {
+  min-width: 0;
+}
+
+.page-header h1 {
+  font-size: 1.05rem;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.page-header p,
+.page-header-breadcrumb {
+  color: var(--ink-2);
+  font-size: .72rem;
+  line-height: 1.35;
+  margin: .15rem 0 0;
+}
+
+.page-header-breadcrumb {
+  margin: 0 0 .12rem;
+}
+
+.page-header-breadcrumb a {
+  color: var(--accent);
+}
+
+.page-header-actions {
+  flex: 0 0 auto;
 }
 
 .topbar-user {
@@ -290,6 +341,44 @@ body {
 
   .nav-icon {
     display: none;
+  }
+
+  .app-topbar {
+    align-items: flex-start;
+    padding: .65rem 1rem;
+  }
+
+  .page-header {
+    align-items: flex-start;
+  }
+
+  .page-header p {
+    white-space: normal;
+  }
+
+  .topbar-user {
+    max-width: 8rem;
+  }
+}
+
+@media (max-width: 38rem) {
+  .app-topbar {
+    flex-wrap: wrap;
+    gap: .55rem;
+  }
+
+  .app-topbar-page {
+    flex-basis: 100%;
+    order: 2;
+  }
+
+  .app-topbar-account {
+    margin-left: auto;
+    order: 1;
+  }
+
+  .page-header-actions {
+    align-self: center;
   }
 }
 /* A view-as session must remain unmistakable and easy to exit on every page. */
