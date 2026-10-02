@@ -53,3 +53,22 @@ test('stays wrecked while wrecked is true and recovers when it clears', () => {
   expect(truck).not.toHaveClass('road-truck-wrecked');
   expect(container.querySelector('.road-truck-flame')).not.toBeInTheDocument();
 });
+
+test('sends a fire truck from the end of the road furthest from the wreck', () => {
+  jest.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(400);
+  jest.spyOn(HTMLElement.prototype, 'offsetLeft', 'get').mockReturnValue(50);
+  jest.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(46);
+
+  const { container, rerender } = render(<RoadTruck />);
+  expect(container.querySelector('.road-rescue')).not.toBeInTheDocument();
+
+  rerender(<RoadTruck wrecked />);
+  const rescue = container.querySelector('.road-rescue');
+  expect(rescue).toHaveClass('road-rescue-from-right');
+  expect(rescue).toHaveStyle({ '--wreck-left': '50px', '--wreck-right': '96px' });
+  expect(container.querySelector('.road-truck')).toHaveClass('road-truck-rescue-right');
+
+  rerender(<RoadTruck />);
+  expect(container.querySelector('.road-rescue')).not.toBeInTheDocument();
+  jest.restoreAllMocks();
+});

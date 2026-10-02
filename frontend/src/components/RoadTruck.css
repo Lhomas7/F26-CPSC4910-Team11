@@ -3,6 +3,10 @@
    --stripe-start insets the dashed centre line from the left edge. */
 .road-lane {
   --stripe-start: .375rem;
+  /* Wreck easter egg timing: how long the fire burns and spreads before the
+     fire truck shows up, and how long it takes to drive in. */
+  --rescue-delay: 20s;
+  --rescue-drive: 2.2s;
   --truck-start: 1.125rem;
   --truck-end: calc(100% - 4rem);
   border-top: 1px solid rgb(255 255 255 / 8%);
@@ -178,7 +182,14 @@
 }
 
 .road-truck-flame {
-  animation: road-truck-flame .35s ease-in-out .9s infinite alternate;
+  /* --catch is how far through the wait (0 to 1) this flame lights. Each one
+     flickers, grows a little until the fire truck arrives, then dies down
+     once the hose has been on it for a second. */
+  --catch: 0;
+  animation:
+    road-truck-flame .35s ease-in-out calc(var(--rescue-delay) * var(--catch) + .9s) infinite alternate,
+    road-truck-fire-grow calc(var(--rescue-delay) * (1 - var(--catch)) + var(--rescue-drive)) ease-in calc(var(--rescue-delay) * var(--catch) + .9s) both,
+    road-truck-fire-douse 4s ease-out calc(var(--rescue-delay) + var(--rescue-drive) + 1s) forwards;
   background: radial-gradient(ellipse at 50% 85%, #fff2b3 0 18%, #ffb020 19% 45%, #e5482f 46% 70%, transparent 71%);
   border-radius: 50% 50% 35% 35%;
   height: .9rem;
@@ -191,7 +202,10 @@
 }
 
 .road-truck-plume {
-  animation: road-truck-plume 2.4s ease-out 1s infinite;
+  animation:
+    road-truck-plume 2.4s ease-out 1s infinite,
+    road-truck-smoke-grow calc(var(--rescue-delay) + var(--rescue-drive)) ease-in 1s both,
+    road-truck-smoke-settle 4s ease-out calc(var(--rescue-delay) + var(--rescue-drive) + 1s) forwards;
   background: rgb(150 155 150 / 75%);
   border-radius: 50%;
   height: .55rem;
@@ -202,13 +216,38 @@
   width: .55rem;
 }
 
+/* The fire spreads from the cab end back along the trailer, then jumps to
+   the cab. Slightly different sizes and flicker speeds keep it from looking
+   like copies. */
+.road-truck-flame-c {
+  --catch: .2;
+  animation-duration: .4s, calc(var(--rescue-delay) * (1 - var(--catch)) + var(--rescue-drive)), 4s;
+  height: .8rem;
+  left: 1.05rem;
+  width: .62rem;
+}
+
+.road-truck-flame-b {
+  --catch: .45;
+  animation-duration: .3s, calc(var(--rescue-delay) * (1 - var(--catch)) + var(--rescue-drive)), 4s;
+  left: .45rem;
+}
+
+.road-truck-flame-d {
+  --catch: .7;
+  animation-duration: .38s, calc(var(--rescue-delay) * (1 - var(--catch)) + var(--rescue-drive)), 4s;
+  height: .75rem;
+  left: 2.2rem;
+  width: .55rem;
+}
+
 .road-truck-plume-b {
-  animation-delay: 1.8s;
+  animation-delay: 1.8s, 1s, calc(var(--rescue-delay) + var(--rescue-drive) + 1s);
   left: 1.35rem;
 }
 
 .road-truck-plume-c {
-  animation-delay: 2.6s;
+  animation-delay: 2.6s, 1s, calc(var(--rescue-delay) + var(--rescue-drive) + 1s);
   left: 1.95rem;
 }
 
@@ -245,10 +284,10 @@
 
 @keyframes road-truck-loose-wheel {
   0% { transform: translate(0, 0) rotate(0); }
-  20% { transform: translate(.6rem, -.5rem) rotate(200deg); }
-  40% { transform: translate(1.4rem, 0) rotate(420deg); }
-  55% { transform: translate(1.9rem, -.15rem) rotate(560deg); }
-  100% { transform: translate(3.75rem, 0) rotate(1080deg); }
+  20% { transform: translate(calc(var(--roll) * .6rem), -.5rem) rotate(calc(var(--roll) * 200deg)); }
+  40% { transform: translate(calc(var(--roll) * 1.4rem), 0) rotate(calc(var(--roll) * 420deg)); }
+  55% { transform: translate(calc(var(--roll) * 1.9rem), -.15rem) rotate(calc(var(--roll) * 560deg)); }
+  100% { transform: translate(calc(var(--roll) * 3.75rem), 0) rotate(calc(var(--roll) * 1080deg)); }
 }
 
 @keyframes road-truck-flame {
@@ -256,9 +295,181 @@
   100% { opacity: 1; transform: scale(1.05, 1.15) skewX(5deg); }
 }
 
+@keyframes road-truck-fire-grow {
+  from { scale: .7; }
+  to { scale: 1.45; }
+}
+
+@keyframes road-truck-fire-douse {
+  from { scale: 1.45; }
+  to { scale: .4; }
+}
+
+@keyframes road-truck-smoke-grow {
+  from { scale: 1; }
+  to { scale: 1.4; }
+}
+
+@keyframes road-truck-smoke-settle {
+  from { scale: 1.4; }
+  to { scale: 1; }
+}
+
 @keyframes road-truck-plume {
   0% { opacity: .85; transform: translate(0, 0) scale(.5); }
   100% { opacity: 0; transform: translate(-1.1rem, -1.6rem) scale(2.6); }
+}
+
+/* Rescue: a fire truck drives in from the far end of the road, stops just
+   short of the wreck (positions measured in RoadTruck.jsx) and hoses it down.
+   It's drawn facing right and mirrored when it comes from the right. */
+.road-rescue {
+  --rescue-width: 3.25rem;
+  --rescue-gap: .5rem;
+  height: 1.25rem;
+  position: absolute;
+  top: calc(50% - .625rem);
+  width: var(--rescue-width);
+}
+
+.road-rescue-from-left {
+  animation: road-rescue-from-left var(--rescue-drive) cubic-bezier(.25, .8, .35, 1) var(--rescue-delay) both;
+}
+
+.road-rescue-from-right {
+  animation: road-rescue-from-right var(--rescue-drive) cubic-bezier(.25, .8, .35, 1) var(--rescue-delay) both;
+}
+
+.road-rescue-vehicle {
+  inset: 0;
+  position: absolute;
+}
+
+.road-rescue-from-right .road-rescue-vehicle {
+  transform: scaleX(-1);
+}
+
+.road-rescue-body {
+  background: #d63b2f;
+  border-radius: .125rem;
+  height: .95rem;
+  left: 0;
+  position: absolute;
+  top: .1rem;
+  width: 2.3rem;
+}
+
+/* White band along the side, like the stripe on a real engine. */
+.road-rescue-body::after {
+  background: #f4f5f2;
+  bottom: .2rem;
+  content: '';
+  height: .12rem;
+  left: .15rem;
+  position: absolute;
+  right: .15rem;
+}
+
+.road-rescue-ladder {
+  background: repeating-linear-gradient(to right, #e8ebe7 0 .1rem, transparent .1rem .3rem);
+  border-bottom: 1px solid #e8ebe7;
+  border-top: 1px solid #e8ebe7;
+  height: .22rem;
+  left: .2rem;
+  position: absolute;
+  top: -.08rem;
+  width: 1.9rem;
+}
+
+.road-rescue-cab {
+  background: #d63b2f;
+  border-radius: .125rem .35rem .125rem .125rem;
+  height: .8rem;
+  left: 2.35rem;
+  position: absolute;
+  top: .25rem;
+  width: .9rem;
+}
+
+.road-rescue-window {
+  background: #bfe3f2;
+  border-radius: 0 .2rem 0 0;
+  height: .28rem;
+  left: 2.8rem;
+  position: absolute;
+  top: .33rem;
+  width: .36rem;
+}
+
+.road-rescue-lights {
+  animation: road-rescue-lights .5s steps(1) infinite;
+  background: linear-gradient(to right, #ff3b30 0 50%, #2f7bff 50%);
+  border-radius: .1rem;
+  height: .18rem;
+  left: 2.45rem;
+  position: absolute;
+  top: .07rem;
+  width: .6rem;
+}
+
+.road-rescue-wheel {
+  background: #111;
+  border: 1px solid #555;
+  border-radius: 50%;
+  bottom: -.05rem;
+  height: .42rem;
+  position: absolute;
+  width: .42rem;
+}
+
+.road-rescue-wheel-a {
+  left: .3rem;
+}
+
+.road-rescue-wheel-b {
+  left: 2.6rem;
+}
+
+/* Water arcing from the ladder nozzle onto the wreck once parked. */
+.road-rescue-spray {
+  animation: road-rescue-spray .25s ease-in-out calc(var(--rescue-delay) + var(--rescue-drive)) infinite alternate;
+  border-radius: 100% 100% 0 0;
+  border-top: 3px dotted #8fd3ff;
+  height: .9rem;
+  left: 1.9rem;
+  opacity: 0;
+  position: absolute;
+  top: -.7rem;
+  width: calc(1.35rem + var(--rescue-gap) + 1rem);
+}
+
+/* The loose wheel rolls away from the side the rescue comes from. */
+.road-truck-loose-wheel {
+  --roll: 1;
+}
+
+.road-truck-rescue-right .road-truck-loose-wheel {
+  --roll: -1;
+  left: .1875rem;
+}
+
+@keyframes road-rescue-from-left {
+  from { left: calc(-1 * var(--rescue-width)); }
+  to { left: calc(var(--wreck-left) - var(--rescue-width) - var(--rescue-gap)); }
+}
+
+@keyframes road-rescue-from-right {
+  from { left: 100%; }
+  to { left: calc(var(--wreck-right) + var(--rescue-gap)); }
+}
+
+@keyframes road-rescue-lights {
+  50% { background: linear-gradient(to right, #2f7bff 0 50%, #ff3b30 50%); }
+}
+
+@keyframes road-rescue-spray {
+  from { opacity: .55; transform: translateY(1px); }
+  to { opacity: 1; transform: translateY(-1px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -283,7 +494,24 @@
 
   .road-truck-loose-wheel {
     animation: none;
-    transform: translateX(3.75rem);
+    transform: translateX(calc(var(--roll) * 3.75rem));
+  }
+
+  /* The fire truck is already parked with its lights on and hose running. */
+  .road-rescue-from-left {
+    animation: none;
+    left: calc(var(--wreck-left) - var(--rescue-width) - var(--rescue-gap));
+  }
+
+  .road-rescue-from-right {
+    animation: none;
+    left: calc(var(--wreck-right) + var(--rescue-gap));
+  }
+
+  .road-rescue-lights,
+  .road-rescue-spray {
+    animation: none;
+    opacity: 1;
   }
 
   .road-truck-flame {
