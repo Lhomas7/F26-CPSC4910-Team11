@@ -1,95 +1,15 @@
-from django.urls import path
-
-from .views import (
-    AdminAccountDetailView,
-    AdminImpersonationStartView,
-    AdminImpersonationStopView,
-    AdminDriverDetailView,
-    AdminSponsorDetailView,
-    AdminSponsorCompanyListView,
-    AdminUserListView,
-    CSRFView,
-    ChangePasswordView,
-    DriverRegistrationView,
-    LoginMFARequestCodeView,
-    LoginMFAView,
-    LoginView,
-    LogoutView,
-    MeView,
-    MFABackupCodesRegenerateView,
-    MFADisableView,
-    MFARequestCodeView,
-    MFAResetView,
-    MFASetupView,
-    MFAStatusView,
-    MFAVerifyView,
-    PasswordResetConfirmView,
-    PasswordResetRequestView,
-    SelfProfileView,
-    SponsorMFASettingsView,
-    SponsorRegistrationView,
-)
+from .routes.admin_users import urlpatterns as admin_user_patterns
+from .routes.authentication import urlpatterns as authentication_patterns
+from .routes.mfa import urlpatterns as mfa_patterns
+from .routes.profiles import urlpatterns as profile_patterns
+from .routes.registration import urlpatterns as registration_patterns
 
 app_name = 'accounts'
 
 urlpatterns = [
-    path(
-        'admin/impersonation/<int:user_id>/',
-        AdminImpersonationStartView.as_view(),
-        name='admin-impersonation-start',
-    ),
-    path(
-        'admin/impersonation/stop/',
-        AdminImpersonationStopView.as_view(),
-        name='admin-impersonation-stop',
-    ),
-    path(
-        'admin/sponsor-organizations/',
-        AdminSponsorCompanyListView.as_view(),
-        name='admin-sponsor-company-list',
-    ),
-    path('admin/users/', AdminUserListView.as_view(), name='admin-user-list'),
-    path(
-        'admin/admins/<int:user_id>/',
-        AdminAccountDetailView.as_view(),
-        name='admin-account-detail',
-    ),
-    path(
-        'admin/sponsors/<int:user_id>/',
-        AdminSponsorDetailView.as_view(),
-        name='admin-sponsor-detail',
-    ),
-    path(
-        'admin/drivers/<int:user_id>/',
-        AdminDriverDetailView.as_view(),
-        name='admin-driver-detail',
-    ),
-    path('accounts/driver/', DriverRegistrationView.as_view(), name='driver-register'),
-    path('accounts/sponsor/', SponsorRegistrationView.as_view(), name='sponsor-register'),
-    path('login/', LoginView.as_view(), name='login'),
-    path('login/mfa/', LoginMFAView.as_view(), name='login-mfa'),
-    path('login/mfa/request-code/', LoginMFARequestCodeView.as_view(), name='login-mfa-request-code'),
-    path('logout/', LogoutView.as_view(), name='logout'),
-    path('me/', MeView.as_view(), name='me'),
-    path('csrf/', CSRFView.as_view(), name='csrf'),
-    path('change-password/', ChangePasswordView.as_view(), name='change-password'),
-    path('password-reset/', PasswordResetRequestView.as_view(), name='password-reset'),
-    path(
-        'password-reset/confirm/',
-        PasswordResetConfirmView.as_view(),
-        name='password-reset-confirm',
-    ),
-    path('profile/', SelfProfileView.as_view(), name='self-profile'),
-    path('mfa/status/', MFAStatusView.as_view(), name='mfa-status'),
-    path('mfa/setup/', MFASetupView.as_view(), name='mfa-setup'),
-    path('mfa/verify/', MFAVerifyView.as_view(), name='mfa-verify'),
-    path('mfa/request-code/', MFARequestCodeView.as_view(), name='mfa-request-code'),
-    path('mfa/reset/', MFAResetView.as_view(), name='mfa-reset'),
-    path('mfa/disable/', MFADisableView.as_view(), name='mfa-disable'),
-    path(
-        'mfa/backup-codes/regenerate/',
-        MFABackupCodesRegenerateView.as_view(),
-        name='mfa-backup-codes-regenerate',
-    ),
-    path('sponsor/mfa/settings/', SponsorMFASettingsView.as_view(), name='sponsor-mfa-settings'),
+    *admin_user_patterns,
+    *registration_patterns,
+    *authentication_patterns,
+    *profile_patterns,
+    *mfa_patterns,
 ]

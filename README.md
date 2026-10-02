@@ -32,9 +32,11 @@ This repository is maintained by **CPSC 4910 Team 11**.
 - Shared login flow with role-aware sessions
 - Session authentication with CSRF protection
 - Password changes and password validation
+- Email-based password-reset request and confirmation flow
+- Login-attempt auditing without requiring an existing user record
 - Authenticator-app, email, and SMS MFA support
 - Sponsor MFA enrollment requirements
-- MFA recovery/reset foundations
+- MFA backup codes, recovery, reset, and delivery throttling
 
 ### Profiles
 
@@ -52,6 +54,7 @@ This repository is maintained by **CPSC 4910 Team 11**.
 - Driver and sponsor account detail/edit pages
 - Sponsor assignment and reassignment
 - Account activation and deactivation
+- Audited administrator view-as sessions for driver and sponsor troubleshooting
 - Role-aware access controls and validation
 
 ### Program information and driver management
@@ -61,6 +64,15 @@ This repository is maintained by **CPSC 4910 Team 11**.
 - Sponsor-scoped driver list
 - Driver-to-sponsor linking
 - Driver detail viewing and approval workflow foundations
+
+### Delivery and operations
+
+- Pull-request and `main`-branch CI for Django and React
+- Migration consistency and Django deployment checks
+- Gitleaks repository secret scanning
+- Docker Compose deployment with Django/Gunicorn and Caddy
+- EC2 deployment through a protected GitHub production environment
+- Database-aware API health check and post-deployment SPA asset smoke tests
 
 ## Architecture
 
@@ -86,25 +98,56 @@ flowchart LR
 
 ```text
 F26-CPSC4910-Team11/
+├── .github/
+│   └── workflows/
+│       └── ci-cd.yml             # Automated test, build, and deployment workflow
 ├── backend/
-│   ├── about_page/       # Release/About content
-│   ├── accounts/         # Authentication, profiles, MFA, admin accounts
-│   ├── config/           # Django project configuration
-│   ├── drivers/          # Driver data and sponsor-facing driver API
-│   ├── sql/              # Development/admin SQL helpers
+│   ├── about_page/               # Release/About model, API, tests, and seed command
+│   ├── accounts/                 # Authentication, profiles, MFA, and administration
+│   │   ├── migrations/           # Account schema history
+│   │   ├── routes/               # Feature-focused URL definitions
+│   │   ├── serializers/          # Feature-focused request/response validation
+│   │   ├── services/             # MFA, delivery, audit, notification, and reset logic
+│   │   ├── tests/                # Feature-focused backend tests and shared helpers
+│   │   └── views/                # Feature-focused API views
+│   ├── config/                   # Settings, root URLs, health check, and AWS secrets
+│   ├── drivers/                  # Driver data and sponsor-facing driver API
+│   ├── sql/                      # Development and administrative SQL helpers
 │   ├── .env.example
 │   ├── manage.py
 │   └── requirements.txt
+├── docker/
+│   ├── Caddyfile                 # Reverse proxy and static/media serving
+│   ├── entrypoint.sh             # Container startup and migration entrypoint
+│   └── web.Dockerfile            # Production application image
 ├── frontend/
 │   ├── public/
 │   ├── src/
-│   │   ├── auth/
-│   │   ├── components/
-│   │   └── config/
+│   │   ├── api/                  # Shared client plus account, auth, and driver APIs
+│   │   ├── app/                  # Application routes, shell, and layout
+│   │   ├── auth/                 # Authentication context and session state
+│   │   ├── components/           # Shared visual components
+│   │   ├── data/                 # Shared static/reference data
+│   │   ├── features/
+│   │   │   ├── about/            # About and release information
+│   │   │   ├── accounts/         # Self-profile, password, and MFA management
+│   │   │   ├── admin-users/      # User directory, creation, and detail pages
+│   │   │   ├── authentication/   # Login and password-reset flows
+│   │   │   ├── drivers/          # Sponsor-facing driver workflow
+│   │   │   └── home/             # Public welcome page
+│   │   └── utils/                # Shared frontend validation utilities
 │   ├── .env.example
-│   └── package.json
+│   ├── package.json
+│   └── package-lock.json
 ├── docs/
+│   ├── ACCOUNT_INPUT_VALIDATION.md
+│   ├── DATABASE_ERD.md
+│   ├── DEPLOYMENT.md
 │   └── PROJECT_TODO.md
+├── .dockerignore
+├── .gitignore
+├── docker-compose.yml
+├── THIRD_PARTY_NOTICES.md
 └── README.md
 ```
 
@@ -126,16 +169,16 @@ Run these commands from PowerShell.
 
 ```powershell
 git clone <repository-url>
-Set-Location "F26-CPSC4910-Team11"
+cd "F26-CPSC4910-Team11"
 ```
 
 ### 2. Create the backend virtual environment
 
 ```powershell
-Set-Location backend
+cd backend
 py -m venv venv
 .\venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
@@ -189,57 +232,137 @@ python manage.py seed_about_page
 Open another PowerShell terminal:
 
 ```powershell
-Set-Location "<repository-path>\frontend"
-Copy-Item .env.example .env
+cd "<repository-path>\frontend"
 npm install
 ```
 
 Use `npm ci` instead of `npm install` in CI or when reproducing the exact lockfile environment.
 
+The frontend does not require a `.env` file for the standard local setup. It
+defaults to `http://localhost:8000/api`. If Django runs at a different address,
+create the optional file from the template before starting React:
+
+```powershell
+Copy-Item .env.example .env
+```
+
 ## Local setup on macOS or Linux
 
+Run these commands from Terminal. Start from the directory where the repository
+should be stored:
+
 ```bash
+git clone <repository-url>
+cd F26-CPSC4910-Team11
 cd backend
 python3 -m venv venv
 source venv/bin/activate
-python -m pip install --upgrade pip
+pip install --upgrade pip
 pip install -r requirements.txt
 cp .env.example .env
+```
+
+Update `backend/.env` using the same database and MFA guidance from the Windows
+section. Generate a local Fernet key with:
+
+```bash
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+Then apply the database migrations:
+
+```bash
 python manage.py migrate
 python manage.py check --database default
 ```
 
-In another terminal:
+Optionally seed the About page:
 
 ```bash
-cd frontend
-cp .env.example .env
+python manage.py seed_about_page
+```
+
+Open another Terminal window and install the frontend:
+
+```bash
+cd <repository-path>/frontend
 npm install
 ```
 
-Update both `.env` files with the appropriate local or privately supplied shared-environment values.
+Use `npm ci` instead of `npm install` in CI or when reproducing the exact
+lockfile environment.
+
+The backend `.env` is required. The frontend `.env` is optional unless the API
+is not served from `http://localhost:8000/api`. For a different API address:
+
+```bash
+cp .env.example .env
+```
 
 ## Launching the application
 
-### Backend
+Run the backend and frontend in two separate terminals. The commands below are
+safe to repeat after pulling new changes; `pip` and `npm` will only install
+dependencies that are missing or have changed.
 
-From `backend/` with the virtual environment active:
+### Terminal 1: backend on Windows
+
+From the repository root in PowerShell:
 
 ```powershell
+cd backend
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python manage.py check
+python manage.py migrate
+python manage.py runserver
+```
+
+### Terminal 1: backend on macOS or Linux
+
+From the repository root:
+
+```bash
+cd backend
+source venv/bin/activate
+pip install -r requirements.txt
+python manage.py check
+python manage.py migrate
 python manage.py runserver
 ```
 
 The API is available at `http://localhost:8000/api/`.
 
-### Frontend
+The backend requires `backend/.env`. Copy `backend/.env.example` when setting up
+a new checkout and replace its placeholders with local or privately supplied
+values. Never commit the populated file.
 
-From `frontend/` in a separate terminal:
+### Terminal 2: frontend on Windows
+
+From the repository root in a separate PowerShell terminal:
 
 ```powershell
+cd frontend
+npm install
+npm start
+```
+
+### Terminal 2: frontend on macOS or Linux
+
+From the repository root in a separate Terminal window:
+
+```bash
+cd frontend
+npm install
 npm start
 ```
 
 The React development server normally opens `http://localhost:3000`.
+
+No `frontend/.env` file is needed when the backend uses the default
+`http://localhost:8000/api` address. To use another API address, copy
+`frontend/.env.example` to `frontend/.env`, set `REACT_APP_API_URL`, and restart
+the React development server.
 
 If port 3000 is occupied, React may offer another port such as 3001. Django currently trusts the configured development origins, so either stop the old frontend process or add the alternate origin to the local CORS/CSRF configuration before testing authenticated writes.
 
@@ -247,7 +370,7 @@ If port 3000 is occupied, React may offer another port such as 3001. Django curr
 
 ### Backend
 
-From `backend/`:
+From `backend/` on Windows PowerShell:
 
 ```powershell
 $env:DB_ENGINE = "sqlite"
@@ -256,13 +379,28 @@ python manage.py makemigrations --check --dry-run
 python manage.py check
 ```
 
+From `backend/` on macOS or Linux:
+
+```bash
+DB_ENGINE=sqlite python manage.py test
+DB_ENGINE=sqlite python manage.py makemigrations --check --dry-run
+DB_ENGINE=sqlite python manage.py check
+```
+
 ### Frontend
 
-From `frontend/`:
+From `frontend/` on Windows PowerShell:
 
 ```powershell
 $env:CI = "true"
 npm test -- --watchAll=false --runInBand
+npm run build
+```
+
+From `frontend/` on macOS or Linux:
+
+```bash
+CI=true npm test -- --watchAll=false --runInBand
 npm run build
 ```
 
@@ -278,8 +416,16 @@ Generated build output is not source code and should not be committed.
 After pulling model or migration changes:
 
 ```powershell
-Set-Location backend
+# Windows PowerShell
+cd backend
 .\venv\Scripts\Activate.ps1
+python manage.py migrate
+```
+
+```bash
+# macOS or Linux
+cd backend
+source venv/bin/activate
 python manage.py migrate
 ```
 
@@ -324,7 +470,10 @@ Use [`frontend/.env.example`](frontend/.env.example):
 REACT_APP_API_URL=http://localhost:8000/api
 ```
 
-React variables are embedded at build time. Never place secrets in frontend environment variables.
+This file is optional because the same URL is the application's built-in local
+default. Restart `npm start` after changing it. React variables are embedded at
+build time, exposed to anyone using the browser application, and must never
+contain passwords, API secrets, or private credentials.
 
 ## Git and release workflow
 
@@ -356,9 +505,13 @@ See [`docs/PROJECT_TODO.md`](docs/PROJECT_TODO.md) for the detailed engineering,
 ## Documentation
 
 - [Engineering backlog and project TODO](docs/PROJECT_TODO.md)
+- [Account input validation and normalization](docs/ACCOUNT_INPUT_VALIDATION.md)
+- [Current database ERD](docs/DATABASE_ERD.md)
+- [Deployment, secrets, Docker, and CI/CD](docs/DEPLOYMENT.md)
+- [Frontend-specific development guide](frontend/README.md)
 - [Backend environment template](backend/.env.example)
 - [Frontend environment template](frontend/.env.example)
-- API and data documentation are planned under `docs/`.
+- API schema and a full data dictionary remain planned under `docs/`.
 - Lucidchart is the collaborative source for DFDs, ERDs, and context diagrams; exported versions should be committed under `docs/diagrams/`.
 
 ## Security notes
@@ -380,6 +533,25 @@ See [`docs/PROJECT_TODO.md`](docs/PROJECT_TODO.md) for the detailed engineering,
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\venv\Scripts\Activate.ps1
 ```
+
+</details>
+
+<details>
+<summary><strong>macOS cannot build or install mysqlclient</strong></summary>
+
+Install the MySQL client libraries and `pkg-config` with Homebrew, reactivate the
+virtual environment, and retry the requirements installation:
+
+```bash
+brew install mysql-client pkg-config
+export PKG_CONFIG_PATH="$(brew --prefix mysql-client)/lib/pkgconfig"
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+Add the `PKG_CONFIG_PATH` export to the developer's shell profile if it is needed
+in every new Terminal session. This is a local machine setting and does not
+belong in the repository.
 
 </details>
 
@@ -417,4 +589,4 @@ Another process is using port 3000. Stop that process and restart React, or upda
 
 ---
 
-_Last updated: 2026-09-23_
+_Last updated: 2026-10-01_

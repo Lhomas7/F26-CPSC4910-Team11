@@ -1,0 +1,134 @@
+.welcome-heading {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  min-height: 4rem;
+  padding: .7rem 1.75rem;
+}
+
+.welcome-heading h1 {
+  font-size: 1.075rem;
+  margin: 0;
+}
+
+.welcome-heading p {
+  color: var(--ink-2);
+  font-size: .75rem;
+  margin: .1rem 0 0;
+}
+
+.welcome-content {
+  max-width: 56rem;
+  padding: 1.5rem 1.75rem 2.5rem;
+}
+
+.welcome-hero {
+  background: var(--road);
+  border: 1px solid var(--line);
+  border-radius: .75rem;
+  color: #f4f5f2;
+  overflow: hidden;
+  padding: 1.75rem 1.875rem 0;
+}
+
+.welcome-hero h2 {
+  font-size: clamp(1.5rem, 3.4vw, 2.125rem);
+  line-height: 1.15;
+  margin: 0;
+  max-width: 22ch;
+}
+
+.welcome-hero > p {
+  color: #c9cec9;
+  font-size: .95rem;
+  margin: .625rem 0 0;
+  max-width: 62ch;
+}
+
+.welcome-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .625rem;
+  margin-top: 1.25rem;
+}
+
+.welcome-button {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .5rem;
+  color: var(--ink);
+  display: inline-flex;
+  font-size: .875rem;
+  font-weight: 600;
+  padding: .625rem .875rem;
+  text-decoration: none;
+}
+
+.welcome-button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+.welcome-button.primary:hover {
+  background: var(--accent-hover, var(--accent));
+}
+
+.welcome-button:not(.primary):hover {
+  background: var(--surface-2);
+}
+
+.welcome-link {
+  align-self: center;
+  color: #dfe3df;
+  font-size: .8rem;
+}
+
+.welcome-link:hover {
+  text-decoration: underline;
+}
+
+.welcome-perks {
+  display: grid;
+  gap: .625rem;
+  list-style: none;
+  margin: 1.5rem 0 0;
+  padding: 0;
+}
+
+.welcome-perks li {
+  align-items: baseline;
+  color: #dfe3df;
+  display: flex;
+  font-size: .875rem;
+  gap: .625rem;
+}
+
+.welcome-perks li::before {
+  background: var(--stripe);
+  border-radius: .125rem;
+  content: '';
+  flex-shrink: 0;
+  height: 4px;
+  transform: translateY(-3px);
+  width: 14px;
+}
+
+.welcome-lane {
+  margin: 1.5rem -1.875rem 0;
+}
+
+@media (max-width: 53.75rem) {
+  .welcome-heading,
+  .welcome-content {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .welcome-hero {
+    padding: 1.375rem 1.25rem 0;
+  }
+
+  .welcome-lane {
+    margin: 1.25rem -1.25rem 0;
+  }
+}

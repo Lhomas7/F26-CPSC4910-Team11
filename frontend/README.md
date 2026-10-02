@@ -1,70 +1,73 @@
-# Getting Started with Create React App
+# Good Driver frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This directory contains the React frontend for the Good Driver Incentive
+Program. The repository-level [`README.md`](../README.md) is the authoritative
+source for full-stack setup, environment configuration, database instructions,
+and the Windows/macOS launch workflow.
 
-## Available Scripts
+## Requirements
 
-In the project directory, you can run:
+- Node.js 20 is used by CI.
+- npm and the checked-in `package-lock.json` manage dependencies.
+- The Django API normally runs at `http://localhost:8000/api`.
 
-### `npm start`
+## Setup and launch
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+The commands are identical in PowerShell, macOS Terminal, and Linux shells:
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+```shell
+cd frontend
+npm install
+npm start
+```
 
-### `npm test`
+The development server normally opens `http://localhost:3000`.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+`frontend/.env` is optional. The API client defaults to
+`http://localhost:8000/api`. To use another backend address:
 
-### `npm run build`
+```shell
+cp .env.example .env
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+PowerShell users can use the equivalent copy command:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```powershell
+Copy-Item .env.example .env
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Set `REACT_APP_API_URL` in that file and restart `npm start`. Never store
+passwords, database credentials, or private keys in a frontend environment
+variable; React embeds these values in browser-delivered code.
 
-### `npm run eject`
+## Tests and production build
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Run the same non-watch test command used by CI:
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```shell
+npm test -- --watchAll=false --runInBand
+npm run build
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+CI sets `CI=true` and builds with `REACT_APP_API_URL=/api`. The generated
+`frontend/build/` directory is deployment output and should not be committed.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Source organization
 
-## Learn More
+```text
+src/
+├── api/              # Shared client and domain endpoint modules
+├── app/              # Routing, application shell, and layout
+├── auth/             # Session/authentication context
+├── components/       # Shared cross-feature components
+├── data/             # Shared reference data
+├── features/         # Feature-owned pages, tests, and styles
+└── utils/            # Shared validation and utility functions
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Feature tests and styles should remain beside their implementations. Shared API
+transport belongs in `src/api/client.js`; domain endpoint functions belong in
+the corresponding module under `src/api/`.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+See [`docs/DEPLOYMENT.md`](../docs/DEPLOYMENT.md) for the Docker Compose, Caddy,
+EC2, and GitHub Actions deployment path.

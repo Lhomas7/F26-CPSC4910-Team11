@@ -5,18 +5,38 @@
 
 ## Contents
 
-- [How to use this document](#how-to-use-this-document)
-- [P0 — Team workflow and release safety](#p0--team-workflow-and-release-safety)
-- [P0 — GitHub Actions, secrets, and deployment](#p0--github-actions-secrets-and-deployment)
-- [P0 — Security and production configuration](#p0--security-and-production-configuration)
-- [P1 — Database documentation and design](#p1--database-documentation-and-design)
-- [P1 — Input normalization and auditability](#p1--input-normalization-and-auditability)
-- [P1 — Application architecture](#p1--application-architecture)
-- [P1 — Sponsor organization management](#p1--sponsor-organization-management)
-- [P1 — Quality standards](#p1--quality-standards)
-- [P2 — Product roadmap](#p2--product-roadmap)
-- [Recommended execution order](#recommended-execution-order)
-- [Definition of done](#definition-of-done)
+- [Good Driver Incentive Program — Project TODO](#good-driver-incentive-program--project-todo)
+	- [Contents](#contents)
+	- [How to use this document](#how-to-use-this-document)
+	- [P0 — Team workflow and release safety](#p0--team-workflow-and-release-safety)
+		- [Branching and pull requests](#branching-and-pull-requests)
+		- [Commit format](#commit-format)
+		- [Professor-required sprint tags](#professor-required-sprint-tags)
+		- [Git releases and prior-sprint demos](#git-releases-and-prior-sprint-demos)
+		- [Release flow](#release-flow)
+	- [P0 — GitHub Actions, secrets, and deployment](#p0--github-actions-secrets-and-deployment)
+		- [Repository and environment secrets](#repository-and-environment-secrets)
+		- [Continuous integration workflow](#continuous-integration-workflow)
+		- [Release workflow](#release-workflow)
+		- [Deployment workflow](#deployment-workflow)
+		- [Production runtime](#production-runtime)
+	- [P0 — Security and production configuration](#p0--security-and-production-configuration)
+	- [P1 — Database documentation and design](#p1--database-documentation-and-design)
+		- [Diagrams](#diagrams)
+		- [Data dictionary](#data-dictionary)
+		- [Schema review and refactoring](#schema-review-and-refactoring)
+	- [P1 — Input normalization and auditability](#p1--input-normalization-and-auditability)
+		- [Input normalization](#input-normalization)
+		- [Audit logging](#audit-logging)
+	- [P1 — Application architecture](#p1--application-architecture)
+		- [Frontend reorganization](#frontend-reorganization)
+		- [Application logo and browser metadata](#application-logo-and-browser-metadata)
+		- [Backend reorganization](#backend-reorganization)
+	- [P1 — Sponsor organization management](#p1--sponsor-organization-management)
+	- [P1 — Quality standards](#p1--quality-standards)
+	- [P2 — Product roadmap](#p2--product-roadmap)
+	- [Recommended execution order](#recommended-execution-order)
+	- [Definition of done](#definition-of-done)
 
 ## How to use this document
 
@@ -183,20 +203,20 @@ Proposed secrets and variables:
 
 ### Continuous integration workflow
 
-- [ ] Add `.github/workflows/ci.yml`.
-- [ ] Trigger CI for pull requests and pushes to `main`.
-- [ ] Install backend dependencies in a clean environment.
-- [ ] Run Django system checks.
-- [ ] Ensure no migrations are missing:
+- [x] Add `.github/workflows/ci-cd.yml`.
+- [x] Trigger CI for pull requests and pushes to `main`.
+- [x] Install backend dependencies in a clean environment.
+- [x] Run Django system checks.
+- [x] Ensure no migrations are missing:
 
   ```powershell
   python manage.py makemigrations --check --dry-run
   ```
 
-- [ ] Run backend tests against an isolated test database.
-- [ ] Install frontend dependencies with `npm ci`.
-- [ ] Run frontend tests in non-watch mode.
-- [ ] Produce a frontend production build.
+- [x] Run backend tests against an isolated test database.
+- [x] Install frontend dependencies with `npm ci`.
+- [x] Run frontend tests in non-watch mode.
+- [x] Produce a frontend production build.
 - [ ] Add linting and formatting checks.
 - [ ] Add dependency and secret scanning.
 - [ ] Upload test/coverage reports when a job fails.
@@ -215,24 +235,24 @@ Proposed secrets and variables:
 
 ### Deployment workflow
 
-- [ ] Add `.github/workflows/deploy.yml` or integrate deployment into the release workflow.
+- [x] Integrate EC2/Docker Compose deployment into `.github/workflows/ci-cd.yml`.
 - [ ] Deploy to staging first.
-- [ ] Use GitHub environments for staging and production.
+- [x] Use a GitHub environment for the current production deployment.
 - [ ] Require manual approval before production.
-- [ ] Apply Django migrations with clear failure handling.
-- [ ] Collect static files.
-- [ ] Build and deploy the React frontend.
-- [ ] Configure the environment-specific API URL.
-- [ ] Run post-deployment smoke tests.
+- [x] Apply Django migrations with clear failure handling.
+- [x] Collect static files.
+- [x] Build and deploy the React frontend.
+- [x] Configure the environment-specific API URL.
+- [x] Run post-deployment API and SPA smoke tests.
 - [ ] Record the deployed release tag and commit SHA.
 - [ ] Document rollback to the previous release.
 - [ ] Verify database restore procedures before relying on automated deployment.
 
 ### Production runtime
 
-- [ ] Select a supported production Django server such as Gunicorn or Waitress.
-- [ ] Add a health-check endpoint.
-- [ ] Decide where uploaded profile pictures will persist.
+- [x] Run Django with Gunicorn behind Caddy.
+- [x] Add a database-aware health-check endpoint at `/api/health/`.
+- [x] Persist uploaded profile pictures in the current host's Docker named volume.
 - [ ] Configure HTTPS and secure cookies.
 - [ ] Configure application and deployment logs.
 - [ ] Confirm RDS backups can actually be restored.
@@ -242,14 +262,16 @@ Proposed secrets and variables:
 
 ## P0 — Security and production configuration
 
-The repository currently contains development-oriented Django settings. These must be corrected before production deployment.
+The repository now has environment-driven production hardening. The remaining
+items track operational verification and separation that cannot be guaranteed by
+settings code alone.
 
-- [ ] Move Django's `SECRET_KEY` to an environment variable.
-- [ ] Make `DEBUG` environment-controlled and set it to `False` in production.
-- [ ] Configure production `ALLOWED_HOSTS`.
-- [ ] Configure environment-specific CORS and CSRF trusted origins.
+- [x] Move Django's `SECRET_KEY` to an environment variable.
+- [x] Make `DEBUG` environment-controlled and default it to `False`.
+- [x] Configure `ALLOWED_HOSTS` from the environment.
+- [x] Configure CORS and CSRF trusted origins from the environment.
 - [ ] Separate development, test, staging, and production settings.
-- [ ] Run Django's deployment checks:
+- [x] Run Django's deployment checks in CI:
 
   ```powershell
   python manage.py check --deploy
@@ -286,8 +308,8 @@ The repository currently contains development-oriented Django settings. These mu
   - Points transactions
   - Catalog and purchasing
   - Reports and auditing
-- [ ] Generate an ERD from the actual models/database.
-- [ ] Verify every relationship against current Django migrations.
+- [x] Generate `docs/DATABASE_ERD.md` from the actual models/database.
+- [x] Verify every documented relationship against current Django migrations.
 - [ ] Maintain diagrams collaboratively in Lucidchart.
 - [ ] Commit exported PDF or PNG versions under `docs/diagrams/`.
 - [ ] Add the diagram revision date and matching release/tag.
@@ -324,8 +346,10 @@ Initial models to document:
 - [ ] `Driver`
 - [ ] `MFASettings`
 - [ ] `MFACode`
+- [ ] `MFABackupCode`
 - [ ] `LoginAttempt`
 - [ ] `DriverNotification`
+- [ ] `AdminImpersonationEvent`
 - [ ] `AboutPageRelease`
 - [ ] Future points, catalog, order, and audit models
 
@@ -401,32 +425,37 @@ React is not traditional MVC. Organize the frontend by feature while separating 
 ```text
 frontend/src/
 ├── api/
+│   ├── index.js
 │   ├── client.js
 │   ├── accounts.js
-│   ├── drivers.js
-│   └── sponsors.js
+│   ├── adminUsers.js
+│   ├── authentication.js
+│   └── drivers.js
 ├── app/
 │   ├── AppLayout.jsx
+│   ├── AppLayout.css
 │   └── AppRoutes.jsx
-├── auth/
-├── components/
-│   ├── common/
-│   ├── forms/
-│   └── layout/
+├── auth/                     # Session and authentication context
+├── components/               # Shared cross-feature UI such as RoadTruck
+├── data/                     # Shared reference data
 ├── features/
 │   ├── about/
 │   ├── accounts/
+│   ├── admin-users/
 │   ├── authentication/
 │   ├── drivers/
-│   └── sponsors/
-├── hooks/
-├── styles/
+│   └── home/
 └── utils/
 ```
 
-- [ ] Break `App.js` into routing and layout modules.
-- [ ] Split `config/api.js` by domain.
-- [ ] Place each feature page beside its tests and styles.
+This tree reflects the current repository. Add `hooks/`, shared style-system
+directories (`/common/`, `/forms/`, `/layout/` under `components/` AND/OR a `styles/` directory), or new feature directories only when implemented code needs them (such as `sponsors/`).
+
+- [x] Break `App.js` into routing and layout modules.
+- [x] Split the legacy `config/api.js` module into a shared client and domain modules.
+- [x] Place each feature page beside its tests and styles.
+- [ ] Rename the legacy combined `Drivers.jsx` module into separate list and detail pages.
+- [ ] Add feature entry points where they improve import readability without hiding ownership.
 - [ ] Extract the shared driver/sponsor admin-account detail UI.
 - [ ] Extract reusable loading, error, forbidden, empty, and not-found states.
 - [ ] Extract reusable form fields and field-error components.
@@ -454,8 +483,10 @@ frontend/src/
 
 ### Backend reorganization
 
-- [ ] Split account serializers by authentication, self-profile, admin management, and MFA.
-- [ ] Split account views and URL modules by feature.
+- [x] Split account serializers by registration, authentication, self-profile/passwords, admin management, and MFA.
+- [x] Split account views by registration, authentication/password recovery, self-profile, admin management/impersonation, and MFA.
+- [x] Split account URL modules by feature while preserving public route names.
+- [x] Split account tests into feature-focused modules while preserving Django test discovery.
 - [ ] Move multi-model business rules into service functions.
 - [ ] Standardize API names and error responses.
 - [ ] Add API versioning such as `/api/v1/` before external consumers depend on current paths.
@@ -573,4 +604,4 @@ A story is complete only when all applicable items are satisfied:
 
 ---
 
-_Last reviewed: 2026-09-23_
+_Last reviewed: 2026-10-01_

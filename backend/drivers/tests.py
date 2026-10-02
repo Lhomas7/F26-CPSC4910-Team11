@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from accounts.models import SponsorAccount, SponsorCompany
-from accounts.tests import enroll_totp
+from accounts.tests.common import enroll_totp
 
 from .models import Driver
 

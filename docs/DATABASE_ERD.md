@@ -1,6 +1,9 @@
 # Good Driver Incentive Program Database ERD
 
-This document reflects the tables, columns, keys, and relationships currently deployed in `Team11_DB`. It is based on the MySQL Workbench schema exports and the corresponding Django models and migrations.
+This document reflects the tables, columns, keys, and relationships defined by
+the repository's current Django models and migrations. It began with MySQL
+Workbench exports from `Team11_DB` and has been updated for subsequent migrations;
+run `python manage.py migrate` to bring an environment to this schema.
 
 ## Application data model
 
@@ -92,6 +95,16 @@ erDiagram
         boolean successful
     }
 
+    ACCOUNTS_ADMINIMPERSONATIONEVENT {
+        bigint id PK
+        varchar target_role
+        varchar action
+        varchar ip_address "nullable"
+        datetime created_at
+        int admin_id FK "nullable"
+        int target_id FK "nullable"
+    }
+
     ABOUT_PAGE_ABOUTPAGERELEASE {
         bigint id PK
         smallint team_number
@@ -108,16 +121,18 @@ erDiagram
     AUTH_USER ||--o| ACCOUNTS_MFASETTINGS : "has MFA settings"
     AUTH_USER ||--o{ ACCOUNTS_MFACODE : "receives MFA codes"
     AUTH_USER ||--o{ ACCOUNTS_MFABACKUPCODE : "has backup codes"
+    AUTH_USER o|--o{ ACCOUNTS_ADMINIMPERSONATIONEVENT : "starts view-as events"
+    AUTH_USER o|--o{ ACCOUNTS_ADMINIMPERSONATIONEVENT : "is view-as target"
     ACCOUNTS_SPONSORCOMPANY ||--o{ ACCOUNTS_SPONSORACCOUNT : "employs"
     ACCOUNTS_SPONSORCOMPANY o|--o{ DRIVERS_DRIVER : "sponsors"
     DRIVERS_DRIVER ||--o{ ACCOUNTS_DRIVERNOTIFICATION : "receives"
 ```
 
-`accounts_loginattempt` deliberately stores a submitted username rather than a foreign key so failed attempts for nonexistent usernames can be recorded. `accounts_mfabackupcode` rows are one-time-use: `used_at` is set the moment a code is consumed and the full set is replaced (old rows deleted) whenever backup codes are regenerated or every MFA method is disabled. `about_page_aboutpagerelease` is currently independent of the other application tables.
+`accounts_loginattempt` deliberately stores a submitted username rather than a foreign key so failed attempts for nonexistent usernames can be recorded. `accounts_mfabackupcode` rows are one-time-use: `used_at` is set the moment a code is consumed and the full set is replaced (old rows deleted) whenever backup codes are regenerated or every MFA method is disabled. `accounts_adminimpersonationevent` is an append-only view-as audit record; its administrator and target references become null rather than deleting the event when an account is removed. `about_page_aboutpagerelease` is currently independent of the other application tables.
 
 ## Complete physical database
 
-This view adds Django's authorization, administration, migration, content-type, and session infrastructure. It represents all 19 tables currently present in the database.
+This view adds Django's authorization, administration, migration, content-type, and session infrastructure. It represents all 20 tables defined by the current Django migrations.
 
 ```mermaid
 erDiagram
@@ -265,6 +280,16 @@ erDiagram
         boolean successful
     }
 
+    ACCOUNTS_ADMINIMPERSONATIONEVENT {
+        bigint id PK
+        varchar target_role
+        varchar action
+        varchar ip_address "nullable"
+        datetime created_at
+        int admin_id FK "nullable"
+        int target_id FK "nullable"
+    }
+
     ABOUT_PAGE_ABOUTPAGERELEASE {
         bigint id PK
         smallint team_number
@@ -281,6 +306,8 @@ erDiagram
     AUTH_USER ||--o| ACCOUNTS_MFASETTINGS : "has MFA settings"
     AUTH_USER ||--o{ ACCOUNTS_MFACODE : "receives MFA codes"
     AUTH_USER ||--o{ ACCOUNTS_MFABACKUPCODE : "has backup codes"
+    AUTH_USER o|--o{ ACCOUNTS_ADMINIMPERSONATIONEVENT : "starts view-as events"
+    AUTH_USER o|--o{ ACCOUNTS_ADMINIMPERSONATIONEVENT : "is view-as target"
     ACCOUNTS_SPONSORCOMPANY ||--o{ ACCOUNTS_SPONSORACCOUNT : "employs"
     ACCOUNTS_SPONSORCOMPANY o|--o{ DRIVERS_DRIVER : "sponsors"
     DRIVERS_DRIVER ||--o{ ACCOUNTS_DRIVERNOTIFICATION : "receives"
@@ -325,3 +352,7 @@ The following proposed entities from the earlier WIP diagram are not currently d
 - Audit user
 
 They should be maintained separately in a future-state or planned-schema diagram until corresponding Django models and migrations are implemented.
+
+---
+
+_Last reviewed against Django models and migrations: 2026-10-01._
