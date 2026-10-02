@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
+import { FireTruck, Flame, Impact, SemiTruck, Smoke, Wheel } from './assets';
 import './RoadTruck.css';
 
 // Matches the length of the road-truck-crash animation in RoadTruck.css.
@@ -57,29 +58,25 @@ export default function RoadTruck({ mode = 'loop', arrived = false, crashKey = 0
     <div className={`road-lane ${className}`.trim()} aria-hidden="true" ref={laneRef}>
       <div className={truckClasses} ref={truckRef}>
         <span className="road-truck-body">
-          <span className="road-truck-trailer" />
-          <span className="road-truck-cab" />
-          <span className="road-truck-wheel road-truck-wheel-a" />
-          <span className="road-truck-wheel road-truck-wheel-b" />
-          <span className="road-truck-wheel road-truck-wheel-c" />
+          <SemiTruck />
         </span>
-        {(crashed || wrecked) && <span className="road-truck-impact" />}
+        {(crashed || wrecked) && <Impact className="road-truck-impact" />}
         {crashed && !wrecked && (
           <>
-            <span className="road-truck-smoke road-truck-smoke-a" />
-            <span className="road-truck-smoke road-truck-smoke-b" />
+            <Smoke className="road-truck-smoke road-truck-smoke-a" />
+            <Smoke className="road-truck-smoke road-truck-smoke-b" />
           </>
         )}
         {wrecked && (
           <>
-            <span className="road-truck-loose-wheel" />
-            <span className="road-truck-flame" />
-            <span className="road-truck-flame road-truck-flame-b" />
-            <span className="road-truck-flame road-truck-flame-c" />
-            <span className="road-truck-flame road-truck-flame-d" />
-            <span className="road-truck-plume road-truck-plume-a" />
-            <span className="road-truck-plume road-truck-plume-b" />
-            <span className="road-truck-plume road-truck-plume-c" />
+            <Wheel className="road-truck-loose-wheel" />
+            <Flame className="road-truck-flame road-truck-flame-a" />
+            <Flame className="road-truck-flame road-truck-flame-b" />
+            <Flame className="road-truck-flame road-truck-flame-c" scale={0.88} />
+            <Flame className="road-truck-flame road-truck-flame-d" scale={0.8} />
+            <Smoke loop className="road-truck-plume road-truck-plume-a" scale={1.1} />
+            <Smoke loop className="road-truck-plume road-truck-plume-b" scale={1.1} />
+            <Smoke loop className="road-truck-plume road-truck-plume-c" scale={1.1} />
           </>
         )}
       </div>
@@ -88,16 +85,7 @@ export default function RoadTruck({ mode = 'loop', arrived = false, crashKey = 0
           className={`road-rescue road-rescue-from-${rescue.side}`}
           style={{ '--wreck-left': `${rescue.wreckLeft}px`, '--wreck-right': `${rescue.wreckRight}px` }}
         >
-          <span className="road-rescue-vehicle">
-            <span className="road-rescue-body" />
-            <span className="road-rescue-ladder" />
-            <span className="road-rescue-cab" />
-            <span className="road-rescue-window" />
-            <span className="road-rescue-lights" />
-            <span className="road-rescue-wheel road-rescue-wheel-a" />
-            <span className="road-rescue-wheel road-rescue-wheel-b" />
-            <span className="road-rescue-spray" />
-          </span>
+          <FireTruck facing={rescue.side === 'right' ? 'left' : 'right'} spraying />
         </div>
       )}
     </div>

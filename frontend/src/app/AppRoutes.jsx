@@ -14,6 +14,7 @@ import ResetPasswordPage from '../features/authentication/ResetPasswordPage';
 import { PrivacyPage, TermsPage } from '../features/legal/LegalPage';
 import { DriverDetail, DriverList } from '../features/drivers/Drivers';
 import WelcomePage from '../features/home/WelcomePage';
+import PlaygroundPage from '../features/playground/PlaygroundPage';
 import { AppLayout } from './AppLayout';
 
 function RequireAuth({ children }) {
@@ -33,6 +34,8 @@ export function AppRoutes() {
       <Route path="/reset-password/:uid/:token" element={<ResetPasswordPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
+      {/* Unlinked sandbox for the drawn assets in components/assets. */}
+      <Route path="/playground" element={<PlaygroundPage />} />
       <Route element={<AppLayout />}>
         <Route path="/" element={<WelcomePage />} />
         <Route path="/drivers" element={<RequireAuth><DriverList /></RequireAuth>} />

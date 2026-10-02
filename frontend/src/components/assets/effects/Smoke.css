@@ -1,0 +1,27 @@
+.asset-smoke {
+  --asset-h: .5em;
+  --asset-w: .5em;
+}
+
+.asset-smoke-puff {
+  animation: asset-smoke-rise var(--smoke-duration, 1.4s) ease-out var(--smoke-delay, 0s) forwards;
+  background: var(--smoke-color, rgb(200 205 200 / 70%));
+  border-radius: 50%;
+  inset: 0;
+  opacity: 0;
+}
+
+.asset-smoke-loop .asset-smoke-puff {
+  animation-iteration-count: infinite;
+}
+
+@keyframes asset-smoke-rise {
+  0% { opacity: .9; transform: translate(0, 0) scale(.55); }
+  100% { opacity: 0; transform: translate(var(--smoke-drift-x, -.75em), var(--smoke-drift-y, -1em)) scale(var(--smoke-spread, 2.2)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .asset-smoke-puff {
+    animation: none;
+  }
+}

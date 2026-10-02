@@ -34,7 +34,7 @@ test('renders the animated truck structure in the road lane', () => {
   const { container } = renderLoginPage();
 
   expect(container.querySelector('.login-lane .road-truck-loop')).toBeInTheDocument();
-  expect(container.querySelector('.road-truck-cab')).toBeInTheDocument();
+  expect(container.querySelector('.road-truck .asset-semi-truck')).toBeInTheDocument();
 });
 
 test('the road truck crashes when a sign-in error appears', () => {

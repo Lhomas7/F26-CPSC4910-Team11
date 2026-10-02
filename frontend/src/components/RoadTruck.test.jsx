@@ -10,7 +10,7 @@ test('loops by default and passes className to the lane', () => {
 
   expect(container.querySelector('.road-lane.page-lane')).toHaveAttribute('aria-hidden', 'true');
   expect(container.querySelector('.road-truck')).toHaveClass('road-truck-loop');
-  expect(container.querySelector('.road-truck-cab')).toBeInTheDocument();
+  expect(container.querySelector('.road-truck .asset-semi-truck')).toBeInTheDocument();
 });
 
 test('arrive mode only moves once arrived is true', () => {
@@ -67,6 +67,7 @@ test('sends a fire truck from the end of the road furthest from the wreck', () =
   expect(rescue).toHaveClass('road-rescue-from-right');
   expect(rescue).toHaveStyle({ '--wreck-left': '50px', '--wreck-right': '96px' });
   expect(container.querySelector('.road-truck')).toHaveClass('road-truck-rescue-right');
+  expect(rescue.querySelector('.asset-fire-truck')).toHaveClass('asset-facing-left');
 
   rerender(<RoadTruck />);
   expect(container.querySelector('.road-rescue')).not.toBeInTheDocument();

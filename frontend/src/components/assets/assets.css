@@ -1,0 +1,158 @@
+/* Shared base for the CSS-drawn assets in this folder.
+   Every size inside an asset is in em, and .asset sets font-size from
+   --asset-scale, so `scale` resizes the whole drawing. At scale 1, 1em is
+   1rem, the same size the road truck has always been drawn at. */
+.asset {
+  display: inline-block;
+  flex-shrink: 0;
+  font-size: calc(var(--asset-scale, 1) * 1rem);
+  height: var(--asset-h);
+  line-height: 0;
+  position: relative;
+  vertical-align: bottom;
+  width: var(--asset-w);
+}
+
+/* The drawing itself. Assets are drawn facing right; facing="left" mirrors
+   this layer so callers can still animate or position the outer box freely. */
+.asset-art {
+  inset: 0;
+  position: absolute;
+}
+
+.asset-facing-left .asset-art {
+  transform: scaleX(-1);
+}
+
+.asset-art span {
+  display: block;
+  position: absolute;
+}
+
+/* ---------- Vehicle parts shared by every vehicle ---------- */
+
+.asset-art .asset-wheel {
+  background: #111;
+  border: .0625em solid #555;
+  border-radius: 50%;
+  bottom: 0;
+  height: var(--wheel-size, .375em);
+  width: var(--wheel-size, .375em);
+}
+
+/* Spoke mark so a spinning wheel visibly turns; only shown while moving. */
+.asset-moving .asset-wheel::after {
+  background: #8a8f8a;
+  content: '';
+  height: 40%;
+  left: calc(50% - .03em);
+  position: absolute;
+  top: 0;
+  width: .06em;
+}
+
+.asset-moving .asset-wheel {
+  animation: asset-wheel-spin .45s linear infinite;
+}
+
+/* A slight bounce while driving. `translate` stacks with the mirror transform. */
+.asset-moving .asset-art {
+  animation: asset-bob .3s ease-in-out infinite alternate;
+}
+
+/* Emergency light bar: two colours that swap places. Vehicles set the colours. */
+.asset-art .asset-lightbar {
+  --light-a: #ff3b30;
+  --light-b: #2f7bff;
+  animation: asset-lights .5s steps(1) infinite;
+  background: linear-gradient(to right, var(--light-a) 0 50%, var(--light-b) 50%);
+  border-radius: .1em;
+}
+
+.asset-lights-off .asset-lightbar {
+  animation: none;
+  background: #8a8f8a;
+}
+
+.asset-art .asset-window {
+  background: #bfe3f2;
+}
+
+/* Speed lines trail behind a speeding vehicle (behind = left, before mirroring). */
+.asset-art .asset-speed-lines {
+  height: 70%;
+  right: 100%;
+  top: 10%;
+  width: 1.5em;
+}
+
+.asset-speed-lines span {
+  animation: asset-speed-line .4s linear infinite;
+  background: linear-gradient(to left, rgb(232 235 231 / 85%), transparent);
+  border-radius: .05em;
+  height: .07em;
+  right: .15em;
+  width: 1.1em;
+}
+
+.asset-speed-lines span:nth-child(1) {
+  top: 15%;
+}
+
+.asset-speed-lines span:nth-child(2) {
+  animation-delay: .13s;
+  top: 50%;
+  width: .8em;
+}
+
+.asset-speed-lines span:nth-child(3) {
+  animation-delay: .26s;
+  top: 85%;
+}
+
+@keyframes asset-wheel-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes asset-bob {
+  from { translate: 0 0; }
+  to { translate: 0 -.04em; }
+}
+
+@keyframes asset-lights {
+  50% { background: linear-gradient(to right, var(--light-b) 0 50%, var(--light-a) 50%); }
+}
+
+@keyframes asset-speed-line {
+  from { opacity: 0; translate: .4em 0; }
+  40% { opacity: 1; }
+  to { opacity: 0; translate: -.6em 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .asset-moving .asset-wheel,
+  .asset-moving .asset-art,
+  .asset-speed-lines span {
+    animation: none;
+  }
+
+  .asset-art .asset-lightbar {
+    animation: none;
+  }
+}
+
+/* Lone wheel (Wheel asset): always shows its spoke so it can be seen rolling. */
+.asset-spare-wheel {
+  --asset-h: var(--wheel-size, .375em);
+  --asset-w: var(--wheel-size, .375em);
+}
+
+.asset-spare-wheel .asset-wheel::after {
+  background: #8a8f8a;
+  content: '';
+  height: 40%;
+  left: calc(50% - .03em);
+  position: absolute;
+  top: 0;
+  width: .06em;
+}

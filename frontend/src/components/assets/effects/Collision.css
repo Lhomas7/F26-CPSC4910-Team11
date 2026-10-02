@@ -1,0 +1,100 @@
+/* Every part starts invisible and only animates `forwards`, so nothing shows
+   before --collision-delay runs out. */
+.asset-collision {
+  --asset-h: 2.6em;
+  --asset-w: 2.6em;
+  --collision-delay: 0s;
+}
+
+.asset-col-flash {
+  animation: asset-col-flash .55s ease-out var(--collision-delay) forwards;
+  background: radial-gradient(circle, #fff6c9 0 22%, #ffb020 23% 50%, #e5482f 51%);
+  clip-path: polygon(50% 0, 61% 33%, 96% 22%, 70% 50%, 98% 76%, 62% 66%, 50% 100%, 39% 66%, 4% 78%, 30% 50%, 6% 22%, 40% 34%);
+  inset: .2em;
+  opacity: 0;
+}
+
+.asset-col-ring {
+  animation: asset-col-ring .5s ease-out var(--collision-delay) forwards;
+  border: .1em solid #fff6c9;
+  border-radius: 50%;
+  inset: .7em;
+  opacity: 0;
+}
+
+.asset-col-shard {
+  --dx: 1em;
+  --dy: -1em;
+  --spin: 360deg;
+  animation: asset-col-shard .9s cubic-bezier(.2, .7, .4, 1) var(--collision-delay) forwards;
+  background: #bfe3f2;
+  border-radius: .03em;
+  height: .12em;
+  left: calc(50% - .11em);
+  opacity: 0;
+  top: calc(50% - .06em);
+  width: .22em;
+}
+
+.asset-col-shard-a { --dx: 1.3em; --dy: -1.1em; --spin: 420deg; }
+.asset-col-shard-b { --dx: -1.2em; --dy: -1.3em; --spin: -380deg; background: #c9cec9; }
+.asset-col-shard-c { --dx: 1.6em; --dy: .5em; --spin: 300deg; background: #c9cec9; }
+.asset-col-shard-d { --dx: -1.5em; --dy: .6em; --spin: -460deg; }
+.asset-col-shard-e { --dx: .3em; --dy: -1.6em; --spin: 520deg; background: #e5482f; }
+.asset-col-shard-f { --dx: -.4em; --dy: 1em; --spin: -300deg; background: #c9cec9; }
+
+.asset-col-smoke {
+  animation: asset-col-smoke 1.6s ease-out calc(var(--collision-delay) + .2s) forwards;
+  background: rgb(170 175 170 / 75%);
+  border-radius: 50%;
+  height: .7em;
+  left: calc(50% - .35em);
+  opacity: 0;
+  top: calc(50% - .35em);
+  width: .7em;
+}
+
+.asset-col-smoke-b {
+  --drift: .5em;
+  animation-delay: calc(var(--collision-delay) + .45s);
+}
+
+@keyframes asset-col-flash {
+  0% { opacity: 1; scale: .1; }
+  40% { opacity: 1; scale: 1.15; }
+  100% { opacity: 0; scale: 1.3; }
+}
+
+@keyframes asset-col-ring {
+  0% { opacity: 1; scale: .3; }
+  100% { opacity: 0; scale: 1.7; }
+}
+
+@keyframes asset-col-shard {
+  0% { opacity: 1; transform: translate(0, 0) rotate(0); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--spin)); }
+}
+
+@keyframes asset-col-smoke {
+  0% { opacity: .85; transform: translate(0, 0) scale(.4); }
+  100% { opacity: 0; transform: translate(var(--drift, -.4em), -1.3em) scale(2.4); }
+}
+
+/* Reduced motion: a brief static flash instead of anything flying around. */
+@media (prefers-reduced-motion: reduce) {
+  .asset-col-ring,
+  .asset-col-shard,
+  .asset-col-smoke {
+    animation: none;
+  }
+
+  .asset-col-flash {
+    animation: asset-col-flash-still 1s steps(1) var(--collision-delay) forwards;
+  }
+
+  @keyframes asset-col-flash-still {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+}

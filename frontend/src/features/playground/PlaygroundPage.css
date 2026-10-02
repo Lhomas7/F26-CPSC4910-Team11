@@ -1,0 +1,351 @@
+.pg-page {
+  --pg-sky-top: #cfe8f5;
+  --pg-sky-bottom: #eef6f9;
+  background: var(--bg);
+  color: var(--ink);
+  display: grid;
+  gap: 2rem;
+  margin: 0 auto;
+  max-width: 72rem;
+  min-height: 100vh;
+  padding: 2rem 1.5rem 4rem;
+}
+
+.pg-night {
+  --pg-sky-top: #141b33;
+  --pg-sky-bottom: #2b3456;
+}
+
+.pg-header h1 {
+  font-size: 1.6rem;
+  margin: 0;
+}
+
+.pg-header p {
+  color: var(--ink-2);
+  margin: .35rem 0 0;
+}
+
+.pg-page h2 {
+  font-size: 1.1rem;
+  margin: 0 0 .75rem;
+}
+
+.pg-controls {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem .9rem;
+  margin-top: .6rem;
+}
+
+.pg-global {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .6rem;
+  padding: .6rem .9rem;
+}
+
+.pg-toggle {
+  align-items: center;
+  color: var(--ink-2);
+  display: inline-flex;
+  font-size: .8rem;
+  gap: .35rem;
+}
+
+.pg-page button {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .45rem;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: .8rem;
+  font-weight: 700;
+  padding: .35rem .75rem;
+}
+
+.pg-page button:hover {
+  border-color: var(--accent);
+}
+
+/* ---------- Gallery cards ---------- */
+
+.pg-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+}
+
+.pg-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .65rem;
+  margin: 0;
+  overflow: hidden;
+}
+
+.pg-stage {
+  align-items: flex-end;
+  background: linear-gradient(var(--pg-sky-top), var(--pg-sky-bottom) 70%, #2f3531 70%);
+  display: flex;
+  gap: 1.25rem;
+  justify-content: center;
+  min-height: 9rem;
+  overflow: hidden;
+  padding: 1.5rem 1.5rem 1.35rem;
+}
+
+.pg-card figcaption {
+  border-top: 1px solid var(--line);
+  font-size: .85rem;
+  padding: .7rem .9rem .8rem;
+}
+
+.pg-card .pg-controls {
+  margin-top: .4rem;
+}
+
+/* ---------- Street scene ---------- */
+
+.pg-street {
+  border: 1px solid var(--line);
+  border-radius: .65rem;
+  margin-top: 1rem;
+  overflow: hidden;
+}
+
+.pg-skyline {
+  align-items: flex-end;
+  background: linear-gradient(var(--pg-sky-top), var(--pg-sky-bottom));
+  display: flex;
+  gap: .6rem;
+  overflow: hidden;
+  padding: 1.5rem 1rem 0;
+}
+
+.pg-street-road {
+  --road-height: 4.5rem;
+}
+
+.pg-traffic {
+  position: absolute;
+}
+
+.pg-traffic-a {
+  animation: pg-traffic-right 11s linear infinite;
+  top: 2.6rem;
+}
+
+.pg-traffic-b {
+  animation: pg-traffic-left 9s linear infinite;
+  top: .35rem;
+}
+
+.pg-traffic-c {
+  animation: pg-traffic-right 11s linear -5.5s infinite;
+  top: 2.95rem;
+}
+
+@keyframes pg-traffic-right {
+  from { left: -4rem; }
+  to { left: 100%; }
+}
+
+@keyframes pg-traffic-left {
+  from { left: 100%; }
+  to { left: -4rem; }
+}
+
+/* ---------- Scenes ---------- */
+
+.pg-scene {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .65rem;
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.pg-scene header {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: .9rem 1rem;
+}
+
+.pg-scene h3 {
+  font-size: .95rem;
+  margin: 0;
+}
+
+.pg-scene header p {
+  color: var(--ink-2);
+  font-size: .8rem;
+  margin: .2rem 0 0;
+}
+
+.pg-scene > .pg-controls {
+  padding: 0 1rem .9rem;
+}
+
+.pg-scene-road > span {
+  position: absolute;
+}
+
+/* Pulled over: the speeder races ahead, the cop closes in, both pull onto
+   the bottom shoulder. The car stops at ~4.2s (see PulledOverScene). */
+.pg-pullover {
+  --road-height: 5.5rem;
+}
+
+.pg-pull-speeder {
+  animation: pg-speeder 4.4s cubic-bezier(.3, .1, .3, 1) forwards;
+  top: 3rem;
+}
+
+.pg-pull-cop {
+  animation: pg-cop 4.4s cubic-bezier(.35, .05, .3, 1) .5s both;
+  top: 3rem;
+}
+
+@keyframes pg-speeder {
+  0% { left: -3rem; }
+  55% { left: 55%; top: 3rem; }
+  85% { left: 66%; top: 3.85rem; }
+  100% { left: 68%; top: 3.9rem; }
+}
+
+@keyframes pg-cop {
+  0% { left: -6rem; }
+  55% { left: calc(55% - 4.5rem); top: 3rem; }
+  85% { left: calc(66% - 3.6rem); top: 3.85rem; }
+  100% { left: calc(68% - 3.3rem); top: 3.9rem; }
+}
+
+/* Collision: the cars meet in the middle at 70% of 1.7s (1.19s), when the
+   Collision effect is set to go off, then bounce back and skew. */
+.pg-collision {
+  --road-height: 4.5rem;
+}
+
+.pg-crash-a {
+  animation: pg-crash-a 1.7s cubic-bezier(.5, 0, .9, .6) forwards;
+  top: 1.75rem;
+}
+
+.pg-crash-b {
+  animation: pg-crash-b 1.7s cubic-bezier(.5, 0, .9, .6) forwards;
+  top: 1.75rem;
+}
+
+.pg-crash-burst {
+  left: calc(50% - 1.3rem);
+  position: absolute;
+  top: calc(50% - 1.3rem);
+}
+
+@keyframes pg-crash-a {
+  0% { left: -2.5rem; }
+  70% { left: calc(50% - 2.35rem); rotate: 0deg; }
+  85% { left: calc(50% - 2.95rem); rotate: -10deg; }
+  100% { left: calc(50% - 2.8rem); rotate: -6deg; }
+}
+
+@keyframes pg-crash-b {
+  0% { left: 100%; }
+  70% { left: calc(50% - .05rem); rotate: 0deg; }
+  85% { left: calc(50% + .55rem); rotate: 12deg; }
+  100% { left: calc(50% + .4rem); rotate: 8deg; }
+}
+
+/* School zone: the bus pulls in and stops at 40%; the car behind stops short
+   of it; the kids and dog walk from the bus door along the sidewalk to the
+   school (timings match SCHOOL_STEPS in PlaygroundPage.jsx). */
+.pg-zone {
+  background: linear-gradient(var(--pg-sky-top), var(--pg-sky-bottom));
+}
+
+.pg-zone-backdrop {
+  align-items: flex-end;
+  display: flex;
+  gap: 1rem;
+  overflow: hidden;
+  padding: 1.25rem 1rem 0;
+}
+
+.pg-zone-sidewalk {
+  background: #c9cec9;
+  border-top: 2px solid #b3b9b4;
+  height: 1.6rem;
+  position: relative;
+}
+
+.pg-kid {
+  animation: pg-kid-walk 5.5s linear forwards;
+  bottom: .2rem;
+  position: absolute;
+}
+
+.pg-kid-a { --from: calc(40% + 3.2rem); --to: 12%; }
+.pg-kid-b { --from: calc(40% + 3.7rem); --to: 15%; animation-delay: .4s; }
+.pg-kid-c { --from: calc(40% + 4.3rem); --to: 18%; animation-delay: .7s; }
+
+.pg-kid-b,
+.pg-kid-c {
+  animation-fill-mode: both;
+}
+
+.pg-zone-road {
+  --road-height: 4.5rem;
+}
+
+.pg-zone-bus {
+  animation: pg-bus-in 2.3s cubic-bezier(.25, .7, .35, 1) forwards;
+  top: 2.6rem;
+}
+
+.pg-zone-car {
+  animation: pg-car-behind 2.4s cubic-bezier(.25, .7, .35, 1) .8s both;
+  top: 3.05rem;
+}
+
+@keyframes pg-kid-walk {
+  from { left: var(--from); }
+  to { left: var(--to); }
+}
+
+@keyframes pg-bus-in {
+  from { left: -5rem; }
+  to { left: 40%; }
+}
+
+@keyframes pg-car-behind {
+  from { left: -3rem; }
+  to { left: calc(40% - 3.2rem); }
+}
+
+/* Road truck scene sits on the same dark panel as the Login page. */
+.pg-truck-panel {
+  background: var(--road);
+  padding: 1.25rem 0;
+}
+
+.pg-truck-lane.pg-fast-rescue {
+  --rescue-delay: 3s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pg-traffic,
+  .pg-pull-speeder,
+  .pg-pull-cop,
+  .pg-crash-a,
+  .pg-crash-b,
+  .pg-kid,
+  .pg-zone-bus,
+  .pg-zone-car {
+    animation-duration: .01s;
+  }
+}

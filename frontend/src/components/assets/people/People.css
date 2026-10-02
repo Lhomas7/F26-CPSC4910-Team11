@@ -1,0 +1,267 @@
+/* ---------- Person ---------- */
+
+.asset-person {
+  --asset-h: 1.62em;
+  --asset-w: .62em;
+}
+
+/* Children are drawn smaller with a slightly bigger head. */
+.asset-person-child {
+  font-size: calc(var(--asset-scale, 1) * .68rem);
+}
+
+.asset-person-head {
+  background: var(--skin);
+  border-radius: 50%;
+  height: .32em;
+  left: .16em;
+  top: .02em;
+  width: .32em;
+}
+
+.asset-person-child .asset-person-head {
+  height: .38em;
+  left: .13em;
+  top: -.04em;
+  width: .38em;
+}
+
+.asset-person-hair {
+  background: var(--hair);
+  border-radius: .2em .2em .04em .1em;
+  height: .15em;
+  left: .14em;
+  top: 0;
+  width: .34em;
+}
+
+.asset-person-child .asset-person-hair {
+  left: .11em;
+  top: -.06em;
+  width: .4em;
+}
+
+.asset-person-torso {
+  background: var(--shirt);
+  border-radius: .14em .14em .06em .06em;
+  height: .6em;
+  left: .12em;
+  top: .34em;
+  width: .38em;
+}
+
+.asset-person-arm {
+  background: var(--shirt);
+  border-radius: .05em;
+  height: .52em;
+  left: .26em;
+  top: .37em;
+  transform-origin: 50% .05em;
+  width: .1em;
+}
+
+/* Hand at the end of the sleeve. */
+.asset-person-arm::after {
+  background: var(--skin);
+  border-radius: 50%;
+  bottom: -.05em;
+  content: '';
+  height: .1em;
+  left: 0;
+  position: absolute;
+  width: .1em;
+}
+
+.asset-person-arm-back {
+  filter: brightness(.82);
+}
+
+.asset-person-leg {
+  background: var(--pants);
+  border-radius: .03em .03em .05em .05em;
+  height: .7em;
+  left: .24em;
+  top: .9em;
+  transform-origin: 50% 0;
+  width: .13em;
+}
+
+/* Shoe. */
+.asset-person-leg::after {
+  background: #1d201d;
+  border-radius: .04em .08em .03em .03em;
+  bottom: -.02em;
+  content: '';
+  height: .07em;
+  left: 0;
+  position: absolute;
+  width: .2em;
+}
+
+.asset-person-leg-back {
+  filter: brightness(.8);
+}
+
+.asset-walking .asset-person-leg-front,
+.asset-walking .asset-person-arm-back {
+  animation: asset-swing .5s ease-in-out infinite alternate;
+}
+
+.asset-walking .asset-person-leg-back,
+.asset-walking .asset-person-arm-front {
+  animation: asset-swing .5s ease-in-out infinite alternate-reverse;
+}
+
+.asset-walking .asset-art {
+  animation: asset-step .25s ease-in-out infinite alternate;
+}
+
+.asset-waving .asset-person-arm-front {
+  animation: asset-wave .45s ease-in-out infinite alternate;
+}
+
+/* ---------- Dog ---------- */
+
+.asset-dog {
+  --asset-h: .78em;
+  --asset-w: 1.25em;
+  --dog-dark: color-mix(in srgb, var(--dog-color) 70%, #000);
+}
+
+.asset-dog-body {
+  background: var(--dog-color);
+  border-radius: .2em .22em .16em .2em;
+  height: .32em;
+  left: .2em;
+  top: .24em;
+  width: .76em;
+}
+
+.asset-dog-head {
+  background: var(--dog-color);
+  border-radius: .15em .2em .12em .15em;
+  height: .3em;
+  left: .86em;
+  top: .06em;
+  width: .3em;
+}
+
+/* Snout. */
+.asset-dog-head::after {
+  background: var(--dog-color);
+  border-radius: .03em .08em .08em .03em;
+  content: '';
+  height: .13em;
+  left: .2em;
+  position: absolute;
+  top: .13em;
+  width: .17em;
+}
+
+.asset-dog-nose {
+  background: #1d201d;
+  border-radius: 50%;
+  height: .06em;
+  left: 1.18em;
+  top: .18em;
+  width: .06em;
+}
+
+.asset-dog-ear {
+  background: var(--dog-dark);
+  border-radius: .02em .02em .08em .08em;
+  height: .2em;
+  left: .9em;
+  top: .04em;
+  transform: rotate(12deg);
+  width: .11em;
+}
+
+.asset-dog-collar {
+  background: #d63b2f;
+  height: .14em;
+  left: .87em;
+  top: .3em;
+  width: .07em;
+}
+
+.asset-dog-tail {
+  background: var(--dog-color);
+  border-radius: .04em;
+  height: .07em;
+  left: .02em;
+  top: .24em;
+  transform: rotate(-35deg);
+  transform-origin: 100% 50%;
+  width: .26em;
+}
+
+.asset-dog-leg {
+  background: var(--dog-color);
+  border-radius: .02em .02em .03em .03em;
+  height: .26em;
+  top: .5em;
+  transform-origin: 50% 0;
+  width: .08em;
+}
+
+.asset-dog-leg-a,
+.asset-dog-leg-c {
+  filter: brightness(.82);
+}
+
+.asset-dog-leg-a { left: .26em; }
+.asset-dog-leg-b { left: .38em; }
+.asset-dog-leg-c { left: .78em; }
+.asset-dog-leg-d { left: .9em; }
+
+.asset-wagging .asset-dog-tail {
+  animation: asset-wag .22s ease-in-out infinite alternate;
+}
+
+.asset-walking .asset-dog-leg-a,
+.asset-walking .asset-dog-leg-d {
+  animation: asset-swing .32s ease-in-out infinite alternate;
+}
+
+.asset-walking .asset-dog-leg-b,
+.asset-walking .asset-dog-leg-c {
+  animation: asset-swing .32s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes asset-swing {
+  from { rotate: -22deg; }
+  to { rotate: 22deg; }
+}
+
+@keyframes asset-step {
+  from { translate: 0 0; }
+  to { translate: 0 -.03em; }
+}
+
+@keyframes asset-wave {
+  from { rotate: 150deg; }
+  to { rotate: 185deg; }
+}
+
+@keyframes asset-wag {
+  from { rotate: -20deg; }
+  to { rotate: 15deg; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .asset-walking .asset-art,
+  .asset-walking .asset-person-leg-front,
+  .asset-walking .asset-person-leg-back,
+  .asset-walking .asset-person-arm-front,
+  .asset-walking .asset-person-arm-back,
+  .asset-walking .asset-dog-leg,
+  .asset-wagging .asset-dog-tail {
+    animation: none;
+  }
+
+  .asset-waving .asset-person-arm-front {
+    animation: none;
+    rotate: 165deg;
+  }
+}
