@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import * as api from '../../api';
 import PageHeader from '../../app/PageHeader';
+import SelectMenu from '../../components/SelectMenu';
 import './AdminUsersPage.css';
 
 const ROLE_LABELS = { driver: 'Driver', sponsor: 'Sponsor', admin: 'Admin' };
@@ -35,6 +36,7 @@ export default function AdminUsersPage() {
   const [status, setStatus] = useState('loading');
   const [query, setQuery] = useState('');
   const [role, setRole] = useState('all');
+  const [organization, setOrganization] = useState('all');
 
   const loadUsers = useCallback(async () => {
     if (user?.account_type !== 'admin') return;
@@ -57,19 +59,36 @@ export default function AdminUsersPage() {
     [current.role]: result[current.role] + 1,
   }), { all: users.length, driver: 0, sponsor: 0, admin: 0 }), [users]);
 
+  const organizations = useMemo(() => Array.from(
+    new Map(users
+      .filter((current) => current.sponsor_org)
+      .map((current) => [String(current.sponsor_org.id), current.sponsor_org])).values(),
+  ).sort((left, right) => left.name.localeCompare(right.name)), [users]);
+  const hasUnassignedDrivers = users.some((current) => current.role === 'driver' && !current.sponsor_org);
+  const organizationOptions = useMemo(() => [
+    { value: 'all', label: 'All organizations' },
+    ...organizations.map((current) => ({ value: String(current.id), label: current.name })),
+    ...(hasUnassignedDrivers ? [{ value: 'unassigned', label: 'Unassigned drivers' }] : []),
+  ], [hasUnassignedDrivers, organizations]);
+
   const visibleUsers = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     return users.filter((current) => (
       (role === 'all' || current.role === role)
+      && (organization === 'all'
+        || (organization === 'unassigned'
+          ? current.role === 'driver' && !current.sponsor_org
+          : String(current.sponsor_org?.id) === organization))
       && (!normalized
         || current.display_name.toLowerCase().includes(normalized)
         || current.username.toLowerCase().includes(normalized))
     ));
-  }, [query, role, users]);
+  }, [organization, query, role, users]);
 
   const clearFilters = () => {
     setQuery('');
     setRole('all');
+    setOrganization('all');
   };
 
   if (user?.account_type !== 'admin' || status === 'forbidden') {
@@ -121,13 +140,26 @@ export default function AdminUsersPage() {
               <div className="users-filters" role="group" aria-label="Filter by role">
                 {['all', 'driver', 'sponsor', 'admin'].map((option) => (
                   <button key={option} type="button" aria-pressed={role === option} onClick={() => setRole(option)}>
-                    {option === 'all' ? 'All' : `${ROLE_LABELS[option]}s`} <span>{counts[option]}</span>
+                    <span className="users-filter-content">
+                      <span className="users-filter-label">{option === 'all' ? 'All' : `${ROLE_LABELS[option]}s`}</span>
+                      <span className="users-filter-count">{counts[option]}</span>
+                    </span>
                   </button>
                 ))}
               </div>
-              <Link className="users-button primary users-toolbar-action" to="/users/new">+ Add user</Link>
+              <SelectMenu
+                className="users-organization-filter"
+                label="Filter by sponsor organization"
+                value={organization}
+                options={organizationOptions}
+                onChange={setOrganization}
+              />
+              <Link className="users-button primary users-toolbar-action" to="/users/new">
+                <span className="users-add-icon" aria-hidden="true">+</span>
+                <span>Add user</span>
+              </Link>
             </div>
-            <p className="users-count">{query || role !== 'all' ? `Showing ${visibleUsers.length} of ${users.length} users` : `${users.length} users`}</p>
+            <p className="users-count">{query || role !== 'all' || organization !== 'all' ? `Showing ${visibleUsers.length} of ${users.length} users` : `${users.length} users`}</p>
             {visibleUsers.length === 0 ? (
               <section className="users-state compact">
                 <h2>No users match</h2>

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 import { useAuth } from '../../auth/AuthContext';
@@ -34,7 +34,7 @@ test('loads and displays the admin user directory', async () => {
   expect(screen.getByRole('status')).toHaveTextContent('Loading users');
   expect(await screen.findByText('Marcus Alvarez')).toBeInTheDocument();
   expect(screen.getByText('@malvarez')).toBeInTheDocument();
-  expect(screen.getAllByText('Palmetto Freight')).toHaveLength(2);
+  expect(within(screen.getByRole('table')).getAllByText('Palmetto Freight')).toHaveLength(2);
 });
 
 test('searches and filters the loaded directory', async () => {
@@ -48,6 +48,19 @@ test('searches and filters the loaded directory', async () => {
   expect(screen.getByText(/Showing 0 of 3 users/)).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Clear search and filters' }));
   expect(screen.getByText('Marcus Alvarez')).toBeInTheDocument();
+});
+
+test('filters users by sponsor organization', async () => {
+  renderPage();
+  await screen.findByText('Marcus Alvarez');
+
+  fireEvent.click(screen.getByRole('button', { name: 'Filter by sponsor organization' }));
+  fireEvent.click(screen.getByRole('option', { name: 'Palmetto Freight' }));
+
+  expect(screen.getByText('Marcus Alvarez')).toBeInTheDocument();
+  expect(screen.getByText('Dana Whitfield')).toBeInTheDocument();
+  expect(screen.queryByText('Kylie Gilbert')).not.toBeInTheDocument();
+  expect(screen.getByText('Showing 2 of 3 users')).toBeInTheDocument();
 });
 
 test('does not call the API for a non-admin user', () => {
