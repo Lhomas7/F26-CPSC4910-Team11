@@ -142,8 +142,10 @@ jobs:
 
       - name: Write runtime env (.env, chmod 600)
         run: |
-          umask 177
+          # mkdir before umask: web/ isn't tracked in git, so under umask 177
+          # it would be created 0600 (no x bit) and the write below would fail.
           mkdir -p web
+          umask 177
           cat > web/.env <<EOF
           DJANGO_DEBUG=false
           DJANGO_ALLOWED_HOSTS=${{ vars.EC2_HOST }},127.0.0.1
