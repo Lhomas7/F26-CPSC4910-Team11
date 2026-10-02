@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
 import * as api from '../../api';
@@ -16,6 +16,13 @@ import {
 import './LoginPage.css';
 
 const ROLE_LABEL = { driver: 'Driver', sponsor: 'Sponsor' };
+const HEALTH_POLL_MS = 10000;
+const OUTAGE_MESSAGE = "We can't reach the Good Driver server right now. Check your connection, or try again in a minute.";
+
+/** Error text for a failed request, replacing raw network errors like "Failed to fetch". */
+function requestErrorMessage(err, fallback) {
+  return api.isOutageError(err) ? OUTAGE_MESSAGE : (err.message || fallback);
+}
 
 function PasswordField({ id, label, className = 'login-input', ...inputProps }) {
   return (
@@ -28,6 +35,20 @@ function PasswordField({ id, label, className = 'login-input', ...inputProps }) 
 
 export default function LoginPage() {
   const { loading, user, signIn, completeMfaLogin, requestMfaLoginCode } = useAuth();
+  const [crashKey, setCrashKey] = useState(0);
+  const [serverDown, setServerDown] = useState(false);
+  const crashTruck = useCallback(() => setCrashKey((count) => count + 1), []);
+  const wreckTruck = useCallback(() => setServerDown(true), []);
+
+  // While the server is unreachable the truck stays wrecked; check back
+  // periodically and put it back on the road once the backend answers.
+  useEffect(() => {
+    if (!serverDown) return undefined;
+    const timer = setInterval(async () => {
+      if (await api.checkHealth()) setServerDown(false);
+    }, HEALTH_POLL_MS);
+    return () => clearInterval(timer);
+  }, [serverDown]);
 
   let content;
   if (loading) {
@@ -35,7 +56,7 @@ export default function LoginPage() {
   } else if (user) {
     content = <Navigate to="/" replace />;
   } else {
-    content = <AuthCard onSignIn={signIn} onMfaComplete={completeMfaLogin} onRequestMfaCode={requestMfaLoginCode} />;
+    content = <AuthCard onSignIn={signIn} onMfaComplete={completeMfaLogin} onRequestMfaCode={requestMfaLoginCode} onError={crashTruck} onOutage={wreckTruck} />;
   }
 
   return (
@@ -50,7 +71,7 @@ export default function LoginPage() {
           <p>Your sponsor company gives you points for driving well. Sign in to check your balance and see what you can redeem.</p>
           <ProgramPerks className="login-perks" />
         </div>
-        <RoadTruck className="login-lane" />
+        <RoadTruck className="login-lane" crashKey={crashKey} wrecked={serverDown} />
         <div className="login-road-foot">
           <span>Team 11, v0.1.0 (Sprint 1)</span>
           <Link to="/about">About this app</Link>
@@ -72,7 +93,7 @@ function LoadingCard() {
   );
 }
 
-function AuthCard({ onSignIn, onMfaComplete, onRequestMfaCode }) {
+function AuthCard({ onSignIn, onMfaComplete, onRequestMfaCode, onError, onOutage }) {
   const [searchParams] = useSearchParams();
   const [view, setView] = useState(() => (
     searchParams.get('tab') === 'register' ? 'signup' : 'signin'
@@ -119,16 +140,16 @@ function AuthCard({ onSignIn, onMfaComplete, onRequestMfaCode }) {
 
       {notice && <p className="login-alert login-alert-success" role="status">{notice}</p>}
 
-      {view === 'signin' && <LoginForm onSignIn={onSignIn} onMfaComplete={onMfaComplete} onRequestMfaCode={onRequestMfaCode} />}
+      {view === 'signin' && <LoginForm onSignIn={onSignIn} onMfaComplete={onMfaComplete} onRequestMfaCode={onRequestMfaCode} onError={onError} onOutage={onOutage} />}
 
       {view === 'signup' && role === null && <RoleChoice onPick={setRole} />}
 
       {view === 'signup' && role === 'driver' && (
-        <RoleRegistrationForm role="driver" onBack={() => setRole(null)} onDone={handleRegistered} />
+        <RoleRegistrationForm role="driver" onBack={() => setRole(null)} onDone={handleRegistered} onError={onError} onOutage={onOutage} />
       )}
 
       {view === 'signup' && role === 'sponsor' && (
-        <RoleRegistrationForm role="sponsor" onBack={() => setRole(null)} onDone={handleRegistered} />
+        <RoleRegistrationForm role="sponsor" onBack={() => setRole(null)} onDone={handleRegistered} onError={onError} onOutage={onOutage} />
       )}
     </div>
   );
@@ -141,7 +162,7 @@ const METHOD_LABEL = {
   backup: 'Backup code',
 };
 
-function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode }) {
+function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode, onError, onOutage }) {
   const [step, setStep] = useState('creds');
   const [mfaMethods, setMfaMethods] = useState([]);
   const [backupAvailable, setBackupAvailable] = useState(false);
@@ -153,6 +174,11 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode }) {
   const [busy, setBusy] = useState(false);
   const [sendingCode, setSendingCode] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+
+  // Easter egg: tell the page so the road truck crashes whenever an error shows.
+  useEffect(() => {
+    if (error) onError?.();
+  }, [error, onError]);
 
   useEffect(() => {
     if (cooldown <= 0) return undefined;
@@ -167,7 +193,8 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode }) {
       await onRequestMfaCode(chosen);
       setCooldown(30);
     } catch (err) {
-      setError(err.message || 'Could not send the verification code.');
+      setError(requestErrorMessage(err, 'Could not send the verification code.'));
+      if (api.isOutageError(err)) onOutage?.();
     } finally {
       setSendingCode(false);
     }
@@ -204,7 +231,8 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode }) {
         }
       }
     } catch (err) {
-      setError(err.message || 'Invalid username or password.');
+      setError(requestErrorMessage(err, 'Invalid username or password.'));
+      if (api.isOutageError(err)) onOutage?.();
       setPassword('');
     } finally {
       setBusy(false);
@@ -234,7 +262,8 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode }) {
     try {
       await onMfaComplete(method, code.trim());
     } catch (err) {
-      setError(err.message || 'Invalid code.');
+      setError(requestErrorMessage(err, 'Invalid code.'));
+      if (api.isOutageError(err)) onOutage?.();
       setCode('');
     } finally {
       setBusy(false);
@@ -416,7 +445,7 @@ function RoleChoice({ onPick }) {
   );
 }
 
-function RoleRegistrationForm({ role, onBack, onDone }) {
+function RoleRegistrationForm({ role, onBack, onDone, onError, onOutage }) {
   const { updateUser } = useAuth();
   const navigate = useNavigate();
   const [firstName, setFirstName] = useState('');
@@ -429,6 +458,11 @@ function RoleRegistrationForm({ role, onBack, onDone }) {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+
+  // Easter egg: tell the page so the road truck crashes whenever an error shows.
+  useEffect(() => {
+    if (error) onError?.();
+  }, [error, onError]);
 
   const validate = () => {
     const fieldProblem = validateName(firstName, 'first name')
@@ -481,7 +515,8 @@ function RoleRegistrationForm({ role, onBack, onDone }) {
         + ` You can now sign in with your username and password.`
       );
     } catch (err) {
-      setError(err.message || 'Account could not be created.');
+      setError(requestErrorMessage(err, 'Account could not be created.'));
+      if (api.isOutageError(err)) onOutage?.();
     } finally {
       setBusy(false);
     }

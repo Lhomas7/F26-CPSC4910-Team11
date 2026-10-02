@@ -1,9 +1,9 @@
 // Decorative, aria-hidden markup has no role or text to query, so these tests
 // look up elements by class.
 /* eslint-disable testing-library/no-container, testing-library/no-node-access */
-import { render } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 
-import RoadTruck from './RoadTruck';
+import RoadTruck, { CRASH_MS } from './RoadTruck';
 
 test('loops by default and passes className to the lane', () => {
   const { container } = render(<RoadTruck className="page-lane" />);
@@ -22,4 +22,34 @@ test('arrive mode only moves once arrived is true', () => {
 
   rerender(<RoadTruck mode="arrive" arrived />);
   expect(truck).toHaveClass('road-truck-arrived');
+});
+
+test('crashes when crashKey changes, then recovers', () => {
+  jest.useFakeTimers();
+  const { container, rerender } = render(<RoadTruck />);
+  const truck = container.querySelector('.road-truck');
+
+  expect(truck).not.toHaveClass('road-truck-crashed');
+
+  rerender(<RoadTruck crashKey={1} />);
+  expect(truck).toHaveClass('road-truck-crashed');
+  expect(container.querySelector('.road-truck-impact')).toBeInTheDocument();
+
+  act(() => jest.advanceTimersByTime(CRASH_MS));
+  expect(truck).not.toHaveClass('road-truck-crashed');
+  expect(container.querySelector('.road-truck-impact')).not.toBeInTheDocument();
+  jest.useRealTimers();
+});
+
+test('stays wrecked while wrecked is true and recovers when it clears', () => {
+  const { container, rerender } = render(<RoadTruck wrecked />);
+  const truck = container.querySelector('.road-truck');
+
+  expect(truck).toHaveClass('road-truck-wrecked');
+  expect(container.querySelector('.road-truck-flame')).toBeInTheDocument();
+  expect(container.querySelector('.road-truck-loose-wheel')).toBeInTheDocument();
+
+  rerender(<RoadTruck />);
+  expect(truck).not.toHaveClass('road-truck-wrecked');
+  expect(container.querySelector('.road-truck-flame')).not.toBeInTheDocument();
 });

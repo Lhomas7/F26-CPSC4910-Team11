@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 import { useAuth } from '../../auth/AuthContext';
@@ -35,6 +35,42 @@ test('renders the animated truck structure in the road lane', () => {
 
   expect(container.querySelector('.login-lane .road-truck-loop')).toBeInTheDocument();
   expect(container.querySelector('.road-truck-cab')).toBeInTheDocument();
+});
+
+test('the road truck crashes when a sign-in error appears', () => {
+  const { container } = renderLoginPage();
+  const truck = container.querySelector('.login-lane .road-truck');
+  expect(truck).not.toHaveClass('road-truck-crashed');
+
+  const signInButton = screen.getAllByRole('button', { name: 'Sign In' })
+    .find((button) => button.getAttribute('type') === 'submit');
+  fireEvent.click(signInButton);
+
+  expect(screen.getByRole('alert')).toHaveTextContent('Enter your username.');
+  expect(truck).toHaveClass('road-truck-crashed');
+});
+
+test('the road truck wrecks while the server is unreachable and recovers when it is back', async () => {
+  jest.useFakeTimers();
+  const outage = new TypeError('Failed to fetch');
+  useAuth.mockReturnValue({ ...useAuth(), signIn: jest.fn().mockRejectedValue(outage) });
+  api.isOutageError.mockImplementation((error) => error === outage);
+  api.checkHealth.mockResolvedValue(true);
+
+  const { container } = renderLoginPage();
+  const truck = container.querySelector('.login-lane .road-truck');
+  fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'driver.one' } });
+  fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ExamplePassword123!' } });
+  fireEvent.click(screen.getAllByRole('button', { name: 'Sign In' })
+    .find((button) => button.getAttribute('type') === 'submit'));
+
+  expect(await screen.findByRole('alert')).toHaveTextContent("We can't reach the Good Driver server right now.");
+  expect(truck).toHaveClass('road-truck-wrecked');
+
+  await act(async () => { jest.advanceTimersByTime(10000); });
+  expect(api.checkHealth).toHaveBeenCalled();
+  expect(truck).not.toHaveClass('road-truck-wrecked');
+  jest.useRealTimers();
 });
 
 test('driver registration sends separate name and email fields', async () => {
