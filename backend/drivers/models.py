@@ -4,6 +4,8 @@ from uuid import uuid4
 from django.conf import settings
 from django.core.validators import FileExtensionValidator
 from django.db import models
+from django.db.models import Sum, Value
+from django.db.models.functions import Coalesce
 
 
 def profile_picture_upload_to(instance, filename):
@@ -40,3 +42,57 @@ class Driver(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def point_balance(self):
+        """Derive the current balance from the immutable transaction ledger."""
+        return self.point_transactions.aggregate(
+            balance=Coalesce(Sum('point_change'), Value(0)),
+        )['balance']
+
+
+class PointTransaction(models.Model):
+    """An auditable, signed change to a driver's point balance."""
+
+    driver = models.ForeignKey(
+        Driver,
+        on_delete=models.PROTECT,
+        related_name='point_transactions',
+    )
+    sponsor = models.ForeignKey(
+        'accounts.SponsorCompany',
+        on_delete=models.PROTECT,
+        related_name='point_transactions',
+    )
+    changed_by_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='point_transactions_created',
+    )
+    point_change = models.IntegerField()
+    reason = models.CharField(max_length=500)
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('-changed_at', '-id')
+        constraints = [
+            models.CheckConstraint(
+                condition=~models.Q(point_change=0),
+                name='point_tx_change_nonzero',
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=('driver', '-changed_at'),
+                name='point_tx_driver_time_idx',
+            ),
+            models.Index(
+                fields=('sponsor', '-changed_at'),
+                name='point_tx_sponsor_time_idx',
+            ),
+        ]
+
+    def __str__(self):
+        sign = '+' if self.point_change > 0 else ''
+        return f'{self.driver}: {sign}{self.point_change} points'
