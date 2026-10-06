@@ -12,11 +12,13 @@ from drivers.models import Driver
 from ..models import SponsorAccount, SponsorCompany
 from ..serializers import DriverRegistrationSerializer, SponsorRegistrationSerializer
 from ..services import get_public_user, normalize_company_name
+from ..sensitive import hide_sensitive_data
 
 class AnonymousAPIView(APIView):
     authentication_classes = ()
     permission_classes = ()
 
+@hide_sensitive_data
 class DriverRegistrationView(AnonymousAPIView):
     def post(self, request):
         serializer = DriverRegistrationSerializer(data=request.data)
@@ -42,6 +44,7 @@ class DriverRegistrationView(AnonymousAPIView):
         return Response(get_public_user(user), status=status.HTTP_201_CREATED)
 
 
+@hide_sensitive_data
 class SponsorRegistrationView(AnonymousAPIView):
     def post(self, request):
         serializer = SponsorRegistrationSerializer(data=request.data)

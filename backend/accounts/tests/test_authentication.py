@@ -14,9 +14,10 @@ from django.contrib.auth.hashers import make_password
 from django.core import mail
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import override_settings
+from django.test import RequestFactory, SimpleTestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
+from django.views.debug import ExceptionReporter
 from PIL import Image
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -36,6 +37,7 @@ from ..models import (
 from ..middleware import IMPERSONATION_STARTED_KEY
 from ..services.crypto import decrypt_secret, encrypt_secret
 from ..services.mfa import backup_codes_remaining, create_mfa_code
+from ..views import LoginView
 
 class ChangePasswordTests(APITestCase):
     url = reverse('accounts:change-password')
@@ -193,6 +195,33 @@ class LoginAttemptLoggingTests(APITestCase):
         attempt = LoginAttempt.objects.get()
         self.assertEqual(attempt.username, 'driver.one')
         self.assertFalse(attempt.successful)
+
+
+class ErrorReportRedactionTests(SimpleTestCase):
+    """A 500 on a credential endpoint must not put the password in Django's report."""
+
+    def test_login_error_report_masks_the_password(self):
+        secret = 'Sup3r-Secret-Pa55word!'
+        request = RequestFactory().post(
+            reverse('accounts:login'),
+            {'username': 'driver.one', 'password': secret},
+        )
+
+        with patch(
+            'accounts.views.authentication.authenticate',
+            side_effect=RuntimeError('database unavailable'),
+        ):
+            with self.assertRaises(RuntimeError) as raised:
+                LoginView.as_view()(request)
+
+        error = raised.exception
+        report = ExceptionReporter(
+            request, type(error), error, error.__traceback__
+        ).get_traceback_html()
+
+        self.assertNotIn(secret, report)
+        self.assertIn('driver.one', report)
+        self.assertIn('database unavailable', report)
 
 
 class PasswordResetTests(APITestCase):

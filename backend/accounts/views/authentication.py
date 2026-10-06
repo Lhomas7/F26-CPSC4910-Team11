@@ -36,6 +36,7 @@ from ..services.password_reset import (
     token_is_valid,
     user_from_uid,
 )
+from ..sensitive import hide_sensitive_data
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +44,7 @@ class AnonymousAPIView(APIView):
     authentication_classes = ()
     permission_classes = ()
 
+@hide_sensitive_data
 class LoginView(AnonymousAPIView):
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
@@ -80,6 +82,7 @@ class LoginView(AnonymousAPIView):
         return Response(get_public_user(user))
 
 
+@hide_sensitive_data
 class LoginMFAView(AnonymousAPIView):
     def post(self, request):
         serializer = LoginMFASerializer(data=request.data)
@@ -151,6 +154,7 @@ class LoginMFAView(AnonymousAPIView):
         request.session.set_expiry(0)
 
 
+@hide_sensitive_data
 class LoginMFARequestCodeView(AnonymousAPIView):
     """Send a login-purpose code for a single method during the staged MFA step.
 
@@ -235,6 +239,7 @@ class LogoutView(APIView):
         logout(request)
         return Response(status=status.HTTP_204_NO_CONTENT)
     
+@hide_sensitive_data
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -280,6 +285,7 @@ class PasswordResetRequestView(AnonymousAPIView):
         return Response({'detail': PASSWORD_RESET_REQUEST_MESSAGE})
 
 
+@hide_sensitive_data
 class PasswordResetConfirmView(AnonymousAPIView):
     """Set a new password using the uid/token from the emailed link."""
 

@@ -26,6 +26,7 @@ from ..serializers import (
     SponsorCompanySerializer,
 )
 from ..services import get_account_type, get_public_user
+from ..sensitive import hide_sensitive_data
 
 class AdminImpersonationStartView(APIView):
     permission_classes = [IsAdminUser]
@@ -97,6 +98,7 @@ class AdminImpersonationStopView(APIView):
 
 
 
+@hide_sensitive_data
 class AdminUserListView(APIView):
     permission_classes = [IsAdminUser, MFAEnrolled]
 
