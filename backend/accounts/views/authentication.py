@@ -56,7 +56,10 @@ class LoginView(AnonymousAPIView):
 
         user = authenticate(request, username=username, password=password)
         if user is None or get_account_type(user) is None:
-            record_login_attempt(username, successful=False)
+            # authenticate() returns None for a wrong password too, so resolve
+            # the targeted account separately to link the failure to it.
+            targeted = get_user_model().objects.filter(username__iexact=username).first()
+            record_login_attempt(username, successful=False, user=targeted)
             return Response(
                 {'detail': 'Invalid username or password.'},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -80,7 +83,7 @@ class LoginView(AnonymousAPIView):
             return Response({'mfa': get_mfa_status(user)})
 
         login(request, user)
-        record_login_attempt(user.get_username(), successful=True)
+        record_login_attempt(user.get_username(), successful=True, user=user)
         return Response(get_public_user(user))
 
 
@@ -139,7 +142,7 @@ class LoginMFAView(AnonymousAPIView):
 
         if not verified:
             request.session['pending_mfa_attempts'] = pending_attempts + 1
-            record_login_attempt(user.get_username(), successful=False)
+            record_login_attempt(user.get_username(), successful=False, user=user)
             return Response(
                 {'detail': 'Invalid code.'},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -147,7 +150,7 @@ class LoginMFAView(AnonymousAPIView):
 
         self._clear_pending_mfa(request)
         login(request, user)
-        record_login_attempt(user.get_username(), successful=True)
+        record_login_attempt(user.get_username(), successful=True, user=user)
         return Response(get_public_user(user))
 
     def _clear_pending_mfa(self, request):

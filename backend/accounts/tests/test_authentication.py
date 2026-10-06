@@ -124,6 +124,7 @@ class LoginAttemptLoggingTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         attempt = LoginAttempt.objects.get()
         self.assertEqual(attempt.username, 'driver.one')
+        self.assertEqual(attempt.user, self.user)
         self.assertTrue(attempt.successful)
         self.assertIsNotNone(attempt.timestamp)
 
@@ -133,6 +134,15 @@ class LoginAttemptLoggingTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         attempt = LoginAttempt.objects.get()
         self.assertEqual(attempt.username, 'driver.one')
+        self.assertEqual(attempt.user, self.user)
+        self.assertFalse(attempt.successful)
+
+    def test_wrong_password_with_different_case_is_linked_to_account(self):
+        self.login(username='Driver.One', password='WrongPassword123!')
+
+        attempt = LoginAttempt.objects.get()
+        self.assertEqual(attempt.username, 'Driver.One')
+        self.assertEqual(attempt.user, self.user)
         self.assertFalse(attempt.successful)
 
     def test_unknown_username_is_recorded_as_failure(self):
@@ -141,6 +151,7 @@ class LoginAttemptLoggingTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         attempt = LoginAttempt.objects.get()
         self.assertEqual(attempt.username, 'nobody.here')
+        self.assertIsNone(attempt.user)
         self.assertFalse(attempt.successful)
 
     def test_unknown_username_and_wrong_password_get_identical_responses(self):
@@ -181,6 +192,7 @@ class LoginAttemptLoggingTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         attempt = LoginAttempt.objects.get()
         self.assertEqual(attempt.username, 'driver.one')
+        self.assertEqual(attempt.user, self.user)
         self.assertTrue(attempt.successful)
 
     def test_mfa_wrong_code_is_recorded_as_failure(self):
@@ -197,6 +209,7 @@ class LoginAttemptLoggingTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         attempt = LoginAttempt.objects.get()
         self.assertEqual(attempt.username, 'driver.one')
+        self.assertEqual(attempt.user, self.user)
         self.assertFalse(attempt.successful)
 
 

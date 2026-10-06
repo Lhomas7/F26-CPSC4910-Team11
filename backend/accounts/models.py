@@ -11,9 +11,22 @@ class SponsorCompany(models.Model):
         return self.name
 
 class LoginAttempt(models.Model):
+    # Linked by FK (not just username) so history follows the account through
+    # username changes. Null for attempts against usernames that don't exist.
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='login_attempts',
+    )
     username = models.CharField(max_length=150)
     timestamp = models.DateTimeField(auto_now_add=True)
     successful = models.BooleanField()
+
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [models.Index(fields=['user', '-timestamp'])]
 
     def __str__(self):
         result = 'Success' if self.successful else 'Failure'
