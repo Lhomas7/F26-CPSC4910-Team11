@@ -18,7 +18,7 @@ const FOCUSABLE = [
  * Focus starts on the element marked `data-autofocus` (or the first control),
  * stays inside while open, and returns to the trigger on close.
  */
-export default function Modal({ title, children, actions, onClose }) {
+export default function Modal({ title, children, actions, onClose, className = '' }) {
   const titleId = useId();
   const bodyId = useId();
   const dialogRef = useRef(null);
@@ -69,15 +69,15 @@ export default function Modal({ title, children, actions, onClose }) {
     <div className="modal-backdrop" onMouseDown={closeOnBackdrop}>
       <div
         ref={dialogRef}
-        className="modal"
+        className={`modal ${className}`.trim()}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        aria-describedby={bodyId}
+        aria-describedby={children ? bodyId : undefined}
         tabIndex="-1"
       >
         <h2 id={titleId} className="modal-title">{title}</h2>
-        <div id={bodyId} className="modal-body">{children}</div>
+        {children && <div id={bodyId} className="modal-body">{children}</div>}
         {actions && <div className="modal-actions">{actions}</div>}
       </div>
     </div>,

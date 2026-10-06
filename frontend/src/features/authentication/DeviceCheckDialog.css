@@ -1,3 +1,8 @@
+.device-check .modal-title,
+.device-check .modal-body {
+  text-align: center;
+}
+
 .device-check-actions {
   display: grid;
   gap: .5rem;

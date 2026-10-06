@@ -5,22 +5,17 @@ import DeviceCheckDialog from './DeviceCheckDialog';
 
 function renderDialog(props = {}) {
   const handlers = { onAnswer: jest.fn().mockResolvedValue(), onSignOut: jest.fn(), ...props };
-  render(<DeviceCheckDialog reason="new_device" {...handlers} />);
+  render(<DeviceCheckDialog {...handlers} />);
   return handlers;
 }
 
-test('explains a new browser and focuses the Yes button', () => {
+test('only asks whether this is the user\'s device', () => {
   renderDialog();
 
-  expect(screen.getByRole('dialog', { name: 'Is this your device?' }))
-    .toHaveTextContent('first time this account has signed in on this browser');
+  const dialog = screen.getByRole('dialog', { name: 'Is this your device?' });
+  expect(dialog.querySelector('.modal-body')).toBeNull();
+  expect(dialog).not.toHaveAttribute('aria-describedby');
   expect(screen.getByRole('button', { name: 'Yes, remember this device' })).toHaveFocus();
-});
-
-test('explains recent failed attempts', () => {
-  render(<DeviceCheckDialog reason="recent_failures" onAnswer={jest.fn()} onSignOut={jest.fn()} />);
-
-  expect(screen.getByRole('dialog')).toHaveTextContent('several failed sign-in attempts');
 });
 
 test('each answer sends the matching value', async () => {

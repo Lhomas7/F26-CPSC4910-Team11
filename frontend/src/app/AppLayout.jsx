@@ -115,7 +115,6 @@ export function AppLayout() {
         )}
         {user?.session?.device_check && (
           <DeviceCheckDialog
-            reason={user.session.device_check}
             onAnswer={answerDeviceCheck}
             onSignOut={signOut}
           />
