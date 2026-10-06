@@ -10,13 +10,15 @@ from django.core.cache import cache
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..middleware import impersonation_details
+from ..middleware import client_ip, impersonation_details
+from ..models import AdminImpersonationEvent
 from ..serializers import (
     ChangePasswordSerializer,
     LoginMFARequestCodeSerializer,
@@ -216,6 +218,7 @@ class LoginMFARequestCodeView(AnonymousAPIView):
         return Response({'detail': 'Verification code sent.'})
 
 
+@method_decorator(never_cache, name='dispatch')
 class MeView(APIView):
     permission_classes = ()
 
@@ -232,13 +235,31 @@ class MeView(APIView):
 
 
 
+@method_decorator(never_cache, name='dispatch')
 class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
+    """End the session: delete it server-side and expire the session cookie.
+
+    Open to anonymous callers so a session that already expired still gets a
+    clean 204 and the browser drops its stale cookie. Logged-in callers still go
+    through SessionAuthentication's CSRF check.
+    """
+    permission_classes = ()
 
     def post(self, request):
+        if getattr(request, 'impersonation_active', False):
+            # Logging out also ends the admin's view-as session; keep the audit
+            # trail complete as AdminImpersonationStopView does.
+            AdminImpersonationEvent.objects.create(
+                admin=request.real_user,
+                target=request.user,
+                target_role=get_account_type(request.user),
+                action='stop',
+                ip_address=client_ip(request),
+            )
         logout(request)
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
+
 @hide_sensitive_data
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]

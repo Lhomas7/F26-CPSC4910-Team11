@@ -45,8 +45,14 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    await api.logout();
-    setState({ loading: false, user: null });
+    try {
+      await api.logout();
+    } catch {
+      // Still drop the signed-in view if the request fails; leaving the account
+      // on screen would invite the next person at this device to keep using it.
+    } finally {
+      setState({ loading: false, user: null });
+    }
   }, []);
 
   const updateUser = useCallback((user) => {

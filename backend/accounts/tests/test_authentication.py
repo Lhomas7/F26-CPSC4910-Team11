@@ -9,8 +9,10 @@ from unittest.mock import patch
 
 import pyotp
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
+from django.contrib.sessions.models import Session
 from django.core import mail
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -36,6 +38,7 @@ from ..models import (
 )
 from ..middleware import IMPERSONATION_STARTED_KEY
 from ..services.crypto import decrypt_secret, encrypt_secret
+from .common import enroll_totp
 from ..services.mfa import backup_codes_remaining, create_mfa_code
 from ..views import LoginView
 
@@ -195,6 +198,118 @@ class LoginAttemptLoggingTests(APITestCase):
         attempt = LoginAttempt.objects.get()
         self.assertEqual(attempt.username, 'driver.one')
         self.assertFalse(attempt.successful)
+
+
+class LogoutTests(APITestCase):
+    """Logging out must end the session on the server and in the browser."""
+
+    logout_url = reverse('accounts:logout')
+    me_url = reverse('accounts:me')
+
+    @classmethod
+    def setUpTestData(cls):
+        User = get_user_model()
+        cls.driver = User.objects.create_user(
+            username='driver.one',
+            password='ExamplePassword123!',
+            email='driver@example.com',
+        )
+        Driver.objects.create(user=cls.driver, name='Driver One', status='approved')
+        cls.admin = User.objects.create_superuser(
+            username='admin.one',
+            password='ExamplePassword123!',
+            email='admin@example.com',
+        )
+        enroll_totp(cls.admin)
+        cls.sponsor = User.objects.create_user(
+            username='sponsor.one',
+            password='ExamplePassword123!',
+            email='sponsor@example.com',
+        )
+        SponsorAccount.objects.create(
+            user=cls.sponsor,
+            company=SponsorCompany.objects.create(name='Palmetto Freight'),
+        )
+        enroll_totp(cls.sponsor)
+
+    def assert_logout_ends_session(self):
+        session_key = self.client.cookies[settings.SESSION_COOKIE_NAME].value
+        self.assertTrue(self.client.get(self.me_url).data['authenticated'])
+
+        response = self.client.post(self.logout_url)
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        cookie = response.cookies[settings.SESSION_COOKIE_NAME]
+        self.assertEqual(cookie.value, '')
+        self.assertEqual(cookie['max-age'], 0)
+        self.assertIn('no-store', response['Cache-Control'])
+        self.assertFalse(Session.objects.filter(session_key=session_key).exists())
+        self.assertFalse(self.client.get(self.me_url).data['authenticated'])
+
+        # Someone who copied the old cookie cannot pick the session back up.
+        replay = self.client_class()
+        replay.cookies[settings.SESSION_COOKIE_NAME] = session_key
+        self.assertFalse(replay.get(self.me_url).data['authenticated'])
+
+    def test_driver_logout_ends_the_session(self):
+        self.client.post(
+            reverse('accounts:login'),
+            {'username': 'driver.one', 'password': 'ExamplePassword123!'},
+            format='json',
+        )
+        self.assert_logout_ends_session()
+
+    def test_admin_logout_ends_the_session(self):
+        self.client.force_login(self.admin)
+        self.assert_logout_ends_session()
+
+    def test_sponsor_logout_ends_the_session(self):
+        self.client.force_login(self.sponsor)
+        self.assert_logout_ends_session()
+
+    def test_logout_without_a_session_still_succeeds(self):
+        response = self.client.post(self.logout_url)
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_admin_logout_while_viewing_as_a_driver_records_the_stop(self):
+        self.client.force_login(self.admin)
+        started = self.client.post(
+            reverse('accounts:admin-impersonation-start', args=[self.driver.id]),
+            {},
+            format='json',
+        )
+        self.assertEqual(started.status_code, status.HTTP_200_OK)
+
+        self.assert_logout_ends_session()
+
+        stop = AdminImpersonationEvent.objects.get(action='stop')
+        self.assertEqual(stop.admin, self.admin)
+        self.assertEqual(stop.target, self.driver)
+        self.assertEqual(stop.target_role, 'driver')
+
+    def test_admin_logout_while_viewing_as_a_sponsor_records_the_stop(self):
+        self.client.force_login(self.admin)
+        started = self.client.post(
+            reverse('accounts:admin-impersonation-start', args=[self.sponsor.id]),
+            {},
+            format='json',
+        )
+        self.assertEqual(started.status_code, status.HTTP_200_OK)
+
+        self.assert_logout_ends_session()
+
+        stop = AdminImpersonationEvent.objects.get(action='stop')
+        self.assertEqual(stop.admin, self.admin)
+        self.assertEqual(stop.target, self.sponsor)
+        self.assertEqual(stop.target_role, 'sponsor')
+
+    def test_me_response_is_not_cached(self):
+        self.client.force_login(self.driver)
+
+        response = self.client.get(self.me_url)
+
+        self.assertIn('no-store', response['Cache-Control'])
 
 
 class ErrorReportRedactionTests(SimpleTestCase):
