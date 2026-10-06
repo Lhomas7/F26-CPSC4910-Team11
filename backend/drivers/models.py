@@ -96,3 +96,40 @@ class PointTransaction(models.Model):
     def __str__(self):
         sign = '+' if self.point_change > 0 else ''
         return f'{self.driver}: {sign}{self.point_change} points'
+
+
+class DriverStatusChange(models.Model):
+    """Audit record of a sponsor rejecting or dropping a driver, with the reason."""
+
+    REJECTED = 'rejected'
+    DROPPED = 'dropped'
+    ACTION_CHOICES = [
+        (REJECTED, 'Rejected application'),
+        (DROPPED, 'Dropped from sponsor'),
+    ]
+
+    driver = models.ForeignKey(
+        Driver,
+        on_delete=models.PROTECT,
+        related_name='status_changes',
+    )
+    sponsor = models.ForeignKey(
+        'accounts.SponsorCompany',
+        on_delete=models.PROTECT,
+        related_name='driver_status_changes',
+    )
+    changed_by_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='driver_status_changes_made',
+    )
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    reason = models.CharField(max_length=500)
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('-changed_at', '-id')
+
+    def __str__(self):
+        return f'{self.driver}: {self.get_action_display()}'

@@ -1,0 +1,207 @@
+.points-page {
+  min-height: 100%;
+}
+
+.points-content {
+  display: grid;
+  gap: 1rem;
+  max-width: 56rem;
+  padding: 1.5rem 1.75rem 4rem;
+}
+
+/* ---------- Balance card ---------- */
+
+.points-balance,
+.points-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .65rem;
+}
+
+.points-balance {
+  align-items: flex-start;
+  display: grid;
+  gap: .3rem;
+  padding: 1.1rem 1.25rem;
+}
+
+.points-balance > span {
+  color: var(--ink-2);
+  font-size: .75rem;
+}
+
+.points-balance strong {
+  color: var(--accent);
+  font-size: 1.9rem;
+  line-height: 1.1;
+}
+
+.points-balance small {
+  color: var(--ink-2);
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+.points-balance p {
+  color: var(--ink-2);
+  font-size: .8rem;
+  margin: .2rem 0 0;
+}
+
+.points-balance .points-button {
+  margin-top: .35rem;
+}
+
+/* ---------- History card ---------- */
+
+.points-card {
+  overflow: hidden;
+}
+
+.points-card h2 {
+  font-size: .95rem;
+  margin: 0;
+}
+
+.points-card > h2,
+.points-card-heading {
+  border-bottom: 1px solid var(--line);
+  padding: 1rem 1.1rem;
+}
+
+.points-card-heading {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem;
+  justify-content: space-between;
+}
+
+.points-driver-filter {
+  flex: 0 1 13rem;
+  min-width: 10rem;
+}
+
+.points-driver-filter .select-menu-trigger {
+  height: 2.15rem;
+}
+
+.point-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.point-history li {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: .75rem 1.1rem;
+}
+
+.point-history li:first-child {
+  border-top: 0;
+}
+
+.point-history-main {
+  display: grid;
+  gap: .15rem;
+  min-width: 0;
+}
+
+.point-history-driver {
+  font-size: .8rem;
+  font-weight: 800;
+}
+
+.point-history-driver a {
+  color: var(--ink);
+}
+
+.point-history-reason {
+  font-size: .85rem;
+  overflow-wrap: anywhere;
+}
+
+.point-history-meta {
+  color: var(--ink-2);
+  font-size: .72rem;
+}
+
+.point-history-change {
+  border-radius: 999px;
+  flex-shrink: 0;
+  font-size: .8rem;
+  padding: .2rem .55rem;
+}
+
+.point-history-change.positive {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.point-history-change.negative {
+  background: #fbeae8;
+  color: #b3372f;
+}
+
+.point-history-empty {
+  color: var(--ink-2);
+  font-size: .85rem;
+  margin: 0;
+  padding: 1.25rem 1.1rem;
+}
+
+/* ---------- Shared bits ---------- */
+
+.points-button {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .45rem;
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 800;
+  min-height: 2.25rem;
+  padding: 0 .85rem;
+  text-decoration: none;
+}
+
+.points-button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.points-skeleton {
+  border-radius: .65rem;
+  height: 6rem;
+  margin-bottom: 1rem;
+}
+
+.points-skeleton-list {
+  height: 16rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .point-history-change.negative {
+    background: #3b2220;
+    color: #e5766e;
+  }
+}
+
+@media (max-width: 42rem) {
+  .points-content {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .point-history li {
+    padding: .7rem .85rem;
+  }
+}

@@ -206,6 +206,98 @@
   width: 30ch;
 }
 
+/* ---------- Admin release editor ---------- */
+
+.about-button {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .45rem;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: .8rem;
+  font-weight: 700;
+  padding: .45rem .8rem;
+}
+
+.about-button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.about-button:disabled {
+  cursor: progress;
+  opacity: .6;
+}
+
+.about-edit {
+  display: grid;
+  gap: .8rem;
+  margin-bottom: 1.25rem;
+}
+
+.about-edit-grid {
+  display: grid;
+  gap: .8rem;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+
+.about-edit label {
+  display: grid;
+  gap: .3rem;
+}
+
+.about-edit label > span {
+  color: var(--ink-2);
+  font-size: .75rem;
+  font-weight: 700;
+}
+
+.about-edit input,
+.about-edit textarea {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .45rem;
+  color: var(--ink);
+  font: inherit;
+  padding: .55rem .65rem;
+}
+
+.about-edit textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.about-edit input:focus,
+.about-edit textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: 0;
+}
+
+.about-edit-actions {
+  display: flex;
+  gap: .5rem;
+  justify-content: flex-end;
+}
+
+.about-edit-error {
+  color: #b3372f;
+  font-size: .75rem;
+  margin: 0;
+}
+
+.about-notice {
+  background: var(--accent-soft);
+  border-radius: .5rem;
+  color: var(--accent);
+  font-size: .82rem;
+  font-weight: 700;
+  margin: 0 0 1rem;
+  padding: .7rem .9rem;
+}
+
 @media (prefers-color-scheme: dark) {
   .points-steps li::before {
     background: #3a2f1a;

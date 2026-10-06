@@ -5,6 +5,7 @@ import { useAuth } from '../../auth/AuthContext';
 import PageHeader from '../../app/PageHeader';
 import ProgramPerks from '../../components/branding/ProgramPerks';
 import RoadTruck from '../../components/branding/RoadTruck';
+import HomeDashboard from './components/HomeDashboard';
 import './WelcomePage.css';
 
 export default function WelcomePage() {
@@ -42,15 +43,10 @@ export default function WelcomePage() {
             </div>
           ) : (
             <div className="welcome-cta">
-              {accountType === 'sponsor' && (
-                <Link className="welcome-button primary" to="/drivers">Go to drivers</Link>
-              )}
-              <Link
-                className={`welcome-button ${accountType === 'sponsor' ? '' : 'primary'}`}
-                to="/account"
-              >
-                My account
-              </Link>
+              {accountType === 'driver' && <Link className="welcome-button primary" to="/points">View my points</Link>}
+              {accountType === 'sponsor' && <Link className="welcome-button primary" to="/drivers">Go to drivers</Link>}
+              {accountType === 'admin' && <Link className="welcome-button primary" to="/users">Manage users</Link>}
+              <Link className="welcome-button" to="/account">My account</Link>
             </div>
           )}
 
@@ -58,6 +54,8 @@ export default function WelcomePage() {
 
           <RoadTruck className="welcome-lane" />
         </section>
+
+        {signedIn && <HomeDashboard accountType={accountType} />}
       </main>
     </div>
   );

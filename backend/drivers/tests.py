@@ -9,7 +9,7 @@ from rest_framework.test import APITestCase
 from accounts.models import SponsorAccount, SponsorCompany
 from accounts.tests.common import enroll_totp
 
-from .models import Driver, PointTransaction
+from .models import Driver, DriverStatusChange, PointTransaction
 from .services import MAX_POINT_ADJUSTMENT, PointAdjustmentError, adjust_driver_points
 
 
@@ -397,76 +397,155 @@ class DriverViewSetMFAGateTests(APITestCase):
         self.assertEqual(allowed.status_code, status.HTTP_200_OK)
 
 
-class AdminDriverOverviewTests(APITestCase):
+class RoleScopedDriverTestData(APITestCase):
+    """Two companies, one sponsor each, an admin, and drivers in each state."""
+
     @classmethod
     def setUpTestData(cls):
-        cls.company = SponsorCompany.objects.create(name='Overview Freight')
-        cls.other_company = SponsorCompany.objects.create(name='Second Freight')
+        cls.company = SponsorCompany.objects.create(name='Scope Freight')
+        cls.other_company = SponsorCompany.objects.create(name='Elsewhere Freight')
         cls.admin_user = get_user_model().objects.create_user(
-            username='overview.admin',
+            username='scope.admin',
             password='ExamplePassword123!',
             is_staff=True,
         )
         enroll_totp(cls.admin_user)
         cls.sponsor_user = get_user_model().objects.create_user(
-            username='overview.sponsor',
+            username='scope.sponsor',
             password='ExamplePassword123!',
+            first_name='Pat',
+            last_name='Sponsor',
         )
         SponsorAccount.objects.create(user=cls.sponsor_user, company=cls.company)
         enroll_totp(cls.sponsor_user)
-        cls.drivers = []
-        for username, name, company in (
-            ('overview.one', 'Avery One', cls.company),
-            ('overview.two', 'Blake Two', cls.other_company),
-            ('overview.three', 'Casey Three', None),
-        ):
-            user = get_user_model().objects.create_user(username=username, password='ExamplePassword123!')
-            cls.drivers.append(Driver.objects.create(user=user, name=name, sponsor=company))
-        PointTransaction.objects.create(
-            driver=cls.drivers[0],
-            sponsor=cls.company,
-            changed_by_user=cls.sponsor_user,
-            point_change=40,
-            reason='Safe week',
+        cls.other_sponsor_user = get_user_model().objects.create_user(
+            username='elsewhere.sponsor',
+            password='ExamplePassword123!',
         )
+        SponsorAccount.objects.create(user=cls.other_sponsor_user, company=cls.other_company)
+        enroll_totp(cls.other_sponsor_user)
 
-    def test_admin_sees_every_driver_with_organization_and_balance(self):
+        def make_driver(username, name, company, status_value):
+            user = get_user_model().objects.create_user(username=username, password='ExamplePassword123!')
+            return Driver.objects.create(user=user, name=name, sponsor=company, status=status_value)
+
+        cls.approved = make_driver('scope.approved', 'Avery Approved', cls.company, 'approved')
+        cls.pending = make_driver('scope.pending', 'Blake Pending', cls.company, 'pending')
+        cls.outsider = make_driver('scope.outsider', 'Casey Outsider', cls.other_company, 'approved')
+        for driver, company, change, reason in (
+            (cls.approved, cls.company, 50, 'Clean inspection'),
+            (cls.approved, cls.company, -10, 'Late log'),
+            (cls.outsider, cls.other_company, 30, 'Other company award'),
+        ):
+            PointTransaction.objects.create(
+                driver=driver,
+                sponsor=company,
+                changed_by_user=cls.sponsor_user if company == cls.company else cls.other_sponsor_user,
+                point_change=change,
+                reason=reason,
+            )
+
+
+class AdminDriverApiTests(RoleScopedDriverTestData):
+    def test_admins_get_no_drivers_and_cannot_change_them(self):
         self.client.force_authenticate(self.admin_user)
 
-        response = self.client.get(reverse('driver-list'))
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        by_name = {row['name']: row for row in response.data}
-        self.assertEqual(set(by_name), {'Avery One', 'Blake Two', 'Casey Three'})
-        self.assertEqual(by_name['Avery One']['sponsor_name'], 'Overview Freight')
-        self.assertEqual(by_name['Avery One']['point_balance'], 40)
-        self.assertEqual(by_name['Blake Two']['sponsor_name'], 'Second Freight')
-        self.assertIsNone(by_name['Casey Three']['sponsor_name'])
-        self.assertEqual(by_name['Casey Three']['user'], self.drivers[2].user_id)
-
-    def test_admin_overview_is_read_only(self):
-        self.client.force_authenticate(self.admin_user)
-        detail_url = reverse('driver-detail', kwargs={'pk': self.drivers[0].pk})
-
-        self.assertEqual(self.client.get(detail_url).status_code, status.HTTP_200_OK)
+        self.assertEqual(self.client.get(reverse('driver-list')).data, [])
+        detail_url = reverse('driver-detail', kwargs={'pk': self.approved.pk})
+        self.assertEqual(self.client.get(detail_url).status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(
-            self.client.patch(detail_url, {'status': 'approved'}, format='json').status_code,
+            self.client.patch(detail_url, {'status': 'pending'}, format='json').status_code,
             status.HTTP_404_NOT_FOUND,
         )
-        self.assertEqual(self.client.delete(detail_url).status_code, status.HTTP_404_NOT_FOUND)
-        points = self.client.post(
-            reverse('driver-points', kwargs={'pk': self.drivers[0].pk}),
-            {'point_change': 5, 'reason': 'Admin award'},
-            format='json',
-        )
-        self.assertEqual(points.status_code, status.HTTP_403_FORBIDDEN)
-        self.drivers[0].refresh_from_db()
-        self.assertEqual(self.drivers[0].status, 'pending')
-        self.assertTrue(Driver.objects.filter(pk=self.drivers[0].pk).exists())
 
-    def test_sponsor_still_only_sees_their_own_drivers(self):
+    def test_driver_list_includes_sponsor_name(self):
         self.client.force_authenticate(self.sponsor_user)
 
-        response = self.client.get(reverse('driver-list'))
+        names = {row['name']: row['sponsor_name'] for row in self.client.get(reverse('driver-list')).data}
 
-        self.assertEqual([row['name'] for row in response.data], ['Avery One'])
+        self.assertEqual(names, {'Avery Approved': 'Scope Freight', 'Blake Pending': 'Scope Freight'})
+
+
+class DriverRemovalTests(RoleScopedDriverTestData):
+    def remove(self, driver, data, user=None):
+        self.client.force_authenticate(user or self.sponsor_user)
+        return self.client.post(reverse('driver-remove', kwargs={'pk': driver.pk}), data, format='json')
+
+    def test_rejecting_a_pending_driver_unlinks_them_with_an_audited_reason(self):
+        response = self.remove(self.pending, {'reason': '  Missing   CDL details '})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['action'], 'rejected')
+        self.pending.refresh_from_db()
+        self.assertIsNone(self.pending.sponsor)
+        record = DriverStatusChange.objects.get(driver=self.pending)
+        self.assertEqual(record.reason, 'Missing CDL details')
+        self.assertEqual(record.sponsor, self.company)
+        self.assertEqual(record.changed_by_user, self.sponsor_user)
+
+    def test_dropping_an_approved_driver_keeps_their_point_history(self):
+        response = self.remove(self.approved, {'reason': 'Left the company'})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['action'], 'dropped')
+        self.approved.refresh_from_db()
+        self.assertIsNone(self.approved.sponsor)
+        self.assertEqual(self.approved.status, 'pending')
+        self.assertEqual(self.approved.point_balance, 40)
+        self.assertEqual(self.approved.point_transactions.count(), 2)
+
+    def test_a_reason_is_required_and_nothing_changes_without_one(self):
+        for data in ({}, {'reason': '   '}, {'reason': 'a' * 501}, {'reason': 'bad\x00reason'}):
+            with self.subTest(data=data):
+                response = self.remove(self.pending, data)
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn('reason', response.data)
+        self.pending.refresh_from_db()
+        self.assertEqual(self.pending.sponsor, self.company)
+        self.assertFalse(DriverStatusChange.objects.exists())
+
+    def test_only_the_drivers_own_sponsor_can_remove_them(self):
+        self.assertEqual(
+            self.remove(self.pending, {'reason': 'Not ours'}, user=self.other_sponsor_user).status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+        self.assertEqual(
+            self.remove(self.pending, {'reason': 'Admin attempt'}, user=self.admin_user).status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+        self.assertEqual(
+            self.remove(self.pending, {'reason': 'Self'}, user=self.pending.user).status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+        self.pending.refresh_from_db()
+        self.assertEqual(self.pending.sponsor, self.company)
+
+
+class PointHistoryApiTests(RoleScopedDriverTestData):
+    def history(self, user, **params):
+        self.client.force_authenticate(user)
+        return self.client.get(reverse('point-history'), params)
+
+    def test_drivers_see_only_their_own_history_with_reasons(self):
+        response = self.history(self.approved.user)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual([row['reason'] for row in response.data], ['Late log', 'Clean inspection'])
+        self.assertEqual(response.data[0]['point_change'], -10)
+        self.assertEqual(response.data[0]['changed_by_name'], 'Pat Sponsor')
+        self.assertEqual(response.data[0]['sponsor_name'], 'Scope Freight')
+
+    def test_sponsors_see_their_organizations_changes_and_can_filter_by_driver(self):
+        everything = self.history(self.sponsor_user)
+        self.assertEqual({row['driver_name'] for row in everything.data}, {'Avery Approved'})
+        self.assertEqual(len(everything.data), 2)
+
+        latest = self.history(self.sponsor_user, limit=1)
+        self.assertEqual([row['reason'] for row in latest.data], ['Late log'])
+
+        other_driver = self.history(self.sponsor_user, driver=self.outsider.pk)
+        self.assertEqual(other_driver.data, [])
+        self.assertEqual(self.history(self.sponsor_user, driver='abc').data, [])
+
+    def test_admins_have_no_point_history(self):
+        self.assertEqual(self.history(self.admin_user).status_code, status.HTTP_403_FORBIDDEN)

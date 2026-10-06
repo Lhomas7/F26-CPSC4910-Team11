@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 
 import { API_URL } from '../../api';
 import PageHeader from '../../app/PageHeader';
+import { useAuth } from '../../auth/AuthContext';
 import RoadTruck from '../../components/branding/RoadTruck';
 import Skeleton from '../../components/feedback/Skeleton';
 import StatePanel from '../../components/feedback/StatePanel';
+import AboutEditForm from './AboutEditForm';
 import './AboutPage.css';
 
 function formatReleaseDate(releaseDate) {
@@ -16,7 +18,10 @@ function formatReleaseDate(releaseDate) {
 }
 
 export default function AboutPage() {
+  const { user } = useAuth() || {};
   const [release, setRelease] = useState(null);
+  const [editing, setEditing] = useState(false);
+  const [notice, setNotice] = useState('');
   const [status, setStatus] = useState('loading');
   const [requestNumber, setRequestNumber] = useState(0);
 
@@ -58,10 +63,20 @@ export default function AboutPage() {
   const retry = () => setRequestNumber((value) => value + 1);
 
   const ready = status === 'ready' && release;
+  // Admins can edit the release in place (the server only accepts edits from admins).
+  const canEdit = ready && user?.account_type === 'admin' && !editing;
 
   return (
     <div className="about-layout">
-      <PageHeader title="About" subtitle="Product and release information" />
+      <PageHeader
+        title="About"
+        subtitle="Product and release information"
+        actions={canEdit && (
+          <button className="about-button" type="button" onClick={() => { setNotice(''); setEditing(true); }}>
+            Edit release details
+          </button>
+        )}
+      />
 
       <main className="about-content" aria-busy={status === 'loading'}>
         <p className="sr-only" role="status" aria-live="polite">
@@ -79,6 +94,20 @@ export default function AboutPage() {
           <StatePanel className="about-state" title="No release information yet">
             <p>An administrator needs to add the product and release details in Django Admin before they can appear here.</p>
           </StatePanel>
+        )}
+
+        {notice && <p className="about-notice" role="status">{notice}</p>}
+
+        {editing && ready && (
+          <AboutEditForm
+            release={release}
+            onCancel={() => setEditing(false)}
+            onSaved={(saved) => {
+              setRelease(saved);
+              setEditing(false);
+              setNotice('Release details saved.');
+            }}
+          />
         )}
 
         {(status === 'loading' || ready) && (

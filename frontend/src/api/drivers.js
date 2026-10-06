@@ -22,3 +22,17 @@ export function adjustDriverPoints(driverId, pointChange, reason) {
     body: { point_change: pointChange, reason },
   }).then(readJson);
 }
+
+/** Point history, newest first: a driver's own, or a sponsor's organization's (optionally one driver). */
+export function getPointHistory({ driver, limit } = {}) {
+  const params = new URLSearchParams();
+  if (driver) params.set('driver', driver);
+  if (limit) params.set('limit', limit);
+  const query = params.toString();
+  return request(`/points/${query ? `?${query}` : ''}`).then(readJson);
+}
+
+/** Reject a pending driver or drop an approved one; the server records the reason. */
+export function removeDriver(driverId, reason) {
+  return request(`/sponsor/drivers/${driverId}/remove/`, { method: 'POST', body: { reason } }).then(readJson);
+}

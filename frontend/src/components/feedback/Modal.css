@@ -76,6 +76,12 @@
   filter: brightness(1.08);
 }
 
+.modal-button.danger {
+  background: #b3372f;
+  border-color: #b3372f;
+  color: white;
+}
+
 .modal-button:disabled {
   cursor: default;
   opacity: .6;

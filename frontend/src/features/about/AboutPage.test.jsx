@@ -1,6 +1,11 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
+import { updateRelease } from '../../api';
+import { useAuth } from '../../auth/AuthContext';
 import AboutPage from './AboutPage';
+
+jest.mock('../../auth/AuthContext');
+jest.mock('../../api', () => ({ ...jest.requireActual('../../api'), updateRelease: jest.fn() }));
 
 const release = {
   team_number: 11,
@@ -92,4 +97,31 @@ test('allows a failed request to be retried', async () => {
     await screen.findByRole('heading', { name: release.product_name }),
   ).toBeInTheDocument();
   expect(global.fetch).toHaveBeenCalledTimes(2);
+});
+
+test('admins can edit the release details in place', async () => {
+  useAuth.mockReturnValue({ user: { account_type: 'admin' } });
+  global.fetch.mockResolvedValue({ ok: true, json: async () => release });
+  updateRelease.mockResolvedValue({ ...release, version_number: 'Sprint 4' });
+
+  render(<AboutPage />);
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit release details' }));
+  fireEvent.change(screen.getByLabelText('Version'), { target: { value: 'Sprint 4' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+  await waitFor(() => expect(updateRelease).toHaveBeenCalledWith(expect.objectContaining({ version_number: 'Sprint 4', team_number: 11 })));
+  expect(await screen.findByRole('status', { name: '' })).toBeInTheDocument();
+  expect(screen.getByText('Release details saved.')).toBeInTheDocument();
+  expect(screen.getAllByText('Sprint 4').length).toBeGreaterThan(0);
+});
+
+test('other account types cannot edit the release', async () => {
+  useAuth.mockReturnValue({ user: { account_type: 'sponsor' } });
+  global.fetch.mockResolvedValue({ ok: true, json: async () => release });
+
+  render(<AboutPage />);
+
+  expect(await screen.findByRole('heading', { name: release.product_name })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Edit release details' })).not.toBeInTheDocument();
 });

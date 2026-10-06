@@ -1,13 +1,14 @@
-import unicodedata
 from dataclasses import dataclass
 
 from django.db import transaction
 
 from drivers.models import Driver, PointTransaction
 
+from .reasons import MAX_REASON_LENGTH, normalize_reason
+
 
 MAX_POINT_ADJUSTMENT = 1_000_000
-MAX_POINT_REASON_LENGTH = 500
+MAX_POINT_REASON_LENGTH = MAX_REASON_LENGTH
 
 
 class PointAdjustmentError(ValueError):
@@ -50,36 +51,11 @@ def _validated_point_change(value):
 
 
 def _normalized_reason(value):
-    if not isinstance(value, str):
-        raise PointAdjustmentError(
-            'reason',
-            'Enter a reason for this point adjustment.',
-            code='missing_reason',
-        )
-    normalized = unicodedata.normalize('NFKC', value)
-    if any(
-        unicodedata.category(character).startswith('C') and not character.isspace()
-        for character in normalized
-    ):
-        raise PointAdjustmentError(
-            'reason',
-            'Control characters are not allowed.',
-            code='invalid_reason',
-        )
-    normalized = ' '.join(normalized.split())
-    if not normalized:
-        raise PointAdjustmentError(
-            'reason',
-            'Enter a reason for this point adjustment.',
-            code='missing_reason',
-        )
-    if len(normalized) > MAX_POINT_REASON_LENGTH:
-        raise PointAdjustmentError(
-            'reason',
-            f'Reasons must be {MAX_POINT_REASON_LENGTH} characters or fewer.',
-            code='reason_too_long',
-        )
-    return normalized
+    return normalize_reason(
+        value,
+        subject='this point adjustment',
+        error=lambda code, message: PointAdjustmentError('reason', message, code=code),
+    )
 
 
 def _sponsor_company_id(user):

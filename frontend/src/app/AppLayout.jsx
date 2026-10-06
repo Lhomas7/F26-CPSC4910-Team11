@@ -8,6 +8,7 @@ import { AccountIcon, ChevronDownIcon, SignOutIcon, UserIcon } from '../componen
 import MfaSetupWall from '../features/accounts/MfaSetupWall';
 import DeviceCheckDialog from '../features/authentication/DeviceCheckDialog';
 import './AppLayout.css';
+import { navItemsFor } from './navigation';
 import { PageHeaderTargetProvider } from './PageHeader';
 
 function AccountMenu({ user, onSignOut }) {
@@ -173,20 +174,12 @@ export function AppLayout() {
           <span className="brand-name">Good Driver</span>
         </Link>
         <nav className="site-nav" aria-label="Primary navigation">
-          <NavLink to="/drivers">
-            <span className="nav-icon" aria-hidden="true" />
-            Drivers
-          </NavLink>
-          <NavLink to="/about">
-            <span className="nav-icon" aria-hidden="true" />
-            About
-          </NavLink>
-          {user?.account_type === 'admin' && (
-            <NavLink to="/users">
+          {navItemsFor(user).map((item) => (
+            <NavLink key={item.to} to={item.to} end={item.to === '/'}>
               <span className="nav-icon" aria-hidden="true" />
-              Users
+              {item.label}
             </NavLink>
-          )}
+          ))}
         </nav>
         <div className="sidebar-account">
           <AccountMenu user={user} onSignOut={signOut} />

@@ -6,3 +6,8 @@ export function currentRelease() {
     response.status === 404 ? null : readJson(response)
   ));
 }
+
+/** Admins only: update fields of the current release. */
+export function updateRelease(data) {
+  return request('/about/', { method: 'PATCH', body: data }).then(readJson);
+}

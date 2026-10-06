@@ -139,21 +139,6 @@
   gap: .35rem;
 }
 
-/* Admin-only sponsor organization dropdown. */
-.drivers-organization-filter {
-  flex: 0 1 12rem;
-  min-width: 10rem;
-}
-
-.drivers-organization-filter .select-menu-trigger {
-  height: 2.15rem;
-}
-
-.driver-card-org {
-  color: var(--ink-2);
-  font-size: .72rem;
-  margin: .3rem 0 0;
-}
 
 .drivers-filters button {
   align-items: center;
@@ -596,6 +581,91 @@
 .point-confirmation p {
   flex-basis: 100%;
   margin: 0;
+}
+
+/* ---------- Driver page: actions, history, reject/drop ---------- */
+
+.drivers-button.danger {
+  background: #b3372f;
+  border-color: #b3372f;
+  color: white;
+}
+
+.driver-summary {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.driver-summary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+.driver-history {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .65rem;
+  overflow: hidden;
+}
+
+.driver-history h2 {
+  border-bottom: 1px solid var(--line);
+  font-size: .95rem;
+  margin: 0;
+  padding: 1rem 1.1rem;
+}
+
+.drivers-notice {
+  background: var(--accent-soft);
+  border-radius: .5rem;
+  color: var(--accent);
+  font-size: .82rem;
+  font-weight: 700;
+  margin: 0;
+  padding: .7rem .9rem;
+}
+
+.remove-driver-dialog form {
+  display: grid;
+  gap: .4rem;
+}
+
+.remove-driver-dialog form p {
+  margin: 0 0 .4rem;
+}
+
+.remove-driver-dialog label {
+  color: var(--ink-2);
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.remove-driver-dialog textarea {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .45rem;
+  color: var(--ink);
+  font: inherit;
+  min-height: 5rem;
+  padding: .6rem;
+  resize: vertical;
+}
+
+.remove-driver-dialog textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: 0;
+}
+
+.remove-driver-dialog small {
+  color: var(--ink-2);
+  font-size: .72rem;
+}
+
+.remove-driver-dialog small.error {
+  color: #b3372f;
 }
 
 @media (max-width: 42rem) {

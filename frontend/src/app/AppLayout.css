@@ -519,3 +519,9 @@ body {
   color: #9f241d;
   font-weight: 700;
 }
+
+/* Shown by RequireAuth when a signed-in user opens a page their role can't use. */
+.forbidden-page {
+  max-width: 40rem;
+  padding: 1.5rem 1.75rem;
+}
