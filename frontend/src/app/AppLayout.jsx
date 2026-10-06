@@ -2,17 +2,41 @@ import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 
 import { useAuth } from '../auth/AuthContext';
+import ConfirmDialog from '../components/ConfirmDialog';
 import MfaSetupWall from '../features/accounts/MfaSetupWall';
 import './AppLayout.css';
 
 function AccountMenu({ user, onSignOut }) {
+  const [confirming, setConfirming] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+
+  const confirmSignOut = async () => {
+    setSigningOut(true);
+    try {
+      await onSignOut();
+    } finally {
+      setSigningOut(false);
+      setConfirming(false);
+    }
+  };
+
   if (user) {
     return (
       <>
         <span className="topbar-user">{user.name || user.username}</span>
-        <button className="topbar-signout" type="button" onClick={onSignOut}>
+        <button className="topbar-signout" type="button" onClick={() => setConfirming(true)}>
           Sign out
         </button>
+        {confirming && (
+          <ConfirmDialog
+            title="Sign out?"
+            message="Are you sure you want to sign out? You'll need to sign in again to keep using your account."
+            confirmLabel={signingOut ? 'Signing out…' : 'Sign out'}
+            busy={signingOut}
+            onConfirm={confirmSignOut}
+            onCancel={() => setConfirming(false)}
+          />
+        )}
       </>
     );
   }
