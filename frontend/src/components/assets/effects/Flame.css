@@ -1,0 +1,23 @@
+.asset-flame {
+  --asset-h: .9em;
+  --asset-w: .7em;
+}
+
+.asset-flame-fire {
+  animation: asset-flame-flicker var(--flicker-speed, .35s) ease-in-out infinite alternate;
+  background: radial-gradient(ellipse at 50% 85%, #fff2b3 0 18%, #ffb020 19% 45%, #e5482f 46% 70%, transparent 71%);
+  border-radius: 50% 50% 35% 35%;
+  inset: 0;
+  transform-origin: 50% 100%;
+}
+
+@keyframes asset-flame-flicker {
+  from { opacity: .85; transform: scale(.9, .85) skewX(-4deg); }
+  to { opacity: 1; transform: scale(1.05, 1.15) skewX(5deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .asset-flame-fire {
+    animation: none;
+  }
+}

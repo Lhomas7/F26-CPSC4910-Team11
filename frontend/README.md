@@ -56,18 +56,47 @@ CI sets `CI=true` and builds with `REACT_APP_API_URL=/api`. The generated
 
 ```text
 src/
-├── api/              # Shared client and domain endpoint modules
-├── app/              # Routing, application shell, and layout
-├── auth/             # Session/authentication context
-├── components/       # Shared cross-feature components
-├── data/             # Shared reference data
-├── features/         # Feature-owned pages, tests, and styles
-└── utils/            # Shared validation and utility functions
+├── api/                         # Shared HTTP client and domain endpoint modules
+│   ├── about.js
+│   ├── accounts.js
+│   ├── adminUsers.js
+│   ├── authentication.js
+│   ├── client.js
+│   └── drivers.js
+├── app/                         # Routes, responsive shell, layout, and page headers
+├── auth/                        # Authentication context and session events
+├── components/                  # Shared UI used by more than one feature
+│   ├── assets/                  # Illustrated asset library
+│   │   ├── effects/             # Collision, flame, impact, and smoke effects
+│   │   ├── people/              # Reusable people illustrations
+│   │   ├── scenery/             # Buildings, roads, signs, plants, and street objects
+│   │   └── vehicles/            # Cars, buses, trucks, ambulances, and wheels
+│   ├── branding/                # BrandMark, ProgramPerks, and RoadTruck
+│   ├── feedback/                # Modal, ConfirmDialog, Skeleton, and StatePanel
+│   ├── forms/                   # PasswordInput, PasswordRequirements, and SelectMenu
+│   └── primitives/              # Avatar and interface Icons
+├── data/                         # Shared static/reference data
+├── features/                     # Feature-owned pages, tests, and styles
+│   ├── about/                    # Product and release information
+│   ├── accounts/                 # Profile, password, MFA, and login activity
+│   ├── admin-users/              # User directory, creation, details, and settings
+│   ├── authentication/           # Login, registration, device check, and password reset
+│   ├── drivers/                  # Sponsor-facing driver workflow
+│   ├── home/                     # Public welcome page
+│   ├── legal/                    # Terms of Service and Privacy Notice
+│   └── playground/               # Development-only shared-asset gallery
+└── utils/                        # Shared validation and utility functions
 ```
 
 Feature tests and styles should remain beside their implementations. Shared API
 transport belongs in `src/api/client.js`; domain endpoint functions belong in
-the corresponding module under `src/api/`.
+the corresponding module under `src/api/`. A component belongs in
+`src/components/` only when multiple features use it or it is part of the
+shared visual system; feature-specific panels and forms stay inside their own
+feature directory. Within `components/`, use `branding/` for program identity,
+`feedback/` for application states and overlays, `forms/` for reusable input
+controls, `primitives/` for small foundational UI, and `assets/` for reusable
+illustrations grouped by visual domain.
 
 See [`docs/DEPLOYMENT.md`](../docs/DEPLOYMENT.md) for the Docker Compose, Caddy,
 EC2, and GitHub Actions deployment path.

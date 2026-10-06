@@ -35,7 +35,43 @@ test('renders the animated truck structure in the road lane', () => {
   const { container } = renderLoginPage();
 
   expect(container.querySelector('.login-lane .road-truck-loop')).toBeInTheDocument();
-  expect(container.querySelector('.road-truck-cab')).toBeInTheDocument();
+  expect(container.querySelector('.road-truck .asset-semi-truck')).toBeInTheDocument();
+});
+
+test('the road truck crashes when a sign-in error appears', () => {
+  const { container } = renderLoginPage();
+  const truck = container.querySelector('.login-lane .road-truck');
+  expect(truck).not.toHaveClass('road-truck-crashed');
+
+  const signInButton = screen.getAllByRole('button', { name: 'Sign In' })
+    .find((button) => button.getAttribute('type') === 'submit');
+  fireEvent.click(signInButton);
+
+  expect(screen.getByRole('alert')).toHaveTextContent('Enter your username.');
+  expect(truck).toHaveClass('road-truck-crashed');
+});
+
+test('the road truck wrecks while the server is unreachable and recovers when it is back', async () => {
+  jest.useFakeTimers();
+  const outage = new TypeError('Failed to fetch');
+  useAuth.mockReturnValue({ ...useAuth(), signIn: jest.fn().mockRejectedValue(outage) });
+  api.isOutageError.mockImplementation((error) => error === outage);
+  api.checkHealth.mockResolvedValue(true);
+
+  const { container } = renderLoginPage();
+  const truck = container.querySelector('.login-lane .road-truck');
+  fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'driver.one' } });
+  fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ExamplePassword123!' } });
+  fireEvent.click(screen.getAllByRole('button', { name: 'Sign In' })
+    .find((button) => button.getAttribute('type') === 'submit'));
+
+  expect(await screen.findByRole('alert')).toHaveTextContent("We can't reach the Good Driver server right now.");
+  expect(truck).toHaveClass('road-truck-wrecked');
+
+  await act(async () => { jest.advanceTimersByTime(10000); });
+  expect(api.checkHealth).toHaveBeenCalled();
+  expect(truck).not.toHaveClass('road-truck-wrecked');
+  jest.useRealTimers();
 });
 
 test('driver registration sends separate name and email fields', async () => {
@@ -49,7 +85,7 @@ test('driver registration sends separate name and email fields', async () => {
   fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'jamie.rivera' } });
   fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ExamplePassword123!' } });
   fireEvent.change(screen.getByLabelText('Confirm Password'), { target: { value: 'ExamplePassword123!' } });
-  fireEvent.click(screen.getByRole('checkbox', { name: /program terms/i }));
+  fireEvent.click(screen.getByRole('checkbox', { name: /Terms of Service/i }));
   fireEvent.click(screen.getByRole('button', { name: 'Create Driver Account' }));
 
   await waitFor(() => {
@@ -65,6 +101,17 @@ test('driver registration sends separate name and email fields', async () => {
   });
 });
 
+test('registration links to the terms and privacy notice without losing form state', () => {
+  renderLoginPage();
+  fireEvent.click(screen.getByRole('button', { name: 'Create Account' }));
+  fireEvent.click(screen.getByRole('button', { name: /Driver.*Earn points/i }));
+
+  expect(screen.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute('href', '/terms');
+  expect(screen.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute('target', '_blank');
+  expect(screen.getByRole('link', { name: 'Privacy Notice' })).toHaveAttribute('href', '/privacy');
+  expect(screen.getByRole('link', { name: 'Privacy Notice' })).toHaveAttribute('target', '_blank');
+});
+
 function fillDriverRegistration() {
   fireEvent.click(screen.getByRole('button', { name: 'Create Account' }));
   fireEvent.click(screen.getByRole('button', { name: /Driver.*Earn points/i }));
@@ -74,7 +121,7 @@ function fillDriverRegistration() {
   fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'jamie.rivera' } });
   fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ExamplePassword123!' } });
   fireEvent.change(screen.getByLabelText('Confirm Password'), { target: { value: 'ExamplePassword123!' } });
-  fireEvent.click(screen.getByRole('checkbox', { name: /program terms/i }));
+  fireEvent.click(screen.getByRole('checkbox', { name: /Terms of Service/i }));
   fireEvent.click(screen.getByRole('button', { name: 'Create Driver Account' }));
 }
 

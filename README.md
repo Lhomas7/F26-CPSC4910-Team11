@@ -127,18 +127,25 @@ F26-CPSC4910-Team11/
 ├── frontend/
 │   ├── public/
 │   ├── src/
-│   │   ├── api/                  # Shared client plus account, auth, and driver APIs
-│   │   ├── app/                  # Application routes, shell, and layout
-│   │   ├── auth/                 # Authentication context and session state
-│   │   ├── components/           # Shared visual components
+│   │   ├── api/                  # HTTP client and domain-specific API modules
+│   │   ├── app/                  # Routes, responsive shell, layout, and page headers
+│   │   ├── auth/                 # Authentication context and session events
+│   │   ├── components/           # Shared cross-feature UI
+│   │   │   ├── assets/           # Illustrated people, scenery, vehicles, and effects
+│   │   │   ├── branding/         # Brand marks, program messaging, and road animation
+│   │   │   ├── feedback/         # Modals, confirmations, loading, and state panels
+│   │   │   ├── forms/            # Shared password and selection controls
+│   │   │   └── primitives/       # Avatars and interface icons
 │   │   ├── data/                 # Shared static/reference data
 │   │   ├── features/
 │   │   │   ├── about/            # About and release information
-│   │   │   ├── accounts/         # Self-profile, password, and MFA management
-│   │   │   ├── admin-users/      # User directory, creation, and detail pages
-│   │   │   ├── authentication/   # Login and password-reset flows
+│   │   │   ├── accounts/         # Profile, password, MFA, and login activity
+│   │   │   ├── admin-users/      # User directory, account details, and registration settings
+│   │   │   ├── authentication/   # Login, registration, device check, and password reset
 │   │   │   ├── drivers/          # Sponsor-facing driver workflow
-│   │   │   └── home/             # Public welcome page
+│   │   │   ├── home/             # Public welcome page
+│   │   │   ├── legal/            # Terms of Service and Privacy Notice
+│   │   │   └── playground/       # Development-only shared-asset gallery
 │   │   └── utils/                # Shared frontend validation utilities
 │   ├── .env.example
 │   ├── package.json
@@ -595,4 +602,4 @@ Another process is using port 3000. Stop that process and restart React, or upda
 
 ---
 
-_Last updated: 2026-10-01_
+_Last updated: 2026-10-06_

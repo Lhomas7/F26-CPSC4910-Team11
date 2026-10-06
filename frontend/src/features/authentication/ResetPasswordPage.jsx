@@ -2,37 +2,17 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import * as api from '../../api';
-import PasswordRequirements from '../../components/PasswordRequirements';
+import PasswordInput from '../../components/forms/PasswordInput';
+import PasswordRequirements from '../../components/forms/PasswordRequirements';
 import { validatePassword } from '../../utils/accountValidation';
 import './LoginPage.css';
 import './PasswordResetPage.css';
 
-function PasswordInput({ id, label, value, onChange, disabled, children }) {
-  const [visible, setVisible] = useState(false);
+function PasswordField({ id, label, ...inputProps }) {
   return (
     <div className="login-field">
       <label htmlFor={id}>{label}</label>
-      <div className="login-password-input">
-        <input
-          id={id}
-          type={visible ? 'text' : 'password'}
-          className="login-input"
-          value={value}
-          onChange={onChange}
-          autoComplete="new-password"
-          disabled={disabled}
-        />
-        <button
-          type="button"
-          onClick={() => setVisible((current) => !current)}
-          aria-label={`${visible ? 'Hide' : 'Show'} ${label.toLowerCase()}`}
-          aria-pressed={visible}
-          disabled={disabled}
-        >
-          {visible ? 'Hide' : 'Show'}
-        </button>
-      </div>
-      {children}
+      <PasswordInput id={id} label={label} className="login-input" autoComplete="new-password" {...inputProps} />
     </div>
   );
 }
@@ -110,16 +90,15 @@ export default function ResetPasswordPage() {
       <form className="login-form" onSubmit={submit} noValidate>
         <h2>Choose a new password</h2>
         {error && <p className="login-alert login-alert-error" role="alert">{error}</p>}
-        <PasswordInput
+        <PasswordField
           id="reset-password"
           label="New password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           disabled={busy}
-        >
-          <PasswordRequirements />
-        </PasswordInput>
-        <PasswordInput
+        />
+        <PasswordRequirements />
+        <PasswordField
           id="reset-password-confirm"
           label="Confirm new password"
           value={confirmation}

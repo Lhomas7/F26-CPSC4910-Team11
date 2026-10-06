@@ -1,0 +1,251 @@
+.asset-building {
+  --building-color: #6d7a86;
+  --building-trim: #4f5963;
+  --window-color: #bfe3f2;
+}
+
+.asset-building-lit {
+  --window-color: #ffd76a;
+}
+
+.asset-building-lit .asset-bld-windows,
+.asset-building-lit .asset-house-window,
+.asset-building-lit .asset-shop-window {
+  filter: drop-shadow(0 0 .15em rgb(255 215 106 / 70%));
+}
+
+/* ---------- Shared parts ---------- */
+
+.asset-bld-body {
+  background: var(--building-color);
+  border-radius: .1em .1em 0 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+/* A grid of windows: one window tile repeated with even spacing. */
+.asset-bld-windows {
+  background: linear-gradient(var(--window-color), var(--window-color)) 0 0 / .42em .4em space;
+}
+
+.asset-bld-door {
+  background: #3d5f6e;
+  border-radius: .06em .06em 0 0;
+  bottom: 0;
+  height: .78em;
+  left: calc(50% - .3em);
+  width: .6em;
+}
+
+/* ---------- Office tower: height follows --floors ---------- */
+
+.asset-building-office {
+  --asset-h: calc(var(--floors) * .9em + 1.1em);
+  --asset-w: 2.6em;
+}
+
+.asset-building-office .asset-bld-body {
+  top: .55em;
+}
+
+.asset-bld-ledge {
+  background: var(--building-trim);
+  height: .16em;
+  left: -.08em;
+  right: -.08em;
+  top: .45em;
+}
+
+.asset-bld-antenna {
+  background: var(--building-trim);
+  height: .5em;
+  left: 1.7em;
+  top: 0;
+  width: .06em;
+}
+
+/* Blinking aircraft warning light on the antenna. */
+.asset-bld-antenna::after {
+  animation: asset-blink 1.6s steps(1) infinite;
+  background: #ff3b30;
+  border-radius: 50%;
+  content: '';
+  height: .12em;
+  left: -.03em;
+  position: absolute;
+  top: -.06em;
+  width: .12em;
+}
+
+.asset-building-office .asset-bld-windows {
+  bottom: 1em;
+  left: .3em;
+  right: .3em;
+  top: .85em;
+}
+
+/* ---------- House ---------- */
+
+.asset-building-house {
+  --asset-h: 2.3em;
+  --asset-w: 2.6em;
+  --building-color: #d9b48f;
+}
+
+.asset-building-house .asset-bld-body {
+  left: .15em;
+  right: .15em;
+  top: 1em;
+}
+
+.asset-house-roof {
+  background: #8e3b2f;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  height: 1.05em;
+  left: -.1em;
+  top: 0;
+  width: 2.8em;
+}
+
+.asset-house-chimney {
+  background: #7a4a3a;
+  height: .6em;
+  left: 1.8em;
+  top: .15em;
+  width: .3em;
+}
+
+.asset-building-house .asset-bld-door {
+  background: #6b4a32;
+  left: .5em;
+}
+
+.asset-house-window {
+  background:
+    linear-gradient(#f4f5f2, #f4f5f2) center / .05em 100% no-repeat,
+    linear-gradient(#f4f5f2, #f4f5f2) center / 100% .05em no-repeat,
+    var(--window-color);
+  height: .5em;
+  right: .45em;
+  top: 1.3em;
+  width: .65em;
+}
+
+/* ---------- Shop ---------- */
+
+.asset-building-shop {
+  --asset-h: 2.4em;
+  --asset-w: 3.4em;
+  --building-color: #9fb3a6;
+}
+
+.asset-building-shop .asset-bld-body {
+  top: .45em;
+}
+
+.asset-shop-sign {
+  background: #1d201d;
+  border-radius: .06em;
+  height: .45em;
+  left: .3em;
+  right: .3em;
+  top: 0;
+}
+
+.asset-shop-sign::after {
+  background: repeating-linear-gradient(to right, var(--stripe, #f2c230) 0 .3em, transparent .3em .45em);
+  content: '';
+  height: .08em;
+  left: .25em;
+  position: absolute;
+  right: .25em;
+  top: calc(50% - .04em);
+}
+
+.asset-shop-awning {
+  background: repeating-linear-gradient(90deg, #d63b2f 0 .3em, #f4f5f2 .3em .6em);
+  border-radius: 0 0 .15em .15em;
+  height: .38em;
+  left: -.05em;
+  right: -.05em;
+  top: .95em;
+}
+
+.asset-shop-window {
+  background: var(--window-color);
+  height: .7em;
+  left: .3em;
+  top: 1.48em;
+  width: 1.7em;
+}
+
+.asset-building-shop .asset-bld-door {
+  height: .95em;
+  left: auto;
+  right: .4em;
+  width: .55em;
+}
+
+/* ---------- Warehouse / truck depot ---------- */
+
+.asset-building-warehouse {
+  --asset-h: 2.6em;
+  --asset-w: 5em;
+  --building-color: #8a96a0;
+}
+
+.asset-building-warehouse .asset-bld-body {
+  border-radius: 0;
+  top: .55em;
+}
+
+.asset-depot-roof {
+  background: var(--building-trim);
+  clip-path: polygon(0 100%, 0 40%, 25% 0, 25% 40%, 50% 0, 50% 40%, 75% 0, 75% 40%, 100% 0, 100% 100%);
+  height: .6em;
+  left: 0;
+  right: 0;
+  top: 0;
+}
+
+/* Good Driver green band under the roof line. */
+.asset-depot-band {
+  background: #3fae86;
+  height: .14em;
+  left: 0;
+  right: 0;
+  top: .6em;
+}
+
+.asset-building-warehouse .asset-bld-windows {
+  height: .28em;
+  left: .4em;
+  right: .4em;
+  top: .9em;
+}
+
+.asset-depot-door {
+  background: repeating-linear-gradient(to bottom, #d6dbd6 0 .1em, #b9bfb9 .1em .2em);
+  bottom: 0;
+  height: 1.25em;
+  width: 1.3em;
+}
+
+.asset-depot-door-a {
+  left: .55em;
+}
+
+.asset-depot-door-b {
+  left: 2.25em;
+}
+
+@keyframes asset-blink {
+  50% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .asset-bld-antenna::after {
+    animation: none;
+  }
+}

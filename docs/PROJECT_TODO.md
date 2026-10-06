@@ -425,18 +425,31 @@ React is not traditional MVC. Organize the frontend by feature while separating 
 ```text
 frontend/src/
 ├── api/
-│   ├── index.js
-│   ├── client.js
+│   ├── about.js
 │   ├── accounts.js
 │   ├── adminUsers.js
 │   ├── authentication.js
-│   └── drivers.js
+│   ├── client.js
+│   ├── client.test.js
+│   ├── drivers.js
+│   └── index.js
 ├── app/
 │   ├── AppLayout.jsx
 │   ├── AppLayout.css
-│   └── AppRoutes.jsx
-├── auth/                     # Session and authentication context
-├── components/               # Shared cross-feature UI such as RoadTruck
+│   ├── AppLayout.test.jsx
+│   ├── AppRoutes.jsx
+│   └── PageHeader.jsx
+├── auth/                     # Authentication context and session events
+├── components/               # Shared UI primitives and visual system
+│   ├── assets/
+│   │   ├── effects/          # Collision, flame, impact, and smoke
+│   │   ├── people/           # People illustrations
+│   │   ├── scenery/          # Roads, places, signs, and street objects
+│   │   └── vehicles/         # Vehicle illustrations and shared wheels
+│   ├── branding/             # BrandMark, ProgramPerks, and RoadTruck
+│   ├── feedback/             # Modal, ConfirmDialog, Skeleton, and StatePanel
+│   ├── forms/                # PasswordInput, PasswordRequirements, and SelectMenu
+│   └── primitives/           # Avatar and interface Icons
 ├── data/                     # Shared reference data
 ├── features/
 │   ├── about/
@@ -444,12 +457,20 @@ frontend/src/
 │   ├── admin-users/
 │   ├── authentication/
 │   ├── drivers/
-│   └── home/
+│   ├── home/
+│   ├── legal/
+│   └── playground/           # Development-only shared-asset gallery
 └── utils/
 ```
 
-This tree reflects the current repository. Add `hooks/`, shared style-system
-directories (`/common/`, `/forms/`, `/layout/` under `components/` AND/OR a `styles/` directory), or new feature directories only when implemented code needs them (such as `sponsors/`).
+This tree reflects the current repository. Keep feature-specific pages, panels,
+tests, and styles in their owning feature. Move UI into `components/` only when
+it is reused across features or forms part of the shared visual system. Keep
+illustrated elements under `components/assets/` and group them by visual domain.
+Group the remaining shared UI by responsibility under `branding/`, `feedback/`,
+`forms/`, and `primitives/`; do not restore a flat components directory.
+Add `hooks/`, broader style-system directories, or new feature directories only
+when implemented code needs them rather than pre-creating empty abstractions.
 
 - [x] Break `App.js` into routing and layout modules.
 - [x] Split the legacy `config/api.js` module into a shared client and domain modules.
@@ -457,25 +478,29 @@ directories (`/common/`, `/forms/`, `/layout/` under `components/` AND/OR a `sty
 - [ ] Rename the legacy combined `Drivers.jsx` module into separate list and detail pages.
 - [ ] Add feature entry points where they improve import readability without hiding ownership.
 - [ ] Extract the shared driver/sponsor admin-account detail UI.
-- [ ] Extract reusable loading, error, forbidden, empty, and not-found states.
-- [ ] Extract reusable form fields and field-error components.
+- [x] Extract reusable loading and empty/error/informational state components (`Skeleton` and `StatePanel`).
+- [ ] Extend shared state handling to explicit forbidden and not-found variants when those views are implemented.
+- [ ] Extract reusable form fields and field-error components beyond the shared password and select controls.
 - [ ] Standardize buttons, cards, badges, avatars, banners, and design tokens.
+- [x] Centralize reusable illustrated assets by people, scenery, vehicles, and effects.
+- [x] Organize shared components into branding, feedback, forms, and primitive UI groups.
 - [ ] Adopt naming conventions:
   - `*Page.jsx` for routed pages
   - `*Form.jsx` for forms
   - `*Card.jsx` for reusable display components
   - `*.test.jsx` beside its implementation
 - [ ] Decide between feature CSS and CSS Modules.
-- [ ] Refactor one feature at a time while keeping tests green.
+- [x] Preserve colocated frontend tests and keep the suite green during the initial architecture refactor.
+- [ ] Continue applying the established feature boundaries as Sprint 4 pages are added.
 - [ ] Evaluate replacing Create React App only if the benefit justifies the migration risk.
 
 ### Application logo and browser metadata
 
 - [ ] Finalize an approved Good Driver Incentive Program application logo.
-- [ ] Export favicon assets at the appropriate browser sizes and formats.
-- [ ] Replace the default React favicon and starter logos under `frontend/public/`.
-- [ ] Update `frontend/public/index.html` with the correct favicon and application metadata.
-- [ ] Update `frontend/public/manifest.json` with the correct application name, short name, theme colors, and icon paths.
+- [x] Export favicon assets at the appropriate browser sizes and formats.
+- [x] Replace the default React favicon and starter logos under `frontend/public/`.
+- [x] Update `frontend/public/index.html` with the correct favicon and application metadata.
+- [x] Update `frontend/public/manifest.json` with the correct application name, short name, theme colors, and icon paths.
 - [ ] Confirm the logo displays correctly in browser tabs during local development.
 - [ ] Confirm the logo displays correctly in the deployed production build.
 - [ ] Test light/dark browser chrome and high-density displays where practical.

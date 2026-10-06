@@ -2,24 +2,6 @@
   min-height: 100%;
 }
 
-.account-heading {
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
-  min-height: 4rem;
-  padding: .7rem 1.75rem;
-}
-
-.account-heading h1 {
-  font-size: 1.075rem;
-  margin: 0;
-}
-
-.account-heading p {
-  color: var(--ink-2);
-  font-size: .75rem;
-  margin: .1rem 0 0;
-}
-
 .account-content {
   display: grid;
   gap: 1rem;
@@ -27,8 +9,7 @@
   padding: 1.5rem 1.75rem 2.5rem;
 }
 
-.account-card,
-.account-state {
+.account-card {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: .7rem;
@@ -63,26 +44,13 @@
 }
 
 .account-avatar {
-  align-items: center;
   align-self: start;
-  background: var(--accent-soft);
   border: 1px solid var(--line);
-  border-radius: 50%;
-  color: var(--accent);
-  display: flex;
   font-size: 2.25rem;
   font-weight: 700;
   height: 7rem;
-  justify-content: center;
   margin: 0 auto;
   width: 7rem;
-}
-
-.account-avatar img {
-  border-radius: inherit;
-  height: 100%;
-  object-fit: cover;
-  width: 100%;
 }
 
 .profile-picture-editor {
@@ -228,44 +196,6 @@
   font-size: .7rem;
 }
 
-.account-password-input {
-  position: relative;
-}
-
-.account-password-input input {
-  padding-right: 4.25rem;
-}
-
-.account-password-input button {
-  background: transparent;
-  border: 0;
-  color: var(--accent);
-  cursor: pointer;
-  font: inherit;
-  font-size: .75rem;
-  font-weight: 700;
-  padding: .35rem .55rem;
-  position: absolute;
-  right: .25rem;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.account-password-input button:hover:not(:disabled) {
-  text-decoration: underline;
-}
-
-.account-password-input button:focus-visible {
-  border-radius: .25rem;
-  box-shadow: 0 0 0 3px var(--accent-soft);
-  outline: 0;
-}
-
-.account-password-input button:disabled {
-  cursor: progress;
-  opacity: .65;
-}
-
 @media (max-width: 36rem) {
   .mfa-phone-input {
     grid-template-columns: 1fr;
@@ -350,20 +280,6 @@
 .account-banner.error {
   background: #fbeae8;
   color: #9e2f29;
-}
-
-.account-state {
-  padding: 1.5rem;
-}
-
-.account-state p {
-  color: var(--ink-2);
-  margin: .25rem 0 1rem;
-}
-
-.account-state-error {
-  background: #fbeae8;
-  border-color: #dfaaa6;
 }
 
 .password-form {
@@ -492,11 +408,7 @@
 }
 
 .account-skeleton {
-  animation: account-shimmer 1.2s linear infinite;
-  background: linear-gradient(90deg, var(--line), var(--surface-2), var(--line));
-  background-size: 200% 100%;
   border-radius: .35rem;
-  display: block;
   height: .9rem;
   width: 65%;
 }
@@ -526,29 +438,15 @@
   width: 35%;
 }
 
-@keyframes account-shimmer {
-  to {
-    background-position: -200% 0;
-  }
-}
-
 @media (prefers-color-scheme: dark) {
-  .account-banner.error,
-  .account-state-error {
+  .account-banner.error {
     background: #3b2220;
     border-color: #7c3c37;
     color: #e5766e;
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .account-skeleton {
-    animation: none;
-  }
-}
-
 @media (max-width: 53.75rem) {
-  .account-heading,
   .account-content {
     padding-left: 1rem;
     padding-right: 1rem;

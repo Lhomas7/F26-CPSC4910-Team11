@@ -3,16 +3,11 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import { useAuth } from '../../auth/AuthContext';
 import * as api from '../../api';
+import PageHeader from '../../app/PageHeader';
+import Avatar from '../../components/primitives/Avatar';
+import StatePanel from '../../components/feedback/StatePanel';
+import { fullName } from '../../utils/names';
 import './AdminUserDetailPage.css';
-
-function fullName(account) {
-  return `${account.first_name || ''} ${account.last_name || ''}`.trim() || account.username;
-}
-
-function initials(account) {
-  return [account.first_name, account.last_name].filter(Boolean)
-    .map((part) => part[0].toUpperCase()).join('') || '?';
-}
 
 function formFrom(account) {
   return {
@@ -117,19 +112,19 @@ export default function SponsorDetailPage() {
     }
   };
 
-  if (user?.account_type !== 'admin' || status === 'forbidden') return <main className="sponsor-detail-page"><section className="sponsor-detail-state"><h1>You don&apos;t have access to this page</h1><p>Only administrators can view and edit sponsor accounts.</p></section></main>;
+  if (user?.account_type !== 'admin' || status === 'forbidden') return <main className="sponsor-detail-page"><StatePanel className="sponsor-detail-state" headingLevel={1} title="You don't have access to this page"><p>Only administrators can view and edit sponsor accounts.</p></StatePanel></main>;
   if (status === 'loading') return <main className="sponsor-detail-page"><p role="status">Loading sponsor account…</p><section className="sponsor-detail-card sponsor-detail-skeleton" aria-label="Loading the account" /></main>;
-  if (status === 'error') return <main className="sponsor-detail-page"><section className="sponsor-detail-state error" role="alert"><h1>This account couldn&apos;t be loaded</h1><p>Check your connection and try again.</p><button type="button" onClick={load}>Try again</button></section></main>;
-  if (status === 'not-found') return <main className="sponsor-detail-page"><section className="sponsor-detail-state"><h1>That sponsor account doesn&apos;t exist</h1><p>It may have been removed, or the link may be wrong.</p><Link to="/users">Back to users</Link></section></main>;
+  if (status === 'error') return <main className="sponsor-detail-page"><StatePanel className="sponsor-detail-state" headingLevel={1} tone="error" title="This account couldn't be loaded"><p>Check your connection and try again.</p><button type="button" onClick={load}>Try again</button></StatePanel></main>;
+  if (status === 'not-found') return <main className="sponsor-detail-page"><StatePanel className="sponsor-detail-state" headingLevel={1} title="That sponsor account doesn't exist"><p>It may have been removed, or the link may be wrong.</p><Link to="/users">Back to users</Link></StatePanel></main>;
 
   const name = fullName(account);
   return (
     <div className="sponsor-detail-page">
-      <header className="sponsor-detail-heading"><p><Link to="/users">Users</Link> / {name}</p><h1>Sponsor account</h1></header>
+      <PageHeader title="Sponsor account" breadcrumb={<><Link to="/users">Users</Link> / {name}</>} />
       <main className="sponsor-detail-content">
         <section className="sponsor-detail-card">
           <div className="sponsor-detail-card-head">
-            <div className="sponsor-detail-person"><span className="sponsor-detail-avatar" aria-hidden="true">{initials(account)}</span><div><h2>{name}</h2><p>@{account.username} <span>Sponsor</span> · {account.is_active ? 'Active' : 'Inactive'}</p></div></div>
+            <div className="sponsor-detail-person"><Avatar className="sponsor-detail-avatar" name={name} /><div><h2>{name}</h2><p>@{account.username} <span>Sponsor</span> · {account.is_active ? 'Active' : 'Inactive'}</p></div></div>
             {!editing && <div className="sponsor-detail-header-actions"><button type="button" onClick={viewAsSponsor} disabled={viewingAs || !account.is_active}>{viewingAs ? 'Opening…' : 'View as sponsor'}</button><button type="button" onClick={() => { setNotice(''); setEditing(true); }}>Edit account</button></div>}
           </div>
           {errors.detail && !editing && <p className="sponsor-detail-error" role="alert">{errors.detail}</p>}

@@ -75,3 +75,23 @@ export async function readJson(response) {
   }
   return data;
 }
+
+/**
+ * True when a request failed because the server is unreachable or broken,
+ * rather than because the user did something wrong: fetch() rejects with a
+ * TypeError ("Failed to fetch") when the server can't be reached, and a 5xx
+ * means the server or its database is down.
+ */
+export function isOutageError(error) {
+  return error instanceof TypeError || (error instanceof ApiError && error.status >= 500);
+}
+
+/** Resolves true when the backend and its database are up. Never throws. */
+export async function checkHealth() {
+  try {
+    const response = await request('/health/');
+    return response.ok;
+  } catch {
+    return false;
+  }
+}

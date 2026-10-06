@@ -1,0 +1,85 @@
+.asset-ambulance {
+  --asset-h: 1.3em;
+  --asset-w: 2.9em;
+  --wheel-size: .44em;
+}
+
+.asset-amb-box {
+  background: #f4f5f2;
+  border-radius: .12em;
+  height: 1.08em;
+  left: 0;
+  top: 0;
+  width: 1.95em;
+}
+
+/* Red band along the bottom of the box. */
+.asset-amb-box::after {
+  background: #d63b2f;
+  bottom: .18em;
+  content: '';
+  height: .1em;
+  left: 0;
+  position: absolute;
+  right: 0;
+}
+
+.asset-amb-cross {
+  height: .46em;
+  left: .74em;
+  top: .2em;
+  width: .46em;
+}
+
+.asset-amb-cross::before,
+.asset-amb-cross::after {
+  background: #d63b2f;
+  content: '';
+  position: absolute;
+}
+
+.asset-amb-cross::before {
+  height: 100%;
+  left: 35%;
+  width: 30%;
+}
+
+.asset-amb-cross::after {
+  height: 30%;
+  top: 35%;
+  width: 100%;
+}
+
+.asset-amb-cab {
+  background: #f4f5f2;
+  border-radius: .12em .36em .12em .12em;
+  height: .76em;
+  left: 2em;
+  top: .32em;
+  width: .86em;
+}
+
+.asset-amb-window {
+  border-radius: 0 .22em 0 0;
+  height: .28em;
+  left: 2.42em;
+  top: .4em;
+  width: .36em;
+}
+
+.asset-art .asset-amb-lightbar {
+  --light-a: #ff3b30;
+  --light-b: #f4f5f2;
+  height: .16em;
+  left: 2.08em;
+  top: .14em;
+  width: .5em;
+}
+
+.asset-amb-wheel-a {
+  left: .3em;
+}
+
+.asset-amb-wheel-b {
+  left: 2.2em;
+}

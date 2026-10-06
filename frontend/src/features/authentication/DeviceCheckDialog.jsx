@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import Modal from '../../components/Modal';
+import Modal from '../../components/feedback/Modal';
 import './DeviceCheckDialog.css';
 
 /**

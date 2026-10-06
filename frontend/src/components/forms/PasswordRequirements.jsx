@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 
-import * as api from '../api';
+import * as api from '../../api';
 import './PasswordRequirements.css';
 
 const POPOVER_WIDTH = 288;

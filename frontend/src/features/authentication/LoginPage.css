@@ -21,22 +21,8 @@
 }
 
 .login-brand-mark {
-  background: #3a403c;
-  border-radius: .45rem;
   height: 2rem;
-  overflow: hidden;
-  position: relative;
   width: 2rem;
-}
-
-.login-brand-mark::after {
-  background: repeating-linear-gradient(to bottom, var(--stripe) 0 .3rem, transparent .3rem .55rem);
-  bottom: .2rem;
-  content: '';
-  left: calc(50% - .1rem);
-  position: absolute;
-  top: .2rem;
-  width: .2rem;
 }
 
 .login-brand-name {
@@ -61,31 +47,6 @@
   font-size: .95rem;
   margin-top: .875rem;
   max-width: 42ch;
-}
-
-.login-perks {
-  display: grid;
-  gap: .625rem;
-  list-style: none;
-  margin-top: 1.5rem;
-}
-
-.login-perks li {
-  align-items: baseline;
-  color: #dfe3df;
-  display: flex;
-  font-size: .875rem;
-  gap: .625rem;
-}
-
-.login-perks li::before {
-  background: var(--stripe);
-  border-radius: .125rem;
-  content: '';
-  flex-shrink: 0;
-  height: 4px;
-  transform: translateY(-3px);
-  width: 14px;
 }
 
 .login-lane {
@@ -218,31 +179,9 @@
   margin-top: .15rem;
 }
 
-.login-password-input {
-  position: relative;
-}
-
-.login-password-input .login-input {
-  padding-right: 4rem;
-}
-
-.login-password-input button {
-  background: transparent;
-  border: 0;
+.login-consent a {
   color: var(--accent);
-  cursor: pointer;
-  font-size: .75rem;
   font-weight: 700;
-  padding: .35rem;
-  position: absolute;
-  right: .4rem;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.login-password-input button:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
 }
 
 .login-input-error {

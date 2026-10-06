@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import { useAuth } from '../../auth/AuthContext';
 import { getDriver, getDrivers, getSponsorMfaSetting, linkDriver, sponsorMfaSettings, updateDriver } from '../../api';
+import PageHeader from '../../app/PageHeader';
 
 export function DriverList() {
   const { user } = useAuth();
@@ -21,6 +22,7 @@ export function DriverList() {
 
   return (
     <>
+      <PageHeader title="Drivers" subtitle="Manage drivers and enrollment" />
       {drivers.length === 0 ? (
         <p>No drivers assigned yet.</p>
       ) : (
@@ -173,7 +175,7 @@ export function DriverDetail() {
 
   return (
     <div>
-      <h2>{driver.name}</h2>
+      <PageHeader title={driver.name} subtitle="Driver details" />
       <p>Status: {driver.status}</p>
       {driver.status === 'pending' && (
         <button type="button" onClick={approve} disabled={saving}>

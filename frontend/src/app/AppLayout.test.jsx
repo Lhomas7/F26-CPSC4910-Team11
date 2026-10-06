@@ -26,10 +26,15 @@ function renderLayout(overrides = {}) {
   return auth;
 }
 
+function getSignOutButton() {
+  userEvent.click(screen.getByRole('button', { name: /Profile menu for/i }));
+  return screen.getByRole('menuitem', { name: 'Sign out' });
+}
+
 test('Sign out asks for confirmation before signing out', () => {
   const auth = renderLayout();
 
-  userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+  userEvent.click(getSignOutButton());
 
   const dialog = screen.getByRole('dialog', { name: 'Sign out?' });
   expect(dialog).toHaveTextContent('Are you sure you want to sign out?');
@@ -37,26 +42,26 @@ test('Sign out asks for confirmation before signing out', () => {
   expect(auth.signOut).not.toHaveBeenCalled();
 });
 
-test('Cancel keeps the user signed in and returns focus to Sign out', () => {
+test('Cancel keeps the user signed in and dismisses the confirmation', () => {
   const auth = renderLayout();
-  const signOutButton = screen.getByRole('button', { name: 'Sign out' });
+  const signOutButton = getSignOutButton();
 
   userEvent.click(signOutButton);
   userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   expect(auth.signOut).not.toHaveBeenCalled();
-  expect(signOutButton).toHaveFocus();
+  expect(signOutButton).not.toBeInTheDocument();
 });
 
 test('Escape and a backdrop click also cancel', () => {
   const auth = renderLayout();
 
-  userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+  userEvent.click(getSignOutButton());
   userEvent.keyboard('{Escape}');
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
-  userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+  userEvent.click(getSignOutButton());
   userEvent.click(document.querySelector('.modal-backdrop'));
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   expect(auth.signOut).not.toHaveBeenCalled();
@@ -65,7 +70,7 @@ test('Escape and a backdrop click also cancel', () => {
 test('confirming signs the user out', async () => {
   const auth = renderLayout();
 
-  userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+  userEvent.click(getSignOutButton());
   const dialog = screen.getByRole('dialog', { name: 'Sign out?' });
   await act(async () => {
     userEvent.click(dialog.querySelector('.modal-button.primary'));
@@ -78,7 +83,7 @@ test('confirming signs the user out', async () => {
 test('Tab stays inside the dialog', () => {
   renderLayout();
 
-  userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+  userEvent.click(getSignOutButton());
   const dialog = screen.getByRole('dialog', { name: 'Sign out?' });
   const [cancel, confirm] = dialog.querySelectorAll('button');
 

@@ -1,0 +1,79 @@
+.asset-semi-truck {
+  --asset-h: 1.125em;
+  --asset-w: 2.875em;
+}
+
+.asset-semi-trailer {
+  background: #e8ebe7;
+  border-radius: .125em;
+  height: .875em;
+  left: 0;
+  top: 0;
+  width: 2em;
+}
+
+.asset-semi-cab {
+  background: #3fae86;
+  border-radius: .125em .25em .125em .125em;
+  height: .6875em;
+  left: 2.0625em;
+  top: .1875em;
+  width: .8125em;
+}
+
+/* Exhaust stack poking up behind the cab. */
+.asset-semi-exhaust {
+  background: #9aa29b;
+  border-radius: .03em .03em 0 0;
+  height: .42em;
+  left: 2.0em;
+  top: -.06em;
+  width: .06em;
+}
+
+.asset-semi-window {
+  border-radius: 0 .16em 0 0;
+  height: .24em;
+  left: 2.46em;
+  top: .26em;
+  width: .32em;
+}
+
+.asset-semi-headlight {
+  background: #ffe9a3;
+  border-radius: .03em;
+  height: .1em;
+  left: 2.81em;
+  top: .6em;
+  width: .06em;
+}
+
+.asset-semi-taillight {
+  background: #e5482f;
+  border-radius: .02em;
+  height: .14em;
+  left: 0;
+  top: .56em;
+  width: .05em;
+}
+
+.asset-semi-bumper {
+  background: #3a403c;
+  border-radius: .02em .03em .03em .02em;
+  height: .07em;
+  left: 2.68em;
+  top: .8em;
+  width: .2em;
+}
+
+.asset-semi-wheel-a {
+  left: .1875em;
+}
+
+.asset-semi-wheel-b {
+  left: 1.25em;
+}
+
+.asset-semi-wheel-c {
+  left: 2.3125em;
+}

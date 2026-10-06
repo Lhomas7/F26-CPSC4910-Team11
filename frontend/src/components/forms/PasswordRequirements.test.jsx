@@ -1,10 +1,10 @@
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import * as api from '../api';
+import * as api from '../../api';
 import PasswordRequirements from './PasswordRequirements';
 
-jest.mock('../api');
+jest.mock('../../api');
 
 const POLICY = {
   requirements: ['At least 12 characters', 'At least 2 numbers'],

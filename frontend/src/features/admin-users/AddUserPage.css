@@ -2,36 +2,13 @@
   min-height: 100%;
 }
 
-.add-user-heading {
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
-  min-height: 4rem;
-  padding: .55rem 1.75rem;
-}
-
-.add-user-heading h1 {
-  font-size: 1.075rem;
-  margin: .1rem 0 0;
-}
-
-.add-user-heading p {
-  color: var(--ink-2);
-  font-size: .72rem;
-  margin: 0;
-}
-
-.add-user-heading a {
-  color: var(--ink-2);
-  text-decoration: none;
-}
-
 .add-user-content {
   max-width: 48rem;
   padding: 1.5rem 1.75rem 3rem;
 }
 
 .add-user-card,
-.add-user-state {
+.add-user-loading {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: .7rem;
@@ -157,26 +134,6 @@
   color: #b3372f;
 }
 
-.add-user-password {
-  position: relative;
-}
-
-.add-user-password input {
-  padding-right: 3.5rem;
-}
-
-.add-user-password button {
-  background: transparent;
-  border: 0;
-  color: var(--accent);
-  cursor: pointer;
-  font-size: .72rem;
-  font-weight: 700;
-  position: absolute;
-  right: .35rem;
-  top: .45rem;
-}
-
 .add-user-note {
   border-left: 2px solid var(--line);
   color: var(--ink-2);
@@ -229,28 +186,8 @@
   padding: .6rem .75rem;
 }
 
-.add-user-state {
+.add-user-loading {
   padding: 1.5rem;
-}
-
-.add-user-state h1,
-.add-user-state h2 {
-  font-size: 1rem;
-  margin: 0;
-}
-
-.add-user-state p {
-  color: var(--ink-2);
-  margin: .25rem 0 1rem;
-}
-
-.add-user-state.error {
-  background: #fbeae8;
-  border-color: #dfaaa6;
-}
-
-.add-user-state.success {
-  border-color: var(--accent);
 }
 
 .add-user-check {
@@ -299,12 +236,6 @@
 }
 
 .add-user-skeleton {
-  animation: add-user-shimmer 1.2s linear infinite;
-  background: linear-gradient(90deg, var(--line), var(--surface-2), var(--line));
-  background-size: 200% 100%;
-  border-radius: .3rem;
-  display: block;
-  height: .8rem;
   margin-bottom: .8rem;
   width: 55%;
 }
@@ -318,15 +249,8 @@
   width: 100%;
 }
 
-@keyframes add-user-shimmer {
-  to {
-    background-position: -200% 0;
-  }
-}
-
 @media (prefers-color-scheme: dark) {
-  .add-user-banner,
-  .add-user-state.error {
+  .add-user-banner {
     background: #3b2220;
     border-color: #7c3c37;
     color: #e5766e;
@@ -337,14 +261,7 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .add-user-skeleton {
-    animation: none;
-  }
-}
-
 @media (max-width: 53.75rem) {
-  .add-user-heading,
   .add-user-content {
     padding-left: 1rem;
     padding-right: 1rem;

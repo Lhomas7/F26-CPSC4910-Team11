@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import App from './App';
 
 beforeEach(() => {
@@ -64,7 +64,11 @@ test('shows an impersonation warning and returns to the administrator account', 
   fireEvent.click(screen.getByRole('button', { name: 'Return to admin account' }));
 
   await waitFor(() => expect(screen.queryByText(/Viewing as Drew Driver/)).not.toBeInTheDocument());
-  expect(screen.getByText('Avery Admin')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Profile menu for Avery Admin' }));
+  const profileMenu = screen.getByRole('menu');
+  expect(within(profileMenu).getByText('Avery Admin')).toBeInTheDocument();
+  expect(within(profileMenu).getByText('@admin.viewer')).toBeInTheDocument();
+  expect(screen.getByRole('menuitem', { name: 'Account' })).toHaveAttribute('href', '/account');
   expect(global.fetch).toHaveBeenCalledWith(
     expect.stringContaining('/admin/impersonation/stop/'),
     expect.objectContaining({ method: 'POST' }),

@@ -83,25 +83,6 @@ body {
   text-decoration: none;
 }
 
-.brand-mark {
-  background: var(--road);
-  border-radius: .45rem;
-  height: 1.875rem;
-  overflow: hidden;
-  position: relative;
-  width: 1.875rem;
-}
-
-.brand-mark::after {
-  background: repeating-linear-gradient(to bottom, var(--stripe) 0 .3rem, transparent .3rem .55rem);
-  bottom: .2rem;
-  content: '';
-  left: calc(50% - .1rem);
-  position: absolute;
-  top: .2rem;
-  width: .2rem;
-}
-
 .brand-name {
   font-size: .875rem;
   font-weight: 700;
@@ -203,33 +184,183 @@ body {
   background: var(--surface);
   border-bottom: 1px solid var(--line);
   display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
+  gap: 1.25rem;
+  justify-content: space-between;
   min-height: 4rem;
-  padding: .625rem 1.25rem;
+  padding: .65rem 1.5rem;
 }
 
-.topbar-user {
+.app-topbar-page {
+  flex: 1;
+  min-width: 0;
+}
+
+.page-header {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.page-header-copy {
+  min-width: 0;
+}
+
+.page-header h1 {
+  font-size: 1.05rem;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.page-header p,
+.page-header-breadcrumb {
+  color: var(--ink-2);
+  font-size: .72rem;
+  line-height: 1.35;
+  margin: .15rem 0 0;
+}
+
+.page-header-breadcrumb {
+  margin: 0 0 .12rem;
+}
+
+.page-header-breadcrumb a {
+  color: var(--accent);
+}
+
+.page-header-actions {
+  flex: 0 0 auto;
+}
+
+.profile-menu-shell {
+  position: relative;
+}
+
+.sidebar-account {
+  border-top: 1px solid var(--line);
+  margin-top: 0;
+  padding: .85rem 1rem;
+}
+
+.profile-menu-trigger {
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
   color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  height: 2.5rem;
+  gap: .55rem;
+  justify-content: flex-start;
+  padding: 0 .7rem;
+  width: 100%;
+}
+
+.profile-trigger-name {
   font-size: .825rem;
   font-weight: 700;
+  line-height: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transform: translateY(.06em);
+  white-space: nowrap;
+}
+
+.profile-menu-trigger:hover,
+.profile-menu-trigger[aria-expanded='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.profile-menu-chevron {
+  margin-left: auto;
+  transition: transform 120ms ease;
+}
+
+.profile-menu-trigger[aria-expanded='true'] .profile-menu-chevron {
+  transform: rotate(180deg);
+}
+
+.profile-menu {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .65rem;
+  box-shadow: 0 .75rem 2rem rgb(0 0 0 / 18%);
+  bottom: auto;
+  left: 0;
+  min-width: 14rem;
+  overflow: visible;
+  padding: .45rem;
+  position: absolute;
+  top: calc(100% + .45rem);
+  z-index: 30;
+}
+
+.profile-menu::before {
+  content: '';
+  height: .5rem;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: -.5rem;
+}
+
+.profile-menu-identity {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: .55rem .65rem;
+}
+
+.profile-menu-identity strong,
+.profile-menu-identity span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.topbar-signout {
-  background: transparent;
-  border: 0;
-  color: var(--ink-2);
-  cursor: pointer;
-  font-size: .825rem;
-  font-weight: 600;
-  padding: .375rem .625rem;
+.profile-menu-identity strong {
+  font-size: .85rem;
 }
 
-.topbar-signout:hover {
+.profile-menu-identity span {
+  color: var(--ink-2);
+  font-size: .75rem;
+  margin-top: .12rem;
+}
+
+.profile-menu-divider {
+  border-top: 1px solid var(--line);
+  margin: .25rem 0;
+}
+
+.profile-menu a,
+.profile-menu button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: .4rem;
   color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: .8rem;
+  gap: .55rem;
+  padding: .55rem .65rem;
+  text-align: left;
+  text-decoration: none;
+  width: 100%;
+}
+
+.profile-menu a:hover,
+.profile-menu button:hover,
+.profile-menu a:focus-visible,
+.profile-menu button:focus-visible {
+  background: var(--surface-2);
 }
 
 .topbar-signin {
@@ -259,7 +390,7 @@ body {
     border-right: 0;
     flex: 0 0 auto;
     flex-direction: row;
-    justify-content: space-between;
+    justify-content: flex-start;
   }
 
   .brand {
@@ -274,7 +405,8 @@ body {
 
   .site-nav {
     flex-direction: row;
-    padding: 0 .5rem 0 0;
+    margin-left: auto;
+    padding: 0;
   }
 
   .site-nav a {
@@ -290,6 +422,68 @@ body {
 
   .nav-icon {
     display: none;
+  }
+
+  .sidebar-account {
+    align-items: center;
+    align-self: stretch;
+    border-left: 1px solid var(--line);
+    border-top: 0;
+    display: flex;
+    margin-left: 0;
+    margin-top: 0;
+    padding: .45rem .75rem;
+  }
+
+  .sidebar-account .profile-menu-trigger {
+    gap: .15rem;
+    justify-content: center;
+    padding: 0 .55rem 0 .7rem;
+    width: auto;
+  }
+
+  .profile-trigger-name {
+    display: none;
+  }
+
+  .sidebar-account .profile-menu-chevron {
+    margin-left: .15rem;
+  }
+
+  .sidebar-account .profile-menu {
+    bottom: auto;
+    left: auto;
+    right: 0;
+    top: calc(100% + .45rem);
+  }
+
+  .app-topbar {
+    align-items: center;
+    padding: .65rem 1rem;
+  }
+
+  .page-header {
+    align-items: center;
+  }
+
+  .page-header p {
+    white-space: normal;
+  }
+
+}
+
+@media (max-width: 38rem) {
+  .app-topbar {
+    gap: .75rem;
+    padding: .65rem .85rem;
+  }
+
+  .app-topbar-page {
+    overflow: hidden;
+  }
+
+  .profile-menu {
+    min-width: 12.5rem;
   }
 }
 /* A view-as session must remain unmistakable and easy to exit on every page. */

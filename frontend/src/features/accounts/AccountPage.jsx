@@ -2,6 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '../../auth/AuthContext';
 import * as api from '../../api';
+import PageHeader from '../../app/PageHeader';
+import Avatar from '../../components/primitives/Avatar';
+import Skeleton from '../../components/feedback/Skeleton';
+import StatePanel from '../../components/feedback/StatePanel';
 import LoginActivityPanel from './LoginActivityPanel';
 import MfaPanel from './MfaPanel';
 import PasswordPanel from './PasswordPanel';
@@ -13,31 +17,18 @@ const PROFILE_PICTURE_LIMIT = 2 * 1024 * 1024;
 // Sign-in history is for privileged accounts that need to spot suspicious access.
 const LOGIN_ACTIVITY_ROLES = ['sponsor', 'admin'];
 
-function initials(name) {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2)
-    .map((part) => part[0].toUpperCase()).join('') || '?';
-}
-
 function ProfileSkeleton() {
   return (
     <section className="account-card" aria-label="Loading your profile">
-      <div className="account-card-header"><span className="account-skeleton account-skeleton-heading" /></div>
+      <div className="account-card-header"><Skeleton className="account-skeleton account-skeleton-heading" /></div>
       <div className="profile-layout">
-        <span className="account-skeleton account-skeleton-avatar" />
+        <Skeleton className="account-skeleton account-skeleton-avatar" />
         <div className="account-skeleton-lines">
-          <span className="account-skeleton" /><span className="account-skeleton short" />
-          <span className="account-skeleton shorter" /><span className="account-skeleton short" />
+          <Skeleton className="account-skeleton" /><Skeleton className="account-skeleton short" />
+          <Skeleton className="account-skeleton shorter" /><Skeleton className="account-skeleton short" />
         </div>
       </div>
     </section>
-  );
-}
-
-function Avatar({ name, src }) {
-  return (
-    <div className="account-avatar" aria-label={`Profile picture for ${name}`}>
-      {src ? <img src={src} alt="" /> : initials(name)}
-    </div>
   );
 }
 
@@ -174,16 +165,15 @@ export default function AccountPage() {
 
   return (
     <div className="account-page">
-      <header className="account-heading"><h1>My account</h1><p>Your profile and sign-in details</p></header>
+      <PageHeader title="My account" subtitle="Your profile and sign-in details" />
       <main className="account-content" aria-busy={status === 'loading' || status === 'saving'}>
         <p className="sr-only" role="status" aria-live="polite">{status === 'loading' ? 'Loading your profile' : ''}</p>
         {status === 'loading' && <ProfileSkeleton />}
         {status === 'error' && (
-          <section className="account-state account-state-error" role="alert">
-            <h2>Your profile couldn&apos;t be loaded</h2>
+          <StatePanel className="account-state" tone="error" title="Your profile couldn't be loaded">
             <p>The server didn&apos;t send back your account details. Check your connection and try again.</p>
             <button className="account-button primary" type="button" onClick={loadProfile}>Try again</button>
-          </section>
+          </StatePanel>
         )}
         {profile && status !== 'loading' && status !== 'error' && (
           <>
@@ -196,7 +186,7 @@ export default function AccountPage() {
               {formError && <p className="account-banner error" role="alert">{formError}</p>}
               {!editing ? (
                 <div className="profile-layout">
-                  <Avatar name={profile.name} src={profile.avatar_url} />
+                  <Avatar className="account-avatar" name={profile.name} src={profile.avatar_url} label={`Profile picture for ${profile.name}`} />
                   <dl className="profile-details">
                     <div><dt>Display name</dt><dd>{profile.name}</dd></div>
                     <div><dt>Username</dt><dd>@{profile.username}</dd></div>
@@ -208,7 +198,7 @@ export default function AccountPage() {
                 <form onSubmit={saveProfile} noValidate>
                   <div className="profile-layout">
                     <div className="profile-picture-editor">
-                      <Avatar name={form.name || profile.name} src={displayedPicture} />
+                      <Avatar className="account-avatar" name={form.name || profile.name} src={displayedPicture} label={`Profile picture for ${form.name || profile.name}`} />
                       {profile.account_type === 'driver' && (
                         <div className="profile-picture-actions">
                           <label className="account-button" htmlFor="profile-picture">Choose picture</label>
