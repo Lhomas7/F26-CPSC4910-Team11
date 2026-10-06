@@ -1,5 +1,12 @@
 from django.contrib import admin
-from .models import AdminImpersonationEvent, LoginAttempt, SponsorAccount, SponsorCompany
+from .models import (
+    AdminImpersonationEvent,
+    LoginAttempt,
+    RegistrationEmailCode,
+    RegistrationSettings,
+    SponsorAccount,
+    SponsorCompany,
+)
 
 
 @admin.register(SponsorCompany)
@@ -45,4 +52,30 @@ class AdminImpersonationEventAdmin(admin.ModelAdmin):
         return False
 
     def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(RegistrationSettings)
+class RegistrationSettingsAdmin(admin.ModelAdmin):
+    list_display = ('email_verification_required', 'updated_at')
+
+    # A single settings row; RegistrationSettings.load() creates it on demand.
+    def has_add_permission(self, request):
+        return not RegistrationSettings.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(RegistrationEmailCode)
+class RegistrationEmailCodeAdmin(admin.ModelAdmin):
+    list_display = ('email', 'used', 'attempts', 'created_at', 'expires_at')
+    list_filter = ('used',)
+    search_fields = ('email',)
+
+    # Code rows are written only by the signup flow and store only hashes.
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
         return False

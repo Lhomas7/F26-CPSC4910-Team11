@@ -105,6 +105,40 @@ class MFABackupCode(models.Model):
         ]
 
 
+class RegistrationSettings(models.Model):
+    """Site-wide account creation options, edited by administrators.
+
+    A single row (pk=1); use RegistrationSettings.load() rather than querying.
+    """
+
+    email_verification_required = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @classmethod
+    def load(cls):
+        settings_row, _ = cls.objects.get_or_create(pk=1)
+        return settings_row
+
+
+class RegistrationEmailCode(models.Model):
+    """One-time code proving control of an email address during signup.
+
+    Keyed by email rather than user because the account does not exist yet.
+    """
+
+    email = models.EmailField(max_length=254)
+    code_hash = models.CharField(max_length=128)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    attempts = models.PositiveSmallIntegerField(default=0)
+    used = models.BooleanField(default=False)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['email', 'used'], name='regcode_email_used_idx'),
+        ]
+
+
 class DriverNotification(models.Model):
     driver = models.ForeignKey('drivers.Driver', on_delete=models.CASCADE, related_name='notifications')
     message = models.CharField(max_length=500)
