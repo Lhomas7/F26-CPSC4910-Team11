@@ -18,6 +18,7 @@ beforeEach(() => {
     requestMfaLoginCode: jest.fn(),
   });
   api.registerDriver.mockResolvedValue({ username: 'jamie.rivera' });
+  api.currentRelease.mockResolvedValue(null);
 });
 
 afterEach(() => jest.clearAllMocks());
@@ -361,4 +362,27 @@ test('explains a sign-out caused by inactivity', () => {
   renderLoginPage();
 
   expect(screen.getByRole('status')).toHaveTextContent('You were signed out due to inactivity.');
+});
+
+test('the footer shows the current release from the About page data', async () => {
+  api.currentRelease.mockResolvedValue({
+    team_number: 11,
+    version_number: 'Sprint 4',
+    release_date: '2026-10-06',
+    product_name: 'Good Driver Incentive Program',
+    product_description: 'A rewards program for safer driving.',
+  });
+
+  renderLoginPage();
+
+  expect(await screen.findByText('Team 11, Sprint 4')).toBeInTheDocument();
+  expect(screen.queryByText(/v0\.1\.0/)).not.toBeInTheDocument();
+});
+
+test('the footer leaves the release out when none is available', async () => {
+  renderLoginPage();
+
+  await waitFor(() => expect(api.currentRelease).toHaveBeenCalled());
+  expect(screen.queryByText(/^Team \d+/)).not.toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'About this app' })).toBeInTheDocument();
 });
