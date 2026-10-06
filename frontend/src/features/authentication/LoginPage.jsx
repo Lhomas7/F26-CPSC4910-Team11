@@ -57,6 +57,7 @@ function PasswordInput({
 
 export default function LoginPage() {
   const { loading, user, notice, signIn, completeMfaLogin, requestMfaLoginCode } = useAuth();
+  const release = useCurrentRelease();
 
   let content;
   if (loading) {
@@ -92,7 +93,7 @@ export default function LoginPage() {
         </div>
         <RoadTruck className="login-lane" />
         <div className="login-road-foot">
-          <span>Team 11, v0.1.0 (Sprint 1)</span>
+          {release && <span>Team {release.team_number}, {release.version_number}</span>}
           <Link to="/about">About this app</Link>
         </div>
       </aside>
@@ -102,6 +103,23 @@ export default function LoginPage() {
       </main>
     </div>
   );
+}
+
+// Same release record the About page shows; the footer omits it until loaded.
+function useCurrentRelease() {
+  const [release, setRelease] = useState(null);
+  useEffect(() => {
+    let active = true;
+    api.currentRelease()
+      .then((data) => {
+        if (active) setRelease(data);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+  return release;
 }
 
 function LoadingCard() {
