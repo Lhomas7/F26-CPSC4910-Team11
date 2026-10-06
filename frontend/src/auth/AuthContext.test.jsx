@@ -1,7 +1,8 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import * as api from '../api';
 import { AuthProvider, useAuth } from './AuthContext';
+import { API_ACTIVITY_EVENT, SESSION_EXPIRED_EVENT } from './sessionEvents';
 
 jest.mock('../api');
 
@@ -105,4 +106,81 @@ test('profile updates without a session keep the current one', async () => {
 
   expect(await screen.findByText('Name: Renamed')).toBeInTheDocument();
   expect(screen.getByText('Device check: new_device')).toBeInTheDocument();
+});
+
+function NoticeStatus() {
+  const { loading, user, notice } = useAuth();
+  if (loading) return <p>Loading</p>;
+  return <p>{user ? `Signed in as ${user.username}` : `Signed out (${notice || 'no notice'})`}</p>;
+}
+
+function renderWithIdleLimit(idleSeconds) {
+  api.ensureCsrf.mockResolvedValue();
+  api.logout.mockResolvedValue(null);
+  api.me.mockResolvedValue({
+    authenticated: true,
+    user: {
+      username: 'admin.one',
+      account_type: 'admin',
+      session: { device_check: null, idle_timeout_seconds: idleSeconds },
+    },
+  });
+  return render(
+    <AuthProvider>
+      <NoticeStatus />
+    </AuthProvider>,
+  );
+}
+
+test('a server-reported expiry clears the user and sets the expired notice', async () => {
+  renderWithIdleLimit(null);
+  expect(await screen.findByText('Signed in as admin.one')).toBeInTheDocument();
+
+  act(() => {
+    window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+  });
+
+  expect(screen.getByText('Signed out (expired)')).toBeInTheDocument();
+});
+
+describe('idle timer', () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  test('signs out after the idle limit with no requests', async () => {
+    renderWithIdleLimit(60);
+    expect(await screen.findByText('Signed in as admin.one')).toBeInTheDocument();
+
+    act(() => {
+      jest.advanceTimersByTime(60 * 1000);
+    });
+
+    expect(screen.getByText('Signed out (expired)')).toBeInTheDocument();
+    expect(api.logout).toHaveBeenCalledTimes(1);
+  });
+
+  test('API activity restarts the timer', async () => {
+    renderWithIdleLimit(60);
+    expect(await screen.findByText('Signed in as admin.one')).toBeInTheDocument();
+
+    act(() => {
+      jest.advanceTimersByTime(45 * 1000);
+      window.dispatchEvent(new Event(API_ACTIVITY_EVENT));
+      jest.advanceTimersByTime(45 * 1000);
+    });
+
+    expect(screen.getByText('Signed in as admin.one')).toBeInTheDocument();
+    expect(api.logout).not.toHaveBeenCalled();
+  });
+
+  test('no timer runs when the session has no idle limit', async () => {
+    renderWithIdleLimit(null);
+    expect(await screen.findByText('Signed in as admin.one')).toBeInTheDocument();
+
+    act(() => {
+      jest.advanceTimersByTime(24 * 60 * 60 * 1000);
+    });
+
+    expect(screen.getByText('Signed in as admin.one')).toBeInTheDocument();
+  });
 });

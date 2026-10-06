@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../auth/AuthContext';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -50,7 +50,8 @@ function AccountMenu({ user, onSignOut }) {
 }
 
 export function AppLayout() {
-  const { user, signOut, stopImpersonation, answerDeviceCheck } = useAuth();
+  const { user, notice, signOut, stopImpersonation, answerDeviceCheck } = useAuth();
+  const navigate = useNavigate();
   const [endingViewAs, setEndingViewAs] = useState(false);
   const [viewAsError, setViewAsError] = useState('');
   const mfaWallNeeded = user
@@ -58,6 +59,11 @@ export function AppLayout() {
     && user.mfa
     && user.mfa.required
     && !user.mfa.enrolled;
+
+  // A timed-out session goes straight to sign-in, even from public pages.
+  useEffect(() => {
+    if (notice === 'expired' && !user) navigate('/login', { replace: true });
+  }, [notice, user, navigate]);
 
   const stopViewingAs = async () => {
     setEndingViewAs(true);

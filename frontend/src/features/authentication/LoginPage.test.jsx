@@ -346,3 +346,19 @@ test('a signed-in user is redirected to the welcome page', async () => {
 
   expect(await screen.findByText('Welcome')).toBeInTheDocument();
 });
+
+test('explains a sign-out caused by inactivity', () => {
+  useAuth.mockReturnValue({
+    loading: false,
+    user: null,
+    notice: 'expired',
+    signIn: jest.fn(),
+    signOut: jest.fn(),
+    completeMfaLogin: jest.fn(),
+    requestMfaLoginCode: jest.fn(),
+  });
+
+  renderLoginPage();
+
+  expect(screen.getByRole('status')).toHaveTextContent('You were signed out due to inactivity.');
+});

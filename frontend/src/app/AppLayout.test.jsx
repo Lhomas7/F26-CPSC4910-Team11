@@ -1,6 +1,6 @@
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 import { useAuth } from '../auth/AuthContext';
 import { AppLayout } from './AppLayout';
@@ -104,4 +104,27 @@ test('a pending device question opens the dialog over the page', async () => {
     userEvent.click(screen.getByRole('button', { name: 'No, this is a shared or public device' }));
   });
   expect(auth.answerDeviceCheck).toHaveBeenCalledWith(false);
+});
+
+test('an expired session is sent to the sign-in page', () => {
+  useAuth.mockReturnValue({
+    user: null,
+    notice: 'expired',
+    signOut: jest.fn(),
+    stopImpersonation: jest.fn(),
+    answerDeviceCheck: jest.fn(),
+  });
+
+  render(
+    <MemoryRouter initialEntries={['/about']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <Routes>
+        <Route element={<AppLayout />}>
+          <Route path="/about" element={<p>About page</p>} />
+        </Route>
+        <Route path="/login" element={<p>Sign in page</p>} />
+      </Routes>
+    </MemoryRouter>,
+  );
+
+  expect(screen.getByText('Sign in page')).toBeInTheDocument();
 });

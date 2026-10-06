@@ -56,7 +56,7 @@ function PasswordInput({
 }
 
 export default function LoginPage() {
-  const { loading, user, signIn, completeMfaLogin, requestMfaLoginCode } = useAuth();
+  const { loading, user, notice, signIn, completeMfaLogin, requestMfaLoginCode } = useAuth();
 
   let content;
   if (loading) {
@@ -64,7 +64,14 @@ export default function LoginPage() {
   } else if (user) {
     content = <Navigate to="/" replace />;
   } else {
-    content = <AuthCard onSignIn={signIn} onMfaComplete={completeMfaLogin} onRequestMfaCode={requestMfaLoginCode} />;
+    content = (
+      <AuthCard
+        sessionExpired={notice === 'expired'}
+        onSignIn={signIn}
+        onMfaComplete={completeMfaLogin}
+        onRequestMfaCode={requestMfaLoginCode}
+      />
+    );
   }
 
   return (
@@ -105,13 +112,15 @@ function LoadingCard() {
   );
 }
 
-function AuthCard({ onSignIn, onMfaComplete, onRequestMfaCode }) {
+const SESSION_EXPIRED_NOTICE = 'You were signed out due to inactivity. Sign in again to continue.';
+
+function AuthCard({ sessionExpired = false, onSignIn, onMfaComplete, onRequestMfaCode }) {
   const [searchParams] = useSearchParams();
   const [view, setView] = useState(() => (
     searchParams.get('tab') === 'register' ? 'signup' : 'signin'
   ));
   const [role, setRole] = useState(null);
-  const [notice, setNotice] = useState(null);
+  const [notice, setNotice] = useState(sessionExpired ? SESSION_EXPIRED_NOTICE : null);
 
   const switchToSignIn = () => {
     setView('signin');
