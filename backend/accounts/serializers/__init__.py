@@ -7,7 +7,7 @@ from .admin_users import (
     RegistrationSettingsSerializer,
     SponsorCompanySerializer,
 )
-from .authentication import LoginSerializer
+from .authentication import DeviceCheckSerializer, LoginSerializer
 from .login_attempts import LoginAttemptSerializer
 from .mfa import (
     BackupCodesRegenerateSerializer,
@@ -40,6 +40,7 @@ __all__ = [
     'AdminUserListSerializer',
     'BackupCodesRegenerateSerializer',
     'ChangePasswordSerializer',
+    'DeviceCheckSerializer',
     'DriverRegistrationSerializer',
     'LoginAttemptSerializer',
     'LoginMFARequestCodeSerializer',

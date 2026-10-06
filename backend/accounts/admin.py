@@ -6,6 +6,7 @@ from .models import (
     RegistrationSettings,
     SponsorAccount,
     SponsorCompany,
+    TrustedDevice,
 )
 
 
@@ -74,6 +75,21 @@ class RegistrationEmailCodeAdmin(admin.ModelAdmin):
     search_fields = ('email',)
 
     # Code rows are written only by the signup flow and store only hashes.
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(TrustedDevice)
+class TrustedDeviceAdmin(admin.ModelAdmin):
+    list_display = ('user', 'created_at', 'last_used_at')
+    search_fields = ('user__username',)
+    exclude = ('token_hash',)
+
+    # Rows are created only when a user answers "Yes, this is my device".
+    # Deleting one is allowed so an admin can make that browser ask again.
     def has_add_permission(self, request):
         return False
 

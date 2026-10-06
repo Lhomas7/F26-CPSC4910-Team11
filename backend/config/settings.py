@@ -260,6 +260,14 @@ PASSWORD_RESET_REQUEST_COOLDOWN = int(
     os.environ.get("PASSWORD_RESET_REQUEST_COOLDOWN_SECONDS", 60)
 )
 
+# "Is this your device?" check after sign-in. A browser the user marks as theirs
+# is remembered this many days; sign-ins from other browsers, or after this many
+# failed attempts within the window, ask the question again.
+TRUSTED_DEVICE_DAYS = 90
+TRUSTED_DEVICE_COOKIE_NAME = "gd_device"
+SUSPICIOUS_FAILURE_THRESHOLD = 3
+SUSPICIOUS_FAILURE_WINDOW_MINUTES = 15
+
 # Cross-origin access for the React app. In development the React dev server
 # (http://localhost:3000) calls Django (http://localhost:8000). Deployed
 # environments list their real origins, comma-separated, e.g.

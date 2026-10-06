@@ -35,3 +35,26 @@ def notify_password_reset(user):
             from_email=settings.DEFAULT_FROM_EMAIL,
             to=[user.email],
         ).send()
+
+
+def notify_unrecognized_sign_in(user):
+    """Tell the account owner someone signed in on a device marked as not theirs.
+
+    No device details are included: none are collected. Drivers also get an
+    in-app notification.
+    """
+    message = (
+        'Your Good Driver account was just signed in to on a device that was marked '
+        'as shared or not yours. That session ends when the browser closes. If this '
+        'was not you, change your password and contact your sponsor or an '
+        'administrator right away.'
+    )
+    if hasattr(user, 'driver_profile'):
+        DriverNotification.objects.create(driver=user.driver_profile, message=message)
+    if user.email:
+        EmailMessage(
+            subject='New sign-in to your Good Driver account',
+            body=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[user.email],
+        ).send()

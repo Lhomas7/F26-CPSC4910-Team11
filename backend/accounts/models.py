@@ -175,3 +175,29 @@ class AdminImpersonationEvent(models.Model):
 
     class Meta:
         ordering = ('-created_at',)
+
+
+class TrustedDevice(models.Model):
+    """A browser the user said is theirs when asked "Is this your device?".
+
+    The browser holds a random token in an HttpOnly cookie; only its SHA-256 is
+    stored here. Nothing about the device itself (IP, user agent, location) is
+    recorded. One browser token can be trusted by several accounts.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='trusted_devices',
+    )
+    token_hash = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['user', 'token_hash'], name='trusteddevice_user_token_idx'),
+        ]
+
+    def __str__(self):
+        return f'{self.user} - trusted {self.created_at:%Y-%m-%d}'
