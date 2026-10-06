@@ -1,4 +1,4 @@
-import { initials } from '../utils/names';
+import { initials } from '../../utils/names';
 import './Avatar.css';
 
 // Round profile picture that falls back to the person's initials.

@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 
 import { API_URL } from '../../api';
 import PageHeader from '../../app/PageHeader';
-import RoadTruck from '../../components/RoadTruck';
-import Skeleton from '../../components/Skeleton';
-import StatePanel from '../../components/StatePanel';
+import RoadTruck from '../../components/branding/RoadTruck';
+import Skeleton from '../../components/feedback/Skeleton';
+import StatePanel from '../../components/feedback/StatePanel';
 import './AboutPage.css';
 
 function formatReleaseDate(releaseDate) {

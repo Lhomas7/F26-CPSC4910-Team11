@@ -36,7 +36,7 @@ import {
   Tree,
   YieldSign,
 } from '../../components/assets';
-import RoadTruck from '../../components/RoadTruck';
+import RoadTruck from '../../components/branding/RoadTruck';
 import './PlaygroundPage.css';
 
 // Unlinked sandbox for trying out the drawn assets and animation ideas.

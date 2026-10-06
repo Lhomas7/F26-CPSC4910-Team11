@@ -130,8 +130,12 @@ F26-CPSC4910-Team11/
 │   │   ├── api/                  # HTTP client and domain-specific API modules
 │   │   ├── app/                  # Routes, responsive shell, layout, and page headers
 │   │   ├── auth/                 # Authentication context and session events
-│   │   ├── components/           # Shared UI primitives, feedback, forms, and branding
-│   │   │   └── assets/           # Reusable illustrated people, scenery, vehicles, and effects
+│   │   ├── components/           # Shared cross-feature UI
+│   │   │   ├── assets/           # Illustrated people, scenery, vehicles, and effects
+│   │   │   ├── branding/         # Brand marks, program messaging, and road animation
+│   │   │   ├── feedback/         # Modals, confirmations, loading, and state panels
+│   │   │   ├── forms/            # Shared password and selection controls
+│   │   │   └── primitives/       # Avatars and interface icons
 │   │   ├── data/                 # Shared static/reference data
 │   │   ├── features/
 │   │   │   ├── about/            # About and release information

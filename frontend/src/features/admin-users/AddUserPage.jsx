@@ -4,10 +4,10 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import * as api from '../../api';
 import PageHeader from '../../app/PageHeader';
-import PasswordInput from '../../components/PasswordInput';
-import Skeleton from '../../components/Skeleton';
-import StatePanel from '../../components/StatePanel';
-import PasswordRequirements from '../../components/PasswordRequirements';
+import Skeleton from '../../components/feedback/Skeleton';
+import StatePanel from '../../components/feedback/StatePanel';
+import PasswordInput from '../../components/forms/PasswordInput';
+import PasswordRequirements from '../../components/forms/PasswordRequirements';
 import {
   validateEmail,
   validateName,

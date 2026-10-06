@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-import BrandMark from '../../components/BrandMark';
+import BrandMark from '../../components/branding/BrandMark';
 import './LegalPage.css';
 
 const EFFECTIVE_DATE = 'October 2, 2026';

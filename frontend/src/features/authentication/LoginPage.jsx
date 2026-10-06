@@ -2,11 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
 import * as api from '../../api';
-import BrandMark from '../../components/BrandMark';
-import PasswordInput from '../../components/PasswordInput';
-import PasswordRequirements from '../../components/PasswordRequirements';
-import ProgramPerks from '../../components/ProgramPerks';
-import RoadTruck from '../../components/RoadTruck';
+import BrandMark from '../../components/branding/BrandMark';
+import ProgramPerks from '../../components/branding/ProgramPerks';
+import RoadTruck from '../../components/branding/RoadTruck';
+import PasswordInput from '../../components/forms/PasswordInput';
+import PasswordRequirements from '../../components/forms/PasswordRequirements';
 import { useAuth } from '../../auth/AuthContext';
 import {
   validateEmail,

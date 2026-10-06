@@ -446,17 +446,10 @@ frontend/src/
 │   │   ├── people/           # People illustrations
 │   │   ├── scenery/          # Roads, places, signs, and street objects
 │   │   └── vehicles/         # Vehicle illustrations and shared wheels
-│   ├── Avatar.*
-│   ├── BrandMark.*
-│   ├── ConfirmDialog.* / Modal.*
-│   ├── Icons.jsx
-│   ├── PasswordInput.*
-│   ├── PasswordRequirements.*
-│   ├── ProgramPerks.*
-│   ├── RoadTruck.*
-│   ├── SelectMenu.*
-│   ├── Skeleton.*
-│   └── StatePanel.*
+│   ├── branding/             # BrandMark, ProgramPerks, and RoadTruck
+│   ├── feedback/             # Modal, ConfirmDialog, Skeleton, and StatePanel
+│   ├── forms/                # PasswordInput, PasswordRequirements, and SelectMenu
+│   └── primitives/           # Avatar and interface Icons
 ├── data/                     # Shared reference data
 ├── features/
 │   ├── about/
@@ -474,6 +467,8 @@ This tree reflects the current repository. Keep feature-specific pages, panels,
 tests, and styles in their owning feature. Move UI into `components/` only when
 it is reused across features or forms part of the shared visual system. Keep
 illustrated elements under `components/assets/` and group them by visual domain.
+Group the remaining shared UI by responsibility under `branding/`, `feedback/`,
+`forms/`, and `primitives/`; do not restore a flat components directory.
 Add `hooks/`, broader style-system directories, or new feature directories only
 when implemented code needs them rather than pre-creating empty abstractions.
 
@@ -488,6 +483,7 @@ when implemented code needs them rather than pre-creating empty abstractions.
 - [ ] Extract reusable form fields and field-error components beyond the shared password and select controls.
 - [ ] Standardize buttons, cards, badges, avatars, banners, and design tokens.
 - [x] Centralize reusable illustrated assets by people, scenery, vehicles, and effects.
+- [x] Organize shared components into branding, feedback, forms, and primitive UI groups.
 - [ ] Adopt naming conventions:
   - `*Page.jsx` for routed pages
   - `*Form.jsx` for forms

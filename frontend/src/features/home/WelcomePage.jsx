@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 
 import { useAuth } from '../../auth/AuthContext';
 import PageHeader from '../../app/PageHeader';
-import ProgramPerks from '../../components/ProgramPerks';
-import RoadTruck from '../../components/RoadTruck';
+import ProgramPerks from '../../components/branding/ProgramPerks';
+import RoadTruck from '../../components/branding/RoadTruck';
 import './WelcomePage.css';
 
 export default function WelcomePage() {

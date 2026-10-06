@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-import { FireTruck, Flame, Impact, SemiTruck, Smoke, Wheel } from './assets';
+import { FireTruck, Flame, Impact, SemiTruck, Smoke, Wheel } from '../assets';
 import './RoadTruck.css';
 
 // Matches the length of the road-truck-crash animation in RoadTruck.css.

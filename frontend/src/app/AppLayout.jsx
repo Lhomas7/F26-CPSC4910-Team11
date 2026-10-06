@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../auth/AuthContext';
-import BrandMark from '../components/BrandMark';
-import ConfirmDialog from '../components/ConfirmDialog';
-import { AccountIcon, ChevronDownIcon, SignOutIcon, UserIcon } from '../components/Icons';
+import BrandMark from '../components/branding/BrandMark';
+import ConfirmDialog from '../components/feedback/ConfirmDialog';
+import { AccountIcon, ChevronDownIcon, SignOutIcon, UserIcon } from '../components/primitives/Icons';
 import MfaSetupWall from '../features/accounts/MfaSetupWall';
 import DeviceCheckDialog from '../features/authentication/DeviceCheckDialog';
 import './AppLayout.css';

@@ -71,15 +71,10 @@ src/
 │   │   ├── people/              # Reusable people illustrations
 │   │   ├── scenery/             # Buildings, roads, signs, plants, and street objects
 │   │   └── vehicles/            # Cars, buses, trucks, ambulances, and wheels
-│   ├── Avatar.*                 # Profile-image fallback and presentation
-│   ├── BrandMark.*              # Good Driver road-mark branding
-│   ├── Modal.* / ConfirmDialog.* # Accessible modal and confirmation behavior
-│   ├── PasswordInput.*          # Shared password visibility control
-│   ├── PasswordRequirements.*   # API-backed password-rule presentation
-│   ├── RoadTruck.*              # Animated branded road scene
-│   ├── SelectMenu.*             # Custom select/menu control
-│   ├── Skeleton.*               # Shared loading placeholder
-│   └── StatePanel.*             # Empty, error, and informational states
+│   ├── branding/                # BrandMark, ProgramPerks, and RoadTruck
+│   ├── feedback/                # Modal, ConfirmDialog, Skeleton, and StatePanel
+│   ├── forms/                   # PasswordInput, PasswordRequirements, and SelectMenu
+│   └── primitives/              # Avatar and interface Icons
 ├── data/                         # Shared static/reference data
 ├── features/                     # Feature-owned pages, tests, and styles
 │   ├── about/                    # Product and release information
@@ -97,9 +92,11 @@ Feature tests and styles should remain beside their implementations. Shared API
 transport belongs in `src/api/client.js`; domain endpoint functions belong in
 the corresponding module under `src/api/`. A component belongs in
 `src/components/` only when multiple features use it or it is part of the
-shared visual system; feature-specific panels and forms stay inside their
-own feature directory. Reusable illustrated elements belong under
-`src/components/assets/`, grouped by visual domain.
+shared visual system; feature-specific panels and forms stay inside their own
+feature directory. Within `components/`, use `branding/` for program identity,
+`feedback/` for application states and overlays, `forms/` for reusable input
+controls, `primitives/` for small foundational UI, and `assets/` for reusable
+illustrations grouped by visual domain.
 
 See [`docs/DEPLOYMENT.md`](../docs/DEPLOYMENT.md) for the Docker Compose, Caddy,
 EC2, and GitHub Actions deployment path.
