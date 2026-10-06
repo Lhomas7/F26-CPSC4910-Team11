@@ -54,8 +54,10 @@
 
 /* ---------- History card ---------- */
 
+/* No overflow clipping here: the driver dropdown's option list has to be able
+   to extend past the bottom of the card (e.g. when the history is empty). */
 .points-card {
-  overflow: hidden;
+  position: relative;
 }
 
 .points-card h2 {
