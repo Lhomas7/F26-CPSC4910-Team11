@@ -30,6 +30,7 @@ from ..models import (
     MFABackupCode,
     MFACode,
     MFASettings,
+    RegistrationSettings,
     SponsorAccount,
     SponsorCompany,
 )
@@ -647,3 +648,80 @@ class AdminImpersonationTests(APITestCase):
             AdminImpersonationEvent.objects.filter(action='expire', target=self.driver_user).exists()
         )
 
+
+
+class AdminRegistrationSettingsTests(APITestCase):
+    url = reverse('accounts:admin-registration-settings')
+
+    @classmethod
+    def setUpTestData(cls):
+        company = SponsorCompany.objects.create(name='Palmetto Freight')
+        cls.admin = get_user_model().objects.create_superuser(
+            username='settings.admin',
+            password='ExamplePassword123!',
+        )
+        enroll_totp(cls.admin)
+        cls.unenrolled_admin = get_user_model().objects.create_superuser(
+            username='new.admin',
+            password='ExamplePassword123!',
+        )
+        cls.sponsor_user = get_user_model().objects.create_user(
+            username='dana.sponsor',
+            password='ExamplePassword123!',
+        )
+        SponsorAccount.objects.create(user=cls.sponsor_user, company=company)
+        enroll_totp(cls.sponsor_user)
+        cls.driver_user = get_user_model().objects.create_user(
+            username='marcus.driver',
+            password='ExamplePassword123!',
+        )
+        Driver.objects.create(user=cls.driver_user, name='Marcus Alvarez', sponsor=company)
+
+    def test_admin_reads_default_setting(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['email_verification_required'], False)
+
+    def test_admin_can_toggle_email_verification(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.patch(self.url, {'email_verification_required': True}, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['email_verification_required'], True)
+        self.assertTrue(RegistrationSettings.load().email_verification_required)
+
+        response = self.client.patch(self.url, {'email_verification_required': False}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(RegistrationSettings.load().email_verification_required)
+
+    def test_invalid_value_is_rejected(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.patch(self.url, {'email_verification_required': 'sometimes'}, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(RegistrationSettings.load().email_verification_required)
+
+    def test_non_admins_cannot_read_or_change_setting(self):
+        anonymous = self.client.patch(self.url, {'email_verification_required': True}, format='json')
+        self.assertIn(anonymous.status_code, (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN))
+
+        for user in (self.sponsor_user, self.driver_user):
+            self.client.force_authenticate(user)
+            self.assertEqual(self.client.get(self.url).status_code, status.HTTP_403_FORBIDDEN)
+            response = self.client.patch(self.url, {'email_verification_required': True}, format='json')
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        self.assertFalse(RegistrationSettings.load().email_verification_required)
+
+    def test_admin_without_mfa_cannot_change_setting(self):
+        self.client.force_authenticate(self.unenrolled_admin)
+
+        response = self.client.patch(self.url, {'email_verification_required': True}, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(RegistrationSettings.load().email_verification_required)

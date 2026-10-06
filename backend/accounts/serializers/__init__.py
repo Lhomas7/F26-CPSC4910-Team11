@@ -4,6 +4,7 @@ from .admin_users import (
     AdminSponsorDetailSerializer,
     AdminUserCreateSerializer,
     AdminUserListSerializer,
+    RegistrationSettingsSerializer,
     SponsorCompanySerializer,
 )
 from .authentication import LoginSerializer
@@ -51,6 +52,7 @@ __all__ = [
     'MFAVerifySerializer',
     'PasswordResetRequestSerializer',
     'RegistrationSerializer',
+    'RegistrationSettingsSerializer',
     'SelfProfileSerializer',
     'SponsorCompanySerializer',
     'SponsorMFASerializer',

@@ -15,7 +15,7 @@ from ..middleware import (
     client_ip,
     impersonation_details,
 )
-from ..models import AdminImpersonationEvent, SponsorCompany
+from ..models import AdminImpersonationEvent, RegistrationSettings, SponsorCompany
 from ..permissions import MFAEnrolled
 from ..serializers import (
     AdminAccountDetailSerializer,
@@ -23,6 +23,7 @@ from ..serializers import (
     AdminSponsorDetailSerializer,
     AdminUserCreateSerializer,
     AdminUserListSerializer,
+    RegistrationSettingsSerializer,
     SponsorCompanySerializer,
 )
 from ..services import get_account_type, get_public_user
@@ -152,6 +153,25 @@ class AdminSponsorCompanyListView(APIView):
     def get(self, request):
         companies = SponsorCompany.objects.order_by('name')
         return Response(SponsorCompanySerializer(companies, many=True).data)
+
+
+class AdminRegistrationSettingsView(APIView):
+    """Site-wide account creation options, such as requiring email verification."""
+
+    permission_classes = [IsAdminUser, MFAEnrolled]
+
+    def get(self, request):
+        return Response(RegistrationSettingsSerializer(RegistrationSettings.load()).data)
+
+    def patch(self, request):
+        serializer = RegistrationSettingsSerializer(
+            RegistrationSettings.load(),
+            data=request.data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 
 class AdminAccountDetailView(APIView):
