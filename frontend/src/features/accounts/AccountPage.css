@@ -207,6 +207,15 @@
   font-size: .7rem;
 }
 
+.profile-form .profile-field-error {
+  color: #9e2f29;
+  font-weight: 700;
+}
+
+.profile-form input[aria-invalid='true'] {
+  border-color: #b23d35;
+}
+
 .profile-section-label {
   color: var(--ink-2);
   font-size: .68rem;
@@ -439,6 +448,14 @@
 }
 
 @media (prefers-color-scheme: dark) {
+  .profile-form .profile-field-error {
+    color: #e5766e;
+  }
+
+  .profile-form input[aria-invalid='true'] {
+    border-color: #e5766e;
+  }
+
   .account-banner.error {
     background: #3b2220;
     border-color: #7c3c37;

@@ -43,6 +43,7 @@ export default function AccountPage() {
   const [removePicture, setRemovePicture] = useState(false);
   const [picturePreview, setPicturePreview] = useState('');
   const [formError, setFormError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [notice, setNotice] = useState('');
 
   const loadProfile = useCallback(async () => {
@@ -91,6 +92,7 @@ export default function AccountPage() {
   const beginEditing = () => {
     setForm({ name: profile.name, username: profile.username, email: profile.email, phone_number: profile.phone_number || '' });
     setFormError('');
+    setFieldErrors({});
     setNotice('');
     setPendingPicture(null);
     setRemovePicture(false);
@@ -100,6 +102,7 @@ export default function AccountPage() {
   const cancelEditing = () => {
     setForm({ name: profile.name, username: profile.username, email: profile.email, phone_number: profile.phone_number || '' });
     setFormError('');
+    setFieldErrors({});
     setPendingPicture(null);
     setRemovePicture(false);
     setEditing(false);
@@ -122,31 +125,35 @@ export default function AccountPage() {
     setRemovePicture(false);
   };
 
+  const updateField = (field, value) => {
+    setForm((current) => ({ ...current, [field]: value }));
+    setFieldErrors((current) => ({ ...current, [field]: undefined }));
+    setFormError('');
+  };
+
   const saveProfile = async (event) => {
     event.preventDefault();
     const name = form.name.trim();
     const username = form.username.trim();
-    if (!name || !username) {
-      setFormError('Enter both a display name and username.');
-      return;
-    }
-    if (!/^[A-Za-z0-9._-]{3,30}$/.test(username)) {
-      setFormError('Username must be 3 to 30 characters using letters, numbers, periods, dashes, or underscores.');
-      return;
+    const validationErrors = {};
+    if (!name) validationErrors.name = 'Enter a display name.';
+    if (!username) validationErrors.username = 'Enter a username.';
+    else if (!/^[A-Za-z0-9._-]{3,30}$/.test(username)) {
+      validationErrors.username = 'Username must be 3 to 30 characters using letters, numbers, periods, dashes, or underscores.';
     }
     const emailError = validateEmail(form.email);
-    if (emailError) {
-      setFormError(emailError);
-      return;
-    }
+    if (emailError) validationErrors.email = emailError;
     const phoneError = profile.account_type === 'driver' && validatePhoneNumber(form.phone_number);
-    if (phoneError) {
-      setFormError(phoneError);
+    if (phoneError) validationErrors.phone_number = phoneError;
+    if (Object.keys(validationErrors).length) {
+      setFieldErrors(validationErrors);
+      setFormError('');
       return;
     }
 
     setStatus('saving');
     setFormError('');
+    setFieldErrors({});
     setNotice('');
     try {
       const changes = { name, username, email: form.email.trim() };
@@ -163,8 +170,16 @@ export default function AccountPage() {
       setNotice('Profile saved. Your changes are live.');
       setStatus('ready');
     } catch (error) {
-      setFormError(error.data?.username?.[0] || error.data?.email?.[0] || error.data?.phone_number?.[0] || error.data?.name?.[0]
-        || error.message || 'Your changes could not be saved.');
+      const responseErrors = error.data || {};
+      const nextFieldErrors = {};
+      ['name', 'username', 'email', 'phone_number'].forEach((field) => {
+        const detail = responseErrors[field];
+        if (detail) nextFieldErrors[field] = Array.isArray(detail) ? detail[0] : detail;
+      });
+      setFieldErrors(nextFieldErrors);
+      if (!Object.keys(nextFieldErrors).length) {
+        setFormError(error.message || 'Your changes could not be saved.');
+      }
       setStatus('ready');
     }
   };
@@ -225,19 +240,19 @@ export default function AccountPage() {
                     <div className="profile-form">
                       <p className="profile-section-label">You can change</p>
                       <label htmlFor="profile-name">Display name</label>
-                      <input id="profile-name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} maxLength="200" autoComplete="name" disabled={status === 'saving'} />
-                      <small>Required. Shown to your sponsor and admins.</small>
+                      <input id="profile-name" value={form.name} onChange={(event) => updateField('name', event.target.value)} maxLength="200" autoComplete="name" disabled={status === 'saving'} aria-invalid={Boolean(fieldErrors.name)} aria-describedby="profile-name-help" />
+                      <small id="profile-name-help" className={fieldErrors.name ? 'profile-field-error' : ''} role={fieldErrors.name ? 'alert' : undefined}>{fieldErrors.name || 'Required. Shown to your sponsor and admins.'}</small>
                       <label htmlFor="profile-username">Username</label>
-                      <div className="username-input"><span aria-hidden="true">@</span><input id="profile-username" value={form.username} onChange={(event) => setForm({ ...form, username: event.target.value })} maxLength="30" autoComplete="username" autoCapitalize="none" spellCheck="false" disabled={status === 'saving'} /></div>
-                      <small>3 to 30 letters, numbers, periods, dashes, or underscores.</small>
+                      <div className="username-input"><span aria-hidden="true">@</span><input id="profile-username" value={form.username} onChange={(event) => updateField('username', event.target.value)} maxLength="30" autoComplete="username" autoCapitalize="none" spellCheck="false" disabled={status === 'saving'} aria-invalid={Boolean(fieldErrors.username)} aria-describedby="profile-username-help" /></div>
+                      <small id="profile-username-help" className={fieldErrors.username ? 'profile-field-error' : ''} role={fieldErrors.username ? 'alert' : undefined}>{fieldErrors.username || '3 to 30 letters, numbers, periods, dashes, or underscores.'}</small>
                       <label htmlFor="profile-email">Email</label>
-                      <input id="profile-email" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} maxLength="254" autoComplete="email" autoCapitalize="none" spellCheck="false" disabled={status === 'saving'} />
-                      <small>Used for account notices and password recovery.</small>
+                      <input id="profile-email" type="email" value={form.email} onChange={(event) => updateField('email', event.target.value)} maxLength="254" autoComplete="email" autoCapitalize="none" spellCheck="false" disabled={status === 'saving'} aria-invalid={Boolean(fieldErrors.email)} aria-describedby="profile-email-help" />
+                      <small id="profile-email-help" className={fieldErrors.email ? 'profile-field-error' : ''} role={fieldErrors.email ? 'alert' : undefined}>{fieldErrors.email || 'Used for account notices and password recovery.'}</small>
                       {profile.account_type === 'driver' && (
                         <>
                           <label htmlFor="profile-phone">Phone</label>
-                          <input id="profile-phone" type="tel" value={form.phone_number} onChange={(event) => setForm({ ...form, phone_number: event.target.value })} maxLength="30" autoComplete="tel" disabled={status === 'saving'} />
-                          <small>Optional. US numbers may use familiar formatting; other numbers need a country code.</small>
+                          <input id="profile-phone" type="tel" value={form.phone_number} onChange={(event) => updateField('phone_number', event.target.value)} maxLength="30" autoComplete="tel" disabled={status === 'saving'} aria-invalid={Boolean(fieldErrors.phone_number)} aria-describedby="profile-phone-help" />
+                          <small id="profile-phone-help" className={fieldErrors.phone_number ? 'profile-field-error' : ''} role={fieldErrors.phone_number ? 'alert' : undefined}>{fieldErrors.phone_number || 'Optional. US numbers may use familiar formatting; other numbers need a country code.'}</small>
                         </>
                       )}
                       <p className="profile-section-label">Only an admin can change</p>

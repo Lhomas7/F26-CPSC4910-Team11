@@ -62,7 +62,10 @@ test('shows server validation errors without discarding edits', async () => {
   fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'existing.user' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
   expect(await screen.findByRole('alert')).toHaveTextContent('already exists');
-  expect(screen.getByLabelText('Username')).toHaveValue('existing.user');
+  const username = screen.getByLabelText('Username');
+  expect(username).toHaveValue('existing.user');
+  expect(username).toHaveAttribute('aria-invalid', 'true');
+  expect(username).toHaveAttribute('aria-describedby', 'profile-username-help');
 });
 
 test('rejects an invalid username before sending an update', async () => {
@@ -71,6 +74,7 @@ test('rejects an invalid username before sending an update', async () => {
   fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'not a username' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
   expect(screen.getByRole('alert')).toHaveTextContent('3 to 30 characters');
+  expect(screen.getByLabelText('Username')).toHaveAttribute('aria-invalid', 'true');
   expect(api.updateProfile).not.toHaveBeenCalled();
 });
 
@@ -165,7 +169,23 @@ test('rejects an invalid phone number before sending an update', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
   expect(screen.getByRole('alert')).toHaveTextContent('valid phone number');
+  expect(screen.getByLabelText('Phone')).toHaveAttribute('aria-invalid', 'true');
   expect(api.updateProfile).not.toHaveBeenCalled();
+});
+
+test('clears a field error when the driver corrects that field', async () => {
+  render(<AccountPage />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit profile' }));
+  const email = screen.getByLabelText('Email');
+  fireEvent.change(email, { target: { value: 'not-an-email' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+  expect(email).toHaveAttribute('aria-invalid', 'true');
+  expect(screen.getByRole('alert')).toHaveTextContent('valid email address');
+
+  fireEvent.change(email, { target: { value: 'fixed@example.com' } });
+  expect(email).not.toHaveAttribute('aria-invalid', 'true');
+  expect(screen.queryByText('Enter a valid email address with a complete domain.')).not.toBeInTheDocument();
 });
 
 test('uploads a profile picture for an administrator', async () => {
