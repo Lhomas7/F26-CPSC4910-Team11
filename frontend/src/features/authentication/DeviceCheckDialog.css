@@ -1,0 +1,27 @@
+.device-check-actions {
+  display: grid;
+  gap: .5rem;
+  width: 100%;
+}
+
+.device-check-signout {
+  background: none;
+  border: 0;
+  color: var(--ink-2);
+  cursor: pointer;
+  font: inherit;
+  font-size: .8125rem;
+  justify-self: center;
+  padding: .25rem;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.device-check-signout:hover:not(:disabled) {
+  color: var(--ink);
+}
+
+.device-check-error {
+  color: #b42318;
+  font-weight: 600;
+}

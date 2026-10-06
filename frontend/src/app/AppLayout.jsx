@@ -4,6 +4,7 @@ import { Link, NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import ConfirmDialog from '../components/ConfirmDialog';
 import MfaSetupWall from '../features/accounts/MfaSetupWall';
+import DeviceCheckDialog from '../features/authentication/DeviceCheckDialog';
 import './AppLayout.css';
 
 function AccountMenu({ user, onSignOut }) {
@@ -49,7 +50,7 @@ function AccountMenu({ user, onSignOut }) {
 }
 
 export function AppLayout() {
-  const { user, signOut, stopImpersonation } = useAuth();
+  const { user, signOut, stopImpersonation, answerDeviceCheck } = useAuth();
   const [endingViewAs, setEndingViewAs] = useState(false);
   const [viewAsError, setViewAsError] = useState('');
   const mfaWallNeeded = user
@@ -111,6 +112,13 @@ export function AppLayout() {
               {endingViewAs ? 'Returning…' : 'Return to admin account'}
             </button>
           </div>
+        )}
+        {user?.session?.device_check && (
+          <DeviceCheckDialog
+            reason={user.session.device_check}
+            onAnswer={answerDeviceCheck}
+            onSignOut={signOut}
+          />
         )}
         <header className="app-topbar">
           <AccountMenu user={user} onSignOut={signOut} />

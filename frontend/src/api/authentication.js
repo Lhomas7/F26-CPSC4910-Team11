@@ -12,6 +12,10 @@ export function logout() {
   return request('/logout/', { method: 'POST' }).then(readJson);
 }
 
+export function deviceCheck(trusted) {
+  return request('/device-check/', { method: 'POST', body: { trusted } }).then(readJson);
+}
+
 export function me() {
   return request('/me/').then(readJson);
 }

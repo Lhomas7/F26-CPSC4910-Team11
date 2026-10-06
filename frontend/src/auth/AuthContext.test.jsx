@@ -52,3 +52,57 @@ test('signing out clears the user even when the logout request fails', async () 
   await waitFor(() => expect(api.logout).toHaveBeenCalledTimes(1));
   expect(await screen.findByText('Signed out')).toBeInTheDocument();
 });
+
+function SessionStatus() {
+  const { loading, user, updateUser, answerDeviceCheck } = useAuth();
+  if (loading) return <p>Loading</p>;
+  return (
+    <>
+      <p>Device check: {user?.session?.device_check || 'none'}</p>
+      <p>Name: {user?.name}</p>
+      <button type="button" onClick={() => answerDeviceCheck(true)}>Trust</button>
+      <button type="button" onClick={() => updateUser({ ...user, session: undefined, name: 'Renamed' })}>
+        Rename
+      </button>
+    </>
+  );
+}
+
+function renderWithPendingDeviceCheck() {
+  api.ensureCsrf.mockResolvedValue();
+  api.me.mockResolvedValue({
+    authenticated: true,
+    user: {
+      username: 'driver.one',
+      name: 'Driver One',
+      account_type: 'driver',
+      session: { device_check: 'new_device', idle_timeout_seconds: null },
+    },
+  });
+  return render(
+    <AuthProvider>
+      <SessionStatus />
+    </AuthProvider>,
+  );
+}
+
+test('answering the device check stores the session the server returns', async () => {
+  api.deviceCheck.mockResolvedValue({ session: { device_check: null, idle_timeout_seconds: null } });
+  renderWithPendingDeviceCheck();
+  expect(await screen.findByText('Device check: new_device')).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Trust' }));
+
+  expect(await screen.findByText('Device check: none')).toBeInTheDocument();
+  expect(api.deviceCheck).toHaveBeenCalledWith(true);
+});
+
+test('profile updates without a session keep the current one', async () => {
+  renderWithPendingDeviceCheck();
+  expect(await screen.findByText('Device check: new_device')).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Rename' }));
+
+  expect(await screen.findByText('Name: Renamed')).toBeInTheDocument();
+  expect(screen.getByText('Device check: new_device')).toBeInTheDocument();
+});

@@ -10,7 +10,13 @@ jest.mock('../auth/AuthContext');
 const USER = { username: 'jordan.lee', name: 'Jordan Lee', account_type: 'driver' };
 
 function renderLayout(overrides = {}) {
-  const auth = { user: USER, signOut: jest.fn().mockResolvedValue(), stopImpersonation: jest.fn(), ...overrides };
+  const auth = {
+    user: USER,
+    signOut: jest.fn().mockResolvedValue(),
+    stopImpersonation: jest.fn(),
+    answerDeviceCheck: jest.fn().mockResolvedValue(),
+    ...overrides,
+  };
   useAuth.mockReturnValue(auth);
   render(
     <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -82,4 +88,20 @@ test('Tab stays inside the dialog', () => {
   expect(cancel).toHaveFocus();
   userEvent.tab({ shift: true });
   expect(confirm).toHaveFocus();
+});
+
+test('no device question when none is pending', () => {
+  renderLayout({ user: { ...USER, session: { device_check: null } } });
+
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});
+
+test('a pending device question opens the dialog over the page', async () => {
+  const auth = renderLayout({ user: { ...USER, session: { device_check: 'new_device' } } });
+
+  expect(screen.getByRole('dialog', { name: 'Is this your device?' })).toBeInTheDocument();
+  await act(async () => {
+    userEvent.click(screen.getByRole('button', { name: 'No, this is a shared or public device' }));
+  });
+  expect(auth.answerDeviceCheck).toHaveBeenCalledWith(false);
 });

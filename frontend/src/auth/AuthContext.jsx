@@ -4,6 +4,13 @@ import * as api from '../api';
 
 const AuthContext = createContext(null);
 
+// `session` (device check, idle timeout) describes the sign-in, not the profile.
+// Profile and view-as responses omit it, so carry the current one over.
+function keepSession(previous, next) {
+  if (!next || next.session !== undefined || !previous?.session) return next;
+  return { ...next, session: previous.session };
+}
+
 export function AuthProvider({ children }) {
   const [state, setState] = useState({ loading: true, user: null });
 
@@ -56,18 +63,26 @@ export function AuthProvider({ children }) {
   }, []);
 
   const updateUser = useCallback((user) => {
-    setState({ loading: false, user });
+    setState((current) => ({ loading: false, user: keepSession(current.user, user) }));
+  }, []);
+
+  const answerDeviceCheck = useCallback(async (trusted) => {
+    const { session } = await api.deviceCheck(trusted);
+    setState((current) => ({
+      loading: false,
+      user: current.user && { ...current.user, session },
+    }));
   }, []);
 
   const startImpersonation = useCallback(async (userId) => {
     const user = await api.startAdminImpersonation(userId);
-    setState({ loading: false, user });
+    setState((current) => ({ loading: false, user: keepSession(current.user, user) }));
     return user;
   }, []);
 
   const stopImpersonation = useCallback(async () => {
     const user = await api.stopAdminImpersonation();
-    setState({ loading: false, user });
+    setState((current) => ({ loading: false, user: keepSession(current.user, user) }));
     return user;
   }, []);
 
@@ -79,6 +94,7 @@ export function AuthProvider({ children }) {
       requestMfaLoginCode,
       signOut,
       updateUser,
+      answerDeviceCheck,
       startImpersonation,
       stopImpersonation,
     }}>
