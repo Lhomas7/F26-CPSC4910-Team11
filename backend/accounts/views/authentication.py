@@ -47,7 +47,7 @@ from ..services.password_reset import (
     token_is_valid,
     user_from_uid,
 )
-from ..services.session_state import session_info
+from ..services.session_state import session_info, stamp_sign_in
 from ..sensitive import hide_sensitive_data
 
 logger = logging.getLogger(__name__)
@@ -66,6 +66,7 @@ def complete_login(request, user):
     reason = device_check_reason(request, user)
     login(request, user)
     record_login_attempt(user.get_username(), successful=True, user=user)
+    stamp_sign_in(request.session)
     if reason:
         request.session[DEVICE_CHECK_KEY] = reason
     else:

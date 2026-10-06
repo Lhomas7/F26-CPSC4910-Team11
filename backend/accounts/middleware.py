@@ -1,17 +1,27 @@
 from datetime import timedelta
 
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, logout
 from django.http import JsonResponse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
 from .models import AdminImpersonationEvent
 from .services import get_account_type
+from .services.session_state import (
+    AUTH_AT_KEY,
+    LAST_ACTIVITY_KEY,
+    now_ts,
+    timeout_policy,
+)
 
 
 IMPERSONATION_TARGET_KEY = 'admin_impersonation_target_id'
 IMPERSONATION_STARTED_KEY = 'admin_impersonation_started_at'
 IMPERSONATION_DURATION = timedelta(minutes=30)
+SESSION_EXPIRED_MESSAGE = 'Your session expired. Sign in again to continue.'
+# Refresh the activity stamp at most this often, so ordinary browsing doesn't
+# write the session row on every request.
+ACTIVITY_WRITE_INTERVAL = 30
 
 
 def client_ip(request):
@@ -39,6 +49,48 @@ def impersonation_details(request, target, admin=None):
         'target_role': get_account_type(target),
         'expires_at': expires.isoformat() if expires else None,
     }
+
+
+class SessionTimeoutMiddleware:
+    """Sign out sessions that exceed their idle or absolute limit.
+
+    Runs before AdminImpersonationMiddleware so request.user is still the person
+    who signed in: an admin viewing as a driver keeps the admin limits.
+    Which limits apply is decided by services.session_state.timeout_policy.
+    """
+
+    logout_path = '/api/logout/'
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        user = request.user
+        policy = timeout_policy(user, request.session) if user.is_authenticated else None
+        if policy:
+            session = request.session
+            now = now_ts()
+            # Sessions created before these stamps existed start their clock now.
+            if AUTH_AT_KEY not in session:
+                session[AUTH_AT_KEY] = now
+            if LAST_ACTIVITY_KEY not in session:
+                session[LAST_ACTIVITY_KEY] = now
+            idle_expired = policy['idle'] and now - session[LAST_ACTIVITY_KEY] >= policy['idle']
+            absolute_expired = (
+                policy['absolute'] and now - session[AUTH_AT_KEY] >= policy['absolute']
+            )
+            if idle_expired or absolute_expired:
+                logout(request)
+                # Let logout itself finish normally so the client gets its 204.
+                if request.path != self.logout_path:
+                    return JsonResponse(
+                        {'detail': SESSION_EXPIRED_MESSAGE, 'code': 'session_expired'},
+                        status=401,
+                    )
+            elif now - session[LAST_ACTIVITY_KEY] >= ACTIVITY_WRITE_INTERVAL:
+                session[LAST_ACTIVITY_KEY] = now
+
+        return self.get_response(request)
 
 
 class AdminImpersonationMiddleware:

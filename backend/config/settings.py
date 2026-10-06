@@ -91,6 +91,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "accounts.middleware.SessionTimeoutMiddleware",
     "accounts.middleware.AdminImpersonationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -267,6 +268,17 @@ TRUSTED_DEVICE_DAYS = 90
 TRUSTED_DEVICE_COOKIE_NAME = "gd_device"
 SUSPICIOUS_FAILURE_THRESHOLD = 3
 SUSPICIOUS_FAILURE_WINDOW_MINUTES = 15
+
+# Server-enforced session limits, in seconds (accounts.middleware.
+# SessionTimeoutMiddleware). "idle" signs the user out after that long without a
+# request; "absolute" caps a session's total length however active it is. Admins
+# hold privileged access, and shared-device sessions (the user answered "No" to
+# the device question) may be left open for the next person. Other sessions keep
+# Django's default lifetime.
+SESSION_TIMEOUTS = {
+    "admin": {"idle": 15 * 60, "absolute": 8 * 60 * 60},
+    "shared_device": {"idle": 15 * 60, "absolute": None},
+}
 
 # Cross-origin access for the React app. In development the React dev server
 # (http://localhost:3000) calls Django (http://localhost:8000). Deployed
