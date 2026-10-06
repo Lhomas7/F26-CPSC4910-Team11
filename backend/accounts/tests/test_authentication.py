@@ -138,6 +138,15 @@ class LoginAttemptLoggingTests(APITestCase):
         self.assertEqual(attempt.username, 'nobody.here')
         self.assertFalse(attempt.successful)
 
+    def test_unknown_username_and_wrong_password_get_identical_responses(self):
+        unknown_user = self.login(username='nobody.here')
+        wrong_password = self.login(password='WrongPassword123!')
+
+        self.assertEqual(unknown_user.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(unknown_user.status_code, wrong_password.status_code)
+        self.assertEqual(unknown_user.json(), wrong_password.json())
+        self.assertEqual(unknown_user.json(), {'detail': 'Invalid username or password.'})
+
     def test_password_is_never_stored(self):
         self.login(password='WrongPassword123!')
 
