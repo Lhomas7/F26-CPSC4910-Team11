@@ -6,9 +6,9 @@ import './Buses.css';
  * red STOP arm and flashes the red warning lights, as when kids are getting on
  * or off (passing it then is a big points deduction).
  */
-export function SchoolBus({ moving = false, speeding = false, stopArm = false, ...frame }) {
+export function SchoolBus({ moving = false, speeding = false, crash, stopArm = false, ...frame }) {
   return (
-    <AssetFrame name="school-bus" modifiers={[...vehicleModifiers({ moving, speeding }), stopArm && 'stop-arm-out']} {...frame}>
+    <AssetFrame name="school-bus" modifiers={[...vehicleModifiers({ moving, speeding, crash }), stopArm && 'stop-arm-out']} {...frame}>
       {speeding && <SpeedLines />}
       <span className="asset-sbus-body" />
       <span className="asset-sbus-hood" />
@@ -27,9 +27,9 @@ export function SchoolBus({ moving = false, speeding = false, stopArm = false, .
 }
 
 /** American city transit bus: flat front, big windows, destination sign. */
-export function CityBus({ moving = false, speeding = false, ...frame }) {
+export function CityBus({ moving = false, speeding = false, crash, ...frame }) {
   return (
-    <AssetFrame name="city-bus" modifiers={vehicleModifiers({ moving, speeding })} {...frame}>
+    <AssetFrame name="city-bus" modifiers={vehicleModifiers({ moving, speeding, crash })} {...frame}>
       {speeding && <SpeedLines />}
       <span className="asset-cbus-roof" />
       <span className="asset-cbus-body" />
@@ -45,9 +45,9 @@ export function CityBus({ moving = false, speeding = false, ...frame }) {
 }
 
 /** Red London double-decker. */
-export function DoubleDeckerBus({ moving = false, speeding = false, ...frame }) {
+export function DoubleDeckerBus({ moving = false, speeding = false, crash, ...frame }) {
   return (
-    <AssetFrame name="double-decker" modifiers={vehicleModifiers({ moving, speeding })} {...frame}>
+    <AssetFrame name="double-decker" modifiers={vehicleModifiers({ moving, speeding, crash })} {...frame}>
       {speeding && <SpeedLines />}
       <span className="asset-dd-body" />
       <span className="asset-dd-board" />

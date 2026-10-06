@@ -3,9 +3,9 @@ import './SemiTruck.css';
 
 // The Good Driver truck: white trailer, green cab with a window, lights,
 // bumper and exhaust stack.
-export default function SemiTruck({ moving = false, speeding = false, ...frame }) {
+export default function SemiTruck({ moving = false, speeding = false, crash, ...frame }) {
   return (
-    <AssetFrame name="semi-truck" modifiers={vehicleModifiers({ moving, speeding })} {...frame}>
+    <AssetFrame name="semi-truck" modifiers={vehicleModifiers({ moving, speeding, crash })} {...frame}>
       {speeding && <SpeedLines />}
       <span className="asset-semi-exhaust" />
       <span className="asset-semi-trailer" />

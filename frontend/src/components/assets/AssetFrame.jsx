@@ -1,7 +1,9 @@
 import './assets.css';
 
 // Common wrapper for every drawn asset: sizing, mirroring and the decorative
-// aria-hidden flag. `name` becomes the asset-<name> class the asset's CSS
+// aria-hidden flag. Layers: the outer .asset box is the caller's to position
+// and animate; .asset-pose takes crash poses; .asset-art holds the drawing and
+// is the layer that gets mirrored. `name` becomes the asset-<name> class the asset's CSS
 // hangs off; `modifiers` are extra asset-<modifier> classes for flags like
 // moving or lights-off. Position the asset with className/style.
 export default function AssetFrame({
@@ -23,7 +25,9 @@ export default function AssetFrame({
 
   return (
     <span className={classes} style={{ '--asset-scale': scale, ...style }} aria-hidden="true">
-      <span className="asset-art">{children}</span>
+      <span className="asset-pose">
+        <span className="asset-art">{children}</span>
+      </span>
     </span>
   );
 }
@@ -39,11 +43,16 @@ export function SpeedLines() {
   );
 }
 
-/** Modifier list for the flags every vehicle supports. */
-export function vehicleModifiers({ moving, speeding, lights }) {
+/**
+ * Modifier list for the flags every vehicle supports. `crash` poses the
+ * vehicle: "tip" lurches onto its nose and back (plays once each time it's
+ * set), "flip" rolls onto its roof and stays there.
+ */
+export function vehicleModifiers({ moving, speeding, lights, crash }) {
   return [
-    (moving || speeding) && 'moving',
-    speeding && 'speeding',
+    (moving || speeding) && !crash && 'moving',
+    speeding && !crash && 'speeding',
     lights === false && 'lights-off',
+    crash && `crash-${crash}`,
   ];
 }

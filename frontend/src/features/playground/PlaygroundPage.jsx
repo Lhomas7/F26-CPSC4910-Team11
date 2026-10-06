@@ -11,6 +11,7 @@ import {
   Collision,
   Dog,
   DoubleDeckerBus,
+  Fire,
   FireHydrant,
   FireTruck,
   Flame,
@@ -34,6 +35,7 @@ import {
   TrafficCone,
   TrafficLight,
   Tree,
+  Wheel,
   YieldSign,
 } from '../../components/assets';
 import RoadTruck from '../../components/branding/RoadTruck';
@@ -50,24 +52,27 @@ import './PlaygroundPage.css';
 // - size: multiplier on the page-wide size slider
 // - night: the prop that the page-wide night toggle switches on (e.g. "lit")
 // - replay: one-shot effect; shows a Replay button that remounts it
+// A select value of "none" is passed as undefined.
+const CRASH_POSES = ['none', 'tip', 'flip'];
+
 const GROUPS = [
   {
     title: 'Vehicles',
     items: [
-      { name: 'Semi truck', render: (p) => <SemiTruck {...p} />, flags: { moving: false, speeding: false } },
-      { name: 'Car', render: (p) => <Car {...p} />, flags: { moving: false, speeding: false }, colors: { color: '#3a7bd5' } },
-      { name: 'Taxi', render: (p) => <Taxi {...p} />, flags: { moving: false, speeding: false } },
-      { name: 'Police car', render: (p) => <PoliceCar {...p} />, flags: { moving: false, speeding: false, lights: true } },
-      { name: 'Ambulance', render: (p) => <Ambulance {...p} />, flags: { moving: false, speeding: false, lights: true } },
-      { name: 'Fire truck', render: (p) => <FireTruck {...p} />, flags: { moving: false, speeding: false, lights: true, spraying: false } },
+      { name: 'Semi truck', render: (p) => <SemiTruck {...p} />, flags: { moving: false, speeding: false }, selects: { crash: CRASH_POSES } },
+      { name: 'Car', render: (p) => <Car {...p} />, flags: { moving: false, speeding: false }, selects: { crash: CRASH_POSES }, colors: { color: '#3a7bd5' } },
+      { name: 'Taxi', render: (p) => <Taxi {...p} />, flags: { moving: false, speeding: false }, selects: { crash: CRASH_POSES } },
+      { name: 'Police car', render: (p) => <PoliceCar {...p} />, flags: { moving: false, speeding: false, lights: true }, selects: { crash: CRASH_POSES } },
+      { name: 'Ambulance', render: (p) => <Ambulance {...p} />, flags: { moving: false, speeding: false, lights: true }, selects: { crash: CRASH_POSES } },
+      { name: 'Fire truck', render: (p) => <FireTruck {...p} />, flags: { moving: false, speeding: false, lights: true, spraying: false }, selects: { crash: CRASH_POSES } },
     ],
   },
   {
     title: 'Buses',
     items: [
-      { name: 'School bus', render: (p) => <SchoolBus {...p} />, flags: { moving: false, speeding: false, stopArm: false }, size: 0.75 },
-      { name: 'City bus', render: (p) => <CityBus {...p} />, flags: { moving: false, speeding: false }, size: 0.7 },
-      { name: 'London double-decker', render: (p) => <DoubleDeckerBus {...p} />, flags: { moving: false, speeding: false }, size: 0.75 },
+      { name: 'School bus', render: (p) => <SchoolBus {...p} />, flags: { moving: false, speeding: false, stopArm: false }, selects: { crash: CRASH_POSES }, size: 0.75 },
+      { name: 'City bus', render: (p) => <CityBus {...p} />, flags: { moving: false, speeding: false }, selects: { crash: CRASH_POSES }, size: 0.7 },
+      { name: 'London double-decker', render: (p) => <DoubleDeckerBus {...p} />, flags: { moving: false, speeding: false }, selects: { crash: CRASH_POSES }, size: 0.75 },
     ],
   },
   {
@@ -165,8 +170,16 @@ const GROUPS = [
     items: [
       { name: 'Collision', render: (p) => <Collision {...p} />, replay: true },
       { name: 'Impact flash', render: (p) => <Impact {...p} />, replay: true },
+      {
+        name: 'Fire (spreading)',
+        render: ({ doused, spread, ...p }) => <Fire spread={spread} dousedAt={doused ? spread + 3 : undefined} {...p} />,
+        flags: { doused: false },
+        numbers: { spread: [8, 2, 30, 1] },
+        replay: true,
+      },
       { name: 'Flame', render: (p) => <Flame {...p} /> },
       { name: 'Smoke', render: (p) => <Smoke {...p} />, flags: { loop: true }, replay: true },
+      { name: 'Wheel', render: (p) => <Wheel {...p} />, selects: { rolling: ['right', 'left', 'none'] }, replay: true },
     ],
   },
 ];
@@ -192,7 +205,8 @@ function AssetCard({ item, scale, facing, night }) {
   const [run, setRun] = useState(0);
   const set = (prop) => (value) => setValues({ ...values, [prop]: value });
 
-  const props = { ...values, scale: scale * (item.size || 1), facing };
+  const props = { scale: scale * (item.size || 1), facing };
+  Object.entries(values).forEach(([prop, value]) => { props[prop] = value === 'none' ? undefined : value; });
   if (item.night) props[item.night] = night;
 
   return (

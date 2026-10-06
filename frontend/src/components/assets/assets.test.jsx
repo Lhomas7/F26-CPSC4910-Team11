@@ -14,6 +14,7 @@ import {
   Collision,
   Dog,
   DoubleDeckerBus,
+  Fire,
   FireHydrant,
   FireTruck,
   Flame,
@@ -139,4 +140,30 @@ test('new asset options set their classes and content', () => {
   expect(container.querySelector('.asset-school-zone-sign')).toHaveClass('asset-zone-active');
   expect(container.querySelector('.asset-street-lamp')).toHaveClass('asset-lamp-lit');
   expect(container.querySelector('.asset-smoke')).toHaveClass('asset-smoke-loop');
+});
+
+test('vehicles take crash poses, wheels roll away, and fire takes its timing', () => {
+  const { container } = render(
+    <>
+      <Car crash="tip" moving />
+      <SchoolBus crash="flip" facing="left" />
+      <Wheel rolling="left" />
+      <Fire delay={1} spread={10} dousedAt={15} />
+    </>,
+  );
+
+  const car = container.querySelector('.asset-sedan');
+  expect(car).toHaveClass('asset-crash-tip');
+  expect(car).not.toHaveClass('asset-moving');
+  expect(container.querySelector('.asset-school-bus')).toHaveClass('asset-crash-flip', 'asset-facing-left');
+
+  const wheel = container.querySelector('.asset-spare-wheel');
+  expect(wheel).toHaveClass('asset-rolling');
+  expect(wheel.style.getPropertyValue('--roll')).toBe('-1');
+
+  const fire = container.querySelector('.asset-fire');
+  expect(fire.style.getPropertyValue('--fire-delay')).toBe('1s');
+  expect(fire.style.getPropertyValue('--fire-spread')).toBe('10s');
+  expect(fire.style.getPropertyValue('--fire-doused-at')).toBe('15s');
+  expect(fire.querySelectorAll('.asset-flame')).toHaveLength(4);
 });

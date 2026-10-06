@@ -27,6 +27,7 @@ export { default as TrafficLight } from './scenery/TrafficLight';
 
 // Effects
 export { default as Collision } from './effects/Collision';
+export { default as Fire } from './effects/Fire';
 export { default as Flame } from './effects/Flame';
 export { default as Impact } from './effects/Impact';
 export { default as Smoke } from './effects/Smoke';
