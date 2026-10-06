@@ -35,6 +35,12 @@ Administrators can require new driver and sponsor accounts to prove control of t
 
 Codes expire after 10 minutes, work once, and are invalidated after 5 wrong attempts. Issuing a new code invalidates the previous one, and a new code can be requested for an address at most once every 30 seconds (`429` otherwise). Email is sent through Django's configured `EMAIL_BACKEND`; the default console backend writes the code to the server log.
 
+### Displaying the password requirements
+
+The password rules are defined once, in `PASSWORD_RULES` in `backend/accounts/input_cleaning.py`. Each rule holds the requirement text shown to users, the check, and the error message, and `validate_password_policy` runs those same rules. `GET /api/password-policy/` (anonymous) publishes the requirements built from that list, plus the username/email rule and the help text of Django's configured validators. The 8-character `MinimumLengthValidator` text is left out because the 12-character rule supersedes it. The response also lists the approved symbols.
+
+Signup, password reset, password change, and the administrator's add-user form show a **Show password requirements** link under the password field. It opens a popover with the server's list, so the UI never hard-codes the rules. React's `validatePassword` still runs for instant feedback.
+
 ### Username compatibility decision
 
 The initial draft proposed `^[A-Za-z][A-Za-z0-9_-]{2,29}$`. The application already uses usernames such as `driver.one`, `jamie.rivera`, and `team11.admin`, so periods remain supported and existing usernames are not invalidated. Whether usernames must begin with a letter remains a future product decision.
@@ -69,6 +75,7 @@ The ASCII-only name pattern was rejected because it would exclude common names s
 - Public registration and login forms: `frontend/src/features/authentication/LoginPage.jsx`
 - Administrator account form: `frontend/src/features/admin-users/AddUserPage.jsx`
 - Password-change panel: `frontend/src/features/accounts/PasswordPanel.jsx`
+- Password requirements popover: `frontend/src/components/PasswordRequirements.jsx`
 
 ## Out of scope
 
@@ -76,4 +83,4 @@ Date of birth, postal code, and mailing address are not collected by the current
 
 ---
 
-_Last reviewed against the feature-based frontend and backend structure: 2026-10-01._
+_Last reviewed against the feature-based frontend and backend structure: 2026-10-06._

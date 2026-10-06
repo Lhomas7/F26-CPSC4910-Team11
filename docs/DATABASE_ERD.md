@@ -112,6 +112,14 @@ erDiagram
         boolean used
     }
 
+    ACCOUNTS_TRUSTEDDEVICE {
+        bigint id PK
+        varchar token_hash "SHA-256 of the browser token"
+        datetime created_at
+        datetime last_used_at
+        int user_id FK
+    }
+
     ACCOUNTS_ADMINIMPERSONATIONEVENT {
         bigint id PK
         varchar target_role
@@ -139,6 +147,7 @@ erDiagram
     AUTH_USER ||--o{ ACCOUNTS_MFACODE : "receives MFA codes"
     AUTH_USER ||--o{ ACCOUNTS_MFABACKUPCODE : "has backup codes"
     AUTH_USER o|--o{ ACCOUNTS_LOGINATTEMPT : "has sign-in attempts"
+    AUTH_USER ||--o{ ACCOUNTS_TRUSTEDDEVICE : "trusts browsers"
     AUTH_USER o|--o{ ACCOUNTS_ADMINIMPERSONATIONEVENT : "starts view-as events"
     AUTH_USER o|--o{ ACCOUNTS_ADMINIMPERSONATIONEVENT : "is view-as target"
     ACCOUNTS_SPONSORCOMPANY ||--o{ ACCOUNTS_SPONSORACCOUNT : "employs"
@@ -146,11 +155,11 @@ erDiagram
     DRIVERS_DRIVER ||--o{ ACCOUNTS_DRIVERNOTIFICATION : "receives"
 ```
 
-`accounts_loginattempt` stores the submitted username and a nullable `user_id`, so failed attempts for nonexistent usernames can still be recorded while history follows an account through username changes. `accounts_mfabackupcode` rows are one-time-use: `used_at` is set the moment a code is consumed and the full set is replaced (old rows deleted) whenever backup codes are regenerated or every MFA method is disabled. `accounts_adminimpersonationevent` is an append-only view-as audit record; its administrator and target references become null rather than deleting the event when an account is removed. `accounts_registrationsettings` holds a single row of site-wide account creation options. `accounts_registrationemailcode` stores hashed signup verification codes keyed by email address rather than by user, because the account does not exist until the code is accepted. `about_page_aboutpagerelease` is currently independent of the other application tables.
+`accounts_loginattempt` stores the submitted username and a nullable `user_id`, so failed attempts for nonexistent usernames can still be recorded while history follows an account through username changes. `accounts_mfabackupcode` rows are one-time-use: `used_at` is set the moment a code is consumed and the full set is replaced (old rows deleted) whenever backup codes are regenerated or every MFA method is disabled. `accounts_adminimpersonationevent` is an append-only view-as audit record; its administrator and target references become null rather than deleting the event when an account is removed. `accounts_registrationsettings` holds a single row of site-wide account creation options. `accounts_registrationemailcode` stores hashed signup verification codes keyed by email address rather than by user, because the account does not exist until the code is accepted. `accounts_trusteddevice` records each browser a user marked as theirs when asked "Is this your device?". It stores only a hash of the random token held in the browser's HttpOnly cookie, and no IP address, user agent, or location (see [Session Security](SESSION_SECURITY.md)). `about_page_aboutpagerelease` is currently independent of the other application tables.
 
 ## Complete physical database
 
-This view adds Django's authorization, administration, migration, content-type, and session infrastructure. It represents all 22 tables defined by the current Django migrations.
+This view adds Django's authorization, administration, migration, content-type, and session infrastructure. It represents all 23 tables defined by the current Django migrations.
 
 ```mermaid
 erDiagram
@@ -315,6 +324,14 @@ erDiagram
         boolean used
     }
 
+    ACCOUNTS_TRUSTEDDEVICE {
+        bigint id PK
+        varchar token_hash "SHA-256 of the browser token"
+        datetime created_at
+        datetime last_used_at
+        int user_id FK
+    }
+
     ACCOUNTS_ADMINIMPERSONATIONEVENT {
         bigint id PK
         varchar target_role
@@ -342,6 +359,7 @@ erDiagram
     AUTH_USER ||--o{ ACCOUNTS_MFACODE : "receives MFA codes"
     AUTH_USER ||--o{ ACCOUNTS_MFABACKUPCODE : "has backup codes"
     AUTH_USER o|--o{ ACCOUNTS_LOGINATTEMPT : "has sign-in attempts"
+    AUTH_USER ||--o{ ACCOUNTS_TRUSTEDDEVICE : "trusts browsers"
     AUTH_USER o|--o{ ACCOUNTS_ADMINIMPERSONATIONEVENT : "starts view-as events"
     AUTH_USER o|--o{ ACCOUNTS_ADMINIMPERSONATIONEVENT : "is view-as target"
     ACCOUNTS_SPONSORCOMPANY ||--o{ ACCOUNTS_SPONSORACCOUNT : "employs"
@@ -368,6 +386,7 @@ Mermaid ER diagrams cannot fully express every composite index, so these constra
 | `accounts_loginattempt` | `user_id`, `timestamp` (descending) | Non-unique composite index |
 | `accounts_mfacode` | `user_id`, `purpose`, `used` | Non-unique composite index |
 | `accounts_registrationemailcode` | `email`, `used` | Non-unique composite index |
+| `accounts_trusteddevice` | `user_id`, `token_hash` | Non-unique composite index |
 | `auth_group_permissions` | `group_id`, `permission_id` | Composite unique constraint |
 | `auth_permission` | `content_type_id`, `codename` | Composite unique constraint |
 | `auth_user_groups` | `user_id`, `group_id` | Composite unique constraint |
