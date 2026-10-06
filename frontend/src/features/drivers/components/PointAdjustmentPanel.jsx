@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { adjustDriverPoints } from '../../api';
+import { adjustDriverPoints } from '../../../api';
 
 const MAX_ADJUSTMENT = 1_000_000;
 const MAX_REASON_LENGTH = 500;

@@ -6,13 +6,13 @@ import AccountPage from '../features/accounts/AccountPage';
 import AddUserPage from '../features/admin-users/AddUserPage';
 import AdminDetailPage from '../features/admin-users/AdminDetailPage';
 import AdminUsersPage from '../features/admin-users/AdminUsersPage';
-import DriverDetailPage from '../features/admin-users/DriverDetailPage';
+import AdminDriverDetailPage from '../features/admin-users/DriverDetailPage';
 import SponsorDetailPage from '../features/admin-users/SponsorDetailPage';
 import ForgotPasswordPage from '../features/authentication/ForgotPasswordPage';
 import LoginPage from '../features/authentication/LoginPage';
 import ResetPasswordPage from '../features/authentication/ResetPasswordPage';
 import { PrivacyPage, TermsPage } from '../features/legal/LegalPage';
-import { DriverDetail, DriverList } from '../features/drivers/Drivers';
+import { DriverDetailPage, DriverListPage } from '../features/drivers';
 import WelcomePage from '../features/home/WelcomePage';
 import PlaygroundPage from '../features/playground/PlaygroundPage';
 import { AppLayout } from './AppLayout';
@@ -38,14 +38,14 @@ export function AppRoutes() {
       <Route path="/playground" element={<PlaygroundPage />} />
       <Route element={<AppLayout />}>
         <Route path="/" element={<WelcomePage />} />
-        <Route path="/drivers" element={<RequireAuth><DriverList /></RequireAuth>} />
+        <Route path="/drivers" element={<RequireAuth><DriverListPage /></RequireAuth>} />
         <Route path="/account" element={<RequireAuth><AccountPage /></RequireAuth>} />
         <Route path="/users" element={<RequireAuth><AdminUsersPage /></RequireAuth>} />
         <Route path="/users/new" element={<RequireAuth><AddUserPage /></RequireAuth>} />
         <Route path="/users/sponsors/:userId" element={<RequireAuth><SponsorDetailPage /></RequireAuth>} />
-        <Route path="/users/drivers/:userId" element={<RequireAuth><DriverDetailPage /></RequireAuth>} />
+        <Route path="/users/drivers/:userId" element={<RequireAuth><AdminDriverDetailPage /></RequireAuth>} />
         <Route path="/users/admins/:userId" element={<RequireAuth><AdminDetailPage /></RequireAuth>} />
-        <Route path="/drivers/:driverId" element={<RequireAuth><DriverDetail /></RequireAuth>} />
+        <Route path="/drivers/:driverId" element={<RequireAuth><DriverDetailPage /></RequireAuth>} />
         <Route path="/about" element={<AboutPage />} />
       </Route>
     </Routes>

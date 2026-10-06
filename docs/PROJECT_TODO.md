@@ -457,9 +457,15 @@ frontend/src/
 │   ├── admin-users/
 │   ├── authentication/
 │   ├── drivers/
+│   │   ├── components/       # Driver linking and point-adjustment controls
+│   │   ├── pages/            # Driver list and detail routes
+│   │   ├── Drivers.css
+│   │   └── index.js
 │   ├── home/
 │   ├── legal/
-│   └── playground/           # Development-only shared-asset gallery
+│   ├── playground/           # Development-only shared-asset gallery
+│   └── sponsors/
+│       └── components/       # Sponsor-wide driver policy controls
 └── utils/
 ```
 
@@ -475,8 +481,8 @@ when implemented code needs them rather than pre-creating empty abstractions.
 - [x] Break `App.js` into routing and layout modules.
 - [x] Split the legacy `config/api.js` module into a shared client and domain modules.
 - [x] Place each feature page beside its tests and styles.
-- [ ] Rename the legacy combined `Drivers.jsx` module into separate list and detail pages.
-- [ ] Add feature entry points where they improve import readability without hiding ownership.
+- [x] Rename the legacy combined `Drivers.jsx` module into separate list and detail pages.
+- [x] Add a driver feature entry point without hiding page and component ownership.
 - [ ] Extract the shared driver/sponsor admin-account detail UI.
 - [x] Extract reusable loading and empty/error/informational state components (`Skeleton` and `StatePanel`).
 - [ ] Extend shared state handling to explicit forbidden and not-found variants when those views are implemented.

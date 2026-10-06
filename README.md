@@ -142,10 +142,11 @@ F26-CPSC4910-Team11/
 │   │   │   ├── accounts/         # Profile, password, MFA, and login activity
 │   │   │   ├── admin-users/      # User directory, account details, and registration settings
 │   │   │   ├── authentication/   # Login, registration, device check, and password reset
-│   │   │   ├── drivers/          # Sponsor-facing driver workflow
+│   │   │   ├── drivers/          # Driver pages, point controls, and linking workflow
 │   │   │   ├── home/             # Public welcome page
 │   │   │   ├── legal/            # Terms of Service and Privacy Notice
-│   │   │   └── playground/       # Development-only shared-asset gallery
+│   │   │   ├── playground/       # Development-only shared-asset gallery
+│   │   │   └── sponsors/         # Sponsor-wide settings and controls
 │   │   └── utils/                # Shared frontend validation utilities
 │   ├── .env.example
 │   ├── package.json

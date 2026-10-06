@@ -1,12 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
-import { useAuth } from '../../auth/AuthContext';
-import * as api from '../../api';
-import { DriverDetail } from './Drivers';
+import { useAuth } from '../../../auth/AuthContext';
+import * as api from '../../../api';
+import DriverDetailPage from './DriverDetailPage';
 
-jest.mock('../../auth/AuthContext');
-jest.mock('../../api');
+jest.mock('../../../auth/AuthContext');
+jest.mock('../../../api');
 
 const driver = {
   id: 7,
@@ -20,7 +20,7 @@ const driver = {
 function renderDetail() {
   return render(
     <MemoryRouter initialEntries={['/drivers/7']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <Routes><Route path="/drivers/:driverId" element={<DriverDetail />} /></Routes>
+      <Routes><Route path="/drivers/:driverId" element={<DriverDetailPage />} /></Routes>
     </MemoryRouter>,
   );
 }
