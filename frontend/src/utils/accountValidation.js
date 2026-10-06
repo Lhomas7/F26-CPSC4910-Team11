@@ -21,6 +21,16 @@ export function validateEmail(value) {
   return null;
 }
 
+export function validatePhoneNumber(value) {
+  const compact = value.trim().replace(/[\s().-]/g, '');
+  if (!compact) return null;
+  const normalized = /^\d{10}$/.test(compact) ? `+1${compact}` : compact;
+  if (!/^\+[1-9]\d{7,14}$/.test(normalized)) {
+    return 'Enter a valid phone number, including the country code when outside the US.';
+  }
+  return null;
+}
+
 export function validateUsername(value) {
   const cleaned = value.trim();
   if (!cleaned) return 'Enter a username.';

@@ -6,7 +6,7 @@ import PageHeader from '../../app/PageHeader';
 import Avatar from '../../components/primitives/Avatar';
 import Skeleton from '../../components/feedback/Skeleton';
 import StatePanel from '../../components/feedback/StatePanel';
-import { validateEmail } from '../../utils/accountValidation';
+import { validateEmail, validatePhoneNumber } from '../../utils/accountValidation';
 import LoginActivityPanel from './LoginActivityPanel';
 import MfaPanel from './MfaPanel';
 import PasswordPanel from './PasswordPanel';
@@ -38,7 +38,7 @@ export default function AccountPage() {
   const [profile, setProfile] = useState(null);
   const [status, setStatus] = useState('loading');
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ name: '', username: '', email: '' });
+  const [form, setForm] = useState({ name: '', username: '', email: '', phone_number: '' });
   const [pendingPicture, setPendingPicture] = useState(null);
   const [removePicture, setRemovePicture] = useState(false);
   const [picturePreview, setPicturePreview] = useState('');
@@ -50,7 +50,7 @@ export default function AccountPage() {
     try {
       const data = await api.getProfile();
       setProfile(data);
-      setForm({ name: data.name, username: data.username, email: data.email });
+      setForm({ name: data.name, username: data.username, email: data.email, phone_number: data.phone_number || '' });
       setStatus('ready');
     } catch {
       setStatus('error');
@@ -89,7 +89,7 @@ export default function AccountPage() {
   }, [pendingPicture]);
 
   const beginEditing = () => {
-    setForm({ name: profile.name, username: profile.username, email: profile.email });
+    setForm({ name: profile.name, username: profile.username, email: profile.email, phone_number: profile.phone_number || '' });
     setFormError('');
     setNotice('');
     setPendingPicture(null);
@@ -98,7 +98,7 @@ export default function AccountPage() {
   };
 
   const cancelEditing = () => {
-    setForm({ name: profile.name, username: profile.username, email: profile.email });
+    setForm({ name: profile.name, username: profile.username, email: profile.email, phone_number: profile.phone_number || '' });
     setFormError('');
     setPendingPicture(null);
     setRemovePicture(false);
@@ -139,17 +139,23 @@ export default function AccountPage() {
       setFormError(emailError);
       return;
     }
+    const phoneError = profile.account_type === 'driver' && validatePhoneNumber(form.phone_number);
+    if (phoneError) {
+      setFormError(phoneError);
+      return;
+    }
 
     setStatus('saving');
     setFormError('');
     setNotice('');
     try {
       const changes = { name, username, email: form.email.trim() };
+      if (profile.account_type === 'driver') changes.phone_number = form.phone_number.trim();
       if (pendingPicture) changes.profile_picture = pendingPicture;
       if (removePicture) changes.remove_profile_picture = true;
       const updated = await api.updateProfile(changes);
       setProfile(updated);
-      setForm({ name: updated.name, username: updated.username, email: updated.email });
+      setForm({ name: updated.name, username: updated.username, email: updated.email, phone_number: updated.phone_number || '' });
       updateUser(updated);
       setPendingPicture(null);
       setRemovePicture(false);
@@ -157,7 +163,7 @@ export default function AccountPage() {
       setNotice('Profile saved. Your changes are live.');
       setStatus('ready');
     } catch (error) {
-      setFormError(error.data?.username?.[0] || error.data?.email?.[0] || error.data?.name?.[0]
+      setFormError(error.data?.username?.[0] || error.data?.email?.[0] || error.data?.phone_number?.[0] || error.data?.name?.[0]
         || error.message || 'Your changes could not be saved.');
       setStatus('ready');
     }
@@ -197,6 +203,7 @@ export default function AccountPage() {
                     <div><dt>Display name</dt><dd>{profile.name}</dd></div>
                     <div><dt>Username</dt><dd>@{profile.username}</dd></div>
                     <div><dt>Email</dt><dd>{profile.email}</dd></div>
+                    {profile.account_type === 'driver' && <div><dt>Phone</dt><dd>{profile.phone_number || <i>Not provided</i>}</dd></div>}
                     <div><dt>Account type</dt><dd>{roleLabel}</dd></div>
                     <div><dt>Sponsor organization</dt><dd>{profile.account_type === 'admin' ? <i>{companyValue}</i> : (profile.company || <i>{companyValue}</i>)}</dd></div>
                   </dl>
@@ -226,6 +233,13 @@ export default function AccountPage() {
                       <label htmlFor="profile-email">Email</label>
                       <input id="profile-email" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} maxLength="254" autoComplete="email" autoCapitalize="none" spellCheck="false" disabled={status === 'saving'} />
                       <small>Used for account notices and password recovery.</small>
+                      {profile.account_type === 'driver' && (
+                        <>
+                          <label htmlFor="profile-phone">Phone</label>
+                          <input id="profile-phone" type="tel" value={form.phone_number} onChange={(event) => setForm({ ...form, phone_number: event.target.value })} maxLength="30" autoComplete="tel" disabled={status === 'saving'} />
+                          <small>Optional. US numbers may use familiar formatting; other numbers need a country code.</small>
+                        </>
+                      )}
                       <p className="profile-section-label">Only an admin can change</p>
                       <div className="locked-fields">
                         <div><span>Account type</span><strong>{roleLabel}</strong></div>

@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 from django.contrib.auth import get_user_model
@@ -55,6 +56,11 @@ class SelfProfileSerializer(serializers.ModelSerializer):
     username = UsernameField()
     email = NormalizedEmailField(max_length=254)
     name = HumanTextField(max_length=200)
+    phone_number = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=30,
+    )
     account_type = serializers.SerializerMethodField()
     company = serializers.SerializerMethodField()
     avatar_url = serializers.SerializerMethodField()
@@ -77,6 +83,7 @@ class SelfProfileSerializer(serializers.ModelSerializer):
             'username',
             'email',
             'name',
+            'phone_number',
             'account_type',
             'company',
             'avatar_url',
@@ -157,6 +164,24 @@ class SelfProfileSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Name is required.')
         return value
 
+    def validate_phone_number(self, value):
+        if not hasattr(self.instance, 'driver_profile'):
+            raise serializers.ValidationError(
+                'Phone number editing is currently available to driver accounts only.'
+            )
+        value = value.strip()
+        if not value:
+            return ''
+        # Accept familiar US punctuation, then store one consistent E.164 value.
+        compact = re.sub(r'[\s().-]', '', value)
+        if compact.isdigit() and len(compact) == 10:
+            compact = f'+1{compact}'
+        if not re.fullmatch(r'\+[1-9]\d{7,14}', compact):
+            raise serializers.ValidationError(
+                'Enter a valid phone number, including the country code when outside the US.'
+            )
+        return compact
+
     def to_representation(self, user):
         # Driver names live on Driver; sponsor names currently live on User.
         if hasattr(user, 'driver_profile'):
@@ -169,6 +194,7 @@ class SelfProfileSerializer(serializers.ModelSerializer):
             'username': user.get_username(),
             'email': user.email,
             'name': name,
+            'phone_number': user.driver_profile.phone_number if hasattr(user, 'driver_profile') else None,
             'account_type': self.get_account_type(user),
             'company': self.get_company(user),
             'avatar_url': self.get_avatar_url(user),
@@ -179,6 +205,7 @@ class SelfProfileSerializer(serializers.ModelSerializer):
     def update(self, user, validated_data):
         # Keep User and its role-specific profile consistent if either save fails.
         name = validated_data.pop('name', None)
+        phone_number = validated_data.pop('phone_number', None)
         picture = validated_data.pop('profile_picture', None)
         remove_picture = validated_data.pop('remove_profile_picture', False)
         user.username = validated_data.get('username', user.username)
@@ -190,6 +217,9 @@ class SelfProfileSerializer(serializers.ModelSerializer):
             if name is not None:
                 driver.name = name
                 changed_driver_fields.append('name')
+            if phone_number is not None:
+                driver.phone_number = phone_number
+                changed_driver_fields.append('phone_number')
 
             old_picture = driver.profile_picture
             old_picture_name = old_picture.name if old_picture else None

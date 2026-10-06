@@ -39,6 +39,8 @@ class Driver(models.Model):
         null=True,
         validators=[FileExtensionValidator(['jpg', 'jpeg', 'png', 'webp'])],
     )
+    # Store a normalized international number; blank means no contact number.
+    phone_number = models.CharField(max_length=16, blank=True)
 
     def __str__(self):
         return self.name

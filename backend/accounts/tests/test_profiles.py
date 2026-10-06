@@ -109,6 +109,7 @@ class SelfProfileTests(APITestCase):
                 'username': 'driver.one',
                 'email': '',
                 'name': 'Driver One',
+                'phone_number': '',
                 'account_type': 'driver',
                 'company': 'Palmetto Freight',
                 'avatar_url': None,
@@ -160,6 +161,7 @@ class SelfProfileTests(APITestCase):
                 'id': self.other_user.id,
                 'user_id': self.other_user.id,
                 'name': 'Still Driver One',
+                'phone_number': '(864) 555-0101',
             },
             format='json',
         )
@@ -168,6 +170,38 @@ class SelfProfileTests(APITestCase):
         self.assertEqual(patch_response.data['id'], self.user.id)
         self.other_driver.refresh_from_db()
         self.assertEqual(self.other_driver.name, 'Driver Two')
+        self.assertEqual(self.other_driver.phone_number, '')
+
+    def test_driver_can_update_and_clear_their_phone_number(self):
+        self.client.force_authenticate(self.user)
+
+        updated = self.client.patch(
+            self.url,
+            {'phone_number': '(864) 555-0101'},
+            format='json',
+        )
+
+        self.assertEqual(updated.status_code, status.HTTP_200_OK)
+        self.assertEqual(updated.data['phone_number'], '+18645550101')
+        self.driver.refresh_from_db()
+        self.assertEqual(self.driver.phone_number, '+18645550101')
+
+        cleared = self.client.patch(self.url, {'phone_number': ''}, format='json')
+        self.assertEqual(cleared.status_code, status.HTTP_200_OK)
+        self.driver.refresh_from_db()
+        self.assertEqual(self.driver.phone_number, '')
+
+    def test_rejects_invalid_driver_phone_number(self):
+        self.client.force_authenticate(self.user)
+
+        response = self.client.patch(
+            self.url,
+            {'phone_number': '555-12'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('phone_number', response.data)
 
     def test_rejects_username_outside_the_shared_account_rules(self):
         self.client.force_authenticate(self.user)
@@ -333,6 +367,7 @@ class AdminSelfProfileTests(APITestCase):
             'username': 'team11.admin',
             'email': 'admin@example.com',
             'name': 'Team Administrator',
+            'phone_number': None,
             'account_type': 'admin',
             'company': None,
             'avatar_url': None,
