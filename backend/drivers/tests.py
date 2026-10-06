@@ -210,6 +210,143 @@ class PointAdjustmentServiceTests(TestCase):
         self.assert_adjustment_error('driver_not_found', driver=999_999)
 
 
+class PointAdjustmentAPITests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.company = SponsorCompany.objects.create(name='API Freight')
+        cls.other_company = SponsorCompany.objects.create(name='Other Freight')
+        cls.sponsor_user = get_user_model().objects.create_user(
+            username='api.sponsor',
+            password='ExamplePassword123!',
+        )
+        SponsorAccount.objects.create(user=cls.sponsor_user, company=cls.company)
+        enroll_totp(cls.sponsor_user)
+        cls.unenrolled_sponsor = get_user_model().objects.create_user(
+            username='unenrolled.sponsor',
+            password='ExamplePassword123!',
+        )
+        SponsorAccount.objects.create(
+            user=cls.unenrolled_sponsor,
+            company=cls.company,
+        )
+        cls.driver_user = get_user_model().objects.create_user(
+            username='api.driver',
+            password='ExamplePassword123!',
+        )
+        cls.driver = Driver.objects.create(
+            user=cls.driver_user,
+            name='API Driver',
+            sponsor=cls.company,
+            status='approved',
+        )
+        cls.other_driver_user = get_user_model().objects.create_user(
+            username='outside.driver',
+            password='ExamplePassword123!',
+        )
+        cls.other_driver = Driver.objects.create(
+            user=cls.other_driver_user,
+            name='Outside Driver',
+            sponsor=cls.other_company,
+            status='approved',
+        )
+
+    def points_url(self, driver=None):
+        return reverse('driver-points', kwargs={'pk': (driver or self.driver).pk})
+
+    def post(self, data, user=None, driver=None):
+        self.client.force_authenticate(user or self.sponsor_user)
+        return self.client.post(self.points_url(driver), data, format='json')
+
+    def test_sponsor_can_award_and_deduct_points(self):
+        award = self.post({'point_change': 100, 'reason': 'Excellent safety record'})
+        deduction = self.post({'point_change': -25, 'reason': 'Documented violation'})
+
+        self.assertEqual(award.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(award.data['balance'], 100)
+        self.assertEqual(award.data['transaction']['point_change'], 100)
+        self.assertEqual(award.data['transaction']['changed_by_user'], self.sponsor_user.id)
+        self.assertEqual(deduction.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(deduction.data['balance'], 75)
+        self.assertEqual(PointTransaction.objects.count(), 2)
+
+    def test_rejects_missing_blank_and_oversized_reasons(self):
+        for data in (
+            {'point_change': 10},
+            {'point_change': 10, 'reason': '   '},
+            {'point_change': 10, 'reason': 'a' * 501},
+        ):
+            with self.subTest(data=data):
+                response = self.post(data)
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn('reason', response.data)
+
+    def test_rejects_invalid_and_excessive_adjustments(self):
+        for value in (0, 1_000_001, -1):
+            with self.subTest(value=value):
+                response = self.post({
+                    'point_change': value,
+                    'reason': 'Adjustment reason',
+                })
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn('point_change', response.data)
+
+    def test_other_company_driver_is_not_visible_to_sponsor(self):
+        response = self.post(
+            {'point_change': 10, 'reason': 'Should not be allowed'},
+            driver=self.other_driver,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertFalse(PointTransaction.objects.exists())
+
+    def test_driver_and_anonymous_user_cannot_adjust_points(self):
+        driver_response = self.post(
+            {'point_change': 10, 'reason': 'Not authorized'},
+            user=self.driver_user,
+        )
+        self.client.force_authenticate(user=None)
+        anonymous_response = self.client.post(
+            self.points_url(),
+            {'point_change': 10, 'reason': 'Not authorized'},
+            format='json',
+        )
+
+        self.assertEqual(driver_response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(anonymous_response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(PointTransaction.objects.exists())
+
+    def test_sponsor_must_enroll_mfa_before_adjusting_points(self):
+        response = self.post(
+            {'point_change': 10, 'reason': 'Not enrolled'},
+            user=self.unenrolled_sponsor,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(PointTransaction.objects.exists())
+
+    def test_driver_api_exposes_calculated_balance(self):
+        PointTransaction.objects.create(
+            driver=self.driver,
+            sponsor=self.company,
+            changed_by_user=self.sponsor_user,
+            point_change=80,
+            reason='Initial award',
+        )
+        PointTransaction.objects.create(
+            driver=self.driver,
+            sponsor=self.company,
+            changed_by_user=self.sponsor_user,
+            point_change=-15,
+            reason='Adjustment',
+        )
+        self.client.force_authenticate(self.driver_user)
+
+        response = self.client.get(reverse('driver-detail', kwargs={'pk': self.driver.pk}))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['point_balance'], 65)
+
+
 class DriverViewSetMFAGateTests(APITestCase):
     """The MFAEnrolled permission (accounts/permissions.py) applied to this
     viewset should block sponsors until they enroll, and block a driver only
