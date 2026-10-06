@@ -56,18 +56,50 @@ CI sets `CI=true` and builds with `REACT_APP_API_URL=/api`. The generated
 
 ```text
 src/
-├── api/              # Shared client and domain endpoint modules
-├── app/              # Routing, application shell, and layout
-├── auth/             # Session/authentication context
-├── components/       # Shared cross-feature components
-├── data/             # Shared reference data
-├── features/         # Feature-owned pages, tests, and styles
-└── utils/            # Shared validation and utility functions
+├── api/                         # Shared HTTP client and domain endpoint modules
+│   ├── about.js
+│   ├── accounts.js
+│   ├── adminUsers.js
+│   ├── authentication.js
+│   ├── client.js
+│   └── drivers.js
+├── app/                         # Routes, responsive shell, layout, and page headers
+├── auth/                        # Authentication context and session events
+├── components/                  # Shared UI used by more than one feature
+│   ├── assets/                  # Illustrated asset library
+│   │   ├── effects/             # Collision, flame, impact, and smoke effects
+│   │   ├── people/              # Reusable people illustrations
+│   │   ├── scenery/             # Buildings, roads, signs, plants, and street objects
+│   │   └── vehicles/            # Cars, buses, trucks, ambulances, and wheels
+│   ├── Avatar.*                 # Profile-image fallback and presentation
+│   ├── BrandMark.*              # Good Driver road-mark branding
+│   ├── Modal.* / ConfirmDialog.* # Accessible modal and confirmation behavior
+│   ├── PasswordInput.*          # Shared password visibility control
+│   ├── PasswordRequirements.*   # API-backed password-rule presentation
+│   ├── RoadTruck.*              # Animated branded road scene
+│   ├── SelectMenu.*             # Custom select/menu control
+│   ├── Skeleton.*               # Shared loading placeholder
+│   └── StatePanel.*             # Empty, error, and informational states
+├── data/                         # Shared static/reference data
+├── features/                     # Feature-owned pages, tests, and styles
+│   ├── about/                    # Product and release information
+│   ├── accounts/                 # Profile, password, MFA, and login activity
+│   ├── admin-users/              # User directory, creation, details, and settings
+│   ├── authentication/           # Login, registration, device check, and password reset
+│   ├── drivers/                  # Sponsor-facing driver workflow
+│   ├── home/                     # Public welcome page
+│   ├── legal/                    # Terms of Service and Privacy Notice
+│   └── playground/               # Development-only shared-asset gallery
+└── utils/                        # Shared validation and utility functions
 ```
 
 Feature tests and styles should remain beside their implementations. Shared API
 transport belongs in `src/api/client.js`; domain endpoint functions belong in
-the corresponding module under `src/api/`.
+the corresponding module under `src/api/`. A component belongs in
+`src/components/` only when multiple features use it or it is part of the
+shared visual system; feature-specific panels and forms stay inside their
+own feature directory. Reusable illustrated elements belong under
+`src/components/assets/`, grouped by visual domain.
 
 See [`docs/DEPLOYMENT.md`](../docs/DEPLOYMENT.md) for the Docker Compose, Caddy,
 EC2, and GitHub Actions deployment path.
