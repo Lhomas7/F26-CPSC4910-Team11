@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import * as api from '../../api';
 import PasswordInput from '../../components/PasswordInput';
+import PasswordRequirements from '../../components/PasswordRequirements';
 import { validatePassword } from '../../utils/accountValidation';
 
 
@@ -100,7 +101,7 @@ export default function PasswordPanel() {
             onToggleVisible={() => setPasswordVisible((current) => !current)}
             disabled={busy}
           />
-          <small>Use 12+ characters with 3 lowercase letters, 2 uppercase letters, 2 numbers, and an approved symbol.</small>
+          <PasswordRequirements />
           <PasswordField
             id="confirm-password"
             label="Confirm new password"

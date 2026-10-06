@@ -13,6 +13,7 @@ beforeEach(() => {
   useAuth.mockReturnValue({ updateUser: jest.fn() });
   api.getProfile.mockResolvedValue(profile);
   api.updateProfile.mockResolvedValue(profile);
+  api.getLoginAttempts.mockResolvedValue({ recent: [], last_24_hours: [] });
 });
 
 afterEach(() => jest.clearAllMocks());
@@ -122,4 +123,18 @@ test('reuses the profile page for an administrator account', async () => {
 
   fireEvent.click(screen.getByRole('button', { name: 'Edit profile' }));
   expect(screen.queryByLabelText('Choose picture')).not.toBeInTheDocument();
+});
+
+test.each(['sponsor', 'admin'])('shows recent sign-in activity to %s accounts', async (accountType) => {
+  api.getProfile.mockResolvedValue({ ...profile, account_type: accountType });
+  render(<AccountPage />);
+  expect(await screen.findByRole('heading', { name: 'Recent sign-in activity' })).toBeInTheDocument();
+  expect(api.getLoginAttempts).toHaveBeenCalled();
+});
+
+test('does not show sign-in activity to drivers', async () => {
+  render(<AccountPage />);
+  expect(await screen.findByText('Driver One')).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'Recent sign-in activity' })).not.toBeInTheDocument();
+  expect(api.getLoginAttempts).not.toHaveBeenCalled();
 });

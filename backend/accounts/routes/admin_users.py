@@ -5,6 +5,7 @@ from ..views.admin_users import (
     AdminDriverDetailView,
     AdminImpersonationStartView,
     AdminImpersonationStopView,
+    AdminRegistrationSettingsView,
     AdminSponsorCompanyListView,
     AdminSponsorDetailView,
     AdminUserListView,
@@ -25,6 +26,11 @@ urlpatterns = [
         'admin/sponsor-organizations/',
         AdminSponsorCompanyListView.as_view(),
         name='admin-sponsor-company-list',
+    ),
+    path(
+        'admin/registration-settings/',
+        AdminRegistrationSettingsView.as_view(),
+        name='admin-registration-settings',
     ),
     path('admin/users/', AdminUserListView.as_view(), name='admin-user-list'),
     path(

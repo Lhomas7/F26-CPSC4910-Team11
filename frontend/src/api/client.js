@@ -1,3 +1,5 @@
+import { API_ACTIVITY_EVENT, SESSION_EXPIRED_EVENT } from '../auth/sessionEvents';
+
 const DEFAULT_API_URL = 'http://localhost:8000/api';
 
 export const API_URL = (
@@ -51,7 +53,16 @@ export async function request(path, { method = 'GET', body, headers } = {}) {
     // The browser supplies the multipart boundary for FormData requests.
     init.body = isFormData ? body : JSON.stringify(body);
   }
-  return fetch(`${API_URL}${path}`, init);
+  // Every request counts as activity for the server's idle timeout.
+  window.dispatchEvent(new Event(API_ACTIVITY_EVENT));
+  const response = await fetch(`${API_URL}${path}`, init);
+  if (response.status === 401) {
+    const data = await response.clone().json().catch(() => ({}));
+    if (data.code === 'session_expired') {
+      window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+    }
+  }
+  return response;
 }
 
 export async function readJson(response) {

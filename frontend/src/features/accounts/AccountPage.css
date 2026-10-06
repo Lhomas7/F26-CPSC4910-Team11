@@ -474,3 +474,62 @@
     flex: 1;
   }
 }
+
+.login-activity-content {
+  padding: .5rem 1.25rem 1rem;
+}
+
+.login-activity-message {
+  color: var(--ink-2);
+  font-size: .85rem;
+  margin: .5rem 0 0;
+}
+
+.login-activity-content .login-activity-error {
+  align-items: center;
+  display: flex;
+  gap: .75rem;
+  justify-content: space-between;
+  margin: .5rem 0 0;
+}
+
+.login-activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.login-activity-list li {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  font-size: .85rem;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: .6rem 0;
+}
+
+.login-activity-list li:last-child {
+  border-bottom: 0;
+}
+
+.login-activity-list time {
+  color: var(--ink-2);
+}
+
+.login-activity-status {
+  border-radius: 999px;
+  font-size: .75rem;
+  font-weight: 600;
+  padding: .15rem .6rem;
+}
+
+.login-activity-list .success .login-activity-status {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.login-activity-list .failed .login-activity-status {
+  background: #fbeae8;
+  color: #9e2f29;
+}

@@ -9,14 +9,17 @@ from unittest.mock import patch
 
 import pyotp
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
+from django.contrib.sessions.models import Session
 from django.core import mail
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import override_settings
+from django.test import RequestFactory, SimpleTestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
+from django.views.debug import ExceptionReporter
 from PIL import Image
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -35,7 +38,9 @@ from ..models import (
 )
 from ..middleware import IMPERSONATION_STARTED_KEY
 from ..services.crypto import decrypt_secret, encrypt_secret
+from .common import enroll_totp
 from ..services.mfa import backup_codes_remaining, create_mfa_code
+from ..views import LoginView
 
 class ChangePasswordTests(APITestCase):
     url = reverse('accounts:change-password')
@@ -119,6 +124,7 @@ class LoginAttemptLoggingTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         attempt = LoginAttempt.objects.get()
         self.assertEqual(attempt.username, 'driver.one')
+        self.assertEqual(attempt.user, self.user)
         self.assertTrue(attempt.successful)
         self.assertIsNotNone(attempt.timestamp)
 
@@ -128,6 +134,15 @@ class LoginAttemptLoggingTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         attempt = LoginAttempt.objects.get()
         self.assertEqual(attempt.username, 'driver.one')
+        self.assertEqual(attempt.user, self.user)
+        self.assertFalse(attempt.successful)
+
+    def test_wrong_password_with_different_case_is_linked_to_account(self):
+        self.login(username='Driver.One', password='WrongPassword123!')
+
+        attempt = LoginAttempt.objects.get()
+        self.assertEqual(attempt.username, 'Driver.One')
+        self.assertEqual(attempt.user, self.user)
         self.assertFalse(attempt.successful)
 
     def test_unknown_username_is_recorded_as_failure(self):
@@ -136,7 +151,17 @@ class LoginAttemptLoggingTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         attempt = LoginAttempt.objects.get()
         self.assertEqual(attempt.username, 'nobody.here')
+        self.assertIsNone(attempt.user)
         self.assertFalse(attempt.successful)
+
+    def test_unknown_username_and_wrong_password_get_identical_responses(self):
+        unknown_user = self.login(username='nobody.here')
+        wrong_password = self.login(password='WrongPassword123!')
+
+        self.assertEqual(unknown_user.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(unknown_user.status_code, wrong_password.status_code)
+        self.assertEqual(unknown_user.json(), wrong_password.json())
+        self.assertEqual(unknown_user.json(), {'detail': 'Invalid username or password.'})
 
     def test_password_is_never_stored(self):
         self.login(password='WrongPassword123!')
@@ -167,6 +192,7 @@ class LoginAttemptLoggingTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         attempt = LoginAttempt.objects.get()
         self.assertEqual(attempt.username, 'driver.one')
+        self.assertEqual(attempt.user, self.user)
         self.assertTrue(attempt.successful)
 
     def test_mfa_wrong_code_is_recorded_as_failure(self):
@@ -183,7 +209,147 @@ class LoginAttemptLoggingTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         attempt = LoginAttempt.objects.get()
         self.assertEqual(attempt.username, 'driver.one')
+        self.assertEqual(attempt.user, self.user)
         self.assertFalse(attempt.successful)
+
+
+class LogoutTests(APITestCase):
+    """Logging out must end the session on the server and in the browser."""
+
+    logout_url = reverse('accounts:logout')
+    me_url = reverse('accounts:me')
+
+    @classmethod
+    def setUpTestData(cls):
+        User = get_user_model()
+        cls.driver = User.objects.create_user(
+            username='driver.one',
+            password='ExamplePassword123!',
+            email='driver@example.com',
+        )
+        Driver.objects.create(user=cls.driver, name='Driver One', status='approved')
+        cls.admin = User.objects.create_superuser(
+            username='admin.one',
+            password='ExamplePassword123!',
+            email='admin@example.com',
+        )
+        enroll_totp(cls.admin)
+        cls.sponsor = User.objects.create_user(
+            username='sponsor.one',
+            password='ExamplePassword123!',
+            email='sponsor@example.com',
+        )
+        SponsorAccount.objects.create(
+            user=cls.sponsor,
+            company=SponsorCompany.objects.create(name='Palmetto Freight'),
+        )
+        enroll_totp(cls.sponsor)
+
+    def assert_logout_ends_session(self):
+        session_key = self.client.cookies[settings.SESSION_COOKIE_NAME].value
+        self.assertTrue(self.client.get(self.me_url).data['authenticated'])
+
+        response = self.client.post(self.logout_url)
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        cookie = response.cookies[settings.SESSION_COOKIE_NAME]
+        self.assertEqual(cookie.value, '')
+        self.assertEqual(cookie['max-age'], 0)
+        self.assertIn('no-store', response['Cache-Control'])
+        self.assertFalse(Session.objects.filter(session_key=session_key).exists())
+        self.assertFalse(self.client.get(self.me_url).data['authenticated'])
+
+        # Someone who copied the old cookie cannot pick the session back up.
+        replay = self.client_class()
+        replay.cookies[settings.SESSION_COOKIE_NAME] = session_key
+        self.assertFalse(replay.get(self.me_url).data['authenticated'])
+
+    def test_driver_logout_ends_the_session(self):
+        self.client.post(
+            reverse('accounts:login'),
+            {'username': 'driver.one', 'password': 'ExamplePassword123!'},
+            format='json',
+        )
+        self.assert_logout_ends_session()
+
+    def test_admin_logout_ends_the_session(self):
+        self.client.force_login(self.admin)
+        self.assert_logout_ends_session()
+
+    def test_sponsor_logout_ends_the_session(self):
+        self.client.force_login(self.sponsor)
+        self.assert_logout_ends_session()
+
+    def test_logout_without_a_session_still_succeeds(self):
+        response = self.client.post(self.logout_url)
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_admin_logout_while_viewing_as_a_driver_records_the_stop(self):
+        self.client.force_login(self.admin)
+        started = self.client.post(
+            reverse('accounts:admin-impersonation-start', args=[self.driver.id]),
+            {},
+            format='json',
+        )
+        self.assertEqual(started.status_code, status.HTTP_200_OK)
+
+        self.assert_logout_ends_session()
+
+        stop = AdminImpersonationEvent.objects.get(action='stop')
+        self.assertEqual(stop.admin, self.admin)
+        self.assertEqual(stop.target, self.driver)
+        self.assertEqual(stop.target_role, 'driver')
+
+    def test_admin_logout_while_viewing_as_a_sponsor_records_the_stop(self):
+        self.client.force_login(self.admin)
+        started = self.client.post(
+            reverse('accounts:admin-impersonation-start', args=[self.sponsor.id]),
+            {},
+            format='json',
+        )
+        self.assertEqual(started.status_code, status.HTTP_200_OK)
+
+        self.assert_logout_ends_session()
+
+        stop = AdminImpersonationEvent.objects.get(action='stop')
+        self.assertEqual(stop.admin, self.admin)
+        self.assertEqual(stop.target, self.sponsor)
+        self.assertEqual(stop.target_role, 'sponsor')
+
+    def test_me_response_is_not_cached(self):
+        self.client.force_login(self.driver)
+
+        response = self.client.get(self.me_url)
+
+        self.assertIn('no-store', response['Cache-Control'])
+
+
+class ErrorReportRedactionTests(SimpleTestCase):
+    """A 500 on a credential endpoint must not put the password in Django's report."""
+
+    def test_login_error_report_masks_the_password(self):
+        secret = 'Sup3r-Secret-Pa55word!'
+        request = RequestFactory().post(
+            reverse('accounts:login'),
+            {'username': 'driver.one', 'password': secret},
+        )
+
+        with patch(
+            'accounts.views.authentication.authenticate',
+            side_effect=RuntimeError('database unavailable'),
+        ):
+            with self.assertRaises(RuntimeError) as raised:
+                LoginView.as_view()(request)
+
+        error = raised.exception
+        report = ExceptionReporter(
+            request, type(error), error, error.__traceback__
+        ).get_traceback_html()
+
+        self.assertNotIn(secret, report)
+        self.assertIn('driver.one', report)
+        self.assertIn('database unavailable', report)
 
 
 class PasswordResetTests(APITestCase):

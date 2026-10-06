@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 
 import * as api from '../../api';
 import PasswordInput from '../../components/PasswordInput';
+import PasswordRequirements from '../../components/PasswordRequirements';
 import { validatePassword } from '../../utils/accountValidation';
 import './LoginPage.css';
 import './PasswordResetPage.css';
@@ -88,10 +89,6 @@ export default function ResetPasswordPage() {
     content = (
       <form className="login-form" onSubmit={submit} noValidate>
         <h2>Choose a new password</h2>
-        <p className="login-sub">
-          Use 12+ characters with 3 lowercase letters, 2 uppercase letters, 2 numbers,
-          and an approved symbol.
-        </p>
         {error && <p className="login-alert login-alert-error" role="alert">{error}</p>}
         <PasswordField
           id="reset-password"
@@ -100,6 +97,7 @@ export default function ResetPasswordPage() {
           onChange={(event) => setPassword(event.target.value)}
           disabled={busy}
         />
+        <PasswordRequirements />
         <PasswordField
           id="reset-password-confirm"
           label="Confirm new password"

@@ -4,6 +4,7 @@ import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import * as api from '../../api';
 import BrandMark from '../../components/BrandMark';
 import PasswordInput from '../../components/PasswordInput';
+import PasswordRequirements from '../../components/PasswordRequirements';
 import ProgramPerks from '../../components/ProgramPerks';
 import RoadTruck from '../../components/RoadTruck';
 import { useAuth } from '../../auth/AuthContext';
@@ -24,17 +25,26 @@ function requestErrorMessage(err, fallback) {
   return api.isOutageError(err) ? OUTAGE_MESSAGE : (err.message || fallback);
 }
 
-function PasswordField({ id, label, className = 'login-input', ...inputProps }) {
+function PasswordField({ id, label, className = 'login-input', invalid, describedBy, children, ...inputProps }) {
   return (
     <div className="login-field">
       <label htmlFor={id}>{label}</label>
-      <PasswordInput id={id} label={label} className={className} {...inputProps} />
+      <PasswordInput
+        id={id}
+        label={label}
+        className={className}
+        aria-invalid={invalid || undefined}
+        aria-describedby={describedBy}
+        {...inputProps}
+      />
+      {children}
     </div>
   );
 }
 
 export default function LoginPage() {
-  const { loading, user, signIn, completeMfaLogin, requestMfaLoginCode } = useAuth();
+  const { loading, user, notice, signIn, completeMfaLogin, requestMfaLoginCode } = useAuth();
+  const release = useCurrentRelease();
   const [crashKey, setCrashKey] = useState(0);
   const [serverDown, setServerDown] = useState(false);
   const crashTruck = useCallback(() => setCrashKey((count) => count + 1), []);
@@ -56,7 +66,16 @@ export default function LoginPage() {
   } else if (user) {
     content = <Navigate to="/" replace />;
   } else {
-    content = <AuthCard onSignIn={signIn} onMfaComplete={completeMfaLogin} onRequestMfaCode={requestMfaLoginCode} onError={crashTruck} onOutage={wreckTruck} />;
+    content = (
+      <AuthCard
+        sessionExpired={notice === 'expired'}
+        onSignIn={signIn}
+        onMfaComplete={completeMfaLogin}
+        onRequestMfaCode={requestMfaLoginCode}
+        onError={crashTruck}
+        onOutage={wreckTruck}
+      />
+    );
   }
 
   return (
@@ -73,7 +92,7 @@ export default function LoginPage() {
         </div>
         <RoadTruck className="login-lane" crashKey={crashKey} wrecked={serverDown} />
         <div className="login-road-foot">
-          <span>Team 11, v0.1.0 (Sprint 1)</span>
+          {release && <span>Team {release.team_number}, {release.version_number}</span>}
           <Link to="/about">About this app</Link>
         </div>
       </aside>
@@ -85,6 +104,23 @@ export default function LoginPage() {
   );
 }
 
+// Same release record the About page shows; the footer omits it until loaded.
+function useCurrentRelease() {
+  const [release, setRelease] = useState(null);
+  useEffect(() => {
+    let active = true;
+    api.currentRelease()
+      .then((data) => {
+        if (active) setRelease(data);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+  return release;
+}
+
 function LoadingCard() {
   return (
     <div className="login-card" role="status">
@@ -93,13 +129,15 @@ function LoadingCard() {
   );
 }
 
-function AuthCard({ onSignIn, onMfaComplete, onRequestMfaCode, onError, onOutage }) {
+const SESSION_EXPIRED_NOTICE = 'You were signed out due to inactivity. Sign in again to continue.';
+
+function AuthCard({ sessionExpired = false, onSignIn, onMfaComplete, onRequestMfaCode, onError, onOutage }) {
   const [searchParams] = useSearchParams();
   const [view, setView] = useState(() => (
     searchParams.get('tab') === 'register' ? 'signup' : 'signin'
   ));
   const [role, setRole] = useState(null);
-  const [notice, setNotice] = useState(null);
+  const [notice, setNotice] = useState(sessionExpired ? SESSION_EXPIRED_NOTICE : null);
 
   const switchToSignIn = () => {
     setView('signin');
@@ -171,6 +209,9 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode, onError, onOutag
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
   const [error, setError] = useState(null);
+  // Set when the server rejects the username/password pair, so both fields are
+  // highlighted (the response deliberately does not say which one was wrong).
+  const [credentialsRejected, setCredentialsRejected] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sendingCode, setSendingCode] = useState(false);
   const [cooldown, setCooldown] = useState(0);
@@ -203,6 +244,7 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode, onError, onOutag
   const submit = async (event) => {
     event.preventDefault();
     setError(null);
+    setCredentialsRejected(false);
     if (!username.trim()) {
       setError('Enter your username.');
       return;
@@ -233,6 +275,7 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode, onError, onOutag
     } catch (err) {
       setError(requestErrorMessage(err, 'Invalid username or password.'));
       if (api.isOutageError(err)) onOutage?.();
+      setCredentialsRejected(true);
       setPassword('');
     } finally {
       setBusy(false);
@@ -386,20 +429,28 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode, onError, onOutag
     );
   }
 
+  const usernameInvalid = Boolean(credentialsRejected || (error && !username.trim()));
+  const passwordInvalid = Boolean(credentialsRejected || (error && !password));
+
   return (
     <form className="login-form" onSubmit={submit} noValidate>
       <h2>Sign in</h2>
       <p className="login-sub">Use the username and password from your account.</p>
 
-      {error && <p className="login-alert login-alert-error" role="alert">{error}</p>}
+      {error && <p id="login-error" className="login-alert login-alert-error" role="alert">{error}</p>}
 
       <div className="login-field">
         <label htmlFor="login-username">Username</label>
         <input
           id="login-username"
-          className={fieldClass(error && !username.trim())}
+          className={fieldClass(usernameInvalid)}
           value={username}
-          onChange={(event) => setUsername(event.target.value)}
+          onChange={(event) => {
+            setUsername(event.target.value);
+            setCredentialsRejected(false);
+          }}
+          aria-invalid={usernameInvalid || undefined}
+          aria-describedby={usernameInvalid ? 'login-error' : undefined}
           autoComplete="username"
           autoCapitalize="none"
           spellCheck="false"
@@ -409,9 +460,14 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode, onError, onOutag
       <PasswordField
         id="login-password"
         label="Password"
-        className={fieldClass(error && !password)}
+        className={fieldClass(passwordInvalid)}
+        invalid={passwordInvalid}
+        describedBy={passwordInvalid ? 'login-error' : undefined}
         value={password}
-        onChange={(event) => setPassword(event.target.value)}
+        onChange={(event) => {
+          setPassword(event.target.value);
+          setCredentialsRejected(false);
+        }}
         autoComplete="current-password"
       />
 
@@ -458,6 +514,20 @@ function RoleRegistrationForm({ role, onBack, onDone, onError, onOutage }) {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  // When an admin requires email verification, the first submit emails a code
+  // and the same details are resubmitted with that code to create the account.
+  const [step, setStep] = useState('details');
+  const [verifyEmail, setVerifyEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [codeNotice, setCodeNotice] = useState(null);
+  const [sendingCode, setSendingCode] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return undefined;
+    const timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
 
   // Easter egg: tell the page so the road truck crashes whenever an error shows.
   useEffect(() => {
@@ -477,6 +547,38 @@ function RoleRegistrationForm({ role, onBack, onDone, onError, onOutage }) {
     return null;
   };
 
+  const register = (extra = {}) => {
+    const payload = {
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
+      email: email.trim(),
+      username: username.trim(),
+      password,
+      password_confirm: passwordConfirm,
+      accepted_terms: acceptedTerms,
+      ...extra,
+    };
+    if (role === 'sponsor') {
+      payload.company_name = companyName.trim();
+    }
+    return role === 'sponsor' ? api.registerSponsor(payload) : api.registerDriver(payload);
+  };
+
+  const finishRegistration = (created) => {
+    if (role === 'sponsor') {
+      // Sponsors finish MFA setup before the account is usable; land them on
+      // the onboarding wall (SiteLayout gates the app until they enroll).
+      updateUser(created);
+      navigate('/');
+      return;
+    }
+    const accountLabel = ROLE_LABEL[role];
+    onDone(
+      `✓ ${accountLabel} account created successfully.`
+      + ` You can now sign in with your username and password.`
+    );
+  };
+
   const submit = async (event) => {
     event.preventDefault();
     setError(null);
@@ -487,33 +589,16 @@ function RoleRegistrationForm({ role, onBack, onDone, onError, onOutage }) {
     }
     setBusy(true);
     try {
-      const payload = {
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
-        email: email.trim(),
-        username: username.trim(),
-        password,
-        password_confirm: passwordConfirm,
-        accepted_terms: acceptedTerms,
-      };
-      if (role === 'sponsor') {
-        payload.company_name = companyName.trim();
-      }
-      const created = role === 'sponsor'
-        ? await api.registerSponsor(payload)
-        : await api.registerDriver(payload);
-      if (role === 'sponsor') {
-        // Sponsors finish MFA setup before the account is usable; land them on
-        // the onboarding wall (SiteLayout gates the app until they enroll).
-        updateUser(created);
-        navigate('/');
+      const result = await register();
+      if (result && result.verification_required) {
+        setVerifyEmail(result.email || email.trim());
+        setCode('');
+        setCodeNotice(null);
+        setCooldown(30);
+        setStep('verify');
         return;
       }
-      const accountLabel = ROLE_LABEL[role];
-      onDone(
-        `✓ ${accountLabel} account created successfully.`
-        + ` You can now sign in with your username and password.`
-      );
+      finishRegistration(result);
     } catch (err) {
       setError(requestErrorMessage(err, 'Account could not be created.'));
       if (api.isOutageError(err)) onOutage?.();
@@ -521,6 +606,85 @@ function RoleRegistrationForm({ role, onBack, onDone, onError, onOutage }) {
       setBusy(false);
     }
   };
+
+  const submitCode = async (event) => {
+    event.preventDefault();
+    setError(null);
+    setCodeNotice(null);
+    if (!code.trim()) {
+      setError('Enter the verification code from your email.');
+      return;
+    }
+    setBusy(true);
+    try {
+      finishRegistration(await register({ code: code.trim() }));
+    } catch (err) {
+      setError(err.message || 'Account could not be created.');
+      setCode('');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resendCode = async () => {
+    if (sendingCode || cooldown > 0) return;
+    setSendingCode(true);
+    setError(null);
+    setCodeNotice(null);
+    try {
+      await register();
+      setCodeNotice('A new code was sent.');
+      setCooldown(30);
+    } catch (err) {
+      setError(err.message || 'Could not send the verification code.');
+    } finally {
+      setSendingCode(false);
+    }
+  };
+
+  const backToDetails = () => {
+    setStep('details');
+    setError(null);
+    setCodeNotice(null);
+    setCode('');
+  };
+
+  if (step === 'verify') {
+    return (
+      <form className="login-form" onSubmit={submitCode} noValidate>
+        <div className="login-form-head">
+          <h2>Verify your email</h2>
+          <button type="button" className="login-back" onClick={backToDetails} disabled={busy}>Back</button>
+        </div>
+        <p className="login-sub">
+          We sent a verification code to <strong>{verifyEmail}</strong>. Enter it below to
+          create your {ROLE_LABEL[role]} account. The code expires in 10 minutes.
+        </p>
+
+        {error && <p className="login-alert login-alert-error" role="alert">{error}</p>}
+        {codeNotice && <p className="login-alert login-alert-success" role="status">{codeNotice}</p>}
+
+        <div className="login-field">
+          <label htmlFor="reg-verification-code">Verification code</label>
+          <input
+            id="reg-verification-code"
+            className={error && !code.trim() ? 'login-input login-input-error' : 'login-input'}
+            value={code}
+            onChange={(event) => setCode(event.target.value)}
+            inputMode="numeric"
+            autoComplete="one-time-code"
+          />
+        </div>
+
+        <button className="login-btn" type="submit" disabled={busy}>
+          {busy ? 'Verifying…' : 'Verify and create account'}
+        </button>
+        <button className="login-btn login-btn-outline" type="button" onClick={resendCode} disabled={busy || sendingCode || cooldown > 0}>
+          {sendingCode ? 'Sending…' : cooldown > 0 ? `Resend code (${cooldown}s)` : 'Resend code'}
+        </button>
+      </form>
+    );
+  }
 
   return (
     <form className="login-form" onSubmit={submit} noValidate>
@@ -579,6 +743,7 @@ function RoleRegistrationForm({ role, onBack, onDone, onError, onOutage }) {
       </div>
 
       <PasswordField id="reg-password" label="Password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" />
+      <PasswordRequirements />
 
       <PasswordField id="reg-password-confirm" label="Confirm Password" value={passwordConfirm} onChange={(event) => setPasswordConfirm(event.target.value)} autoComplete="new-password" />
 

@@ -28,10 +28,13 @@ This repository is maintained by **CPSC 4910 Team 11**.
 
 ### Authentication and account security
 
-- Driver and sponsor registration
+- Driver and sponsor registration, with optional emailed-code verification
 - Shared login flow with role-aware sessions
 - Session authentication with CSRF protection
-- Password changes and password validation
+- "Is this your device?" check after sign-ins from a new browser or after repeated failed attempts
+- Stricter idle and absolute session timeouts for administrators and shared devices
+- Sign-out confirmation
+- Password changes and password validation, with requirements served by the API and shown on demand
 - Email-based password-reset request and confirmation flow
 - Login-attempt auditing without requiring an existing user record
 - Authenticator-app, email, and SMS MFA support
@@ -55,6 +58,7 @@ This repository is maintained by **CPSC 4910 Team 11**.
 - Sponsor assignment and reassignment
 - Account activation and deactivation
 - Audited administrator view-as sessions for driver and sponsor troubleshooting
+- Site-wide switch to require email verification for new accounts
 - Role-aware access controls and validation
 
 ### Program information and driver management
@@ -143,7 +147,8 @@ F26-CPSC4910-Team11/
 │   ├── ACCOUNT_INPUT_VALIDATION.md
 │   ├── DATABASE_ERD.md
 │   ├── DEPLOYMENT.md
-│   └── PROJECT_TODO.md
+│   ├── PROJECT_TODO.md
+│   └── SESSION_SECURITY.md
 ├── .dockerignore
 ├── .gitignore
 ├── docker-compose.yml
@@ -506,6 +511,7 @@ See [`docs/PROJECT_TODO.md`](docs/PROJECT_TODO.md) for the detailed engineering,
 
 - [Engineering backlog and project TODO](docs/PROJECT_TODO.md)
 - [Account input validation and normalization](docs/ACCOUNT_INPUT_VALIDATION.md)
+- [Session security: device check, timeouts, and sign-out](docs/SESSION_SECURITY.md)
 - [Current database ERD](docs/DATABASE_ERD.md)
 - [Deployment, secrets, Docker, and CI/CD](docs/DEPLOYMENT.md)
 - [Frontend-specific development guide](frontend/README.md)

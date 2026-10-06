@@ -24,6 +24,22 @@ Passwords are an exception: they are never trimmed or Unicode-normalized because
 | Password | Stored only as a Django password hash; submitted value is not transformed | At least 12 characters, 3 lowercase letters, 2 uppercase letters, 2 digits, and one of `!@#$%^&*()-_+.` | Must not contain the full username or email address; Django's configured password validators also run for account creation |
 | Password confirmation | Not stored | Must exactly match the password | Checked by both React and Django |
 | Account-creation consent | Boolean; not currently stored as an audit record | Must be `true` for public registration | Checked by both React and Django |
+| Email verification code | Trimmed; not stored (only a hash of the issued code is kept) | Optional; 6 digits, required only when an administrator has turned on email verification | Must match an unexpired, unused code issued to the submitted email address |
+
+### Email verification
+
+Administrators can require new driver and sponsor accounts to prove control of their email address (Users page → **Account creation**, stored in `accounts_registrationsettings`). It is off by default. When it is on, public registration takes two submissions to the same endpoint:
+
+1. The client submits the account details without `code`. Django runs every rule above, emails a 6-digit code to the canonical email address, and returns `202` with `verification_required: true`. No account is created and the password is not stored.
+2. The client submits the same details again with `code`. Django re-runs every rule (so a username or email taken in the meantime is still rejected), checks the code, and only then creates the account.
+
+Codes expire after 10 minutes, work once, and are invalidated after 5 wrong attempts. Issuing a new code invalidates the previous one, and a new code can be requested for an address at most once every 30 seconds (`429` otherwise). Email is sent through Django's configured `EMAIL_BACKEND`; the default console backend writes the code to the server log.
+
+### Displaying the password requirements
+
+The password rules are defined once, in `PASSWORD_RULES` in `backend/accounts/input_cleaning.py`. Each rule holds the requirement text shown to users, the check, and the error message, and `validate_password_policy` runs those same rules. `GET /api/password-policy/` (anonymous) publishes the requirements built from that list, plus the username/email rule and the help text of Django's configured validators. The 8-character `MinimumLengthValidator` text is left out because the 12-character rule supersedes it. The response also lists the approved symbols.
+
+Signup, password reset, password change, and the administrator's add-user form show a **Show password requirements** link under the password field. It opens a popover with the server's list, so the UI never hard-codes the rules. React's `validatePassword` still runs for instant feedback.
 
 ### Username compatibility decision
 
@@ -59,6 +75,7 @@ The ASCII-only name pattern was rejected because it would exclude common names s
 - Public registration and login forms: `frontend/src/features/authentication/LoginPage.jsx`
 - Administrator account form: `frontend/src/features/admin-users/AddUserPage.jsx`
 - Password-change panel: `frontend/src/features/accounts/PasswordPanel.jsx`
+- Password requirements popover: `frontend/src/components/PasswordRequirements.jsx`
 
 ## Out of scope
 
@@ -66,4 +83,4 @@ Date of birth, postal code, and mailing address are not collected by the current
 
 ---
 
-_Last reviewed against the feature-based frontend and backend structure: 2026-10-01._
+_Last reviewed against the feature-based frontend and backend structure: 2026-10-06._

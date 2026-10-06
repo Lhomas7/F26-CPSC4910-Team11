@@ -3,11 +3,13 @@ from django.urls import path
 from ..views.authentication import (
     CSRFView,
     ChangePasswordView,
+    DeviceCheckView,
     LoginMFARequestCodeView,
     LoginMFAView,
     LoginView,
     LogoutView,
     MeView,
+    PasswordPolicyView,
     PasswordResetConfirmView,
     PasswordResetRequestView,
 )
@@ -22,8 +24,10 @@ urlpatterns = [
     ),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('me/', MeView.as_view(), name='me'),
+    path('device-check/', DeviceCheckView.as_view(), name='device-check'),
     path('csrf/', CSRFView.as_view(), name='csrf'),
     path('change-password/', ChangePasswordView.as_view(), name='change-password'),
+    path('password-policy/', PasswordPolicyView.as_view(), name='password-policy'),
     path('password-reset/', PasswordResetRequestView.as_view(), name='password-reset'),
     path(
         'password-reset/confirm/',

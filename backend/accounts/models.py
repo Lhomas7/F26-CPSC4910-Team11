@@ -11,9 +11,22 @@ class SponsorCompany(models.Model):
         return self.name
 
 class LoginAttempt(models.Model):
+    # Linked by FK (not just username) so history follows the account through
+    # username changes. Null for attempts against usernames that don't exist.
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='login_attempts',
+    )
     username = models.CharField(max_length=150)
     timestamp = models.DateTimeField(auto_now_add=True)
     successful = models.BooleanField()
+
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [models.Index(fields=['user', '-timestamp'])]
 
     def __str__(self):
         result = 'Success' if self.successful else 'Failure'
@@ -92,6 +105,40 @@ class MFABackupCode(models.Model):
         ]
 
 
+class RegistrationSettings(models.Model):
+    """Site-wide account creation options, edited by administrators.
+
+    A single row (pk=1); use RegistrationSettings.load() rather than querying.
+    """
+
+    email_verification_required = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @classmethod
+    def load(cls):
+        settings_row, _ = cls.objects.get_or_create(pk=1)
+        return settings_row
+
+
+class RegistrationEmailCode(models.Model):
+    """One-time code proving control of an email address during signup.
+
+    Keyed by email rather than user because the account does not exist yet.
+    """
+
+    email = models.EmailField(max_length=254)
+    code_hash = models.CharField(max_length=128)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    attempts = models.PositiveSmallIntegerField(default=0)
+    used = models.BooleanField(default=False)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['email', 'used'], name='regcode_email_used_idx'),
+        ]
+
+
 class DriverNotification(models.Model):
     driver = models.ForeignKey('drivers.Driver', on_delete=models.CASCADE, related_name='notifications')
     message = models.CharField(max_length=500)
@@ -128,3 +175,29 @@ class AdminImpersonationEvent(models.Model):
 
     class Meta:
         ordering = ('-created_at',)
+
+
+class TrustedDevice(models.Model):
+    """A browser the user said is theirs when asked "Is this your device?".
+
+    The browser holds a random token in an HttpOnly cookie; only its SHA-256 is
+    stored here. Nothing about the device itself (IP, user agent, location) is
+    recorded. One browser token can be trusted by several accounts.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='trusted_devices',
+    )
+    token_hash = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['user', 'token_hash'], name='trusteddevice_user_token_idx'),
+        ]
+
+    def __str__(self):
+        return f'{self.user} - trusted {self.created_at:%Y-%m-%d}'

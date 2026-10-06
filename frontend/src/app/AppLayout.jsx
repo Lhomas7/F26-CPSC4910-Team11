@@ -1,15 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../auth/AuthContext';
 import BrandMark from '../components/BrandMark';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { AccountIcon, ChevronDownIcon, SignOutIcon, UserIcon } from '../components/Icons';
 import MfaSetupWall from '../features/accounts/MfaSetupWall';
+import DeviceCheckDialog from '../features/authentication/DeviceCheckDialog';
 import './AppLayout.css';
 import { PageHeaderTargetProvider } from './PageHeader';
 
 function AccountMenu({ user, onSignOut }) {
   const [open, setOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const menuRef = useRef(null);
   const closeTimerRef = useRef(null);
   const openedByHoverRef = useRef(false);
@@ -63,6 +67,15 @@ function AccountMenu({ user, onSignOut }) {
     };
   }, [open]);
 
+  const confirmSignOut = async () => {
+    setSigningOut(true);
+    try {
+      await onSignOut();
+    } finally {
+      setSigningOut(false);
+      setConfirming(false);
+    }
+  };
   if (user) {
     const displayName = user.name || user.username;
     return (
@@ -95,11 +108,21 @@ function AccountMenu({ user, onSignOut }) {
               <AccountIcon size={18} />
               Account
             </Link>
-            <button role="menuitem" type="button" onClick={() => { setOpen(false); onSignOut(); }}>
+            <button role="menuitem" type="button" onClick={() => setConfirming(true)}>
               <SignOutIcon size={18} />
               Sign out
             </button>
           </div>
+        )}
+        {confirming && (
+          <ConfirmDialog
+            title="Sign out?"
+            message="Are you sure you want to sign out? You'll need to sign in again to keep using your account."
+            confirmLabel={signingOut ? 'Signing out…' : 'Sign out'}
+            busy={signingOut}
+            onConfirm={confirmSignOut}
+            onCancel={() => setConfirming(false)}
+          />
         )}
       </div>
     );
@@ -113,7 +136,8 @@ function AccountMenu({ user, onSignOut }) {
 }
 
 export function AppLayout() {
-  const { user, signOut, stopImpersonation } = useAuth();
+  const { user, notice, signOut, stopImpersonation, answerDeviceCheck } = useAuth();
+  const navigate = useNavigate();
   const [endingViewAs, setEndingViewAs] = useState(false);
   const [viewAsError, setViewAsError] = useState('');
   const [pageHeaderTarget, setPageHeaderTarget] = useState(null);
@@ -122,6 +146,11 @@ export function AppLayout() {
     && user.mfa
     && user.mfa.required
     && !user.mfa.enrolled;
+
+  // A timed-out session goes straight to sign-in, even from public pages.
+  useEffect(() => {
+    if (notice === 'expired' && !user) navigate('/login', { replace: true });
+  }, [notice, user, navigate]);
 
   const stopViewingAs = async () => {
     setEndingViewAs(true);
@@ -175,6 +204,12 @@ export function AppLayout() {
               {endingViewAs ? 'Returning…' : 'Return to admin account'}
             </button>
           </div>
+        )}
+        {user?.session?.device_check && (
+          <DeviceCheckDialog
+            onAnswer={answerDeviceCheck}
+            onSignOut={signOut}
+          />
         )}
         <header className="app-topbar">
           <div className="app-topbar-page" ref={setPageHeaderTarget} />

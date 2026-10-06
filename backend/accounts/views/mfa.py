@@ -35,6 +35,7 @@ from ..services.mfa import (
     verify_code,
 )
 from ..services.notify import notify_driver_mfa_change
+from ..sensitive import hide_sensitive_data
 
 MFA_METHOD_LABELS = {
     'email': 'email code',
@@ -75,6 +76,7 @@ class MFAStatusView(APIView):
         return Response({'mfa': get_mfa_status(request.user)})
 
 
+@hide_sensitive_data
 class MFASetupView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -123,6 +125,7 @@ class MFASetupView(APIView):
 
 
 
+@hide_sensitive_data
 class MFAVerifyView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -210,6 +213,7 @@ class MFARequestCodeView(APIView):
         return Response({'detail': 'Verification code sent.'})
 
 
+@hide_sensitive_data
 class MFAResetView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -261,6 +265,7 @@ class MFAResetView(APIView):
         return Response(totp_qr_payload(user, new_secret))
 
 
+@hide_sensitive_data
 class MFADisableView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -310,6 +315,7 @@ class MFADisableView(APIView):
         return Response({'detail': f'{method.title()} disabled.'})
 
 
+@hide_sensitive_data
 class MFABackupCodesRegenerateView(APIView):
     permission_classes = [IsAuthenticated]
 

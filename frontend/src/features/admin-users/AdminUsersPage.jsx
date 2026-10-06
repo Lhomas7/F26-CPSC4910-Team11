@@ -8,6 +8,7 @@ import Avatar from '../../components/Avatar';
 import Skeleton from '../../components/Skeleton';
 import StatePanel from '../../components/StatePanel';
 import SelectMenu from '../../components/SelectMenu';
+import RegistrationSettingsPanel from './RegistrationSettingsPanel';
 import './AdminUsersPage.css';
 
 const ROLE_LABELS = { driver: 'Driver', sponsor: 'Sponsor', admin: 'Admin' };
@@ -109,6 +110,7 @@ export default function AdminUsersPage() {
         <p className="sr-only" role="status" aria-live="polite">
           {status === 'loading' ? 'Loading users' : `${visibleUsers.length} users shown`}
         </p>
+        <RegistrationSettingsPanel />
         {status === 'loading' && <DirectorySkeleton />}
         {status === 'error' && (
           <StatePanel tone="error" title="Users couldn't be loaded">
