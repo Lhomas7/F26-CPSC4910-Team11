@@ -10,6 +10,7 @@ from accounts.models import SponsorAccount, SponsorCompany
 from accounts.tests.common import enroll_totp
 
 from .models import Driver, PointTransaction
+from .services import MAX_POINT_ADJUSTMENT, PointAdjustmentError, adjust_driver_points
 
 
 class PointTransactionModelTests(TestCase):
@@ -80,6 +81,133 @@ class PointTransactionModelTests(TestCase):
         entry.refresh_from_db()
 
         self.assertIsNone(entry.changed_by_user)
+
+
+class PointAdjustmentServiceTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.company = SponsorCompany.objects.create(name='Palmetto Freight')
+        cls.other_company = SponsorCompany.objects.create(name='Blue Ridge Logistics')
+        cls.sponsor_user = get_user_model().objects.create_user(
+            username='adjust.sponsor',
+            password='ExamplePassword123!',
+        )
+        SponsorAccount.objects.create(user=cls.sponsor_user, company=cls.company)
+        cls.other_sponsor_user = get_user_model().objects.create_user(
+            username='other.sponsor',
+            password='ExamplePassword123!',
+        )
+        SponsorAccount.objects.create(
+            user=cls.other_sponsor_user,
+            company=cls.other_company,
+        )
+        cls.driver_user = get_user_model().objects.create_user(
+            username='adjust.driver',
+            password='ExamplePassword123!',
+        )
+        cls.driver = Driver.objects.create(
+            user=cls.driver_user,
+            name='Adjustment Driver',
+            sponsor=cls.company,
+            status='approved',
+        )
+        cls.unassigned_user = get_user_model().objects.create_user(
+            username='unassigned.driver',
+            password='ExamplePassword123!',
+        )
+        cls.unassigned_driver = Driver.objects.create(
+            user=cls.unassigned_user,
+            name='Unassigned Driver',
+            status='approved',
+        )
+
+    def adjust(self, amount=100, reason='Consistent safe driving', **overrides):
+        values = {
+            'driver': self.driver,
+            'changed_by_user': self.sponsor_user,
+            'point_change': amount,
+            'reason': reason,
+        }
+        values.update(overrides)
+        return adjust_driver_points(**values)
+
+    def assert_adjustment_error(self, code, **kwargs):
+        with self.assertRaises(PointAdjustmentError) as caught:
+            self.adjust(**kwargs)
+        self.assertEqual(caught.exception.code, code)
+        return caught.exception
+
+    def test_award_creates_audited_transaction_and_returns_balance(self):
+        result = self.adjust(100, '  Excellent   quarterly performance  ')
+
+        self.assertEqual(result.balance, 100)
+        self.assertEqual(result.transaction.point_change, 100)
+        self.assertEqual(result.transaction.reason, 'Excellent quarterly performance')
+        self.assertEqual(result.transaction.sponsor, self.company)
+        self.assertEqual(result.transaction.changed_by_user, self.sponsor_user)
+
+    def test_deduction_updates_balance_without_allowing_it_below_zero(self):
+        self.adjust(100)
+
+        result = self.adjust(-40, 'Documented safety violation')
+
+        self.assertEqual(result.balance, 60)
+        self.assertEqual(self.driver.point_balance, 60)
+        self.assert_adjustment_error(
+            'insufficient_points',
+            amount=-61,
+            reason='Another documented violation',
+        )
+        self.assertEqual(self.driver.point_balance, 60)
+
+    def test_rejects_zero_noninteger_boolean_and_excessive_amounts(self):
+        for amount, code in (
+            (0, 'zero_amount'),
+            ('10', 'invalid_amount'),
+            (True, 'invalid_amount'),
+            (MAX_POINT_ADJUSTMENT + 1, 'amount_too_large'),
+            (-(MAX_POINT_ADJUSTMENT + 1), 'amount_too_large'),
+        ):
+            with self.subTest(amount=amount):
+                self.assert_adjustment_error(code, amount=amount)
+
+        self.assertFalse(PointTransaction.objects.exists())
+
+    def test_requires_a_nonblank_reason(self):
+        for reason in (None, '', ' \n\t '):
+            with self.subTest(reason=reason):
+                error = self.assert_adjustment_error(
+                    'missing_reason',
+                    reason=reason,
+                )
+                self.assertEqual(error.field, 'reason')
+
+    def test_rejects_oversized_and_control_character_reasons(self):
+        self.assert_adjustment_error('reason_too_long', reason='a' * 501)
+        self.assert_adjustment_error('invalid_reason', reason='unsafe\x00reason')
+
+    def test_rejects_sponsor_from_another_company(self):
+        self.assert_adjustment_error(
+            'driver_outside_company',
+            changed_by_user=self.other_sponsor_user,
+        )
+        self.assertFalse(PointTransaction.objects.exists())
+
+    def test_rejects_non_sponsor_and_inactive_sponsor_accounts(self):
+        self.assert_adjustment_error(
+            'not_sponsor',
+            changed_by_user=self.driver_user,
+        )
+        self.sponsor_user.is_active = False
+        self.sponsor_user.save(update_fields=['is_active'])
+        self.assert_adjustment_error('not_sponsor')
+
+    def test_rejects_unassigned_and_unknown_drivers(self):
+        self.assert_adjustment_error(
+            'driver_outside_company',
+            driver=self.unassigned_driver,
+        )
+        self.assert_adjustment_error('driver_not_found', driver=999_999)
 
 
 class DriverViewSetMFAGateTests(APITestCase):
