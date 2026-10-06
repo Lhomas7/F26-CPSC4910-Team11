@@ -15,3 +15,10 @@ export function updateDriver(driverId, data) {
 export function linkDriver(username) {
   return request('/sponsor/drivers/link/', { method: 'POST', body: { username } }).then(readJson);
 }
+
+export function adjustDriverPoints(driverId, pointChange, reason) {
+  return request(`/sponsor/drivers/${driverId}/points/`, {
+    method: 'POST',
+    body: { point_change: pointChange, reason },
+  }).then(readJson);
+}

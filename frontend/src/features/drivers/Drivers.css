@@ -1,0 +1,194 @@
+.driver-detail-content {
+  display: grid;
+  gap: 1.25rem;
+  max-width: 54rem;
+  padding: 1.5rem 1.75rem 4rem;
+}
+
+.driver-summary,
+.point-adjustment {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .65rem;
+  padding: 1.25rem;
+}
+
+.driver-summary {
+  display: flex;
+  justify-content: space-between;
+}
+
+.driver-summary p {
+  margin: 0;
+}
+
+.driver-balance {
+  color: var(--accent);
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+.point-adjustment-heading,
+.point-adjustment-tabs,
+.point-confirmation {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.point-adjustment-heading h2,
+.point-adjustment-heading p {
+  margin: 0;
+}
+
+.point-adjustment-heading p {
+  color: var(--ink-2);
+  font-size: .8rem;
+  margin-top: .2rem;
+}
+
+.point-adjustment-heading > strong {
+  color: var(--accent);
+  font-size: 1.15rem;
+}
+
+.point-adjustment-tabs {
+  justify-content: flex-start;
+  margin: 1rem 0;
+}
+
+.point-adjustment button {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  min-height: 2.5rem;
+  padding: .55rem .9rem;
+}
+
+.point-adjustment-tabs button:first-child {
+  border-radius: .45rem 0 0 .45rem;
+}
+
+.point-adjustment-tabs button:last-child {
+  border-left: 0;
+  border-radius: 0 .45rem .45rem 0;
+}
+
+.point-adjustment-tabs button.active,
+.point-adjustment button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.point-adjustment form {
+  display: grid;
+  gap: .45rem;
+}
+
+.point-adjustment label {
+  color: var(--ink-2);
+  font-size: .78rem;
+  font-weight: 700;
+  margin-top: .45rem;
+}
+
+.point-adjustment input,
+.point-adjustment textarea {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .45rem;
+  color: var(--ink);
+  font: inherit;
+  padding: .65rem;
+}
+
+.point-adjustment textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.point-adjustment input:focus,
+.point-adjustment textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: 0;
+}
+
+.point-adjustment form > button {
+  border-radius: .45rem;
+  justify-self: end;
+  margin-top: .65rem;
+}
+
+.point-adjustment button.danger {
+  background: #b3372f;
+  border-color: #b3372f;
+  color: white;
+}
+
+.point-adjustment button:disabled {
+  cursor: not-allowed;
+  opacity: .6;
+}
+
+.point-reason-meta,
+.point-confirmation {
+  color: var(--ink-2);
+  display: flex;
+  font-size: .75rem;
+  justify-content: space-between;
+}
+
+.point-field-error,
+.point-adjustment-error {
+  color: #b3372f;
+}
+
+.point-adjustment-notice,
+.point-adjustment-error {
+  margin: .8rem 0 0;
+  padding: .65rem .8rem;
+}
+
+.point-adjustment-notice {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.point-adjustment-error {
+  background: #fbeae8;
+}
+
+.point-confirmation {
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: .45rem;
+  flex-wrap: wrap;
+  gap: .6rem;
+  margin-top: .7rem;
+  padding: .8rem;
+}
+
+.point-confirmation p {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+@media (max-width: 42rem) {
+  .driver-detail-content {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .driver-summary,
+  .point-adjustment-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: .5rem;
+  }
+}
