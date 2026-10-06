@@ -24,6 +24,16 @@ Passwords are an exception: they are never trimmed or Unicode-normalized because
 | Password | Stored only as a Django password hash; submitted value is not transformed | At least 12 characters, 3 lowercase letters, 2 uppercase letters, 2 digits, and one of `!@#$%^&*()-_+.` | Must not contain the full username or email address; Django's configured password validators also run for account creation |
 | Password confirmation | Not stored | Must exactly match the password | Checked by both React and Django |
 | Account-creation consent | Boolean; not currently stored as an audit record | Must be `true` for public registration | Checked by both React and Django |
+| Email verification code | Trimmed; not stored (only a hash of the issued code is kept) | Optional; 6 digits, required only when an administrator has turned on email verification | Must match an unexpired, unused code issued to the submitted email address |
+
+### Email verification
+
+Administrators can require new driver and sponsor accounts to prove control of their email address (Users page → **Account creation**, stored in `accounts_registrationsettings`). It is off by default. When it is on, public registration takes two submissions to the same endpoint:
+
+1. The client submits the account details without `code`. Django runs every rule above, emails a 6-digit code to the canonical email address, and returns `202` with `verification_required: true`. No account is created and the password is not stored.
+2. The client submits the same details again with `code`. Django re-runs every rule (so a username or email taken in the meantime is still rejected), checks the code, and only then creates the account.
+
+Codes expire after 10 minutes, work once, and are invalidated after 5 wrong attempts. Issuing a new code invalidates the previous one, and a new code can be requested for an address at most once every 30 seconds (`429` otherwise). Email is sent through Django's configured `EMAIL_BACKEND`; the default console backend writes the code to the server log.
 
 ### Username compatibility decision
 

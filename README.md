@@ -28,7 +28,7 @@ This repository is maintained by **CPSC 4910 Team 11**.
 
 ### Authentication and account security
 
-- Driver and sponsor registration
+- Driver and sponsor registration, with optional emailed-code verification
 - Shared login flow with role-aware sessions
 - Session authentication with CSRF protection
 - Password changes and password validation
@@ -55,6 +55,7 @@ This repository is maintained by **CPSC 4910 Team 11**.
 - Sponsor assignment and reassignment
 - Account activation and deactivation
 - Audited administrator view-as sessions for driver and sponsor troubleshooting
+- Site-wide switch to require email verification for new accounts
 - Role-aware access controls and validation
 
 ### Program information and driver management
