@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
-import { getDriver, getPointHistory, updateDriver } from '../../../api';
+import { approveDriver, getDriver, getPointHistory } from '../../../api';
 import PageHeader from '../../../app/PageHeader';
 import StatePanel from '../../../components/feedback/StatePanel';
 import PointHistoryList from '../../points/components/PointHistoryList';
@@ -16,13 +16,17 @@ export default function DriverDetailPage() {
   const navigate = useNavigate();
   const [driver, setDriver] = useState(null);
   const [history, setHistory] = useState(null);
+  const [historyError, setHistoryError] = useState('');
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState(false);
 
-  const loadHistory = useCallback(() => (
-    getPointHistory({ driver: driverId }).then(setHistory).catch(() => setHistory([]))
-  ), [driverId]);
+  const loadHistory = useCallback(() => {
+    setHistoryError('');
+    return getPointHistory({ driver: driverId })
+      .then(setHistory)
+      .catch((requestError) => setHistoryError(requestError.message));
+  }, [driverId]);
 
   useEffect(() => {
     getDriver(driverId).then(setDriver).catch((requestError) => setError(requestError.message));
@@ -32,7 +36,7 @@ export default function DriverDetailPage() {
   const approve = async () => {
     setSaving(true);
     try {
-      const updated = await updateDriver(driverId, { status: 'approved' });
+      const updated = await approveDriver(driverId);
       setDriver(updated);
     } catch (requestError) {
       setError(requestError.message);
@@ -100,9 +104,16 @@ export default function DriverDetailPage() {
 
         <section className="driver-history" aria-labelledby="driver-history-heading">
           <h2 id="driver-history-heading">Point history</h2>
-          {history
-            ? <PointHistoryList entries={history} emptyText={`No point changes for ${driver.name} yet.`} />
-            : <p className="point-history-empty" role="status">Loading history…</p>}
+          {historyError ? (
+            <StatePanel tone="error" title="Point history couldn't be loaded">
+              <p>{historyError}</p>
+              <button className="drivers-button" type="button" onClick={loadHistory}>Try again</button>
+            </StatePanel>
+          ) : history ? (
+            <PointHistoryList entries={history} emptyText={`No point changes for ${driver.name} yet.`} />
+          ) : (
+            <p className="point-history-empty" role="status">Loading history…</p>
+          )}
         </section>
       </main>
 

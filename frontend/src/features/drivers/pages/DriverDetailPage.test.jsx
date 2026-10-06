@@ -65,6 +65,29 @@ test('does not offer adjustments until a pending driver is approved', async () =
   expect(screen.queryByRole('heading', { name: 'Adjust points' })).not.toBeInTheDocument();
 });
 
+test('approves a pending driver through the dedicated action', async () => {
+  api.getDriver.mockResolvedValue({ ...driver, status: 'pending', point_balance: 0 });
+  api.approveDriver.mockResolvedValue({ ...driver, status: 'approved', point_balance: 0 });
+  renderDetail();
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Approve Driver' }));
+
+  await waitFor(() => expect(api.approveDriver).toHaveBeenCalledWith('7'));
+  expect(await screen.findByRole('heading', { name: 'Adjust points' })).toBeInTheDocument();
+});
+
+test('shows point history failures and allows retrying', async () => {
+  api.getPointHistory.mockRejectedValueOnce(new Error('History service unavailable'));
+  renderDetail();
+
+  expect(await screen.findByText('History service unavailable')).toBeInTheDocument();
+  api.getPointHistory.mockResolvedValueOnce(history);
+  fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+
+  expect(await screen.findByText('Late log')).toBeInTheDocument();
+  expect(api.getPointHistory).toHaveBeenCalledTimes(2);
+});
+
 test('rejecting a pending driver requires a reason and returns to the list', async () => {
   api.getDriver.mockResolvedValue({ ...driver, status: 'pending', point_balance: 0 });
   api.removeDriver.mockResolvedValue({ id: 1, driver: 7, action: 'rejected', reason: 'Missing CDL' });

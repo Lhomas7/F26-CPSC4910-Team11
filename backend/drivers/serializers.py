@@ -12,6 +12,7 @@ class DriverSerializer(serializers.ModelSerializer):
     class Meta:
         model = Driver
         fields = ['id', 'user', 'name', 'sponsor', 'sponsor_name', 'status', 'point_balance']
+        read_only_fields = fields
 
     def get_point_balance(self, driver):
         annotated = getattr(driver, 'calculated_point_balance', None)

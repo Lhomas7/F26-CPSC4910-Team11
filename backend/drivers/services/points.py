@@ -108,6 +108,13 @@ def adjust_driver_points(*, driver, changed_by_user, point_change, reason):
             code='driver_outside_company',
         )
 
+    if locked_driver.status != 'approved':
+        raise PointAdjustmentError(
+            'driver',
+            'Points can only be adjusted for approved drivers.',
+            code='driver_not_approved',
+        )
+
     current_balance = locked_driver.point_balance
     resulting_balance = current_balance + point_change
     if resulting_balance < 0:

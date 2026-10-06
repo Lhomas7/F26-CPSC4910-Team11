@@ -209,6 +209,15 @@ class PointAdjustmentServiceTests(TestCase):
         )
         self.assert_adjustment_error('driver_not_found', driver=999_999)
 
+    def test_rejects_point_changes_for_pending_drivers(self):
+        self.driver.status = 'pending'
+        self.driver.save(update_fields=['status'])
+
+        error = self.assert_adjustment_error('driver_not_approved')
+
+        self.assertEqual(error.field, 'driver')
+        self.assertFalse(PointTransaction.objects.exists())
+
 
 class PointAdjustmentAPITests(APITestCase):
     @classmethod
@@ -455,7 +464,7 @@ class AdminDriverApiTests(RoleScopedDriverTestData):
         self.assertEqual(self.client.get(detail_url).status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(
             self.client.patch(detail_url, {'status': 'pending'}, format='json').status_code,
-            status.HTTP_404_NOT_FOUND,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 
     def test_driver_list_includes_sponsor_name(self):
@@ -464,6 +473,40 @@ class AdminDriverApiTests(RoleScopedDriverTestData):
         names = {row['name']: row['sponsor_name'] for row in self.client.get(reverse('driver-list')).data}
 
         self.assertEqual(names, {'Avery Approved': 'Scope Freight', 'Blake Pending': 'Scope Freight'})
+
+
+class DriverApiMutationTests(RoleScopedDriverTestData):
+    def test_generic_create_update_and_delete_routes_are_disabled(self):
+        self.client.force_authenticate(self.sponsor_user)
+        detail_url = reverse('driver-detail', kwargs={'pk': self.pending.pk})
+
+        responses = (
+            self.client.post(reverse('driver-list'), {'name': 'Injected Driver'}, format='json'),
+            self.client.patch(detail_url, {'status': 'approved'}, format='json'),
+            self.client.delete(detail_url),
+        )
+
+        self.assertTrue(all(response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED for response in responses))
+        self.pending.refresh_from_db()
+        self.assertEqual(self.pending.status, 'pending')
+
+    def test_sponsor_uses_the_explicit_approve_action(self):
+        self.client.force_authenticate(self.sponsor_user)
+
+        response = self.client.post(reverse('driver-approve', kwargs={'pk': self.pending.pk}))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.pending.refresh_from_db()
+        self.assertEqual(self.pending.status, 'approved')
+
+    def test_driver_cannot_approve_themselves(self):
+        self.client.force_authenticate(self.pending.user)
+
+        response = self.client.post(reverse('driver-approve', kwargs={'pk': self.pending.pk}))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.pending.refresh_from_db()
+        self.assertEqual(self.pending.status, 'pending')
 
 
 class DriverRemovalTests(RoleScopedDriverTestData):

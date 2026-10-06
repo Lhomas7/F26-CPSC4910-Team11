@@ -8,8 +8,8 @@ export function getDriver(driverId) {
   return request(`/sponsor/drivers/${driverId}/`).then(readJson);
 }
 
-export function updateDriver(driverId, data) {
-  return request(`/sponsor/drivers/${driverId}/`, { method: 'PATCH', body: data }).then(readJson);
+export function approveDriver(driverId) {
+  return request(`/sponsor/drivers/${driverId}/approve/`, { method: 'POST' }).then(readJson);
 }
 
 export function linkDriver(username) {

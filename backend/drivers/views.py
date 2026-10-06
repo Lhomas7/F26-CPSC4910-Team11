@@ -28,7 +28,13 @@ from .services import (
 MAX_POINT_HISTORY_LIMIT = 200
 
 
-class DriverViewSet(viewsets.ModelViewSet):
+class DriverViewSet(viewsets.ReadOnlyModelViewSet):
+    """Read driver records and expose narrowly scoped sponsor actions.
+
+    Driver creation, arbitrary updates, and deletion deliberately are not
+    router actions. Membership and point changes must use the audited domain
+    actions below instead.
+    """
     serializer_class = DriverSerializer
     permission_classes = [IsAuthenticated, MFAEnrolled]
 
@@ -86,6 +92,21 @@ class DriverViewSet(viewsets.ModelViewSet):
             'transaction': PointTransactionSerializer(result.transaction).data,
             'balance': result.balance,
         }, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        """Approve a pending driver belonging to the sponsor's company."""
+        if not hasattr(request.user, 'sponsor_account'):
+            return Response(
+                {'detail': 'Only sponsor accounts can approve drivers.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        driver = self.get_object()
+        if driver.status != 'approved':
+            driver.status = 'approved'
+            driver.save(update_fields=['status'])
+        return Response(self.get_serializer(driver).data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], url_path='remove')
     def remove(self, request, pk=None):
