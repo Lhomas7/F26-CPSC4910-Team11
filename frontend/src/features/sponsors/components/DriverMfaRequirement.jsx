@@ -38,17 +38,16 @@ export default function DriverMfaRequirement({ company }) {
   };
 
   return (
-    <form onSubmit={(event) => event.preventDefault()} className="mfa-required-toggle">
-      <label htmlFor="require-mfa">
+    <form onSubmit={(event) => event.preventDefault()} className="driver-settings-card mfa-required-toggle">
+      <div className="driver-settings-heading"><span aria-hidden="true">✓</span><div><h2>Driver security</h2><p>Set the sign-in requirement for your organization.</p></div></div>
+      <label className="driver-setting-switch" htmlFor="require-mfa">
+        <span><strong>Require driver MFA</strong><small>Drivers must configure two-factor authentication.</small></span>
         <input id="require-mfa" type="checkbox" checked={required === true} onChange={toggle} disabled={busy || required === null} />
-        Require drivers to enable MFA
       </label>
       <p className="mfa-required-hint">
-        {company ? `${company} drivers` : 'Your drivers'} must set up two-factor
-        authentication before they are considered enrolled. Changing this
-        requirement notifies every affected driver by notification and email.
+        Applies to {company || 'your organization'}. Changing this setting notifies affected drivers.
       </p>
-      {message && <p role={message.ok ? 'status' : 'alert'}>{message.text}</p>}
+      {message && <p className={`driver-settings-message ${message.ok ? 'success' : 'error'}`} role={message.ok ? 'status' : 'alert'}>{message.text}</p>}
     </form>
   );
 }

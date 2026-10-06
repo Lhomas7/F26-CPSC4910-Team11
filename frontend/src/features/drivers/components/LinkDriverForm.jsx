@@ -24,11 +24,12 @@ export default function LinkDriverForm({ onLinked }) {
   };
 
   return (
-    <form onSubmit={submit}>
-      <label htmlFor="link-username">Link a driver by username</label>
-      <input id="link-username" value={username} onChange={(event) => setUsername(event.target.value)} autoCapitalize="none" spellCheck="false" />
-      <button type="submit" disabled={busy || !username.trim()}>{busy ? 'Linking…' : 'Link Driver'}</button>
-      {message && <p role={message.ok ? 'status' : 'alert'}>{message.text}</p>}
+    <form className="driver-settings-card link-driver-form" onSubmit={submit}>
+      <div className="driver-settings-heading"><span aria-hidden="true">+</span><div><h2>Link a driver</h2><p>Add an existing driver account to your organization.</p></div></div>
+      <label htmlFor="link-username">Driver username</label>
+      <input id="link-username" value={username} onChange={(event) => setUsername(event.target.value)} placeholder="e.g. jamie.rivera" autoComplete="username" autoCapitalize="none" spellCheck="false" />
+      <button className="drivers-button primary" type="submit" disabled={busy || !username.trim()}>{busy ? 'Linking…' : 'Link driver'}</button>
+      {message && <p className={`driver-settings-message ${message.ok ? 'success' : 'error'}`} role={message.ok ? 'status' : 'alert'}>{message.text}</p>}
     </form>
   );
 }
