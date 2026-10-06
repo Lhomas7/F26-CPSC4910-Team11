@@ -12,6 +12,7 @@ from ..input_cleaning import (
     UsernameField,
     validate_password_policy,
 )
+from ..models import AccountProfile
 from ..services import get_account_type, get_mfa_status
 
 
@@ -52,6 +53,7 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 class SelfProfileSerializer(serializers.ModelSerializer):
     # Profile data spans Django's User model and the role-specific related model.
     username = UsernameField()
+    email = NormalizedEmailField(max_length=254)
     name = HumanTextField(max_length=200)
     account_type = serializers.SerializerMethodField()
     company = serializers.SerializerMethodField()
@@ -73,6 +75,7 @@ class SelfProfileSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'username',
+            'email',
             'name',
             'account_type',
             'company',
@@ -98,9 +101,11 @@ class SelfProfileSerializer(serializers.ModelSerializer):
         return None
 
     def get_avatar_url(self, user):
-        if not hasattr(user, 'driver_profile'):
-            return None
-        picture = user.driver_profile.profile_picture
+        if hasattr(user, 'driver_profile'):
+            picture = user.driver_profile.profile_picture
+        else:
+            account_profile = getattr(user, 'account_profile', None)
+            picture = account_profile.profile_picture if account_profile else None
         if not picture:
             return None
         request = self.context.get('request')
@@ -115,18 +120,21 @@ class SelfProfileSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
-        changing_picture = (
-            'profile_picture' in attrs or attrs.get('remove_profile_picture', False)
-        )
-        if changing_picture and not hasattr(self.instance, 'driver_profile'):
-            raise serializers.ValidationError({
-                'profile_picture': 'Profile pictures are currently available to drivers only.'
-            })
         if attrs.get('profile_picture') and attrs.get('remove_profile_picture'):
             raise serializers.ValidationError({
                 'profile_picture': 'Choose a new picture or remove the current one, not both.'
             })
         return attrs
+
+    def validate_email(self, value):
+        duplicate = get_user_model().objects.filter(email__iexact=value)
+        if self.instance is not None:
+            duplicate = duplicate.exclude(pk=self.instance.pk)
+        if duplicate.exists():
+            raise serializers.ValidationError(
+                'A user with this email address already exists.'
+            )
+        return value
 
     def validate_username(self, value):
         value = value.strip()
@@ -159,6 +167,7 @@ class SelfProfileSerializer(serializers.ModelSerializer):
         return {
             'id': user.id,
             'username': user.get_username(),
+            'email': user.email,
             'name': name,
             'account_type': self.get_account_type(user),
             'company': self.get_company(user),
@@ -173,6 +182,7 @@ class SelfProfileSerializer(serializers.ModelSerializer):
         picture = validated_data.pop('profile_picture', None)
         remove_picture = validated_data.pop('remove_profile_picture', False)
         user.username = validated_data.get('username', user.username)
+        user.email = validated_data.get('email', user.email)
 
         if hasattr(user, 'driver_profile'):
             driver = user.driver_profile
@@ -199,10 +209,23 @@ class SelfProfileSerializer(serializers.ModelSerializer):
                 transaction.on_commit(
                     lambda storage=old_storage, name=old_picture_name: storage.delete(name)
                 )
-        elif name is not None:
-            # Non-driver display names are stored on Django's User record.
-            user.first_name = name
-            user.last_name = ''
+        else:
+            if name is not None:
+                # Non-driver display names are stored on Django's User record.
+                user.first_name = name
+                user.last_name = ''
+
+            if picture is not None or remove_picture:
+                account_profile, _created = AccountProfile.objects.get_or_create(user=user)
+                old_picture = account_profile.profile_picture
+                old_picture_name = old_picture.name if old_picture else None
+                old_storage = old_picture.storage if old_picture else None
+                account_profile.profile_picture = None if remove_picture else picture
+                account_profile.save(update_fields=['profile_picture'])
+                if old_picture_name:
+                    transaction.on_commit(
+                        lambda storage=old_storage, name=old_picture_name: storage.delete(name)
+                    )
 
         user.save()
         return user

@@ -175,7 +175,7 @@ class AdminRegistrationSettingsView(APIView):
 
 
 class AdminAccountDetailView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, MFAEnrolled]
 
     def get_object(self, request, user_id):
         # Self-service profile editing has its own endpoint. Keeping this route

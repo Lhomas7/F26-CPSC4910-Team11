@@ -17,6 +17,7 @@ export function updateProfile(data) {
     const body = new FormData();
     body.append('name', data.name);
     body.append('username', data.username);
+    body.append('email', data.email);
     if (data.profile_picture) body.append('profile_picture', data.profile_picture);
     if (data.remove_profile_picture) body.append('remove_profile_picture', 'true');
     return request('/profile/', { method: 'PATCH', body }).then(readJson);

@@ -6,6 +6,7 @@ import PageHeader from '../../app/PageHeader';
 import Avatar from '../../components/primitives/Avatar';
 import Skeleton from '../../components/feedback/Skeleton';
 import StatePanel from '../../components/feedback/StatePanel';
+import { validateEmail } from '../../utils/accountValidation';
 import LoginActivityPanel from './LoginActivityPanel';
 import MfaPanel from './MfaPanel';
 import PasswordPanel from './PasswordPanel';
@@ -37,7 +38,7 @@ export default function AccountPage() {
   const [profile, setProfile] = useState(null);
   const [status, setStatus] = useState('loading');
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ name: '', username: '' });
+  const [form, setForm] = useState({ name: '', username: '', email: '' });
   const [pendingPicture, setPendingPicture] = useState(null);
   const [removePicture, setRemovePicture] = useState(false);
   const [picturePreview, setPicturePreview] = useState('');
@@ -49,7 +50,7 @@ export default function AccountPage() {
     try {
       const data = await api.getProfile();
       setProfile(data);
-      setForm({ name: data.name, username: data.username });
+      setForm({ name: data.name, username: data.username, email: data.email });
       setStatus('ready');
     } catch {
       setStatus('error');
@@ -88,7 +89,7 @@ export default function AccountPage() {
   }, [pendingPicture]);
 
   const beginEditing = () => {
-    setForm({ name: profile.name, username: profile.username });
+    setForm({ name: profile.name, username: profile.username, email: profile.email });
     setFormError('');
     setNotice('');
     setPendingPicture(null);
@@ -97,7 +98,7 @@ export default function AccountPage() {
   };
 
   const cancelEditing = () => {
-    setForm({ name: profile.name, username: profile.username });
+    setForm({ name: profile.name, username: profile.username, email: profile.email });
     setFormError('');
     setPendingPicture(null);
     setRemovePicture(false);
@@ -133,17 +134,22 @@ export default function AccountPage() {
       setFormError('Username must be 3 to 30 characters using letters, numbers, periods, dashes, or underscores.');
       return;
     }
+    const emailError = validateEmail(form.email);
+    if (emailError) {
+      setFormError(emailError);
+      return;
+    }
 
     setStatus('saving');
     setFormError('');
     setNotice('');
     try {
-      const changes = { name, username };
+      const changes = { name, username, email: form.email.trim() };
       if (pendingPicture) changes.profile_picture = pendingPicture;
       if (removePicture) changes.remove_profile_picture = true;
       const updated = await api.updateProfile(changes);
       setProfile(updated);
-      setForm({ name: updated.name, username: updated.username });
+      setForm({ name: updated.name, username: updated.username, email: updated.email });
       updateUser(updated);
       setPendingPicture(null);
       setRemovePicture(false);
@@ -151,7 +157,7 @@ export default function AccountPage() {
       setNotice('Profile saved. Your changes are live.');
       setStatus('ready');
     } catch (error) {
-      setFormError(error.data?.username?.[0] || error.data?.name?.[0]
+      setFormError(error.data?.username?.[0] || error.data?.email?.[0] || error.data?.name?.[0]
         || error.message || 'Your changes could not be saved.');
       setStatus('ready');
     }
@@ -190,6 +196,7 @@ export default function AccountPage() {
                   <dl className="profile-details">
                     <div><dt>Display name</dt><dd>{profile.name}</dd></div>
                     <div><dt>Username</dt><dd>@{profile.username}</dd></div>
+                    <div><dt>Email</dt><dd>{profile.email}</dd></div>
                     <div><dt>Account type</dt><dd>{roleLabel}</dd></div>
                     <div><dt>Sponsor organization</dt><dd>{profile.account_type === 'admin' ? <i>{companyValue}</i> : (profile.company || <i>{companyValue}</i>)}</dd></div>
                   </dl>
@@ -199,16 +206,14 @@ export default function AccountPage() {
                   <div className="profile-layout">
                     <div className="profile-picture-editor">
                       <Avatar className="account-avatar" name={form.name || profile.name} src={displayedPicture} label={`Profile picture for ${form.name || profile.name}`} />
-                      {profile.account_type === 'driver' && (
-                        <div className="profile-picture-actions">
+                      <div className="profile-picture-actions">
                           <label className="account-button" htmlFor="profile-picture">Choose picture</label>
                           <input id="profile-picture" className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" onChange={choosePicture} disabled={status === 'saving'} />
                           {(displayedPicture || pendingPicture) && (
                             <button className="account-link-button" type="button" onClick={() => { setPendingPicture(null); setRemovePicture(Boolean(profile.avatar_url)); setFormError(''); }} disabled={status === 'saving'}>Remove picture</button>
                           )}
                           <small>JPG, PNG, or WebP. Maximum 2 MB.</small>
-                        </div>
-                      )}
+                      </div>
                     </div>
                     <div className="profile-form">
                       <p className="profile-section-label">You can change</p>
@@ -218,6 +223,9 @@ export default function AccountPage() {
                       <label htmlFor="profile-username">Username</label>
                       <div className="username-input"><span aria-hidden="true">@</span><input id="profile-username" value={form.username} onChange={(event) => setForm({ ...form, username: event.target.value })} maxLength="30" autoComplete="username" autoCapitalize="none" spellCheck="false" disabled={status === 'saving'} /></div>
                       <small>3 to 30 letters, numbers, periods, dashes, or underscores.</small>
+                      <label htmlFor="profile-email">Email</label>
+                      <input id="profile-email" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} maxLength="254" autoComplete="email" autoCapitalize="none" spellCheck="false" disabled={status === 'saving'} />
+                      <small>Used for account notices and password recovery.</small>
                       <p className="profile-section-label">Only an admin can change</p>
                       <div className="locked-fields">
                         <div><span>Account type</span><strong>{roleLabel}</strong></div>

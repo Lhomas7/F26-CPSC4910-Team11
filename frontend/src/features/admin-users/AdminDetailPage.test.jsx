@@ -61,6 +61,34 @@ test('shows server validation errors and remains in edit mode', async () => {
   expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
 });
 
+test('validates administrator fields before sending an update', async () => {
+  renderPage();
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit account' }));
+  fireEvent.change(screen.getByLabelText('First name'), { target: { value: '1234' } });
+  fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'root' } });
+  fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'not-an-email' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+  expect(screen.getByText(/first name contains unsupported/i)).toBeInTheDocument();
+  expect(screen.getByText('Choose a different username.')).toBeInTheDocument();
+  expect(screen.getByText(/enter a valid email address/i)).toBeInTheDocument();
+  expect(api.updateAdminAccount).not.toHaveBeenCalled();
+});
+
+test('cancel restores the saved administrator values and clears errors', async () => {
+  renderPage();
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit account' }));
+  fireEvent.change(screen.getByLabelText('First name'), { target: { value: '' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+  expect(screen.getByText('Enter your first name.')).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+  expect(screen.queryByText('Enter your first name.')).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Edit account' }));
+  expect(screen.getByLabelText('First name')).toHaveValue('Dana');
+});
+
 test('blocks non-admin users without loading account data', () => {
   useAuth.mockReturnValue({ user: { id: 2, account_type: 'driver' } });
   renderPage();

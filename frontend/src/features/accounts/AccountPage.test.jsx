@@ -7,7 +7,7 @@ import AccountPage from './AccountPage';
 jest.mock('../../auth/AuthContext');
 jest.mock('../../api');
 
-const profile = { id: 7, username: 'driver.one', name: 'Driver One', account_type: 'driver', company: 'Palmetto Freight', avatar_url: null };
+const profile = { id: 7, username: 'driver.one', email: 'driver@example.com', name: 'Driver One', account_type: 'driver', company: 'Palmetto Freight', avatar_url: null };
 
 beforeEach(() => {
   useAuth.mockReturnValue({ updateUser: jest.fn() });
@@ -39,7 +39,7 @@ test('edits and saves profile fields while keeping locked fields read-only', asy
   fireEvent.click(await screen.findByRole('button', { name: 'Edit profile' }));
   fireEvent.change(screen.getByLabelText('Display name'), { target: { value: 'Updated Driver' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
-  await waitFor(() => expect(api.updateProfile).toHaveBeenCalledWith({ name: 'Updated Driver', username: 'driver.one' }));
+  await waitFor(() => expect(api.updateProfile).toHaveBeenCalledWith({ name: 'Updated Driver', username: 'driver.one', email: 'driver@example.com' }));
   expect(await screen.findByText(/Profile saved/)).toBeInTheDocument();
   expect(updateUser).toHaveBeenCalledWith({ ...profile, name: 'Updated Driver' });
   expect(screen.queryByLabelText('Display name')).not.toBeInTheDocument();
@@ -92,6 +92,7 @@ test('selects and uploads a valid driver profile picture', async () => {
   await waitFor(() => expect(api.updateProfile).toHaveBeenCalledWith({
     name: 'Driver One',
     username: 'driver.one',
+    email: 'driver@example.com',
     profile_picture: picture,
   }));
 });
@@ -109,6 +110,7 @@ test('reuses the profile page for an administrator account', async () => {
   const adminProfile = {
     id: 1,
     username: 'team11.admin',
+    email: 'admin@example.com',
     name: 'Team Administrator',
     account_type: 'admin',
     company: null,
@@ -122,7 +124,27 @@ test('reuses the profile page for an administrator account', async () => {
   expect(screen.getByText('Not applicable')).toBeInTheDocument();
 
   fireEvent.click(screen.getByRole('button', { name: 'Edit profile' }));
-  expect(screen.queryByLabelText('Choose picture')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Choose picture')).toBeInTheDocument();
+  expect(screen.getByLabelText('Email')).toHaveValue('admin@example.com');
+});
+
+test('uploads a profile picture for an administrator', async () => {
+  const adminProfile = { ...profile, id: 1, username: 'team11.admin', email: 'admin@example.com', name: 'Team Administrator', account_type: 'admin', company: null };
+  const picture = new File(['picture'], 'admin.png', { type: 'image/png' });
+  api.getProfile.mockResolvedValue(adminProfile);
+  api.updateProfile.mockResolvedValue({ ...adminProfile, avatar_url: 'http://localhost:8000/media/admin.png' });
+  render(<AccountPage />);
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit profile' }));
+  fireEvent.change(screen.getByLabelText('Choose picture'), { target: { files: [picture] } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+  await waitFor(() => expect(api.updateProfile).toHaveBeenCalledWith({
+    name: 'Team Administrator',
+    username: 'team11.admin',
+    email: 'admin@example.com',
+    profile_picture: picture,
+  }));
 });
 
 test.each(['sponsor', 'admin'])('shows recent sign-in activity to %s accounts', async (accountType) => {

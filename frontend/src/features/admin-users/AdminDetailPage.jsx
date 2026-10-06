@@ -109,7 +109,7 @@ export default function AdminDetailPage() {
         <section className="sponsor-detail-card">
           <div className="sponsor-detail-card-head">
             <div className="sponsor-detail-person"><Avatar className="sponsor-detail-avatar" name={name} /><div><h2>{name}</h2><p>@{account.username} <span>Admin</span> · {account.is_active ? 'Active' : 'Inactive'}</p></div></div>
-            {!editing && <button type="button" onClick={() => { setNotice(''); setEditing(true); }}>Edit account</button>}
+            {!editing && <div className="sponsor-detail-header-actions"><button type="button" onClick={() => { setNotice(''); setErrors({}); setEditing(true); }}>Edit account</button></div>}
           </div>
           {notice && <p className="sponsor-detail-notice" role="status">{notice}</p>}
           {!editing ? (
@@ -122,10 +122,10 @@ export default function AdminDetailPage() {
             <form onSubmit={save} noValidate>
               {errors.detail && <p className="sponsor-detail-error" role="alert">{errors.detail}</p>}
               <div className="sponsor-detail-form">
-                <label>First name<input value={form.first_name} onChange={(event) => update('first_name', event.target.value)} />{errors.first_name && <small>{errors.first_name}</small>}</label>
-                <label>Last name<input value={form.last_name} onChange={(event) => update('last_name', event.target.value)} />{errors.last_name && <small>{errors.last_name}</small>}</label>
-                <label>Username<input value={form.username} onChange={(event) => update('username', event.target.value)} />{errors.username && <small>{errors.username}</small>}</label>
-                <label>Email<input type="email" value={form.email} onChange={(event) => update('email', event.target.value)} />{errors.email && <small>{errors.email}</small>}</label>
+                <label>First name<input value={form.first_name} onChange={(event) => update('first_name', event.target.value)} maxLength="50" autoComplete="given-name" />{errors.first_name && <small>{errors.first_name}</small>}</label>
+                <label>Last name<input value={form.last_name} onChange={(event) => update('last_name', event.target.value)} maxLength="50" autoComplete="family-name" />{errors.last_name && <small>{errors.last_name}</small>}</label>
+                <label>Username<input value={form.username} onChange={(event) => update('username', event.target.value)} maxLength="30" autoComplete="username" autoCapitalize="none" spellCheck="false" />{errors.username && <small>{errors.username}</small>}</label>
+                <label>Email<input type="email" value={form.email} onChange={(event) => update('email', event.target.value)} maxLength="254" autoComplete="email" autoCapitalize="none" spellCheck="false" />{errors.email && <small>{errors.email}</small>}</label>
                 <label>Account status<select value={String(form.is_active)} onChange={(event) => update('is_active', event.target.value === 'true')}><option value="true">Active</option><option value="false">Inactive</option></select><small>An inactive account cannot sign in.</small></label>
                 <div className="sponsor-detail-locked"><span>Account type</span><strong>Administrator</strong><small>Role and administrative privileges cannot be changed here.</small></div>
               </div>

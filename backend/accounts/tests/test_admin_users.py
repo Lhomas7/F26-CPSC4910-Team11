@@ -261,6 +261,7 @@ class AdminAccountDetailTests(APITestCase):
             password='ExamplePassword123!',
             email='manager@example.com',
         )
+        enroll_totp(cls.admin)
         cls.other_admin = get_user_model().objects.create_superuser(
             username='other.admin',
             password='ExamplePassword123!',
@@ -321,6 +322,18 @@ class AdminAccountDetailTests(APITestCase):
         self.admin.refresh_from_db()
         self.assertTrue(self.admin.is_active)
 
+    def test_admin_must_enroll_mfa_before_reviewing_another_admin(self):
+        unenrolled_admin = get_user_model().objects.create_superuser(
+            username='unenrolled.admin',
+            password='ExamplePassword123!',
+            email='unenrolled@example.com',
+        )
+        self.client.force_authenticate(unenrolled_admin)
+
+        response = self.client.get(self.detail_url())
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_non_admin_cannot_review_or_update_admin(self):
         self.client.force_authenticate(self.driver_user)
 
@@ -347,6 +360,20 @@ class AdminAccountDetailTests(APITestCase):
         }, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('username', response.data)
+        self.assertIn('email', response.data)
+
+    def test_rejects_invalid_admin_identity_fields(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.patch(self.detail_url(), {
+            'first_name': '1234',
+            'username': 'root',
+            'email': 'not-an-email',
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('first_name', response.data)
         self.assertIn('username', response.data)
         self.assertIn('email', response.data)
 

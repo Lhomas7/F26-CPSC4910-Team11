@@ -107,6 +107,7 @@ class SelfProfileTests(APITestCase):
             {
                 'id': self.user.id,
                 'username': 'driver.one',
+                'email': '',
                 'name': 'Driver One',
                 'account_type': 'driver',
                 'company': 'Palmetto Freight',
@@ -297,6 +298,15 @@ class AdminSelfProfileTests(APITestCase):
             last_name='Administrator',
         )
 
+    def setUp(self):
+        self.media_directory = TemporaryDirectory()
+        self.media_override = override_settings(MEDIA_ROOT=self.media_directory.name)
+        self.media_override.enable()
+
+    def tearDown(self):
+        self.media_override.disable()
+        self.media_directory.cleanup()
+
     def test_admin_can_log_in_and_is_returned_as_an_admin(self):
         response = self.client.post(
             self.login_url,
@@ -321,6 +331,7 @@ class AdminSelfProfileTests(APITestCase):
         self.assertEqual(get_response.data, {
             'id': self.admin.id,
             'username': 'team11.admin',
+            'email': 'admin@example.com',
             'name': 'Team Administrator',
             'account_type': 'admin',
             'company': None,
@@ -347,7 +358,7 @@ class AdminSelfProfileTests(APITestCase):
         self.assertEqual(self.admin.get_full_name(), 'Program Administrator')
         self.assertEqual(patch_response.data['account_type'], 'admin')
 
-    def test_admin_cannot_add_a_driver_profile_picture(self):
+    def test_admin_can_update_email_and_profile_picture(self):
         self.client.force_authenticate(self.admin)
         image_bytes = BytesIO()
         Image.new('RGB', (40, 40), color='#3fae86').save(image_bytes, format='PNG')
@@ -359,10 +370,28 @@ class AdminSelfProfileTests(APITestCase):
 
         response = self.client.patch(
             self.profile_url,
-            {'profile_picture': picture},
+            {'email': 'program.admin@example.com', 'profile_picture': picture},
             format='multipart',
         )
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('profile_picture', response.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.admin.refresh_from_db()
+        self.assertEqual(self.admin.email, 'program.admin@example.com')
+        self.assertIn('/media/account_profiles/', response.data['avatar_url'])
+        self.assertTrue(self.admin.account_profile.profile_picture)
 
+    def test_admin_cannot_change_email_to_an_existing_address(self):
+        get_user_model().objects.create_user(
+            username='existing.user',
+            email='existing@example.com',
+        )
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.patch(
+            self.profile_url,
+            {'email': 'EXISTING@EXAMPLE.COM'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('email', response.data)
