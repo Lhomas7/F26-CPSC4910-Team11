@@ -19,6 +19,9 @@ class RegistrationSerializer(serializers.Serializer):
     first_name = NameField()
     last_name = NameField()
     email = NormalizedEmailField(max_length=254)
+    # Email verification code, sent on the second submission when an admin
+    # requires email verification for new accounts.
+    code = serializers.CharField(required=False, allow_blank=True, write_only=True, max_length=12)
 
     def validate_username(self, value):
         value = value.strip()

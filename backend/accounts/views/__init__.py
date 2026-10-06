@@ -18,6 +18,7 @@ from .authentication import (
     PasswordResetConfirmView,
     PasswordResetRequestView,
 )
+from .login_attempts import LoginAttemptsView
 from .mfa import (
     MFABackupCodesRegenerateView,
     MFADisableView,
@@ -42,6 +43,7 @@ __all__ = [
     'CSRFView',
     'ChangePasswordView',
     'DriverRegistrationView',
+    'LoginAttemptsView',
     'LoginMFARequestCodeView',
     'LoginMFAView',
     'LoginView',

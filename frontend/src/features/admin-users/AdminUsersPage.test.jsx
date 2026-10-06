@@ -25,6 +25,7 @@ const users = [
 beforeEach(() => {
   useAuth.mockReturnValue({ user: { account_type: 'admin' } });
   api.getAdminUsers.mockResolvedValue(users);
+  api.getRegistrationSettings.mockResolvedValue({ email_verification_required: false });
 });
 
 afterEach(() => jest.clearAllMocks());

@@ -15,7 +15,7 @@ from ..input_cleaning import (
     UsernameField,
     validate_password_policy,
 )
-from ..models import SponsorAccount, SponsorCompany
+from ..models import RegistrationSettings, SponsorAccount, SponsorCompany
 from ..services import get_account_type
 
 
@@ -58,6 +58,13 @@ class SponsorCompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = SponsorCompany
         fields = ('id', 'name')
+
+
+class RegistrationSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RegistrationSettings
+        fields = ('email_verification_required', 'updated_at')
+        read_only_fields = ('updated_at',)
 
 
 class AdminAccountDetailSerializer(serializers.ModelSerializer):

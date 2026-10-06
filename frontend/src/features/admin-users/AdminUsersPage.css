@@ -410,3 +410,51 @@
     content: none;
   }
 }
+
+.users-settings-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .65rem;
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.25rem;
+}
+
+.users-settings-card h2 {
+  font-size: 1rem;
+  margin: 0 0 .6rem;
+}
+
+.users-settings-toggle {
+  align-items: center;
+  color: var(--ink);
+  display: flex;
+  font-weight: 600;
+  gap: .6rem;
+}
+
+.users-settings-toggle input {
+  accent-color: var(--accent);
+  height: 1.05rem;
+  width: 1.05rem;
+}
+
+.users-settings-hint,
+.users-settings-message {
+  color: var(--ink-2);
+  font-size: .9rem;
+  margin: .45rem 0 0;
+}
+
+.users-settings-message {
+  color: var(--accent);
+}
+
+.users-settings-message.error {
+  color: #9e2f29;
+}
+
+@media (prefers-color-scheme: dark) {
+  .users-settings-message.error {
+    color: #e5766e;
+  }
+}

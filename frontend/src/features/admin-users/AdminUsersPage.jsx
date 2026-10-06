@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 
 import { useAuth } from '../../auth/AuthContext';
 import * as api from '../../api';
+import RegistrationSettingsPanel from './RegistrationSettingsPanel';
 import './AdminUsersPage.css';
 
 const ROLE_LABELS = { driver: 'Driver', sponsor: 'Sponsor', admin: 'Admin' };
@@ -92,6 +93,7 @@ export default function AdminUsersPage() {
         <p className="sr-only" role="status" aria-live="polite">
           {status === 'loading' ? 'Loading users' : `${visibleUsers.length} users shown`}
         </p>
+        <RegistrationSettingsPanel />
         {status === 'loading' && <DirectorySkeleton />}
         {status === 'error' && (
           <section className="users-state error" role="alert">

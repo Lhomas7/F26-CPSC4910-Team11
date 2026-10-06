@@ -1,6 +1,6 @@
 from rest_framework.permissions import BasePermission
 
-from .services import get_mfa_status
+from .services import get_account_type, get_mfa_status
 
 
 class MFAEnrolled(BasePermission):
@@ -19,3 +19,15 @@ class MFAEnrolled(BasePermission):
             return False
         status = get_mfa_status(user)
         return (not status['required']) or status['enrolled']
+
+
+class SponsorOrAdmin(BasePermission):
+    """Limits an endpoint to sponsor and admin accounts."""
+
+    message = 'Only sponsor and admin accounts can do this.'
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        return get_account_type(user) in ('sponsor', 'admin')

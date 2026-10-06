@@ -30,12 +30,14 @@ from ..models import (
     MFABackupCode,
     MFACode,
     MFASettings,
+    RegistrationEmailCode,
+    RegistrationSettings,
     SponsorAccount,
     SponsorCompany,
 )
 from ..middleware import IMPERSONATION_STARTED_KEY
 from ..services.crypto import decrypt_secret, encrypt_secret
-from ..services.mfa import backup_codes_remaining, create_mfa_code
+from ..services.mfa import MAX_ATTEMPTS, backup_codes_remaining, create_mfa_code
 
 class RegistrationTests(APITestCase):
     driver_url = reverse('accounts:driver-register')
@@ -249,3 +251,160 @@ class RegistrationTests(APITestCase):
             'Password must contain at least three lowercase letters.',
         )
 
+
+
+class RegistrationEmailVerificationTests(APITestCase):
+    driver_url = reverse('accounts:driver-register')
+    sponsor_url = reverse('accounts:sponsor-register')
+
+    def setUp(self):
+        cache.clear()
+        mail.outbox = []
+        settings_row = RegistrationSettings.load()
+        settings_row.email_verification_required = True
+        settings_row.save()
+
+    def registration_data(self, **overrides):
+        data = {
+            'first_name': 'Jamie',
+            'last_name': 'Rivera',
+            'email': 'jamie@example.com',
+            'username': 'jamie.rivera',
+            'password': 'ExamplePassword123!',
+            'password_confirm': 'ExamplePassword123!',
+            'accepted_terms': True,
+        }
+        data.update(overrides)
+        return data
+
+    def sent_code(self):
+        self.assertEqual(len(mail.outbox), 1)
+        return re.search(r'\b(\d{6})\b', mail.outbox[-1].body).group(1)
+
+    def request_code(self, url=None, **overrides):
+        response = self.client.post(url or self.driver_url, self.registration_data(**overrides), format='json')
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        return self.sent_code()
+
+    def test_verification_off_creates_account_immediately(self):
+        RegistrationSettings.objects.update(email_verification_required=False)
+
+        response = self.client.post(self.driver_url, self.registration_data(), format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_first_submission_emails_code_without_creating_account(self):
+        response = self.client.post(self.driver_url, self.registration_data(), format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        self.assertTrue(response.data['verification_required'])
+        self.assertEqual(response.data['email'], 'jamie@example.com')
+        self.assertEqual(mail.outbox[0].to, ['jamie@example.com'])
+        self.assertNotIn(self.sent_code(), str(response.data))
+        self.assertFalse(get_user_model().objects.filter(username='jamie.rivera').exists())
+
+    def test_invalid_details_are_rejected_before_a_code_is_sent(self):
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(password_confirm='Mismatch123!'),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_correct_code_creates_driver_account(self):
+        code = self.request_code()
+
+        response = self.client.post(self.driver_url, self.registration_data(code=code), format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = get_user_model().objects.get(username='jamie.rivera')
+        self.assertEqual(user.email, 'jamie@example.com')
+        self.assertTrue(hasattr(user, 'driver_profile'))
+
+    def test_code_cannot_be_reused(self):
+        code = self.request_code()
+        self.client.post(self.driver_url, self.registration_data(code=code), format='json')
+
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(code=code, username='jamie.two', email='jamie@example.com'),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(get_user_model().objects.count(), 1)
+
+    def test_wrong_code_is_rejected(self):
+        code = self.request_code()
+        wrong = '000000' if code != '000000' else '111111'
+
+        response = self.client.post(self.driver_url, self.registration_data(code=wrong), format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('code', response.data)
+        self.assertFalse(get_user_model().objects.exists())
+
+    def test_code_locks_after_too_many_wrong_attempts(self):
+        code = self.request_code()
+        wrong = '000000' if code != '000000' else '111111'
+        for _ in range(MAX_ATTEMPTS):
+            self.client.post(self.driver_url, self.registration_data(code=wrong), format='json')
+
+        response = self.client.post(self.driver_url, self.registration_data(code=code), format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(get_user_model().objects.exists())
+
+    def test_expired_code_is_rejected(self):
+        code = self.request_code()
+        RegistrationEmailCode.objects.update(expires_at=timezone.now() - timedelta(seconds=1))
+
+        response = self.client.post(self.driver_url, self.registration_data(code=code), format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_code_only_verifies_the_email_it_was_sent_to(self):
+        code = self.request_code()
+
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(code=code, email='someone.else@example.com'),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(get_user_model().objects.exists())
+
+    def test_resend_within_cooldown_is_throttled(self):
+        self.request_code()
+
+        response = self.client.post(self.driver_url, self.registration_data(), format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_resend_after_cooldown_replaces_previous_code(self):
+        first = self.request_code()
+        cache.clear()
+        mail.outbox = []
+        second = self.request_code()
+
+        if first != second:
+            response = self.client.post(self.driver_url, self.registration_data(code=first), format='json')
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        response = self.client.post(self.driver_url, self.registration_data(code=second), format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_verified_sponsor_is_created_and_signed_in(self):
+        sponsor = {'username': 'sponsor.user', 'email': 'sponsor@example.com', 'company_name': 'Palmetto Freight'}
+        code = self.request_code(self.sponsor_url, **sponsor)
+
+        response = self.client.post(self.sponsor_url, self.registration_data(code=code, **sponsor), format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(SponsorAccount.objects.filter(user__username='sponsor.user').exists())
+        me = self.client.get(reverse('accounts:me'))
+        self.assertEqual(me.data['authenticated'], True)

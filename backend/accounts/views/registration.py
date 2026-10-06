@@ -1,5 +1,8 @@
+import hashlib
+
 from django.contrib.auth import get_user_model, login
 from django.contrib.auth.password_validation import validate_password
+from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from rest_framework import status
@@ -9,14 +12,62 @@ from rest_framework.views import APIView
 
 from drivers.models import Driver
 
-from ..models import SponsorAccount, SponsorCompany
+from ..models import RegistrationSettings, SponsorAccount, SponsorCompany
 from ..serializers import DriverRegistrationSerializer, SponsorRegistrationSerializer
 from ..services import get_public_user, normalize_company_name
+from ..services.delivery import send_code_to_address
+from ..services.registration_verification import (
+    create_registration_code,
+    verify_registration_code,
+)
+from ..sensitive import hide_sensitive_data
+
+REGISTRATION_CODE_RESEND_SECONDS = 30
+INVALID_REGISTRATION_CODE_MESSAGE = 'Invalid or expired verification code.'
+
 
 class AnonymousAPIView(APIView):
     authentication_classes = ()
     permission_classes = ()
 
+
+def check_email_verification(data):
+    """Gate account creation on proof of email control when an admin requires it.
+
+    Returns a Response to send instead of creating the account, or None when the
+    account may be created. The first submission (no code) emails a code and
+    returns 202; the client then resubmits the same details with that code.
+    """
+    if not RegistrationSettings.load().email_verification_required:
+        return None
+
+    email = data['email']
+    code = data.get('code')
+    if code:
+        if not verify_registration_code(email, code):
+            raise DRFValidationError({'code': [INVALID_REGISTRATION_CODE_MESSAGE]})
+        return None
+
+    # One code per address per window stops the endpoint being used to spam a
+    # mailbox, matching the password reset cooldown.
+    digest = hashlib.sha256(email.casefold().encode()).hexdigest()
+    if not cache.add(f'registration_code:{digest}', '1', REGISTRATION_CODE_RESEND_SECONDS):
+        return Response(
+            {'detail': 'Please wait before requesting a new code.'},
+            status=status.HTTP_429_TOO_MANY_REQUESTS,
+        )
+
+    send_code_to_address(email, create_registration_code(email))
+    return Response(
+        {
+            'verification_required': True,
+            'email': email,
+            'detail': 'We sent a verification code to your email address.',
+        },
+        status=status.HTTP_202_ACCEPTED,
+    )
+
+@hide_sensitive_data
 class DriverRegistrationView(AnonymousAPIView):
     def post(self, request):
         serializer = DriverRegistrationSerializer(data=request.data)
@@ -34,6 +85,10 @@ class DriverRegistrationView(AnonymousAPIView):
         except DjangoValidationError as exc:
             raise DRFValidationError({'password': list(exc.messages)})
 
+        verification_response = check_email_verification(data)
+        if verification_response is not None:
+            return verification_response
+
         with transaction.atomic():
             user.set_password(data['password'])
             user.save()
@@ -42,6 +97,7 @@ class DriverRegistrationView(AnonymousAPIView):
         return Response(get_public_user(user), status=status.HTTP_201_CREATED)
 
 
+@hide_sensitive_data
 class SponsorRegistrationView(AnonymousAPIView):
     def post(self, request):
         serializer = SponsorRegistrationSerializer(data=request.data)
@@ -58,6 +114,10 @@ class SponsorRegistrationView(AnonymousAPIView):
             validate_password(data['password'], user)
         except DjangoValidationError as exc:
             raise DRFValidationError({'password': list(exc.messages)})
+
+        verification_response = check_email_verification(data)
+        if verification_response is not None:
+            return verification_response
 
         with transaction.atomic():
             user.set_password(data['password'])

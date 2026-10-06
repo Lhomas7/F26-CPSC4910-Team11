@@ -10,15 +10,19 @@ from django.core.cache import cache
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..middleware import impersonation_details
+from ..input_cleaning import PASSWORD_SPECIAL_CHARACTERS, password_requirements
+from ..middleware import client_ip, impersonation_details
+from ..models import AdminImpersonationEvent
 from ..serializers import (
     ChangePasswordSerializer,
+    DeviceCheckSerializer,
     LoginMFARequestCodeSerializer,
     LoginMFASerializer,
     LoginSerializer,
@@ -27,15 +31,24 @@ from ..serializers import (
 from ..services import get_account_type, get_mfa_status, get_public_user
 from ..services.crypto import decrypt_secret
 from ..services.delivery import send_email_code, send_sms_code
+from ..services.device_trust import (
+    DEVICE_CHECK_KEY,
+    DEVICE_MODE_KEY,
+    device_check_reason,
+    revoke_devices,
+    trust_device,
+)
 from ..services.login_audit import record_login_attempt
 from ..services.mfa import create_mfa_code, verify_backup_code, verify_code
-from ..services.notify import notify_password_reset
+from ..services.notify import notify_password_reset, notify_unrecognized_sign_in
 from ..services.password_reset import (
     find_resettable_users,
     send_password_reset_email,
     token_is_valid,
     user_from_uid,
 )
+from ..services.session_state import session_info, stamp_sign_in
+from ..sensitive import hide_sensitive_data
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +56,24 @@ class AnonymousAPIView(APIView):
     authentication_classes = ()
     permission_classes = ()
 
+
+def complete_login(request, user):
+    """Sign the user in and decide whether to ask "Is this your device?".
+
+    Shared by the password and MFA steps. The device check runs before this
+    success is recorded so the failures that preceded it are still counted.
+    """
+    reason = device_check_reason(request, user)
+    login(request, user)
+    record_login_attempt(user.get_username(), successful=True, user=user)
+    stamp_sign_in(request.session)
+    if reason:
+        request.session[DEVICE_CHECK_KEY] = reason
+    else:
+        request.session[DEVICE_MODE_KEY] = 'trusted'
+    return Response({**get_public_user(user), 'session': session_info(request)})
+
+@hide_sensitive_data
 class LoginView(AnonymousAPIView):
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
@@ -52,7 +83,10 @@ class LoginView(AnonymousAPIView):
 
         user = authenticate(request, username=username, password=password)
         if user is None or get_account_type(user) is None:
-            record_login_attempt(username, successful=False)
+            # authenticate() returns None for a wrong password too, so resolve
+            # the targeted account separately to link the failure to it.
+            targeted = get_user_model().objects.filter(username__iexact=username).first()
+            record_login_attempt(username, successful=False, user=targeted)
             return Response(
                 {'detail': 'Invalid username or password.'},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -75,11 +109,10 @@ class LoginView(AnonymousAPIView):
             # recorded when the second factor succeeds or fails.
             return Response({'mfa': get_mfa_status(user)})
 
-        login(request, user)
-        record_login_attempt(user.get_username(), successful=True)
-        return Response(get_public_user(user))
+        return complete_login(request, user)
 
 
+@hide_sensitive_data
 class LoginMFAView(AnonymousAPIView):
     def post(self, request):
         serializer = LoginMFASerializer(data=request.data)
@@ -134,16 +167,14 @@ class LoginMFAView(AnonymousAPIView):
 
         if not verified:
             request.session['pending_mfa_attempts'] = pending_attempts + 1
-            record_login_attempt(user.get_username(), successful=False)
+            record_login_attempt(user.get_username(), successful=False, user=user)
             return Response(
                 {'detail': 'Invalid code.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         self._clear_pending_mfa(request)
-        login(request, user)
-        record_login_attempt(user.get_username(), successful=True)
-        return Response(get_public_user(user))
+        return complete_login(request, user)
 
     def _clear_pending_mfa(self, request):
         for key in ('pending_mfa_user_id', 'pending_mfa_expires', 'pending_mfa_attempts'):
@@ -151,6 +182,7 @@ class LoginMFAView(AnonymousAPIView):
         request.session.set_expiry(0)
 
 
+@hide_sensitive_data
 class LoginMFARequestCodeView(AnonymousAPIView):
     """Send a login-purpose code for a single method during the staged MFA step.
 
@@ -212,6 +244,7 @@ class LoginMFARequestCodeView(AnonymousAPIView):
         return Response({'detail': 'Verification code sent.'})
 
 
+@method_decorator(never_cache, name='dispatch')
 class MeView(APIView):
     permission_classes = ()
 
@@ -224,17 +257,75 @@ class MeView(APIView):
             return Response({'authenticated': False})
         if getattr(request, 'impersonation_active', False):
             public_user['impersonation'] = impersonation_details(request, user)
+        public_user['session'] = session_info(request)
         return Response({'authenticated': True, 'user': public_user})
 
 
+@method_decorator(never_cache, name='dispatch')
+class DeviceCheckView(APIView):
+    """Record the answer to "Is this your device?" for the current sign-in.
 
-class LogoutView(APIView):
+    Yes: remember this browser so later sign-ins skip the question.
+    No: treat the session as shared (it ends when the browser closes) and email
+    the account owner, in case the sign-in was not theirs.
+    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        # The question belongs to whoever signed in, even while an admin is
+        # viewing as someone else.
+        user = getattr(request, 'real_user', request.user)
+        if not request.session.get(DEVICE_CHECK_KEY):
+            return Response(
+                {'detail': 'There is no device question to answer.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        serializer = DeviceCheckSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        del request.session[DEVICE_CHECK_KEY]
+        if serializer.validated_data['trusted']:
+            request.session[DEVICE_MODE_KEY] = 'trusted'
+            response = Response({'session': session_info(request)})
+            trust_device(response, request, user)
+            return response
+
+        request.session[DEVICE_MODE_KEY] = 'shared'
+        request.session.set_expiry(0)
+        try:
+            notify_unrecognized_sign_in(user)
+        except Exception:
+            logger.exception('Could not send unrecognized sign-in notification.')
+        return Response({'session': session_info(request)})
+
+
+
+@method_decorator(never_cache, name='dispatch')
+class LogoutView(APIView):
+    """End the session: delete it server-side and expire the session cookie.
+
+    Open to anonymous callers so a session that already expired still gets a
+    clean 204 and the browser drops its stale cookie. Logged-in callers still go
+    through SessionAuthentication's CSRF check.
+    """
+    permission_classes = ()
+
+    def post(self, request):
+        if getattr(request, 'impersonation_active', False):
+            # Logging out also ends the admin's view-as session; keep the audit
+            # trail complete as AdminImpersonationStopView does.
+            AdminImpersonationEvent.objects.create(
+                admin=request.real_user,
+                target=request.user,
+                target_role=get_account_type(request.user),
+                action='stop',
+                ip_address=client_ip(request),
+            )
         logout(request)
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
+
+@hide_sensitive_data
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -280,6 +371,7 @@ class PasswordResetRequestView(AnonymousAPIView):
         return Response({'detail': PASSWORD_RESET_REQUEST_MESSAGE})
 
 
+@hide_sensitive_data
 class PasswordResetConfirmView(AnonymousAPIView):
     """Set a new password using the uid/token from the emailed link."""
 
@@ -297,6 +389,9 @@ class PasswordResetConfirmView(AnonymousAPIView):
         serializer.is_valid(raise_exception=True)
         user.set_password(serializer.validated_data['password'])
         user.save()
+        # Whoever reset the password may not be the person who trusted those
+        # browsers, so every device has to answer the question again.
+        revoke_devices(user)
 
         # Changing the password invalidates the token (and every existing session,
         # because the session hash is derived from the password hash).
@@ -307,6 +402,16 @@ class PasswordResetConfirmView(AnonymousAPIView):
 
         return Response({'detail': 'Your password has been reset. You can now sign in.'})
 
+
+
+class PasswordPolicyView(AnonymousAPIView):
+    """Publish the password requirements so forms never hard-code them."""
+
+    def get(self, request):
+        return Response({
+            'requirements': password_requirements(),
+            'special_characters': ''.join(sorted(PASSWORD_SPECIAL_CHARACTERS)),
+        })
 
 
 @method_decorator(ensure_csrf_cookie, name='dispatch')

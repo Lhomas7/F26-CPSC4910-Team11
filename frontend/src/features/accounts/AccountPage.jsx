@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '../../auth/AuthContext';
 import * as api from '../../api';
+import LoginActivityPanel from './LoginActivityPanel';
 import MfaPanel from './MfaPanel';
 import PasswordPanel from './PasswordPanel';
 import './AccountPage.css';
@@ -9,6 +10,8 @@ import './AccountPage.css';
 const ACCOUNT_LABELS = { driver: 'Driver', sponsor: 'Sponsor', admin: 'Admin' };
 const PROFILE_PICTURE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const PROFILE_PICTURE_LIMIT = 2 * 1024 * 1024;
+// Sign-in history is for privileged accounts that need to spot suspicious access.
+const LOGIN_ACTIVITY_ROLES = ['sponsor', 'admin'];
 
 function initials(name) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2)
@@ -241,6 +244,7 @@ export default function AccountPage() {
             </section>
             <PasswordPanel />
             <MfaPanel mfa={profile.mfa || { required: false, enrolled: false, methods: [] }} onRefreshed={refreshMfa} />
+            {LOGIN_ACTIVITY_ROLES.includes(profile.account_type) && <LoginActivityPanel />}
           </>
         )}
       </main>

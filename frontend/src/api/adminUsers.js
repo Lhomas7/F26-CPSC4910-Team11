@@ -47,3 +47,11 @@ export function startAdminImpersonation(userId) {
 export function stopAdminImpersonation() {
   return request('/admin/impersonation/stop/', { method: 'POST' }).then(readJson);
 }
+
+export function getRegistrationSettings() {
+  return request('/admin/registration-settings/').then(readJson);
+}
+
+export function updateRegistrationSettings(data) {
+  return request('/admin/registration-settings/', { method: 'PATCH', body: data }).then(readJson);
+}

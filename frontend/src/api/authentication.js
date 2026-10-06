@@ -12,8 +12,25 @@ export function logout() {
   return request('/logout/', { method: 'POST' }).then(readJson);
 }
 
+export function deviceCheck(trusted) {
+  return request('/device-check/', { method: 'POST', body: { trusted } }).then(readJson);
+}
+
 export function me() {
   return request('/me/').then(readJson);
+}
+
+let passwordPolicyRequest = null;
+
+// The policy only changes on deploy, so one request per page load is enough.
+export function passwordPolicy() {
+  if (!passwordPolicyRequest) {
+    passwordPolicyRequest = request('/password-policy/').then(readJson).catch((error) => {
+      passwordPolicyRequest = null;
+      throw error;
+    });
+  }
+  return passwordPolicyRequest;
 }
 
 export function requestPasswordReset(email) {

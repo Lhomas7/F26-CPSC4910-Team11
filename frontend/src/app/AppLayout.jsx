@@ -1,18 +1,43 @@
-import { useState } from 'react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../auth/AuthContext';
+import ConfirmDialog from '../components/ConfirmDialog';
 import MfaSetupWall from '../features/accounts/MfaSetupWall';
+import DeviceCheckDialog from '../features/authentication/DeviceCheckDialog';
 import './AppLayout.css';
 
 function AccountMenu({ user, onSignOut }) {
+  const [confirming, setConfirming] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+
+  const confirmSignOut = async () => {
+    setSigningOut(true);
+    try {
+      await onSignOut();
+    } finally {
+      setSigningOut(false);
+      setConfirming(false);
+    }
+  };
+
   if (user) {
     return (
       <>
         <span className="topbar-user">{user.name || user.username}</span>
-        <button className="topbar-signout" type="button" onClick={onSignOut}>
+        <button className="topbar-signout" type="button" onClick={() => setConfirming(true)}>
           Sign out
         </button>
+        {confirming && (
+          <ConfirmDialog
+            title="Sign out?"
+            message="Are you sure you want to sign out? You'll need to sign in again to keep using your account."
+            confirmLabel={signingOut ? 'Signing out…' : 'Sign out'}
+            busy={signingOut}
+            onConfirm={confirmSignOut}
+            onCancel={() => setConfirming(false)}
+          />
+        )}
       </>
     );
   }
@@ -25,7 +50,8 @@ function AccountMenu({ user, onSignOut }) {
 }
 
 export function AppLayout() {
-  const { user, signOut, stopImpersonation } = useAuth();
+  const { user, notice, signOut, stopImpersonation, answerDeviceCheck } = useAuth();
+  const navigate = useNavigate();
   const [endingViewAs, setEndingViewAs] = useState(false);
   const [viewAsError, setViewAsError] = useState('');
   const mfaWallNeeded = user
@@ -33,6 +59,11 @@ export function AppLayout() {
     && user.mfa
     && user.mfa.required
     && !user.mfa.enrolled;
+
+  // A timed-out session goes straight to sign-in, even from public pages.
+  useEffect(() => {
+    if (notice === 'expired' && !user) navigate('/login', { replace: true });
+  }, [notice, user, navigate]);
 
   const stopViewingAs = async () => {
     setEndingViewAs(true);
@@ -87,6 +118,12 @@ export function AppLayout() {
               {endingViewAs ? 'Returning…' : 'Return to admin account'}
             </button>
           </div>
+        )}
+        {user?.session?.device_check && (
+          <DeviceCheckDialog
+            onAnswer={answerDeviceCheck}
+            onSignOut={signOut}
+          />
         )}
         <header className="app-topbar">
           <AccountMenu user={user} onSignOut={signOut} />
