@@ -139,6 +139,22 @@
   gap: .35rem;
 }
 
+/* Admin-only sponsor organization dropdown. */
+.drivers-organization-filter {
+  flex: 0 1 12rem;
+  min-width: 10rem;
+}
+
+.drivers-organization-filter .select-menu-trigger {
+  height: 2.15rem;
+}
+
+.driver-card-org {
+  color: var(--ink-2);
+  font-size: .72rem;
+  margin: .3rem 0 0;
+}
+
 .drivers-filters button {
   align-items: center;
   background: var(--surface);

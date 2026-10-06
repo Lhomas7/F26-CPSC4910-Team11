@@ -2,10 +2,11 @@ from django.db.models import IntegerField, Sum, Value
 from django.db.models.functions import Coalesce
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.response import Response
 
 from accounts.permissions import MFAEnrolled
+from accounts.services import get_account_type
 
 from .models import Driver
 from .serializers import (
@@ -22,7 +23,13 @@ class DriverViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if hasattr(user, 'sponsor_account') and user.sponsor_account is not None:
+        if get_account_type(user) == 'admin':
+            # Admins get a read-only overview of every driver across all
+            # sponsors; account changes go through the admin user endpoints.
+            if self.request.method not in SAFE_METHODS:
+                return Driver.objects.none()
+            queryset = Driver.objects.select_related('sponsor').order_by('name')
+        elif hasattr(user, 'sponsor_account') and user.sponsor_account is not None:
             queryset = Driver.objects.filter(sponsor=user.sponsor_account.company)
         elif hasattr(user, 'driver_profile') and user.driver_profile is not None:
             queryset = Driver.objects.filter(user=user)

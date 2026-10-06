@@ -77,3 +77,27 @@ test('keeps sponsor-only management panels hidden from drivers', async () => {
   expect(screen.queryByRole('heading', { name: 'Link a driver' })).not.toBeInTheDocument();
   expect(screen.queryByRole('heading', { name: 'Driver security' })).not.toBeInTheDocument();
 });
+
+test('admins get a read-only overview of every driver with an organization filter', async () => {
+  useAuth.mockReturnValue({ user: { account_type: 'admin' } });
+  api.getDrivers.mockResolvedValue([
+    { id: 4, user: 40, name: 'Jamie Rivera', status: 'approved', point_balance: 125, sponsor: 1, sponsor_name: 'Palmetto Freight' },
+    { id: 8, user: 80, name: 'Morgan Chen', status: 'pending', point_balance: 0, sponsor: 2, sponsor_name: 'Blue Ridge Haulers' },
+    { id: 9, user: 90, name: 'Sam Lee', status: 'pending', point_balance: 0, sponsor: null, sponsor_name: null },
+  ]);
+  renderPage();
+
+  expect(await screen.findByText('All drivers')).toBeInTheDocument();
+  expect(screen.getByText('Palmetto Freight')).toBeInTheDocument();
+  expect(screen.getByText('No sponsor')).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: "Open Jamie Rivera's account" })).toHaveAttribute('href', '/users/drivers/40');
+  expect(screen.queryByRole('heading', { name: 'Link a driver' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'Driver security' })).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Filter by sponsor organization' }));
+  fireEvent.click(screen.getByRole('option', { name: 'Blue Ridge Haulers' }));
+
+  expect(screen.getByText('Morgan Chen')).toBeInTheDocument();
+  expect(screen.queryByText('Jamie Rivera')).not.toBeInTheDocument();
+  expect(screen.queryByText('Sam Lee')).not.toBeInTheDocument();
+});

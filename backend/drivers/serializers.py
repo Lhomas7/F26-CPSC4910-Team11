@@ -6,10 +6,11 @@ from .services import MAX_POINT_REASON_LENGTH
 
 class DriverSerializer(serializers.ModelSerializer):
     point_balance = serializers.SerializerMethodField()
+    sponsor_name = serializers.CharField(source='sponsor.name', read_only=True, default=None)
 
     class Meta:
         model = Driver
-        fields = ['id', 'user', 'name', 'sponsor', 'status', 'point_balance']
+        fields = ['id', 'user', 'name', 'sponsor', 'sponsor_name', 'status', 'point_balance']
 
     def get_point_balance(self, driver):
         annotated = getattr(driver, 'calculated_point_balance', None)

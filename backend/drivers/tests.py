@@ -395,3 +395,78 @@ class DriverViewSetMFAGateTests(APITestCase):
 
         allowed = self.client.get(reverse('driver-list'))
         self.assertEqual(allowed.status_code, status.HTTP_200_OK)
+
+
+class AdminDriverOverviewTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.company = SponsorCompany.objects.create(name='Overview Freight')
+        cls.other_company = SponsorCompany.objects.create(name='Second Freight')
+        cls.admin_user = get_user_model().objects.create_user(
+            username='overview.admin',
+            password='ExamplePassword123!',
+            is_staff=True,
+        )
+        enroll_totp(cls.admin_user)
+        cls.sponsor_user = get_user_model().objects.create_user(
+            username='overview.sponsor',
+            password='ExamplePassword123!',
+        )
+        SponsorAccount.objects.create(user=cls.sponsor_user, company=cls.company)
+        enroll_totp(cls.sponsor_user)
+        cls.drivers = []
+        for username, name, company in (
+            ('overview.one', 'Avery One', cls.company),
+            ('overview.two', 'Blake Two', cls.other_company),
+            ('overview.three', 'Casey Three', None),
+        ):
+            user = get_user_model().objects.create_user(username=username, password='ExamplePassword123!')
+            cls.drivers.append(Driver.objects.create(user=user, name=name, sponsor=company))
+        PointTransaction.objects.create(
+            driver=cls.drivers[0],
+            sponsor=cls.company,
+            changed_by_user=cls.sponsor_user,
+            point_change=40,
+            reason='Safe week',
+        )
+
+    def test_admin_sees_every_driver_with_organization_and_balance(self):
+        self.client.force_authenticate(self.admin_user)
+
+        response = self.client.get(reverse('driver-list'))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        by_name = {row['name']: row for row in response.data}
+        self.assertEqual(set(by_name), {'Avery One', 'Blake Two', 'Casey Three'})
+        self.assertEqual(by_name['Avery One']['sponsor_name'], 'Overview Freight')
+        self.assertEqual(by_name['Avery One']['point_balance'], 40)
+        self.assertEqual(by_name['Blake Two']['sponsor_name'], 'Second Freight')
+        self.assertIsNone(by_name['Casey Three']['sponsor_name'])
+        self.assertEqual(by_name['Casey Three']['user'], self.drivers[2].user_id)
+
+    def test_admin_overview_is_read_only(self):
+        self.client.force_authenticate(self.admin_user)
+        detail_url = reverse('driver-detail', kwargs={'pk': self.drivers[0].pk})
+
+        self.assertEqual(self.client.get(detail_url).status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            self.client.patch(detail_url, {'status': 'approved'}, format='json').status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+        self.assertEqual(self.client.delete(detail_url).status_code, status.HTTP_404_NOT_FOUND)
+        points = self.client.post(
+            reverse('driver-points', kwargs={'pk': self.drivers[0].pk}),
+            {'point_change': 5, 'reason': 'Admin award'},
+            format='json',
+        )
+        self.assertEqual(points.status_code, status.HTTP_403_FORBIDDEN)
+        self.drivers[0].refresh_from_db()
+        self.assertEqual(self.drivers[0].status, 'pending')
+        self.assertTrue(Driver.objects.filter(pk=self.drivers[0].pk).exists())
+
+    def test_sponsor_still_only_sees_their_own_drivers(self):
+        self.client.force_authenticate(self.sponsor_user)
+
+        response = self.client.get(reverse('driver-list'))
+
+        self.assertEqual([row['name'] for row in response.data], ['Avery One'])
