@@ -14,7 +14,16 @@ import './LoginPage.css';
 
 const ROLE_LABEL = { driver: 'Driver', sponsor: 'Sponsor' };
 
-function PasswordInput({ id, label, value, onChange, autoComplete, className = 'login-input' }) {
+function PasswordInput({
+  id,
+  label,
+  value,
+  onChange,
+  autoComplete,
+  className = 'login-input',
+  invalid = false,
+  describedBy,
+}) {
   const [visible, setVisible] = useState(false);
   return (
     <div className="login-field">
@@ -27,6 +36,8 @@ function PasswordInput({ id, label, value, onChange, autoComplete, className = '
           value={value}
           onChange={onChange}
           autoComplete={autoComplete}
+          aria-invalid={invalid || undefined}
+          aria-describedby={describedBy}
         />
         <button
           type="button"
@@ -169,6 +180,9 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode }) {
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
   const [error, setError] = useState(null);
+  // Set when the server rejects the username/password pair, so both fields are
+  // highlighted (the response deliberately does not say which one was wrong).
+  const [credentialsRejected, setCredentialsRejected] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sendingCode, setSendingCode] = useState(false);
   const [cooldown, setCooldown] = useState(0);
@@ -195,6 +209,7 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode }) {
   const submit = async (event) => {
     event.preventDefault();
     setError(null);
+    setCredentialsRejected(false);
     if (!username.trim()) {
       setError('Enter your username.');
       return;
@@ -224,6 +239,7 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode }) {
       }
     } catch (err) {
       setError(err.message || 'Invalid username or password.');
+      setCredentialsRejected(true);
       setPassword('');
     } finally {
       setBusy(false);
@@ -376,20 +392,28 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode }) {
     );
   }
 
+  const usernameInvalid = Boolean(credentialsRejected || (error && !username.trim()));
+  const passwordInvalid = Boolean(credentialsRejected || (error && !password));
+
   return (
     <form className="login-form" onSubmit={submit} noValidate>
       <h2>Sign in</h2>
       <p className="login-sub">Use the username and password from your account.</p>
 
-      {error && <p className="login-alert login-alert-error" role="alert">{error}</p>}
+      {error && <p id="login-error" className="login-alert login-alert-error" role="alert">{error}</p>}
 
       <div className="login-field">
         <label htmlFor="login-username">Username</label>
         <input
           id="login-username"
-          className={fieldClass(error && !username.trim())}
+          className={fieldClass(usernameInvalid)}
           value={username}
-          onChange={(event) => setUsername(event.target.value)}
+          onChange={(event) => {
+            setUsername(event.target.value);
+            setCredentialsRejected(false);
+          }}
+          aria-invalid={usernameInvalid || undefined}
+          aria-describedby={usernameInvalid ? 'login-error' : undefined}
           autoComplete="username"
           autoCapitalize="none"
           spellCheck="false"
@@ -399,9 +423,14 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode }) {
       <PasswordInput
         id="login-password"
         label="Password"
-        className={fieldClass(error && !password)}
+        className={fieldClass(passwordInvalid)}
+        invalid={passwordInvalid}
+        describedBy={passwordInvalid ? 'login-error' : undefined}
         value={password}
-        onChange={(event) => setPassword(event.target.value)}
+        onChange={(event) => {
+          setPassword(event.target.value);
+          setCredentialsRejected(false);
+        }}
         autoComplete="current-password"
       />
 

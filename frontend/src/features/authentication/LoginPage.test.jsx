@@ -175,6 +175,32 @@ test('provides independent password visibility controls during registration', ()
   expect(confirmation).toHaveAttribute('type', 'text');
 });
 
+test('rejected credentials show the error and outline both fields in red', async () => {
+  const signIn = jest.fn().mockRejectedValue(new Error('Invalid username or password.'));
+  useAuth.mockReturnValue({ ...useAuth(), signIn });
+  renderLoginPage();
+
+  const username = screen.getByLabelText('Username');
+  const password = screen.getByLabelText('Password');
+  fireEvent.change(username, { target: { value: 'driver.one' } });
+  fireEvent.change(password, { target: { value: 'WrongPassword1!' } });
+  fireEvent.click(screen.getAllByRole('button', { name: 'Sign In' })
+    .find((button) => button.type === 'submit'));
+
+  expect(await screen.findByRole('alert')).toHaveTextContent('Invalid username or password.');
+  expect(username).toHaveValue('driver.one');
+  expect(password).toHaveValue('');
+  for (const field of [username, password]) {
+    expect(field).toHaveClass('login-input-error');
+    expect(field).toHaveAttribute('aria-invalid', 'true');
+    expect(field).toHaveAttribute('aria-describedby', 'login-error');
+  }
+
+  fireEvent.change(username, { target: { value: 'driver.two' } });
+  expect(username).not.toHaveClass('login-input-error');
+  expect(username).not.toHaveAttribute('aria-invalid');
+});
+
 test('sign in form links to the forgot password page', () => {
   renderLoginPage();
 
