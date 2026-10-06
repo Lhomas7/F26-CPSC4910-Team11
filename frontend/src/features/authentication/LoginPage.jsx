@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
 import * as api from '../../api';
+import PasswordRequirements from '../../components/PasswordRequirements';
 import RoadTruck from '../../components/RoadTruck';
 import { useAuth } from '../../auth/AuthContext';
 import {
@@ -23,6 +24,7 @@ function PasswordInput({
   className = 'login-input',
   invalid = false,
   describedBy,
+  children,
 }) {
   const [visible, setVisible] = useState(false);
   return (
@@ -48,6 +50,7 @@ function PasswordInput({
           {visible ? 'Hide' : 'Show'}
         </button>
       </div>
+      {children}
     </div>
   );
 }
@@ -699,7 +702,9 @@ function RoleRegistrationForm({ role, onBack, onDone }) {
         />
       </div>
 
-      <PasswordInput id="reg-password" label="Password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" />
+      <PasswordInput id="reg-password" label="Password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password">
+        <PasswordRequirements />
+      </PasswordInput>
 
       <PasswordInput id="reg-password-confirm" label="Confirm Password" value={passwordConfirm} onChange={(event) => setPasswordConfirm(event.target.value)} autoComplete="new-password" />
 

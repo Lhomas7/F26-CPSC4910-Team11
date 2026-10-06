@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import * as api from '../../api';
+import PasswordRequirements from '../../components/PasswordRequirements';
 import { validatePassword } from '../../utils/accountValidation';
 import './LoginPage.css';
 import './PasswordResetPage.css';
 
-function PasswordInput({ id, label, value, onChange, disabled }) {
+function PasswordInput({ id, label, value, onChange, disabled, children }) {
   const [visible, setVisible] = useState(false);
   return (
     <div className="login-field">
@@ -31,6 +32,7 @@ function PasswordInput({ id, label, value, onChange, disabled }) {
           {visible ? 'Hide' : 'Show'}
         </button>
       </div>
+      {children}
     </div>
   );
 }
@@ -107,10 +109,6 @@ export default function ResetPasswordPage() {
     content = (
       <form className="login-form" onSubmit={submit} noValidate>
         <h2>Choose a new password</h2>
-        <p className="login-sub">
-          Use 12+ characters with 3 lowercase letters, 2 uppercase letters, 2 numbers,
-          and an approved symbol.
-        </p>
         {error && <p className="login-alert login-alert-error" role="alert">{error}</p>}
         <PasswordInput
           id="reset-password"
@@ -118,7 +116,9 @@ export default function ResetPasswordPage() {
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           disabled={busy}
-        />
+        >
+          <PasswordRequirements />
+        </PasswordInput>
         <PasswordInput
           id="reset-password-confirm"
           label="Confirm new password"

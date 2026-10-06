@@ -16,6 +16,19 @@ export function me() {
   return request('/me/').then(readJson);
 }
 
+let passwordPolicyRequest = null;
+
+// The policy only changes on deploy, so one request per page load is enough.
+export function passwordPolicy() {
+  if (!passwordPolicyRequest) {
+    passwordPolicyRequest = request('/password-policy/').then(readJson).catch((error) => {
+      passwordPolicyRequest = null;
+      throw error;
+    });
+  }
+  return passwordPolicyRequest;
+}
+
 export function requestPasswordReset(email) {
   return request('/password-reset/', { method: 'POST', body: { email } }).then(readJson);
 }
