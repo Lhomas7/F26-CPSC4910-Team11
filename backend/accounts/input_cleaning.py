@@ -53,23 +53,52 @@ def normalize_email(value):
     return normalize_identifier(value).casefold()
 
 
+# Each rule is (requirement shown to users, check, error message). The same
+# tuple drives validation and GET /api/password-policy/, so the requirements
+# the UI displays cannot drift from what the server enforces.
+PASSWORD_RULES = (
+    ('At least 12 characters',
+     lambda value: len(value) >= 12,
+     'Password must be at least 12 characters long.'),
+    ('At least 3 lowercase letters',
+     lambda value: sum(character.islower() for character in value) >= 3,
+     'Password must contain at least three lowercase letters.'),
+    ('At least 2 uppercase letters',
+     lambda value: sum(character.isupper() for character in value) >= 2,
+     'Password must contain at least two uppercase letters.'),
+    ('At least 2 numbers',
+     lambda value: sum(character.isdigit() for character in value) >= 2,
+     'Password must contain at least two numbers.'),
+    ('At least 1 approved symbol',
+     lambda value: any(character in PASSWORD_SPECIAL_CHARACTERS for character in value),
+     'Password must contain at least one approved symbol.'),
+)
+PASSWORD_IDENTITY_REQUIREMENT = 'Must not contain your username or email address'
+
+
+def password_requirements():
+    """List every password requirement in the order users should read them."""
+    # Imported here so this module stays importable before app loading.
+    from django.contrib.auth.password_validation import (
+        MinimumLengthValidator,
+        get_default_password_validators,
+    )
+
+    requirements = [text for text, _check, _message in PASSWORD_RULES]
+    requirements.append(PASSWORD_IDENTITY_REQUIREMENT)
+    # Django's validators also run on every password; the custom 12-character
+    # rule supersedes MinimumLengthValidator, so its weaker text is left out.
+    for validator in get_default_password_validators():
+        if isinstance(validator, MinimumLengthValidator):
+            continue
+        requirements.append(validator.get_help_text().rstrip('.'))
+    return requirements
+
+
 def validate_password_policy(value, *, username='', email=''):
     """Apply the account password policy without returning the secret in errors."""
-    # Keep the existing 12-character minimum while adding the acceptance-rule
-    # counts. Regex alone would make field-specific error messages much less useful.
-    checks = (
-        (len(value) >= 12, 'Password must be at least 12 characters long.'),
-        (sum(character.islower() for character in value) >= 3,
-         'Password must contain at least three lowercase letters.'),
-        (sum(character.isupper() for character in value) >= 2,
-         'Password must contain at least two uppercase letters.'),
-        (sum(character.isdigit() for character in value) >= 2,
-         'Password must contain at least two numbers.'),
-        (any(character in PASSWORD_SPECIAL_CHARACTERS for character in value),
-         'Password must contain at least one approved symbol.'),
-    )
-    for accepted, message in checks:
-        if not accepted:
+    for _requirement, check, message in PASSWORD_RULES:
+        if not check(value):
             raise serializers.ValidationError(message)
 
     folded_password = value.casefold()

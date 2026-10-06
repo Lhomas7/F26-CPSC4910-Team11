@@ -17,6 +17,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ..input_cleaning import PASSWORD_SPECIAL_CHARACTERS, password_requirements
 from ..middleware import client_ip, impersonation_details
 from ..models import AdminImpersonationEvent
 from ..serializers import (
@@ -337,6 +338,16 @@ class PasswordResetConfirmView(AnonymousAPIView):
 
         return Response({'detail': 'Your password has been reset. You can now sign in.'})
 
+
+
+class PasswordPolicyView(AnonymousAPIView):
+    """Publish the password requirements so forms never hard-code them."""
+
+    def get(self, request):
+        return Response({
+            'requirements': password_requirements(),
+            'special_characters': ''.join(sorted(PASSWORD_SPECIAL_CHARACTERS)),
+        })
 
 
 @method_decorator(ensure_csrf_cookie, name='dispatch')
