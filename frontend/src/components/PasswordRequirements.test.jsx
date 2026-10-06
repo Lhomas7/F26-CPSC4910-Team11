@@ -77,3 +77,24 @@ test('a failed request shows a fallback message', async () => {
 
   expect(await screen.findByText(/requirements couldn.t be loaded/i)).toBeInTheDocument();
 });
+
+test('the popover stays inside a short window and scrolls instead', async () => {
+  const originalHeight = window.innerHeight;
+  window.innerHeight = 300;
+  renderInField();
+  // The field sits near the bottom of the 300px-tall window.
+  jest.spyOn(screen.getByLabelText('Password').parentElement, 'getBoundingClientRect')
+    .mockReturnValue({ top: 280, bottom: 320, left: 0, right: 200 });
+
+  try {
+    await open(screen.getByRole('button', { name: 'Show password requirements' }));
+
+    const popover = screen.getByRole('dialog', { name: 'Password requirements' });
+    const top = parseFloat(popover.style.top);
+    const maxHeight = parseFloat(popover.style.maxHeight);
+    expect(top).toBeLessThan(280);
+    expect(top + maxHeight).toBeLessThanOrEqual(300);
+  } finally {
+    window.innerHeight = originalHeight;
+  }
+});

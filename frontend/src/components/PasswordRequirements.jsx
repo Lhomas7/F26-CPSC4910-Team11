@@ -4,8 +4,17 @@ import * as api from '../api';
 import './PasswordRequirements.css';
 
 const POPOVER_WIDTH = 288;
+const MIN_VISIBLE_HEIGHT = 160;
 const GAP = 12;
 const EDGE = 16;
+
+// Keep the popover inside the window: nudge it up when it starts too low, and
+// cap its height so a long list scrolls instead of running off the screen.
+function fitVertically(preferredTop) {
+  const lowestTop = window.innerHeight - EDGE - MIN_VISIBLE_HEIGHT;
+  const top = Math.max(EDGE, Math.min(preferredTop, lowestTop));
+  return { top, maxHeight: Math.max(MIN_VISIBLE_HEIGHT, window.innerHeight - top - EDGE) };
+}
 
 // Place the popover beside the field when there is room, otherwise below the
 // toggle. Fixed positioning keeps it clear of cards that clip overflow.
@@ -13,11 +22,11 @@ function placement(field, toggle) {
   const fieldRect = field.getBoundingClientRect();
   const toggleRect = toggle.getBoundingClientRect();
   if (window.innerWidth - fieldRect.right >= POPOVER_WIDTH + GAP + EDGE) {
-    return { top: fieldRect.top, left: fieldRect.right + GAP, width: POPOVER_WIDTH };
+    return { ...fitVertically(fieldRect.top), left: fieldRect.right + GAP, width: POPOVER_WIDTH };
   }
   const width = Math.min(POPOVER_WIDTH, window.innerWidth - EDGE * 2);
   return {
-    top: toggleRect.bottom + 6,
+    ...fitVertically(toggleRect.bottom + 6),
     left: Math.max(EDGE, Math.min(toggleRect.left, window.innerWidth - width - EDGE)),
     width,
   };
