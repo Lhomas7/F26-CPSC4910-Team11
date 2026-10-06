@@ -79,3 +79,7 @@ export function sponsorMfaSettings(driverMfaRequired) {
 export function getSponsorMfaSetting() {
   return request('/sponsor/mfa/settings/').then(readJson);
 }
+
+export function getLoginAttempts() {
+  return request('/login-attempts/').then(readJson);
+}
