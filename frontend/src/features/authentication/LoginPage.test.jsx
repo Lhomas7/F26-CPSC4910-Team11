@@ -255,8 +255,37 @@ test('single-method MFA login stages, auto-requests the code, and shows the code
   await waitFor(() => expect(signIn).toHaveBeenCalledWith('driver.one', 'ExamplePassword123!'));
   await waitFor(() => expect(requestMfaLoginCode).toHaveBeenCalledWith('email'));
   expect(await screen.findByText('Two-step verification')).toBeInTheDocument();
-  expect(screen.getByLabelText('Verification code')).toBeInTheDocument();
+  expect(screen.getAllByLabelText(/Verification code digit/)).toHaveLength(6);
+  expect(screen.getByText('Enter all six digits; no space is needed.')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Verify and sign in' })).toBeInTheDocument();
+});
+
+test('combines the two MFA code groups into one six-digit code', async () => {
+  const signIn = jest.fn().mockResolvedValue({
+    mfa: { required: true, enrolled: true, methods: ['totp'] },
+  });
+  const completeMfaLogin = jest.fn().mockResolvedValue({ username: 'driver.one' });
+  useAuth.mockReturnValue({
+    loading: false,
+    user: null,
+    signIn,
+    signOut: jest.fn(),
+    completeMfaLogin,
+    requestMfaLoginCode: jest.fn(),
+  });
+
+  renderLoginPage();
+  fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'driver.one' } });
+  fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ExamplePassword123!' } });
+  fireEvent.click(screen.getAllByRole('button', { name: 'Sign In' }).find((button) => button.type === 'submit'));
+
+  const codeInputs = await screen.findAllByLabelText(/Verification code digit/);
+  ['1', '2', '3', '4', '5', '6'].forEach((digit, index) => {
+    fireEvent.change(codeInputs[index], { target: { value: digit } });
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Verify and sign in' }));
+
+  await waitFor(() => expect(completeMfaLogin).toHaveBeenCalledWith('totp', '123456'));
 });
 
 test('offers a backup code option and completes login with one when available', async () => {

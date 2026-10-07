@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
 import * as api from '../../api';
@@ -215,6 +215,7 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode, onError, onOutag
   const [busy, setBusy] = useState(false);
   const [sendingCode, setSendingCode] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const codeInputRefs = useRef([]);
 
   // Easter egg: tell the page so the road truck crashes whenever an error shows.
   useEffect(() => {
@@ -297,13 +298,17 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode, onError, onOutag
       setError('Choose a verification method.');
       return;
     }
-    if (!code.trim()) {
+    if (method === 'backup' && !code.trim()) {
       setError('Enter your code.');
+      return;
+    }
+    if (method !== 'backup' && code.replace(/\D/g, '').length !== 6) {
+      setError('Enter all 6 digits.');
       return;
     }
     setBusy(true);
     try {
-      await onMfaComplete(method, code.trim());
+      await onMfaComplete(method, method === 'backup' ? code.trim() : code.replace(/\D/g, ''));
     } catch (err) {
       setError(requestErrorMessage(err, 'Invalid code.'));
       if (api.isOutageError(err)) onOutage?.();
@@ -345,6 +350,30 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode, onError, onOutag
   };
 
   const fieldClass = (bad) => bad ? 'login-input login-input-error' : 'login-input';
+
+  const updateCodeDigit = (index, value) => {
+    const digits = value.replace(/\D/g, '');
+    if (!digits) {
+      const next = code.padEnd(6, ' ').split('');
+      next[index] = ' ';
+      setCode(next.join('').trimEnd());
+      return;
+    }
+
+    // Password managers and mobile one-time-code autofill may put all six
+    // digits into the focused box, so distribute them across the row.
+    if (digits.length > 1) {
+      const pastedCode = digits.slice(0, 6);
+      setCode(pastedCode);
+      codeInputRefs.current[Math.min(pastedCode.length, 6) - 1]?.focus();
+      return;
+    }
+
+    const next = code.padEnd(6, ' ').split('');
+    next[index] = digits;
+    setCode(next.join('').trimEnd());
+    codeInputRefs.current[index + 1]?.focus();
+  };
 
   if (step === 'select') {
     return (
@@ -402,17 +431,47 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode, onError, onOutag
           </button>
         )}
 
-        <div className="login-field">
-          <label htmlFor="login-mfa-code">{method === 'backup' ? 'Backup code' : 'Verification code'}</label>
-          <input
-            id="login-mfa-code"
-            className={fieldClass(error && !code.trim())}
-            value={code}
-            onChange={(event) => setCode(event.target.value)}
-            inputMode={method === 'backup' ? 'text' : 'numeric'}
-            autoComplete="one-time-code"
-          />
-        </div>
+        {method === 'backup' ? (
+          <div className="login-field">
+            <label htmlFor="login-mfa-code">Backup code</label>
+            <input
+              id="login-mfa-code"
+              className={fieldClass(error && !code.trim())}
+              value={code}
+              onChange={(event) => setCode(event.target.value)}
+              inputMode="text"
+              autoComplete="one-time-code"
+            />
+          </div>
+        ) : (
+          <fieldset className="login-code-field">
+            <legend>Verification code</legend>
+            <div className="login-code-groups">
+              {Array.from({ length: 6 }, (_, index) => (
+                <input
+                  key={index}
+                  ref={(element) => { codeInputRefs.current[index] = element; }}
+                  className={`${fieldClass(error && code.replace(/\D/g, '').length !== 6)} login-code-digit`}
+                  value={(code[index] || '').trim()}
+                  onChange={(event) => updateCodeDigit(index, event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Backspace' && !code[index] && index > 0) {
+                      codeInputRefs.current[index - 1]?.focus();
+                    }
+                    if (event.key === 'ArrowLeft' && index > 0) codeInputRefs.current[index - 1]?.focus();
+                    if (event.key === 'ArrowRight' && index < 5) codeInputRefs.current[index + 1]?.focus();
+                  }}
+                  aria-label={`Verification code digit ${index + 1}`}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={index === 0 ? 6 : 1}
+                  autoComplete={index === 0 ? 'one-time-code' : 'off'}
+                />
+              ))}
+            </div>
+            <small>Enter all six digits; no space is needed.</small>
+          </fieldset>
+        )}
 
         <button className="login-btn" type="submit" disabled={busy}>
           {busy ? 'Verifying…' : 'Verify and sign in'}

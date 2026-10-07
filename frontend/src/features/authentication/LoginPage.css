@@ -149,6 +149,43 @@
   font-weight: 600;
 }
 
+.login-code-field {
+  border: 0;
+  display: grid;
+  gap: .625rem;
+  margin: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.login-code-field legend {
+  color: var(--ink-2);
+  font-size: .75rem;
+  font-weight: 600;
+  padding: 0;
+  transform: translateY(-.25rem);
+}
+
+.login-code-groups {
+  align-items: center;
+  display: grid;
+  gap: .5rem;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.login-code-digit {
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+  padding-left: .25rem;
+  padding-right: .25rem;
+  text-align: center;
+}
+
+.login-code-field small {
+  color: var(--ink-3);
+  font-size: .6875rem;
+}
+
 .login-input {
   background: var(--surface);
   border: 1px solid var(--line);

@@ -35,6 +35,15 @@ export class ApiError extends Error {
   }
 }
 
+/** A request that never received an HTTP response from the API. */
+export class NetworkError extends Error {
+  constructor(message = 'The server could not be reached.', cause) {
+    super(message);
+    this.name = 'NetworkError';
+    this.cause = cause;
+  }
+}
+
 export async function request(path, { method = 'GET', body, headers } = {}) {
   const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
   const init = {
@@ -55,7 +64,14 @@ export async function request(path, { method = 'GET', body, headers } = {}) {
   }
   // Every request counts as activity for the server's idle timeout.
   window.dispatchEvent(new Event(API_ACTIVITY_EVENT));
-  const response = await fetch(`${API_URL}${path}`, init);
+  let response;
+  try {
+    response = await fetch(`${API_URL}${path}`, init);
+  } catch (error) {
+    // Browsers reject fetch() with a generic TypeError. Convert it here so a
+    // TypeError raised later in application code is never mistaken for an outage.
+    throw new NetworkError(undefined, error);
+  }
   if (response.status === 401) {
     const data = await response.clone().json().catch(() => ({}));
     if (data.code === 'session_expired') {
@@ -79,11 +95,11 @@ export async function readJson(response) {
 /**
  * True when a request failed because the server is unreachable or broken,
  * rather than because the user did something wrong: fetch() rejects with a
- * TypeError ("Failed to fetch") when the server can't be reached, and a 5xx
- * means the server or its database is down.
+ * NetworkError when no HTTP response was received, and a 5xx means the server
+ * or its database is down.
  */
 export function isOutageError(error) {
-  return error instanceof TypeError || (error instanceof ApiError && error.status >= 500);
+  return error instanceof NetworkError || (error instanceof ApiError && error.status >= 500);
 }
 
 /** Resolves true when the backend and its database are up. Never throws. */
