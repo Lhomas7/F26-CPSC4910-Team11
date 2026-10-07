@@ -12,10 +12,11 @@ import RegistrationSettingsPanel from './RegistrationSettingsPanel';
 import './AdminUsersPage.css';
 
 const ROLE_LABELS = { driver: 'Driver', sponsor: 'Sponsor', admin: 'Admin' };
+const ROLE_BADGES = { driver: 'badge-success', sponsor: 'badge-warning', admin: 'badge-neutral' };
 
 function DirectorySkeleton() {
   return (
-    <div className="users-table-card" aria-label="Loading users">
+    <div className="card users-table-card" aria-label="Loading users">
       <div className="users-skeleton-heading" />
       {Array.from({ length: 5 }, (_, index) => (
         <div className="users-skeleton-row" key={index}>
@@ -115,13 +116,13 @@ export default function AdminUsersPage() {
         {status === 'error' && (
           <StatePanel tone="error" title="Users couldn't be loaded">
             <p>The server didn&apos;t send back the user list. Check your connection and try again.</p>
-            <button className="users-button primary" type="button" onClick={loadUsers}>Try again</button>
+            <button className="button button-primary" type="button" onClick={loadUsers}>Try again</button>
           </StatePanel>
         )}
         {status === 'ready' && users.length === 0 && (
           <StatePanel icon={<span className="users-road" aria-hidden="true" />} title="No users yet">
             <p>Drivers, sponsors, and other administrators will appear here.</p>
-            <Link className="users-button primary" to="/users/new">+ Add user</Link>
+            <Link className="button button-primary" to="/users/new">+ Add user</Link>
           </StatePanel>
         )}
         {status === 'ready' && users.length > 0 && (
@@ -150,7 +151,7 @@ export default function AdminUsersPage() {
                 options={organizationOptions}
                 onChange={setOrganization}
               />
-              <Link className="users-button primary users-toolbar-action" to="/users/new">
+              <Link className="button button-primary users-toolbar-action" to="/users/new">
                 <span className="users-add-icon" aria-hidden="true">+</span>
                 <span>Add user</span>
               </Link>
@@ -159,17 +160,17 @@ export default function AdminUsersPage() {
             {visibleUsers.length === 0 ? (
               <StatePanel className="users-state-compact" title="No users match">
                 <p>Try another name or username, or clear the filters.</p>
-                <button className="users-button" type="button" onClick={clearFilters}>Clear search and filters</button>
+                <button className="button" type="button" onClick={clearFilters}>Clear search and filters</button>
               </StatePanel>
             ) : (
-              <div className="users-table-card">
+              <div className="card users-table-card">
                 <table>
                   <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Sponsor organization</th><th>Status</th></tr></thead>
                   <tbody>{visibleUsers.map((listedUser) => (
                     <tr key={listedUser.id}>
                       <td data-label="Name"><div className="users-person"><Avatar className={`users-avatar ${listedUser.role}`} name={listedUser.display_name} />{listedUser.role === 'sponsor' ? <Link className="users-name-link" to={`/users/sponsors/${listedUser.id}`}>{listedUser.display_name}</Link> : listedUser.role === 'driver' ? <Link className="users-name-link" to={`/users/drivers/${listedUser.id}`}>{listedUser.display_name}</Link> : listedUser.id !== user.id ? <Link className="users-name-link" to={`/users/admins/${listedUser.id}`}>{listedUser.display_name}</Link> : <strong>{listedUser.display_name} (you)</strong>}</div></td>
                       <td data-label="Username" className="users-username">@{listedUser.username}</td>
-                      <td data-label="Role"><span className={`users-role ${listedUser.role}`}>{ROLE_LABELS[listedUser.role]}</span></td>
+                      <td data-label="Role"><span className={`badge users-role ${ROLE_BADGES[listedUser.role]}`}>{ROLE_LABELS[listedUser.role]}</span></td>
                       <td data-label="Sponsor organization">{listedUser.sponsor_org?.name || (listedUser.role === 'driver' ? <i>Not assigned</i> : <span aria-label="Not applicable">—</span>)}</td>
                       <td data-label="Status"><span className={`users-status ${listedUser.is_active ? '' : 'inactive'}`}>{listedUser.is_active ? 'Active' : 'Inactive'}</span></td>
                     </tr>

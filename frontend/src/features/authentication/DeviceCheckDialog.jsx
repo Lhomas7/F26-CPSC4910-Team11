@@ -29,7 +29,7 @@ export default function DeviceCheckDialog({ onAnswer, onSignOut }) {
       actions={(
         <div className="device-check-actions">
           <button
-            className="modal-button primary"
+            className="button button-large button-primary"
             type="button"
             onClick={() => answer(true)}
             disabled={busy}
@@ -37,7 +37,7 @@ export default function DeviceCheckDialog({ onAnswer, onSignOut }) {
           >
             Yes, remember this device
           </button>
-          <button className="modal-button" type="button" onClick={() => answer(false)} disabled={busy}>
+          <button className="button button-large" type="button" onClick={() => answer(false)} disabled={busy}>
             No, this is a shared or public device
           </button>
           <button className="device-check-signout" type="button" onClick={onSignOut} disabled={busy}>

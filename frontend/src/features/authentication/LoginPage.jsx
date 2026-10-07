@@ -123,7 +123,7 @@ function useCurrentRelease() {
 
 function LoadingCard() {
   return (
-    <div className="login-card" role="status">
+    <div className="card login-card" role="status">
       <p className="login-loading">Checking your session…</p>
     </div>
   );
@@ -156,7 +156,7 @@ function AuthCard({ sessionExpired = false, onSignIn, onMfaComplete, onRequestMf
   };
 
   return (
-    <div className="login-card">
+    <div className="card login-card">
       <div className="login-tabs" role="group" aria-label="Choose sign in or account creation">
         <button
           type="button"
@@ -176,7 +176,7 @@ function AuthCard({ sessionExpired = false, onSignIn, onMfaComplete, onRequestMf
         </button>
       </div>
 
-      {notice && <p className="login-alert login-alert-success" role="status">{notice}</p>}
+      {notice && <p className="banner banner-success" role="status">{notice}</p>}
 
       {view === 'signin' && <LoginForm onSignIn={onSignIn} onMfaComplete={onMfaComplete} onRequestMfaCode={onRequestMfaCode} onError={onError} onOutage={onOutage} />}
 
@@ -381,7 +381,7 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode, onError, onOutag
         <h2>Two-step verification</h2>
         <p className="login-sub">Choose a method to receive your verification code.</p>
 
-        {error && <p className="login-alert login-alert-error" role="alert">{error}</p>}
+        {error && <p className="banner banner-error" role="alert">{error}</p>}
 
         <div className="login-role-grid">
           {mfaMethods.map((m) => (
@@ -399,12 +399,12 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode, onError, onOutag
         </div>
 
         {backupAvailable && (
-          <button className="login-btn login-btn-outline" type="button" onClick={useBackupCode} disabled={busy}>
+          <button className="button button-large button-full-width login-button" type="button" onClick={useBackupCode} disabled={busy}>
             Use a backup code instead
           </button>
         )}
 
-        <button className="login-btn login-btn-outline" type="button" onClick={backToCredentials} disabled={busy}>
+        <button className="button button-large button-full-width login-button" type="button" onClick={backToCredentials} disabled={busy}>
           Back
         </button>
       </form>
@@ -423,10 +423,10 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode, onError, onOutag
               : 'Enter the code from your authenticator app. Your sign-in times out after 5 minutes, so re-enter your password if it expires.'}
         </p>
 
-        {error && <p className="login-alert login-alert-error" role="alert">{error}</p>}
+        {error && <p className="banner banner-error" role="alert">{error}</p>}
 
         {method && method !== 'totp' && method !== 'backup' && (
-          <button className="login-btn login-btn-outline" type="button" onClick={resend} disabled={sendingCode || cooldown > 0}>
+          <button className="button button-large button-full-width login-button" type="button" onClick={resend} disabled={sendingCode || cooldown > 0}>
             {sendingCode ? 'Sending…' : cooldown > 0 ? `Resend code (${cooldown}s)` : 'Resend code'}
           </button>
         )}
@@ -473,15 +473,15 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode, onError, onOutag
           </fieldset>
         )}
 
-        <button className="login-btn" type="submit" disabled={busy}>
+        <button className="button button-large button-primary login-button" type="submit" disabled={busy}>
           {busy ? 'Verifying…' : 'Verify and sign in'}
         </button>
         {backupAvailable && method !== 'backup' && (
-          <button className="login-btn login-btn-outline" type="button" onClick={useBackupCode} disabled={busy}>
+          <button className="button button-large button-full-width login-button" type="button" onClick={useBackupCode} disabled={busy}>
             Use a backup code instead
           </button>
         )}
-        <button className="login-btn login-btn-outline" type="button" onClick={backFromCode} disabled={busy}>
+        <button className="button button-large button-full-width login-button" type="button" onClick={backFromCode} disabled={busy}>
           Back
         </button>
       </form>
@@ -496,7 +496,7 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode, onError, onOutag
       <h2>Sign in</h2>
       <p className="login-sub">Use the username and password from your account.</p>
 
-      {error && <p id="login-error" className="login-alert login-alert-error" role="alert">{error}</p>}
+      {error && <p id="login-error" className="banner banner-error" role="alert">{error}</p>}
 
       <div className="login-field">
         <label htmlFor="login-username">Username</label>
@@ -530,7 +530,7 @@ function LoginForm({ onSignIn, onMfaComplete, onRequestMfaCode, onError, onOutag
         autoComplete="current-password"
       />
 
-      <button className="login-btn" type="submit" disabled={busy}>
+      <button className="button button-large button-primary login-button" type="submit" disabled={busy}>
         {busy ? 'Signing in…' : 'Sign In'}
       </button>
       <p className="login-help">
@@ -720,8 +720,8 @@ function RoleRegistrationForm({ role, onBack, onDone, onError, onOutage }) {
           create your {ROLE_LABEL[role]} account. The code expires in 10 minutes.
         </p>
 
-        {error && <p className="login-alert login-alert-error" role="alert">{error}</p>}
-        {codeNotice && <p className="login-alert login-alert-success" role="status">{codeNotice}</p>}
+        {error && <p className="banner banner-error" role="alert">{error}</p>}
+        {codeNotice && <p className="banner banner-success" role="status">{codeNotice}</p>}
 
         <div className="login-field">
           <label htmlFor="reg-verification-code">Verification code</label>
@@ -735,10 +735,10 @@ function RoleRegistrationForm({ role, onBack, onDone, onError, onOutage }) {
           />
         </div>
 
-        <button className="login-btn" type="submit" disabled={busy}>
+        <button className="button button-large button-primary login-button" type="submit" disabled={busy}>
           {busy ? 'Verifying…' : 'Verify and create account'}
         </button>
-        <button className="login-btn login-btn-outline" type="button" onClick={resendCode} disabled={busy || sendingCode || cooldown > 0}>
+        <button className="button button-large button-full-width login-button" type="button" onClick={resendCode} disabled={busy || sendingCode || cooldown > 0}>
           {sendingCode ? 'Sending…' : cooldown > 0 ? `Resend code (${cooldown}s)` : 'Resend code'}
         </button>
       </form>
@@ -752,7 +752,7 @@ function RoleRegistrationForm({ role, onBack, onDone, onError, onOutage }) {
         <button type="button" className="login-back" onClick={onBack}>Back</button>
       </div>
 
-      {error && <p className="login-alert login-alert-error" role="alert">{error}</p>}
+      {error && <p className="banner banner-error" role="alert">{error}</p>}
 
       <div className="login-field">
         <label htmlFor="reg-first-name">First Name</label>
@@ -833,7 +833,7 @@ function RoleRegistrationForm({ role, onBack, onDone, onError, onOutage }) {
         </div>
       )}
 
-      <button className="login-btn" type="submit" disabled={busy}>
+      <button className="button button-large button-primary login-button" type="submit" disabled={busy}>
         {busy ? 'Creating account…' : `Create ${ROLE_LABEL[role]} Account`}
       </button>
     </form>

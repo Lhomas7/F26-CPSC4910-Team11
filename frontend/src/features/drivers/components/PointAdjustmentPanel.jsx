@@ -85,16 +85,16 @@ export default function PointAdjustmentPanel({ driverId, driverName, balance, on
   };
 
   return (
-    <section className="point-adjustment" aria-labelledby="point-adjustment-heading">
+    <section className="card point-adjustment" aria-labelledby="point-adjustment-heading">
       <header className="point-adjustment-heading">
         <h2 id="point-adjustment-heading">Adjust points</h2>
         <p>A reason is recorded with every change and shown in the driver&apos;s point history.</p>
       </header>
       <div className="point-adjustment-body">
-        {notice && <p className="point-adjustment-notice" role="status">{notice}</p>}
-        {errors.detail && <p className="point-adjustment-error" role="alert">{errors.detail}</p>}
+        {notice && <p className="banner banner-success point-adjustment-banner" role="status">{notice}</p>}
+        {errors.detail && <p className="banner banner-error point-adjustment-banner" role="alert">{errors.detail}</p>}
         {validationFailed && (
-          <p className="point-adjustment-error" role="alert">
+          <p className="banner banner-error point-adjustment-banner" role="alert">
             <strong>Nothing was saved.</strong> Fix the highlighted fields and try again.
           </p>
         )}

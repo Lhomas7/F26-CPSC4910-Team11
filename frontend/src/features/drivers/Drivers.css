@@ -194,12 +194,8 @@
   gap: .7rem;
   grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
 }
-
 .driver-card {
-  background: var(--surface);
-  border: 1px solid var(--line);
   border-left: 3px solid var(--accent);
-  border-radius: .65rem;
   display: grid;
   gap: .55rem;
   padding: .85rem .95rem;
@@ -271,35 +267,6 @@
   overflow-wrap: anywhere;
 }
 
-.driver-status {
-  align-items: center;
-  border-radius: 999px;
-  display: inline-flex;
-  font-size: .7rem;
-  font-weight: 700;
-  gap: .3rem;
-  padding: .12rem .5rem;
-  white-space: nowrap;
-}
-
-.driver-status::before {
-  background: currentColor;
-  border-radius: 50%;
-  content: '';
-  height: .4rem;
-  width: .4rem;
-}
-
-.driver-status.approved {
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
-.driver-status.pending {
-  background: var(--warning-soft);
-  color: var(--warning-ink);
-}
-
 .driver-card-balance {
   align-items: baseline;
   border-top: 1px dashed var(--line);
@@ -325,35 +292,6 @@
 
 .drivers-directory .state-panel {
   margin-top: .75rem;
-}
-
-.drivers-button {
-  align-items: center;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: .45rem;
-  color: var(--ink);
-  cursor: pointer;
-  display: inline-flex;
-  font: inherit;
-  font-size: .78rem;
-  font-weight: 800;
-  justify-content: center;
-  line-height: 1;
-  min-height: 2.25rem;
-  padding: 0 .8rem;
-  text-align: center;
-}
-
-.drivers-button.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: white;
-}
-
-.drivers-button:disabled {
-  cursor: not-allowed;
-  opacity: .55;
 }
 
 .drivers-toolbar-action {
@@ -485,22 +423,8 @@
   height: 1.1rem;
   width: 1.1rem;
 }
-
 .driver-settings-message {
-  border-radius: .45rem;
-  font-size: .73rem;
   margin: .75rem 0 0;
-  padding: .55rem .65rem;
-}
-
-.driver-settings-message.success {
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
-.driver-settings-message.error {
-  background: var(--danger-soft);
-  color: var(--danger);
 }
 
 .drivers-skeleton {
@@ -518,15 +442,6 @@
   max-width: 58rem;
   padding: 1.5rem 1.75rem 4rem;
   width: 100%;
-}
-
-.driver-identity-card,
-.driver-enrollment-card,
-.point-adjustment,
-.driver-history {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: .7rem;
 }
 
 .driver-identity {
@@ -667,15 +582,6 @@
   gap: .6rem;
 }
 
-.drivers-button.danger-outline {
-  border-color: var(--danger-line);
-  color: var(--danger);
-}
-
-.drivers-button.danger-outline:hover {
-  background: var(--danger-soft);
-}
-
 .driver-adjustment-unavailable {
   background: var(--surface-2);
   border: 1px dashed var(--line);
@@ -690,15 +596,6 @@
   display: block;
   font-size: .85rem;
   margin-bottom: .2rem;
-}
-
-.driver-detail-notice {
-  background: var(--accent-soft);
-  border: 1px solid var(--accent);
-  border-radius: .5rem;
-  font-size: .82rem;
-  margin: 0;
-  padding: .65rem .8rem;
 }
 
 .point-adjustment {
@@ -834,28 +731,10 @@
   color: var(--danger);
   font-weight: 600;
 }
-
-.point-adjustment-notice,
-.point-adjustment-error {
-  border-radius: .5rem;
-  font-size: .82rem;
+.point-adjustment-banner {
   margin: 0 0 1rem;
-  padding: .65rem .8rem;
 }
-
-.point-adjustment-notice {
-  background: var(--accent-soft);
-  border: 1px solid var(--accent);
-  color: var(--ink);
-}
-
-.point-adjustment-error {
-  background: var(--danger-soft);
-  border: 1px solid var(--danger-line);
-  color: var(--danger);
-}
-
-.point-adjustment-error strong {
+.point-adjustment-banner strong {
   font-weight: 700;
 }
 
@@ -1000,28 +879,10 @@
   display: grid;
   gap: 0;
 }
-
 .point-history-type {
-  align-items: center;
   border-radius: .3rem;
-  display: inline-flex;
-  font-size: .68rem;
-  font-weight: 700;
-  gap: .25rem;
   justify-self: start;
   letter-spacing: .02em;
-  padding: .1rem .4rem;
-  width: fit-content;
-}
-
-.point-history-type.award {
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
-.point-history-type.deduction {
-  background: var(--danger-soft);
-  color: var(--danger);
 }
 
 .driver-history .point-history-detail .point-history-reason {
@@ -1100,8 +961,7 @@
 .driver-danger-area li {
   margin-bottom: .2rem;
 }
-
-.driver-danger-area .drivers-button {
+.driver-danger-area .button {
   border-radius: .5rem;
   font-size: .825rem;
   font-weight: 600;
@@ -1144,20 +1004,12 @@
 .driver-detail-panel-skeleton.tall {
   height: 13rem;
 }
-
 .drivers-notice {
   align-items: flex-start;
-  background: var(--accent-soft);
-  border: 1px solid var(--accent);
-  border-radius: .5rem;
-  color: var(--accent);
   display: flex;
-  font-size: .82rem;
-  font-weight: 700;
   gap: .75rem;
   justify-content: space-between;
   margin: 0;
-  padding: .7rem .9rem;
 }
 
 .drivers-notice button {
@@ -1251,19 +1103,13 @@
   gap: .5rem;
   margin-top: 1.1rem;
 }
-
-.remove-driver-dialog .modal-button {
+.remove-driver-dialog .button {
   align-items: center;
   border-radius: .5rem;
   display: inline-flex;
   font-size: .825rem;
   font-weight: 600;
   padding: .5rem .9rem;
-}
-
-.remove-driver-dialog .modal-button.danger {
-  background: var(--danger);
-  border-color: var(--danger);
 }
 
 @media (max-width: 53.75rem) {
@@ -1356,21 +1202,19 @@
     margin-top: .15rem;
     justify-self: start;
   }
-
-  .driver-enrollment-actions .drivers-button,
-  .driver-danger-area .drivers-button {
-    flex: 1 1 100%;
-    width: 100%;
-  }
+.driver-enrollment-actions .button,
+  .driver-danger-area .button {
+  flex: 1 1 100%;
+  width: 100%;
+}
 
   .remove-driver-dialog .modal-actions {
     flex-direction: column-reverse;
   }
-
-  .remove-driver-dialog .modal-button {
-    justify-content: center;
-    width: 100%;
-  }
+.remove-driver-dialog .button {
+  justify-content: center;
+  width: 100%;
+}
 }
 
 /* The directory controls need deliberate rows before the cards become truly

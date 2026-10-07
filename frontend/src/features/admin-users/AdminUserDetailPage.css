@@ -6,11 +6,7 @@
   max-width: 54rem;
   padding: 1.5rem 1.75rem 4rem;
 }
-
 .sponsor-detail-card {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: .65rem;
   overflow: hidden;
 }
 
@@ -108,13 +104,6 @@
   margin-left: .5rem;
 }
 
-.sponsor-detail-notice {
-  background: var(--accent-soft);
-  color: var(--accent);
-  margin: 1rem 1.25rem 0;
-  padding: .65rem .8rem;
-}
-
 .sponsor-detail-form {
   display: grid;
   gap: 1rem;
@@ -188,12 +177,8 @@
   cursor: not-allowed;
   opacity: .55;
 }
-
-.sponsor-detail-error {
-  background: var(--danger-soft);
-  color: var(--danger);
+.sponsor-detail-banner {
   margin: 1rem 1.25rem 0;
-  padding: .65rem .8rem;
 }
 
 .sponsor-detail-state {

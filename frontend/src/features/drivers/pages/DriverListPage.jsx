@@ -69,7 +69,7 @@ export default function DriverListPage() {
       <main className="drivers-content">
         <StatePanel tone="error" title="Drivers couldn't be loaded">
           <p>{error}</p>
-          <button className="drivers-button primary" type="button" onClick={loadDrivers}>Try again</button>
+          <button className="button button-primary" type="button" onClick={loadDrivers}>Try again</button>
         </StatePanel>
       </main>
     </div>
@@ -94,7 +94,7 @@ export default function DriverListPage() {
       <PageHeader title="Drivers" subtitle="Manage enrollment, balances, and driver access" />
       <main className="drivers-content">
         {notice && (
-          <div className="drivers-notice" role="status">
+          <div className="banner banner-success drivers-notice" role="status">
             <span>{notice}</span>
             <button type="button" aria-label="Dismiss notice" onClick={() => setNotice('')}>×</button>
           </div>
@@ -176,18 +176,18 @@ export default function DriverListPage() {
           ) : visibleDrivers.length === 0 ? (
             <StatePanel title={search.trim() ? `No drivers match “${search.trim()}”` : `No ${statusFilter} drivers yet`}>
               <p>Try a different name or username, or clear the search and filters to see everyone.</p>
-              <button className="drivers-button" type="button" onClick={clearFilters}>Clear search and filters</button>
+              <button className="button" type="button" onClick={clearFilters}>Clear search and filters</button>
             </StatePanel>
           ) : (
             <div className="driver-card-grid">
               {visibleDrivers.map((driver) => (
-                <article className={`driver-card ${driver.status}`} key={driver.id}>
+                <article className={`card driver-card ${driver.status}`} key={driver.id}>
                   <div className="driver-card-person">
                     <Avatar className="driver-card-avatar" name={driver.name} />
                     <div>
                       <h3><Link to={`/drivers/${driver.id}`} aria-label={`View ${driver.name}`}>{driver.name}</Link></h3>
                       <p className="driver-card-username">@{driver.username}</p>
-                      <span className={`driver-status ${driver.status}`}>{driver.status === 'approved' ? 'Approved' : 'Pending approval'}</span>
+                      <span className={`badge badge-dot ${driver.status === 'approved' ? 'badge-success' : 'badge-warning'}`}>{driver.status === 'approved' ? 'Approved' : 'Pending approval'}</span>
                     </div>
                   </div>
                   <div className="driver-card-balance">

@@ -8,11 +8,7 @@
   max-width: 56rem;
   padding: 1.5rem 1.75rem 2.5rem;
 }
-
 .account-card {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: .7rem;
   overflow: hidden;
 }
 
@@ -66,8 +62,7 @@
   justify-items: center;
   text-align: center;
 }
-
-.profile-picture-actions .account-button {
+.profile-picture-actions .button {
   display: inline-block;
 }
 
@@ -76,21 +71,6 @@
   font-size: .68rem;
   line-height: 1.35;
   max-width: 9rem;
-}
-
-.account-link-button {
-  background: transparent;
-  border: 0;
-  color: var(--ink-2);
-  cursor: pointer;
-  font: inherit;
-  font-size: .75rem;
-  padding: .15rem;
-  text-decoration: underline;
-}
-
-.account-link-button:hover:not(:disabled) {
-  color: var(--ink);
 }
 
 .profile-details {
@@ -124,32 +104,6 @@
 .profile-details i {
   color: var(--ink-2);
   font-weight: 400;
-}
-
-.account-button {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: .45rem;
-  color: var(--ink);
-  cursor: pointer;
-  font-size: .8rem;
-  font-weight: 700;
-  padding: .45rem .8rem;
-}
-
-.account-button:hover:not(:disabled) {
-  background: var(--surface-2);
-}
-
-.account-button.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: white;
-}
-
-.account-button:disabled {
-  cursor: progress;
-  opacity: .65;
 }
 
 .profile-form {
@@ -273,22 +227,8 @@
   margin-top: 1rem;
   padding: .8rem 1.25rem;
 }
-
 .account-banner {
-  border-radius: .45rem;
-  font-size: .8rem;
   margin: 1rem 1.25rem 0;
-  padding: .6rem .75rem;
-}
-
-.account-banner.success {
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
-.account-banner.error {
-  background: var(--danger-soft);
-  color: var(--danger-ink);
 }
 
 .password-form {
@@ -347,14 +287,7 @@
   display: flex;
   gap: .6rem;
 }
-
 .mfa-pill {
-  background: var(--accent-soft);
-  border-radius: 99rem;
-  color: var(--accent);
-  font-size: .7rem;
-  font-weight: 800;
-  padding: .2rem .6rem;
   text-transform: uppercase;
 }
 
@@ -470,10 +403,9 @@
   .locked-fields {
     grid-template-columns: 1fr;
   }
-
-  .account-card-footer .account-button {
-    flex: 1;
-  }
+.account-card-footer .button {
+  flex: 1;
+}
 }
 
 .login-activity-content {
@@ -516,21 +448,4 @@
 
 .login-activity-list time {
   color: var(--ink-2);
-}
-
-.login-activity-status {
-  border-radius: 999px;
-  font-size: .75rem;
-  font-weight: 600;
-  padding: .15rem .6rem;
-}
-
-.login-activity-list .success .login-activity-status {
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
-.login-activity-list .failed .login-activity-status {
-  background: var(--danger-soft);
-  color: var(--danger-ink);
 }

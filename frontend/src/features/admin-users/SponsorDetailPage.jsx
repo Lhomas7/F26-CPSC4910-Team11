@@ -113,7 +113,7 @@ export default function SponsorDetailPage() {
   };
 
   if (user?.account_type !== 'admin' || status === 'forbidden') return <main className="sponsor-detail-page"><StatePanel className="sponsor-detail-state" headingLevel={1} title="You don't have access to this page"><p>Only administrators can view and edit sponsor accounts.</p></StatePanel></main>;
-  if (status === 'loading') return <main className="sponsor-detail-page"><p role="status">Loading sponsor account…</p><section className="sponsor-detail-card sponsor-detail-skeleton" aria-label="Loading the account" /></main>;
+  if (status === 'loading') return <main className="sponsor-detail-page"><p role="status">Loading sponsor account…</p><section className="card sponsor-detail-card sponsor-detail-skeleton" aria-label="Loading the account" /></main>;
   if (status === 'error') return <main className="sponsor-detail-page"><StatePanel className="sponsor-detail-state" headingLevel={1} tone="error" title="This account couldn't be loaded"><p>Check your connection and try again.</p><button type="button" onClick={load}>Try again</button></StatePanel></main>;
   if (status === 'not-found') return <main className="sponsor-detail-page"><StatePanel className="sponsor-detail-state" headingLevel={1} title="That sponsor account doesn't exist"><p>It may have been removed, or the link may be wrong.</p><Link to="/users">Back to users</Link></StatePanel></main>;
 
@@ -122,13 +122,13 @@ export default function SponsorDetailPage() {
     <div className="sponsor-detail-page">
       <PageHeader title="Sponsor account" breadcrumb={<><Link to="/users">Users</Link> / {name}</>} />
       <main className="sponsor-detail-content">
-        <section className="sponsor-detail-card">
+        <section className="card sponsor-detail-card">
           <div className="sponsor-detail-card-head">
             <div className="sponsor-detail-person"><Avatar className="sponsor-detail-avatar" name={name} /><div><h2>{name}</h2><p>@{account.username} <span>Sponsor</span> · {account.is_active ? 'Active' : 'Inactive'}</p></div></div>
             {!editing && <div className="sponsor-detail-header-actions"><button type="button" onClick={viewAsSponsor} disabled={viewingAs || !account.is_active}>{viewingAs ? 'Opening…' : 'View as sponsor'}</button><button type="button" onClick={() => { setNotice(''); setEditing(true); }}>Edit account</button></div>}
           </div>
-          {errors.detail && !editing && <p className="sponsor-detail-error" role="alert">{errors.detail}</p>}
-          {notice && <p className="sponsor-detail-notice" role="status">{notice}</p>}
+          {errors.detail && !editing && <p className="banner banner-error sponsor-detail-banner" role="alert">{errors.detail}</p>}
+          {notice && <p className="banner banner-success sponsor-detail-banner" role="status">{notice}</p>}
           {!editing ? (
             <dl className="sponsor-detail-view">
               <div><dt>Full name</dt><dd>{name}</dd></div><div><dt>Username</dt><dd>@{account.username}</dd></div>
@@ -137,7 +137,7 @@ export default function SponsorDetailPage() {
             </dl>
           ) : (
             <form onSubmit={save} noValidate>
-              {errors.detail && <p className="sponsor-detail-error" role="alert">{errors.detail}</p>}
+              {errors.detail && <p className="banner banner-error sponsor-detail-banner" role="alert">{errors.detail}</p>}
               <div className="sponsor-detail-form">
                 <label>First name<input value={form.first_name} onChange={(e) => update('first_name', e.target.value)} />{errors.first_name && <small>{errors.first_name}</small>}</label>
                 <label>Last name<input value={form.last_name} onChange={(e) => update('last_name', e.target.value)} />{errors.last_name && <small>{errors.last_name}</small>}</label>

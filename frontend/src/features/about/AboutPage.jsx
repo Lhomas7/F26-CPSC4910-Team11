@@ -72,7 +72,7 @@ export default function AboutPage() {
         title="About"
         subtitle="Product and release information"
         actions={canEdit && (
-          <button className="about-button" type="button" onClick={() => { setNotice(''); setEditing(true); }}>
+          <button className="button" type="button" onClick={() => { setNotice(''); setEditing(true); }}>
             Edit release details
           </button>
         )}
@@ -96,7 +96,7 @@ export default function AboutPage() {
           </StatePanel>
         )}
 
-        {notice && <p className="about-notice" role="status">{notice}</p>}
+        {notice && <p className="banner banner-success about-notice" role="status">{notice}</p>}
 
         {editing && ready && (
           <AboutEditForm
@@ -130,8 +130,8 @@ export default function AboutPage() {
             </section>
 
             <div className="about-grid">
-              <section className="about-card" aria-labelledby="release-details-heading">
-                <h3 id="release-details-heading">Release details {ready && <span className="current-badge">Current</span>}</h3>
+              <section className="card about-card" aria-labelledby="release-details-heading">
+                <h3 id="release-details-heading">Release details {ready && <span className="badge badge-success">Current</span>}</h3>
                 <dl className="detail-rows">
                   <div><dt>Product</dt><dd>{ready ? release.product_name : <Skeleton className="about-skeleton">Loading product</Skeleton>}</dd></div>
                   <div><dt>Version</dt><dd>{ready ? release.version_number : <Skeleton className="about-skeleton">Loading</Skeleton>}</dd></div>
@@ -140,7 +140,7 @@ export default function AboutPage() {
                 </dl>
               </section>
 
-              <section className="about-card" aria-labelledby="points-heading">
+              <section className="card about-card" aria-labelledby="points-heading">
                 <h3 id="points-heading">How points work</h3>
                 <ol className="points-steps">
                   <li>Sponsors award points for safe driving.</li>

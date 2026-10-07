@@ -1,0 +1,184 @@
+/* Shared building blocks used across features. Put these classes straight on
+   elements (<button>, <Link>, <p>, <section>…); feature stylesheets only add
+   spacing and layout on top, never their own colours, borders or type. */
+
+/* ---------- Buttons ----------
+   .button                 secondary (outlined)
+   .button-primary         main action
+   .button-danger          destructive action
+   .button-danger-outline  destructive but secondary
+   .button-link            text-only, underlined
+   .button-large           larger: auth screens, hero calls to action, dialogs
+   .button-full-width      full width */
+.button {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .45rem;
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: .8rem;
+  font-weight: 700;
+  gap: .35rem;
+  justify-content: center;
+  line-height: 1.2;
+  min-height: 2.25rem;
+  padding: .45rem .85rem;
+  text-align: center;
+  text-decoration: none;
+}
+
+.button:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.button-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.button-primary:hover:not(:disabled) {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+.button-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--on-danger);
+}
+
+.button-danger:hover:not(:disabled) {
+  background: var(--danger-ink);
+  border-color: var(--danger-ink);
+}
+
+.button-danger-outline {
+  border-color: var(--danger-line);
+  color: var(--danger);
+}
+
+.button-danger-outline:hover:not(:disabled) {
+  background: var(--danger-soft);
+}
+
+.button-link {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ink-2);
+  font-size: .75rem;
+  font-weight: 400;
+  min-height: 0;
+  padding: .15rem;
+  text-decoration: underline;
+}
+
+.button-link:hover:not(:disabled) {
+  background: transparent;
+  color: var(--ink);
+}
+
+.button-large {
+  border-radius: .5rem;
+  font-size: .875rem;
+  font-weight: 600;
+  min-height: 2.5rem;
+  padding: .55rem .95rem;
+}
+
+.button-full-width {
+  width: 100%;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: .6;
+}
+
+/* ---------- Banners ----------
+   Inline messages: <p className="banner banner-error" role="alert">. */
+.banner {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: .5rem;
+  color: var(--ink);
+  font-size: .82rem;
+  line-height: 1.45;
+  margin: 0;
+  padding: .65rem .8rem;
+}
+
+.banner-success {
+  background: var(--success-soft);
+  border-color: var(--success-line);
+  color: var(--success);
+}
+
+.banner-error {
+  background: var(--danger-soft);
+  border-color: var(--danger-line);
+  color: var(--danger-ink);
+}
+
+.banner-warning {
+  background: var(--warning-soft);
+  border-color: var(--warning-line);
+  color: var(--warning-ink);
+}
+
+/* ---------- Badges ----------
+   Small status pills. .badge-dot adds a leading coloured dot. */
+.badge {
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--ink-2);
+  display: inline-flex;
+  font-size: .7rem;
+  font-weight: 700;
+  gap: .3rem;
+  line-height: 1.3;
+  padding: .12rem .55rem;
+  white-space: nowrap;
+  width: max-content;
+}
+
+.badge-success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.badge-warning {
+  background: var(--warning-soft);
+  color: var(--warning-ink);
+}
+
+.badge-danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.badge-neutral {
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.badge-dot::before {
+  background: currentColor;
+  border-radius: 50%;
+  content: '';
+  height: .4rem;
+  width: .4rem;
+}
+
+/* ---------- Cards ----------
+   The bordered surface most page sections sit on. Padding is up to the page. */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .65rem;
+}

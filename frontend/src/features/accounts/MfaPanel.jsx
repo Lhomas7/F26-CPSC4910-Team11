@@ -54,10 +54,10 @@ function BackupCodesReveal({ codes, onDone }) {
         onFocus={(event) => event.target.select()}
         rows={codes.length}
       />
-      {copyMessage && <p className="account-banner success" role="status">{copyMessage}</p>}
+      {copyMessage && <p className="banner banner-success account-banner" role="status">{copyMessage}</p>}
       <div className="account-card-footer">
-        <button className="account-button" type="button" onClick={copy}>Copy codes</button>
-        <button className="account-button primary" type="button" onClick={onDone}>
+        <button className="button" type="button" onClick={copy}>Copy codes</button>
+        <button className="button button-primary" type="button" onClick={onDone}>
           Done — I saved these codes
         </button>
       </div>
@@ -236,7 +236,7 @@ export default function MfaPanel({ mfa, onRefreshed, requiredText, hideRequiredB
 
   if (revealCodes) {
     return (
-      <section className="account-card" aria-labelledby="mfa-heading">
+      <section className="card account-card" aria-labelledby="mfa-heading">
         <div className="account-card-header">
           <div><h2 id="mfa-heading">Two-factor authentication</h2><p>Save your backup codes</p></div>
         </div>
@@ -249,19 +249,19 @@ export default function MfaPanel({ mfa, onRefreshed, requiredText, hideRequiredB
   }
 
   return (
-    <section className="account-card" aria-labelledby="mfa-heading">
+    <section className="card account-card" aria-labelledby="mfa-heading">
       <div className="account-card-header">
         <div><h2 id="mfa-heading">Two-factor authentication</h2><p>Add an extra layer of protection when you sign in</p></div>
       </div>
 
       {!hideRequiredBanner && mfa.required && !mfa.enrolled && (
-        <p className="account-banner error" role="status">
+        <p className="banner banner-error account-banner" role="status">
           {requiredMessage}
         </p>
       )}
 
       {message && (
-        <p className={message.ok ? 'account-banner success' : 'account-banner error'} role={message.ok ? 'status' : 'alert'}>
+        <p className={message.ok ? 'banner banner-success account-banner' : 'banner banner-error account-banner'} role={message.ok ? 'status' : 'alert'}>
           {message.text}
         </p>
       )}
@@ -277,8 +277,8 @@ export default function MfaPanel({ mfa, onRefreshed, requiredText, hideRequiredB
             <label htmlFor="mfa-verify-code">Enter a code from your authenticator app</label>
             <input id="mfa-verify-code" inputMode="numeric" autoComplete="one-time-code" value={code} onChange={(event) => setCode(event.target.value)} />
             <div className="account-card-footer">
-              <button className="account-button" type="button" onClick={reset} disabled={busy === 'verify'}>Cancel</button>
-              <button className="account-button primary" type="submit" disabled={busy === 'verify'}>{busy === 'verify' ? 'Verifying…' : 'Verify and enable'}</button>
+              <button className="button" type="button" onClick={reset} disabled={busy === 'verify'}>Cancel</button>
+              <button className="button button-primary" type="submit" disabled={busy === 'verify'}>{busy === 'verify' ? 'Verifying…' : 'Verify and enable'}</button>
             </div>
           </form>
         </div>
@@ -291,8 +291,8 @@ export default function MfaPanel({ mfa, onRefreshed, requiredText, hideRequiredB
             <label htmlFor="mfa-verify-code">Verification code</label>
             <input id="mfa-verify-code" inputMode="numeric" autoComplete="one-time-code" value={code} onChange={(event) => setCode(event.target.value)} />
             <div className="account-card-footer">
-              <button className="account-button" type="button" onClick={reset} disabled={busy === 'verify'}>Cancel</button>
-              <button className="account-button primary" type="submit" disabled={busy === 'verify'}>{busy === 'verify' ? 'Verifying…' : 'Verify and enable'}</button>
+              <button className="button" type="button" onClick={reset} disabled={busy === 'verify'}>Cancel</button>
+              <button className="button button-primary" type="submit" disabled={busy === 'verify'}>{busy === 'verify' ? 'Verifying…' : 'Verify and enable'}</button>
             </div>
           </form>
         </div>
@@ -309,8 +309,8 @@ export default function MfaPanel({ mfa, onRefreshed, requiredText, hideRequiredB
             <label htmlFor="mfa-verify-code">{flow.method === 'backup' ? 'Backup code' : 'Reset code'}</label>
             <input id="mfa-verify-code" inputMode={flow.method === 'backup' ? 'text' : 'numeric'} value={code} onChange={(event) => setCode(event.target.value)} />
             <div className="account-card-footer">
-              <button className="account-button" type="button" onClick={reset} disabled={busy === 'reset'}>Cancel</button>
-              <button className="account-button primary" type="submit" disabled={busy === 'reset'}>{busy === 'reset' ? 'Resetting…' : 'Reset authenticator app'}</button>
+              <button className="button" type="button" onClick={reset} disabled={busy === 'reset'}>Cancel</button>
+              <button className="button button-primary" type="submit" disabled={busy === 'reset'}>{busy === 'reset' ? 'Resetting…' : 'Reset authenticator app'}</button>
             </div>
           </form>
         </div>
@@ -323,7 +323,7 @@ export default function MfaPanel({ mfa, onRefreshed, requiredText, hideRequiredB
           <p className="mfa-manual-key">
             Manual key: <code>{flow.payload.manual_key}</code>
           </p>
-          <button className="account-button" type="button" onClick={reset}>Done</button>
+          <button className="button" type="button" onClick={reset}>Done</button>
         </div>
       )}
 
@@ -337,7 +337,7 @@ export default function MfaPanel({ mfa, onRefreshed, requiredText, hideRequiredB
             {setupMethod !== 'sms' && (
               <div className="mfa-method-actions">
                 <button
-                  className="account-button primary"
+                  className="button button-primary"
                   type="button"
                   onClick={() => startEnable(setupMethod)}
                   disabled={busy === setupMethod}
@@ -367,7 +367,7 @@ export default function MfaPanel({ mfa, onRefreshed, requiredText, hideRequiredB
               </div>
               <small>The country code is added automatically when the number is saved.</small>
               <div className="account-card-footer">
-                <button className="account-button primary" type="button" onClick={() => startEnable('sms')} disabled={busy === 'sms'}>
+                <button className="button button-primary" type="button" onClick={() => startEnable('sms')} disabled={busy === 'sms'}>
                   {busy === 'sms' ? 'Starting…' : 'Turn on text message codes'}
                 </button>
               </div>
@@ -377,7 +377,7 @@ export default function MfaPanel({ mfa, onRefreshed, requiredText, hideRequiredB
           {otherMethods.length > 0 && (
             <div className="password-form">
               {!showMethodPicker ? (
-                <button className="account-link-button" type="button" onClick={() => setShowMethodPicker(true)}>
+                <button className="button button-link" type="button" onClick={() => setShowMethodPicker(true)}>
                   Set up a different method instead
                 </button>
               ) : (
@@ -411,13 +411,13 @@ export default function MfaPanel({ mfa, onRefreshed, requiredText, hideRequiredB
                 <div className="mfa-method-actions">
                   {row.enabled ? (
                     <>
-                      <span className="mfa-pill">Enabled</span>
-                      <button className="account-button" type="button" onClick={() => disable(row.key)} disabled={busy === row.key}>
+                      <span className="badge badge-success mfa-pill">Enabled</span>
+                      <button className="button" type="button" onClick={() => disable(row.key)} disabled={busy === row.key}>
                         {busy === row.key ? 'Disabling…' : 'Disable'}
                       </button>
                     </>
                   ) : (
-                    <button className="account-button primary" type="button" aria-label={row.key === 'totp' ? 'Set up Authenticator app' : `Turn on ${row.title}`} onClick={() => startEnable(row.key)} disabled={busy === row.key}>
+                    <button className="button button-primary" type="button" aria-label={row.key === 'totp' ? 'Set up Authenticator app' : `Turn on ${row.title}`} onClick={() => startEnable(row.key)} disabled={busy === row.key}>
                       {row.key === 'totp' ? 'Set up' : 'Turn on'}
                     </button>
                   )}
@@ -433,7 +433,7 @@ export default function MfaPanel({ mfa, onRefreshed, requiredText, hideRequiredB
               </div>
               {!regenerating && (
                 <div className="mfa-method-actions">
-                  <button className="account-button" type="button" onClick={() => setRegenerating(true)}>
+                  <button className="button" type="button" onClick={() => setRegenerating(true)}>
                     Regenerate codes
                   </button>
                 </div>
@@ -453,10 +453,10 @@ export default function MfaPanel({ mfa, onRefreshed, requiredText, hideRequiredB
               />
               <small>Regenerating replaces every existing backup code with a new set.</small>
               <div className="account-card-footer">
-                <button className="account-button" type="button" onClick={() => { setRegenerating(false); setRegeneratePassword(''); }} disabled={busy === 'regenerate'}>
+                <button className="button" type="button" onClick={() => { setRegenerating(false); setRegeneratePassword(''); }} disabled={busy === 'regenerate'}>
                   Cancel
                 </button>
-                <button className="account-button primary" type="button" onClick={submitRegenerate} disabled={busy === 'regenerate'}>
+                <button className="button button-primary" type="button" onClick={submitRegenerate} disabled={busy === 'regenerate'}>
                   {busy === 'regenerate' ? 'Regenerating…' : 'Regenerate codes'}
                 </button>
               </div>
@@ -489,7 +489,7 @@ export default function MfaPanel({ mfa, onRefreshed, requiredText, hideRequiredB
           </div>
           {mfa.methods.includes('totp') && (
             <div className="account-card-footer">
-              <button className="account-button" type="button" onClick={startReset} disabled={busy === 'reset'}>
+              <button className="button" type="button" onClick={startReset} disabled={busy === 'reset'}>
                 {busy === 'reset' ? 'Requesting…' : 'Reset authenticator app'}
               </button>
             </div>

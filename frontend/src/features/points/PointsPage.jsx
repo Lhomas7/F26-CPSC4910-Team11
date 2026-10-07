@@ -39,7 +39,7 @@ function LoadState({ error, onRetry }) {
     return (
       <StatePanel tone="error" title="Points couldn't be loaded">
         <p>{error}</p>
-        <button className="points-button" type="button" onClick={onRetry}>Try again</button>
+        <button className="button" type="button" onClick={onRetry}>Try again</button>
       </StatePanel>
     );
   }
@@ -63,12 +63,12 @@ function DriverPoints() {
       <main className="points-content">
         {!history ? <LoadState error={error} onRetry={reload} /> : (
           <>
-            <section className="points-balance" aria-label="Point balance">
+            <section className="card points-balance" aria-label="Point balance">
               <span>Current balance</span>
               <strong>{Number(record?.point_balance || 0).toLocaleString()} <small>pts</small></strong>
               <p>{record?.sponsor_name ? `Sponsored by ${record.sponsor_name}` : 'Not linked to a sponsor yet'}</p>
             </section>
-            <section className="points-card" aria-labelledby="points-history-heading">
+            <section className="card points-card" aria-labelledby="points-history-heading">
               <h2 id="points-history-heading">History</h2>
               <PointHistoryList entries={history} emptyText="No point changes yet. Your sponsor's awards and deductions will appear here." />
             </section>
@@ -97,18 +97,18 @@ function SponsorPoints() {
       <main className="points-content">
         {!drivers ? <LoadState error={error} onRetry={reload} /> : (
           <>
-            <section className="points-balance" aria-label="Point balance">
+            <section className="card points-balance" aria-label="Point balance">
               <span>{selected ? `${selected.name}'s balance` : 'Points held by your drivers'}</span>
               <strong>{Number(selected ? selected.point_balance : totalPoints).toLocaleString()} <small>pts</small></strong>
               {selected ? (
                 selected.status === 'approved'
-                  ? <Link className="points-button primary" to={`/drivers/${selected.id}`}>Award or deduct points</Link>
+                  ? <Link className="button button-primary" to={`/drivers/${selected.id}`}>Award or deduct points</Link>
                   : <p>Approve {selected.name} before awarding points.</p>
               ) : (
                 <p>To award or deduct points, pick a driver or open them from the Drivers page.</p>
               )}
             </section>
-            <section className="points-card" aria-labelledby="points-history-heading">
+            <section className="card points-card" aria-labelledby="points-history-heading">
               <div className="points-card-heading">
                 <h2 id="points-history-heading">{selected ? `${selected.name}'s history` : 'Recent activity'}</h2>
                 {drivers.length > 0 && (

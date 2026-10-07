@@ -73,7 +73,7 @@ test('confirming signs the user out', async () => {
   userEvent.click(getSignOutButton());
   const dialog = screen.getByRole('dialog', { name: 'Sign out?' });
   await act(async () => {
-    userEvent.click(dialog.querySelector('.modal-button.primary'));
+    userEvent.click(dialog.querySelector('.button-primary'));
   });
 
   expect(auth.signOut).toHaveBeenCalledTimes(1);

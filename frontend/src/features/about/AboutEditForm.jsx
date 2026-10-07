@@ -35,7 +35,7 @@ export default function AboutEditForm({ release, onSaved, onCancel }) {
   const error = (name) => errors[name];
 
   return (
-    <form className="about-card about-edit" onSubmit={submit} aria-labelledby="about-edit-heading">
+    <form className="card about-card about-edit" onSubmit={submit} aria-labelledby="about-edit-heading">
       <h3 id="about-edit-heading">Edit release details</h3>
       {errors.detail && <p className="about-edit-error" role="alert">{errors.detail}</p>}
       <div className="about-edit-grid">
@@ -68,8 +68,8 @@ export default function AboutEditForm({ release, onSaved, onCancel }) {
         {error('product_description') && <small className="about-edit-error">{error('product_description')}</small>}
       </label>
       <div className="about-edit-actions">
-        <button className="about-button" type="button" onClick={onCancel} disabled={busy}>Cancel</button>
-        <button className="about-button primary" type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save changes'}</button>
+        <button className="button" type="button" onClick={onCancel} disabled={busy}>Cancel</button>
+        <button className="button button-primary" type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save changes'}</button>
       </div>
     </form>
   );

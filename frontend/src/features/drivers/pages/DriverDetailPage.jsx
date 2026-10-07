@@ -74,14 +74,14 @@ export default function DriverDetailPage() {
           error.status === 404 ? (
             <StatePanel headingLevel={1} title="That driver isn't in your organization">
               <p>They may have been dropped, or the link may be wrong. Search the driver directory to find the driver you&apos;re after.</p>
-              <Link className="drivers-button primary" to="/drivers">Back to drivers</Link>
+              <Link className="button button-primary" to="/drivers">Back to drivers</Link>
             </StatePanel>
           ) : (
             <StatePanel headingLevel={1} tone="error" title="This driver couldn't be loaded">
               <p>{error.message}</p>
               <div className="driver-state-actions">
-                <button className="drivers-button primary" type="button" onClick={loadDriver}>Try again</button>
-                <Link className="drivers-button" to="/drivers">Back to drivers</Link>
+                <button className="button button-primary" type="button" onClick={loadDriver}>Try again</button>
+                <Link className="button" to="/drivers">Back to drivers</Link>
               </div>
             </StatePanel>
           )
@@ -126,15 +126,15 @@ function DriverWorkspace({
 
   return (
     <>
-      {notice && <p className="driver-detail-notice" role="status">{notice}</p>}
+      {notice && <p className="banner banner-success" role="status">{notice}</p>}
 
-      <section className="driver-identity-card" aria-labelledby="driver-identity-name">
+      <section className="card driver-identity-card" aria-labelledby="driver-identity-name">
         <div className={`driver-identity ${driver.status}`}>
           <Avatar className="driver-identity-avatar" name={driver.name} />
           <div className="driver-identity-copy">
             <h2 id="driver-identity-name">{driver.name}</h2>
             <p className="driver-identity-username">@{driver.username}</p>
-            <span className={`driver-status ${driver.status}`}>{approved ? 'Approved' : 'Pending approval'}</span>
+            <span className={`badge badge-dot ${driver.status === 'approved' ? 'badge-success' : 'badge-warning'}`}>{approved ? 'Approved' : 'Pending approval'}</span>
             <p className="driver-identity-organization">{driver.sponsor_name}</p>
           </div>
         </div>
@@ -154,7 +154,7 @@ function DriverWorkspace({
 
       {!approved && (
         <>
-          <section className="driver-enrollment-card" aria-labelledby="driver-enrollment-heading">
+          <section className="card driver-enrollment-card" aria-labelledby="driver-enrollment-heading">
             <header>
               <h2 id="driver-enrollment-heading">Enrollment review</h2>
               <p>This driver applied to join {driver.sponsor_name || 'your organization'} and is waiting for your decision.</p>
@@ -165,10 +165,10 @@ function DriverWorkspace({
                 <li>Rejecting declines the application. A reason is required, and they can apply to another sponsor.</li>
               </ul>
               <div className="driver-enrollment-actions">
-                <button className="drivers-button primary" type="button" onClick={onApprove} disabled={saving}>
+                <button className="button button-primary" type="button" onClick={onApprove} disabled={saving}>
                   {saving ? 'Approving…' : 'Approve driver'}
                 </button>
-                <button className="drivers-button danger-outline" type="button" onClick={onRemove} disabled={saving}>Reject application</button>
+                <button className="button button-danger-outline" type="button" onClick={onRemove} disabled={saving}>Reject application</button>
               </div>
             </div>
           </section>
@@ -188,7 +188,7 @@ function DriverWorkspace({
         />
       )}
 
-      <section className="driver-history" aria-labelledby="driver-history-heading">
+      <section className="card driver-history" aria-labelledby="driver-history-heading">
         <header>
           <h2 id="driver-history-heading">Point history</h2>
           <p>Newest first. Times are shown in your local time zone.</p>
@@ -200,7 +200,7 @@ function DriverWorkspace({
                 <strong>Point history couldn&apos;t be loaded</strong>
                 <p>Everything else on this page is current. Recent point changes may not be shown here until this loads.</p>
               </div>
-              <button className="drivers-button" type="button" onClick={onRetryHistory}>Try again</button>
+              <button className="button" type="button" onClick={onRetryHistory}>Try again</button>
             </div>
           ) : history ? (
             <PointHistoryList detailStyle entries={history} emptyText={`No point changes for ${driver.name} yet.`} />
@@ -220,7 +220,7 @@ function DriverWorkspace({
             <li>They can apply to another sponsor afterward.</li>
             <li>A reason is required and saved with the enrollment change for auditing.</li>
           </ul>
-          <button className="drivers-button danger-outline" type="button" onClick={onRemove}>Drop driver</button>
+          <button className="button button-danger-outline" type="button" onClick={onRemove}>Drop driver</button>
         </section>
       )}
     </>
@@ -230,7 +230,7 @@ function DriverWorkspace({
 function DriverDetailSkeleton() {
   return (
     <div className="driver-detail-loading" aria-label="Loading driver details">
-      <section className="driver-identity-card" aria-hidden="true">
+      <section className="card driver-identity-card" aria-hidden="true">
         <div className="driver-identity">
           <Skeleton className="driver-detail-avatar-skeleton" />
           <div className="driver-detail-copy-skeleton"><Skeleton /><Skeleton /><Skeleton /></div>

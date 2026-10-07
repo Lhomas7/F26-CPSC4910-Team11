@@ -53,7 +53,7 @@ export default function DriverMfaRequirement({ company }) {
           <span>{required ? 'Required' : 'Not required'}</span>
         </label>
       </div>
-      {message && <p className={`driver-settings-message ${message.ok ? 'success' : 'error'}`} role={message.ok ? 'status' : 'alert'}>{message.text}</p>}
+      {message && <p className={`banner driver-settings-message ${message.ok ? 'banner-success' : 'banner-error'}`} role={message.ok ? 'status' : 'alert'}>{message.text}</p>}
     </section>
   );
 }

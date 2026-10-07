@@ -5,7 +5,6 @@ import PasswordInput from '../../components/forms/PasswordInput';
 import PasswordRequirements from '../../components/forms/PasswordRequirements';
 import { validatePassword } from '../../utils/accountValidation';
 
-
 function PasswordField({ id, label, ...inputProps }) {
   return (
     <>
@@ -73,14 +72,14 @@ export default function PasswordPanel() {
   };
 
   return (
-    <section className="account-card" aria-labelledby="password-heading">
+    <section className="card account-card" aria-labelledby="password-heading">
       <div className="account-card-header">
         <div>
           <h2 id="password-heading">Password</h2>
           <p>Change the password you use to sign in</p>
         </div>
         <button
-          className="account-button"
+          className="button"
           type="button"
           onClick={togglePanel}
           aria-expanded={expanded}
@@ -111,11 +110,11 @@ export default function PasswordPanel() {
             onToggleVisible={() => setConfirmationVisible((current) => !current)}
             disabled={busy}
           />
-          {error && <p className="account-banner error" role="alert">{error}</p>}
-          {success && <p className="account-banner success" role="status">{success}</p>}
+          {error && <p className="banner banner-error account-banner" role="alert">{error}</p>}
+          {success && <p className="banner banner-success account-banner" role="status">{success}</p>}
           <div className="account-card-footer">
-            <button className="account-button" type="button" onClick={closePanel} disabled={busy}>Cancel</button>
-            <button className="account-button primary" type="submit" disabled={busy}>
+            <button className="button" type="button" onClick={closePanel} disabled={busy}>Cancel</button>
+            <button className="button button-primary" type="submit" disabled={busy}>
               {busy ? 'Changing password…' : 'Save new password'}
             </button>
           </div>

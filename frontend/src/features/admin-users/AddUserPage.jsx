@@ -122,7 +122,7 @@ export default function AddUserPage() {
   const selectedOrganization = organizations.find((org) => String(org.id) === String(form.sponsor_org_id));
 
   if (user?.account_type !== 'admin' || status === 'forbidden') {
-    return <main className="add-user-page"><StatePanel headingLevel={1} title="You don't have access to this page"><p>Only administrators can create user accounts.</p><Link className="add-user-button" to="/account">Go to my account</Link></StatePanel></main>;
+    return <main className="add-user-page"><StatePanel headingLevel={1} title="You don't have access to this page"><p>Only administrators can create user accounts.</p><Link className="button" to="/account">Go to my account</Link></StatePanel></main>;
   }
 
   return (
@@ -130,18 +130,18 @@ export default function AddUserPage() {
       <PageHeader title="Add user" breadcrumb={<><Link to="/users">Users</Link> / Add user</>} />
       <main className="add-user-content" aria-busy={status === 'loading' || status === 'saving'}>
         <p className="sr-only" role="status" aria-live="polite">{status === 'loading' ? 'Loading the form' : status === 'saving' ? 'Creating account' : ''}</p>
-        {status === 'loading' && <section className="add-user-loading" aria-label="Loading the form"><Skeleton className="add-user-skeleton wide" /><Skeleton className="add-user-skeleton block" /><Skeleton className="add-user-skeleton" /></section>}
-        {status === 'error' && <StatePanel tone="error" title="The form couldn't be loaded"><p>The sponsor organization list didn&apos;t come back from the server.</p><button className="add-user-button primary" type="button" onClick={loadOrganizations}>Try again</button></StatePanel>}
+        {status === 'loading' && <section className="card add-user-loading" aria-label="Loading the form"><Skeleton className="add-user-skeleton wide" /><Skeleton className="add-user-skeleton block" /><Skeleton className="add-user-skeleton" /></section>}
+        {status === 'error' && <StatePanel tone="error" title="The form couldn't be loaded"><p>The sponsor organization list didn&apos;t come back from the server.</p><button className="button button-primary" type="button" onClick={loadOrganizations}>Try again</button></StatePanel>}
         {status === 'created' && created && (
           <StatePanel tone="success" icon={<span className="add-user-check" aria-hidden="true">✓</span>} title={`${ROLE_LABELS[created.role]} account created`}>
             <p>{created.display_name} can sign in as @{created.username} with the temporary password.</p>
             <dl className="add-user-summary"><div><dt>Name</dt><dd>{created.display_name}</dd></div><div><dt>Username</dt><dd>@{created.username}</dd></div><div><dt>Account type</dt><dd>{ROLE_LABELS[created.role]}</dd></div><div><dt>Sponsor organization</dt><dd>{created.sponsor_org?.name || (created.role === 'driver' ? 'Not assigned' : 'Not applicable')}</dd></div></dl>
-            <div className="add-user-actions"><button className="add-user-button primary" type="button" onClick={addAnother}>Add another user</button><Link className="add-user-button" to="/users">Back to users</Link></div>
+            <div className="add-user-actions"><button className="button button-primary" type="button" onClick={addAnother}>Add another user</button><Link className="button" to="/users">Back to users</Link></div>
           </StatePanel>
         )}
         {(status === 'ready' || status === 'saving') && (
-          <form className="add-user-card" onSubmit={submit} noValidate>
-            {errors.form && <p className="add-user-banner" role="alert">{errors.form}</p>}
+          <form className="card add-user-card" onSubmit={submit} noValidate>
+            {errors.form && <p className="banner banner-error add-user-banner" role="alert">{errors.form}</p>}
             <div className="add-user-body">
               <fieldset><legend>Account type</legend><div className="add-user-roles">
                 {[['driver', 'Earns and spends points'], ['sponsor', 'Manages drivers and a catalog'], ['admin', 'Manages every account']].map(([role, description]) => <label key={role}><input type="radio" name="role" value={role} checked={form.role === role} onChange={() => chooseRole(role)} disabled={status === 'saving'} /><span><strong>{ROLE_LABELS[role]}</strong><small>{description}</small></span></label>)}
@@ -154,7 +154,7 @@ export default function AddUserPage() {
               <div className="add-user-two"><div className="add-user-field"><label htmlFor="password">Temporary password</label><PasswordInput id="password" label="Temporary password" visible={showPassword} onToggleVisible={() => setShowPassword((value) => !value)} value={form.password} onChange={(event) => update('password', event.target.value)} disabled={status === 'saving'} aria-invalid={Boolean(fieldError('password'))} />{fieldError('password') && <small className="error">{fieldError('password')}</small>}<PasswordRequirements /></div><Field label="Confirm password" name="confirm_password" type={showPassword ? 'text' : 'password'} value={form.confirm_password} error={fieldError('confirm_password')} onChange={update} disabled={status === 'saving'} /></div>
               {selectedOrganization && <p className="add-user-note">Selected organization: {selectedOrganization.name}</p>}
             </div>
-            <footer className="add-user-footer"><Link className="add-user-button" to="/users">Cancel</Link><button className="add-user-button primary" type="submit" disabled={status === 'saving' || (form.role === 'sponsor' && organizations.length === 0)}>{status === 'saving' ? 'Creating…' : `Create ${form.role} account`}</button></footer>
+            <footer className="add-user-footer"><Link className="button" to="/users">Cancel</Link><button className="button button-primary" type="submit" disabled={status === 'saving' || (form.role === 'sponsor' && organizations.length === 0)}>{status === 'saving' ? 'Creating…' : `Create ${form.role} account`}</button></footer>
           </form>
         )}
       </main>

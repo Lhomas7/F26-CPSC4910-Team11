@@ -38,10 +38,12 @@
   /* Status: success reuses the brand green */
   --success: var(--accent);
   --success-soft: var(--accent-soft);
+  --success-line: #a9cfbb;
   --danger: #b3372f;
   --danger-ink: #9e2f29;
   --danger-soft: #fbeae8;
   --danger-line: #dfaaa6;
+  --on-danger: #ffffff;
   --warning-ink: #6b4508;
   --warning-soft: #f8ecd4;
   --warning-line: #d9ae55;
@@ -69,6 +71,8 @@
     --danger-ink: #e5766e;
     --danger-soft: #3b2220;
     --danger-line: #7c3c37;
+    --on-danger: #1d0d0b;
+    --success-line: #2f6a52;
     --warning-ink: #f3d49a;
     --warning-soft: #3a2f1a;
     --warning-line: #6d5526;

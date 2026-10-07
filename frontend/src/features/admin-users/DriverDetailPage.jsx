@@ -108,7 +108,7 @@ export default function DriverDetailPage() {
   };
 
   if (user?.account_type !== 'admin' || status === 'forbidden') return <main className="sponsor-detail-page"><StatePanel className="sponsor-detail-state" headingLevel={1} title="You don't have access to this page"><p>Only administrators can view and edit driver accounts.</p></StatePanel></main>;
-  if (status === 'loading') return <main className="sponsor-detail-page"><p role="status">Loading driver account…</p><section className="sponsor-detail-card sponsor-detail-skeleton" aria-label="Loading the account" /></main>;
+  if (status === 'loading') return <main className="sponsor-detail-page"><p role="status">Loading driver account…</p><section className="card sponsor-detail-card sponsor-detail-skeleton" aria-label="Loading the account" /></main>;
   if (status === 'error') return <main className="sponsor-detail-page"><StatePanel className="sponsor-detail-state" headingLevel={1} tone="error" title="This account couldn't be loaded"><p>Check your connection and try again.</p><button type="button" onClick={load}>Try again</button></StatePanel></main>;
   if (status === 'not-found') return <main className="sponsor-detail-page"><StatePanel className="sponsor-detail-state" headingLevel={1} title="That driver account doesn't exist"><p>It may have been removed, or the link may be wrong.</p><Link to="/users">Back to users</Link></StatePanel></main>;
 
@@ -116,13 +116,13 @@ export default function DriverDetailPage() {
     <div className="sponsor-detail-page">
       <PageHeader title="Driver account" breadcrumb={<><Link to="/users">Users</Link> / {account.display_name}</>} />
       <main className="sponsor-detail-content">
-        <section className="sponsor-detail-card">
+        <section className="card sponsor-detail-card">
           <div className="sponsor-detail-card-head">
             <div className="sponsor-detail-person"><Avatar className="sponsor-detail-avatar" name={account.display_name} src={account.profile_picture_url} /><div><h2>{account.display_name}</h2><p>@{account.username} <span>Driver</span> · {account.is_active ? 'Active' : 'Inactive'}</p></div></div>
             {!editing && <div className="sponsor-detail-header-actions"><button type="button" onClick={viewAsDriver} disabled={viewingAs || !account.is_active}>{viewingAs ? 'Opening…' : 'View as driver'}</button><button type="button" onClick={() => { setNotice(''); setEditing(true); }}>Edit account</button></div>}
           </div>
-          {errors.detail && !editing && <p className="sponsor-detail-error" role="alert">{errors.detail}</p>}
-          {notice && <p className="sponsor-detail-notice" role="status">{notice}</p>}
+          {errors.detail && !editing && <p className="banner banner-error sponsor-detail-banner" role="alert">{errors.detail}</p>}
+          {notice && <p className="banner banner-success sponsor-detail-banner" role="status">{notice}</p>}
           {!editing ? (
             <dl className="sponsor-detail-view">
               <div><dt>Full name</dt><dd>{account.display_name}</dd></div><div><dt>Username</dt><dd>@{account.username}</dd></div>
@@ -132,7 +132,7 @@ export default function DriverDetailPage() {
             </dl>
           ) : (
             <form onSubmit={save} noValidate>
-              {errors.detail && <p className="sponsor-detail-error" role="alert">{errors.detail}</p>}
+              {errors.detail && <p className="banner banner-error sponsor-detail-banner" role="alert">{errors.detail}</p>}
               <div className="sponsor-detail-form">
                 <label>Full name<input value={form.display_name} onChange={(e) => update('display_name', e.target.value)} />{errors.display_name && <small>{errors.display_name}</small>}</label>
                 <label>Username<input value={form.username} onChange={(e) => update('username', e.target.value)} />{errors.username && <small>{errors.username}</small>}</label>

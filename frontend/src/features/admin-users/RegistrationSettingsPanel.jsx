@@ -42,7 +42,7 @@ export default function RegistrationSettingsPanel() {
   };
 
   return (
-    <section className="users-settings-card" aria-labelledby="registration-settings-heading">
+    <section className="card users-settings-card" aria-labelledby="registration-settings-heading">
       <h2 id="registration-settings-heading">Account creation</h2>
       <label className="users-settings-toggle" htmlFor="require-email-verification">
         <input

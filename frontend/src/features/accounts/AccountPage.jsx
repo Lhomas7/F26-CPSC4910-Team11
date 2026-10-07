@@ -20,7 +20,7 @@ const LOGIN_ACTIVITY_ROLES = ['sponsor', 'admin'];
 
 function ProfileSkeleton() {
   return (
-    <section className="account-card" aria-label="Loading your profile">
+    <section className="card account-card" aria-label="Loading your profile">
       <div className="account-card-header"><Skeleton className="account-skeleton account-skeleton-heading" /></div>
       <div className="profile-layout">
         <Skeleton className="account-skeleton account-skeleton-avatar" />
@@ -199,18 +199,18 @@ export default function AccountPage() {
         {status === 'error' && (
           <StatePanel className="account-state" tone="error" title="Your profile couldn't be loaded">
             <p>The server didn&apos;t send back your account details. Check your connection and try again.</p>
-            <button className="account-button primary" type="button" onClick={loadProfile}>Try again</button>
+            <button className="button button-primary" type="button" onClick={loadProfile}>Try again</button>
           </StatePanel>
         )}
         {profile && status !== 'loading' && status !== 'error' && (
           <>
-            <section className="account-card" aria-labelledby="profile-heading">
+            <section className="card account-card" aria-labelledby="profile-heading">
               <div className="account-card-header">
                 <div><h2 id="profile-heading">Profile</h2><p>{editing ? 'Editing. Changes are not saved until you select Save changes.' : 'Your account information'}</p></div>
-                {!editing && <button className="account-button" type="button" onClick={beginEditing}>Edit profile</button>}
+                {!editing && <button className="button" type="button" onClick={beginEditing}>Edit profile</button>}
               </div>
-              {notice && <p className="account-banner success" role="status">{notice}</p>}
-              {formError && <p className="account-banner error" role="alert">{formError}</p>}
+              {notice && <p className="banner banner-success account-banner" role="status">{notice}</p>}
+              {formError && <p className="banner banner-error account-banner" role="alert">{formError}</p>}
               {!editing ? (
                 <div className="profile-layout">
                   <Avatar className="account-avatar" name={profile.name} src={profile.avatar_url} label={`Profile picture for ${profile.name}`} />
@@ -229,10 +229,10 @@ export default function AccountPage() {
                     <div className="profile-picture-editor">
                       <Avatar className="account-avatar" name={form.name || profile.name} src={displayedPicture} label={`Profile picture for ${form.name || profile.name}`} />
                       <div className="profile-picture-actions">
-                          <label className="account-button" htmlFor="profile-picture">Choose picture</label>
+                          <label className="button" htmlFor="profile-picture">Choose picture</label>
                           <input id="profile-picture" className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" onChange={choosePicture} disabled={status === 'saving'} />
                           {(displayedPicture || pendingPicture) && (
-                            <button className="account-link-button" type="button" onClick={() => { setPendingPicture(null); setRemovePicture(Boolean(profile.avatar_url)); setFormError(''); }} disabled={status === 'saving'}>Remove picture</button>
+                            <button className="button button-link" type="button" onClick={() => { setPendingPicture(null); setRemovePicture(Boolean(profile.avatar_url)); setFormError(''); }} disabled={status === 'saving'}>Remove picture</button>
                           )}
                           <small>JPG, PNG, or WebP. Maximum 2 MB.</small>
                       </div>
@@ -263,8 +263,8 @@ export default function AccountPage() {
                     </div>
                   </div>
                   <div className="account-card-footer">
-                    <button className="account-button" type="button" onClick={cancelEditing} disabled={status === 'saving'}>Cancel</button>
-                    <button className="account-button primary" type="submit" disabled={status === 'saving'}>{status === 'saving' ? 'Saving…' : 'Save changes'}</button>
+                    <button className="button" type="button" onClick={cancelEditing} disabled={status === 'saving'}>Cancel</button>
+                    <button className="button button-primary" type="submit" disabled={status === 'saving'}>{status === 'saving' ? 'Saving…' : 'Save changes'}</button>
                   </div>
                 </form>
               )}

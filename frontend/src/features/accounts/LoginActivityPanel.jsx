@@ -11,7 +11,7 @@ function AttemptList({ attempts }) {
     <ul className="login-activity-list">
       {attempts.map((attempt) => (
         <li key={attempt.id} className={attempt.successful ? 'success' : 'failed'}>
-          <span className="login-activity-status">{attempt.successful ? 'Successful' : 'Failed'}</span>
+          <span className={`badge ${attempt.successful ? 'badge-success' : 'badge-danger'}`}>{attempt.successful ? 'Successful' : 'Failed'}</span>
           <time dateTime={attempt.timestamp}>{formatTime(attempt.timestamp)}</time>
         </li>
       ))}
@@ -43,7 +43,7 @@ export default function LoginActivityPanel() {
   const showingDay = expanded && hasMore;
 
   return (
-    <section className="account-card" aria-labelledby="login-activity-heading">
+    <section className="card account-card" aria-labelledby="login-activity-heading">
       <div className="account-card-header">
         <div>
           <h2 id="login-activity-heading">Recent sign-in activity</h2>
@@ -51,7 +51,7 @@ export default function LoginActivityPanel() {
         </div>
         {status === 'ready' && hasMore && (
           <button
-            className="account-button"
+            className="button"
             type="button"
             onClick={() => setExpanded((current) => !current)}
             aria-expanded={showingDay}
@@ -64,9 +64,9 @@ export default function LoginActivityPanel() {
       <div id="login-activity-content" className="login-activity-content" aria-busy={status === 'loading'}>
         {status === 'loading' && <p className="login-activity-message">Loading sign-in activity…</p>}
         {status === 'error' && (
-          <div className="account-banner error login-activity-error" role="alert">
+          <div className="banner banner-error account-banner login-activity-error" role="alert">
             <span>Your sign-in activity couldn&apos;t be loaded.</span>
-            <button className="account-link-button" type="button" onClick={loadActivity}>Try again</button>
+            <button className="button button-link" type="button" onClick={loadActivity}>Try again</button>
           </div>
         )}
         {status === 'ready' && activity.recent.length === 0 && (

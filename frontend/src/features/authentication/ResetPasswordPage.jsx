@@ -69,27 +69,27 @@ export default function ResetPasswordPage() {
       <>
         <div className="login-check" aria-hidden="true">✓</div>
         <h2>Password reset</h2>
-        <p className="login-alert login-alert-success" role="status">
+        <p className="banner banner-success" role="status">
           Your password has been reset. You can now sign in with it.
         </p>
-        <Link className="login-btn" to="/login">Go to sign in</Link>
+        <Link className="button button-large button-primary login-button" to="/login">Go to sign in</Link>
       </>
     );
   } else if (linkInvalid) {
     content = (
       <>
         <h2>Link expired</h2>
-        <p className="login-alert login-alert-error" role="alert">
+        <p className="banner banner-error" role="alert">
           This password reset link is invalid or has expired.
         </p>
-        <Link className="login-btn" to="/forgot-password">Request a new link</Link>
+        <Link className="button button-large button-primary login-button" to="/forgot-password">Request a new link</Link>
       </>
     );
   } else {
     content = (
       <form className="login-form" onSubmit={submit} noValidate>
         <h2>Choose a new password</h2>
-        {error && <p className="login-alert login-alert-error" role="alert">{error}</p>}
+        {error && <p className="banner banner-error" role="alert">{error}</p>}
         <PasswordField
           id="reset-password"
           label="New password"
@@ -105,7 +105,7 @@ export default function ResetPasswordPage() {
           onChange={(event) => setConfirmation(event.target.value)}
           disabled={busy}
         />
-        <button className="login-btn" type="submit" disabled={busy}>
+        <button className="button button-large button-primary login-button" type="submit" disabled={busy}>
           {busy ? 'Resetting…' : 'Reset password'}
         </button>
       </form>
@@ -115,7 +115,7 @@ export default function ResetPasswordPage() {
   return (
     <div className="login-page login-page-single">
       <main className="login-side" aria-label="Reset password page">
-        <div className="login-card">{content}</div>
+        <div className="card login-card">{content}</div>
       </main>
     </div>
   );

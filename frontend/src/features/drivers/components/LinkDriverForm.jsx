@@ -41,7 +41,7 @@ export default function LinkDriverForm({ company, onLinked, triggerClassName = '
   return (
     <>
       <button
-        className={`drivers-button primary ${triggerClassName}`.trim()}
+        className={`button button-primary ${triggerClassName}`.trim()}
         type="button"
         onClick={() => setOpen(true)}
       >
@@ -55,8 +55,8 @@ export default function LinkDriverForm({ company, onLinked, triggerClassName = '
           className="link-driver-dialog"
           actions={(
             <>
-              <button className="modal-button" type="button" onClick={close} disabled={busy}>Cancel</button>
-              <button className="modal-button primary" type="submit" form="link-driver-form" disabled={busy}>
+              <button className="button button-large" type="button" onClick={close} disabled={busy}>Cancel</button>
+              <button className="button button-large button-primary" type="submit" form="link-driver-form" disabled={busy}>
                 {busy ? 'Linking…' : 'Link driver'}
               </button>
             </>

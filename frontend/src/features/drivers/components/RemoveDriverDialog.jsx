@@ -41,8 +41,8 @@ export default function RemoveDriverDialog({ driver, onRemoved, onCancel }) {
       className="remove-driver-dialog"
       actions={(
         <>
-          <button className="modal-button" type="button" onClick={onCancel} disabled={busy} data-autofocus>Cancel</button>
-          <button className="modal-button danger" type="submit" form="remove-driver-form" disabled={busy}>
+          <button className="button button-large" type="button" onClick={onCancel} disabled={busy} data-autofocus>Cancel</button>
+          <button className="button button-large button-danger" type="submit" form="remove-driver-form" disabled={busy}>
             {busy ? `${dropping ? 'Dropping' : 'Rejecting'}…` : dropping ? 'Drop from organization' : 'Reject application'}
           </button>
         </>

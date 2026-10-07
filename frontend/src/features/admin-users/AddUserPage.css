@@ -6,12 +6,8 @@
   max-width: 48rem;
   padding: 1.5rem 1.75rem 3rem;
 }
-
 .add-user-card,
 .add-user-loading {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: .7rem;
   overflow: hidden;
 }
 
@@ -154,36 +150,8 @@
   justify-content: flex-end;
   padding: .8rem 1.25rem;
 }
-
-.add-user-button {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: .45rem;
-  color: var(--ink);
-  cursor: pointer;
-  font-size: .8rem;
-  font-weight: 700;
-  padding: .45rem .8rem;
-  text-decoration: none;
-}
-
-.add-user-button.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: white;
-}
-
-.add-user-button:disabled {
-  cursor: not-allowed;
-  opacity: .55;
-}
-
 .add-user-banner {
-  background: var(--danger-soft);
-  color: var(--danger-ink);
-  font-size: .78rem;
   margin: 1rem 1.25rem 0;
-  padding: .6rem .75rem;
 }
 
 .add-user-loading {
@@ -259,10 +227,9 @@
   .add-user-two {
     grid-template-columns: 1fr;
   }
-
-  .add-user-footer .add-user-button,
-  .add-user-actions .add-user-button {
-    flex: 1;
-    text-align: center;
-  }
+.add-user-footer .button,
+  .add-user-actions .button {
+  flex: 1;
+  text-align: center;
+}
 }

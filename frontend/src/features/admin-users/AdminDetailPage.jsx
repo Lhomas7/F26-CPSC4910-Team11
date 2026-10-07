@@ -97,7 +97,7 @@ export default function AdminDetailPage() {
   };
 
   if (user?.account_type !== 'admin' || status === 'forbidden') return <main className="sponsor-detail-page"><StatePanel className="sponsor-detail-state" headingLevel={1} title="You don't have access to this page"><p>Only administrators can review other administrator accounts.</p></StatePanel></main>;
-  if (status === 'loading') return <main className="sponsor-detail-page"><p role="status">Loading administrator account…</p><section className="sponsor-detail-card sponsor-detail-skeleton" aria-label="Loading the account" /></main>;
+  if (status === 'loading') return <main className="sponsor-detail-page"><p role="status">Loading administrator account…</p><section className="card sponsor-detail-card sponsor-detail-skeleton" aria-label="Loading the account" /></main>;
   if (status === 'error') return <main className="sponsor-detail-page"><StatePanel className="sponsor-detail-state" headingLevel={1} tone="error" title="This account couldn't be loaded"><p>Check your connection and try again.</p><button type="button" onClick={load}>Try again</button></StatePanel></main>;
   if (status === 'not-found') return <main className="sponsor-detail-page"><StatePanel className="sponsor-detail-state" headingLevel={1} title="That administrator account isn't available"><p>It may not exist, or you may have selected your own account.</p><Link to="/users">Back to users</Link></StatePanel></main>;
 
@@ -106,12 +106,12 @@ export default function AdminDetailPage() {
     <div className="sponsor-detail-page">
       <PageHeader title="Administrator account" breadcrumb={<><Link to="/users">Users</Link> / {name}</>} />
       <main className="sponsor-detail-content">
-        <section className="sponsor-detail-card">
+        <section className="card sponsor-detail-card">
           <div className="sponsor-detail-card-head">
             <div className="sponsor-detail-person"><Avatar className="sponsor-detail-avatar" name={name} /><div><h2>{name}</h2><p>@{account.username} <span>Admin</span> · {account.is_active ? 'Active' : 'Inactive'}</p></div></div>
             {!editing && <div className="sponsor-detail-header-actions"><button type="button" onClick={() => { setNotice(''); setErrors({}); setEditing(true); }}>Edit account</button></div>}
           </div>
-          {notice && <p className="sponsor-detail-notice" role="status">{notice}</p>}
+          {notice && <p className="banner banner-success sponsor-detail-banner" role="status">{notice}</p>}
           {!editing ? (
             <dl className="sponsor-detail-view">
               <div><dt>Full name</dt><dd>{name}</dd></div><div><dt>Username</dt><dd>@{account.username}</dd></div>
@@ -120,7 +120,7 @@ export default function AdminDetailPage() {
             </dl>
           ) : (
             <form onSubmit={save} noValidate>
-              {errors.detail && <p className="sponsor-detail-error" role="alert">{errors.detail}</p>}
+              {errors.detail && <p className="banner banner-error sponsor-detail-banner" role="alert">{errors.detail}</p>}
               <div className="sponsor-detail-form">
                 <label>First name<input value={form.first_name} onChange={(event) => update('first_name', event.target.value)} maxLength="50" autoComplete="given-name" />{errors.first_name && <small>{errors.first_name}</small>}</label>
                 <label>Last name<input value={form.last_name} onChange={(event) => update('last_name', event.target.value)} maxLength="50" autoComplete="family-name" />{errors.last_name && <small>{errors.last_name}</small>}</label>

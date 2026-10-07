@@ -33,7 +33,7 @@ export default function PointHistoryList({ entries, showDriver = false, linkDriv
         return (
         <li key={entry.id}>
           <div className="point-history-main">
-            {detailStyle && <span className={`point-history-type ${deduction ? 'deduction' : 'award'}`}>{deduction ? 'Deduction' : 'Award'}</span>}
+            {detailStyle && <span className={`badge point-history-type ${deduction ? 'badge-danger' : 'badge-success'}`}>{deduction ? 'Deduction' : 'Award'}</span>}
             {showDriver && (
               <span className="point-history-driver">
                 {linkDrivers ? <Link to={`/drivers/${entry.driver}`}>{entry.driver_name}</Link> : entry.driver_name}
@@ -46,7 +46,7 @@ export default function PointHistoryList({ entries, showDriver = false, linkDriv
               {!detailStyle && entry.changed_by_name && <> · by {entry.changed_by_name}</>}
             </span>
           </div>
-          <strong className={`point-history-change ${deduction ? 'negative' : 'positive'}`}>
+          <strong className={`badge point-history-change ${deduction ? 'badge-danger' : 'badge-success'}`}>
             {formatPoints(entry.point_change)}
             <span className="sr-only"> points</span>
           </strong>

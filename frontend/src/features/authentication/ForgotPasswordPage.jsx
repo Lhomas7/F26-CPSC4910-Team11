@@ -37,11 +37,11 @@ export default function ForgotPasswordPage() {
   return (
     <div className="login-page login-page-single">
       <main className="login-side" aria-label="Forgot password page">
-        <div className="login-card">
+        <div className="card login-card">
           <h2>Forgot your password?</h2>
           {message ? (
             <>
-              <p className="login-alert login-alert-success" role="status">{message}</p>
+              <p className="banner banner-success" role="status">{message}</p>
               <p className="login-sub">
                 The link expires after a short time and can only be used once. Check your
                 spam folder if it does not arrive within a few minutes.
@@ -54,7 +54,7 @@ export default function ForgotPasswordPage() {
                 Enter the email address on your account and we will send you a link to
                 choose a new password.
               </p>
-              {error && <p className="login-alert login-alert-error" role="alert">{error}</p>}
+              {error && <p className="banner banner-error" role="alert">{error}</p>}
               <div className="login-field">
                 <label htmlFor="forgot-email">Email</label>
                 <input
@@ -67,7 +67,7 @@ export default function ForgotPasswordPage() {
                   disabled={busy}
                 />
               </div>
-              <button className="login-btn" type="submit" disabled={busy}>
+              <button className="button button-large button-primary login-button" type="submit" disabled={busy}>
                 {busy ? 'Sending…' : 'Send reset link'}
               </button>
               <p className="login-help"><Link className="login-link" to="/login">Back to sign in</Link></p>

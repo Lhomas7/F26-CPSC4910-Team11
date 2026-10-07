@@ -65,12 +65,8 @@
   gap: 1rem;
   grid-template-columns: 1.1fr 1fr;
 }
-
 .about-card,
 .about-state {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: .625rem;
   padding: 1.125rem 1.25rem;
 }
 
@@ -81,14 +77,6 @@
   font-size: .875rem;
   justify-content: space-between;
   margin: 0 0 .625rem;
-}
-
-.current-badge {
-  background: var(--accent-soft);
-  border-radius: 999px;
-  color: var(--accent);
-  font-size: .7rem;
-  padding: .125rem .625rem;
 }
 
 .detail-rows {
@@ -195,31 +183,7 @@
 .skeleton-line-short {
   width: 30ch;
 }
-
 /* ---------- Admin release editor ---------- */
-
-.about-button {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: .45rem;
-  color: var(--ink);
-  cursor: pointer;
-  font: inherit;
-  font-size: .8rem;
-  font-weight: 700;
-  padding: .45rem .8rem;
-}
-
-.about-button.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: white;
-}
-
-.about-button:disabled {
-  cursor: progress;
-  opacity: .6;
-}
 
 .about-edit {
   display: grid;
@@ -277,15 +241,8 @@
   font-size: .75rem;
   margin: 0;
 }
-
 .about-notice {
-  background: var(--accent-soft);
-  border-radius: .5rem;
-  color: var(--accent);
-  font-size: .82rem;
-  font-weight: 700;
   margin: 0 0 1rem;
-  padding: .7rem .9rem;
 }
 
 @media (max-width: 53.75rem) {

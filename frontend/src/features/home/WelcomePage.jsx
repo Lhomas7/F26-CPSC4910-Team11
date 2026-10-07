@@ -37,16 +37,16 @@ export default function WelcomePage() {
 
           {!signedIn ? (
             <div className="welcome-cta">
-              <Link className="welcome-button primary" to="/login">Sign in</Link>
-              <Link className="welcome-button" to="/login?tab=register">Create an account</Link>
+              <Link className="button button-large button-primary" to="/login">Sign in</Link>
+              <Link className="button button-large" to="/login?tab=register">Create an account</Link>
               <Link className="welcome-link" to="/about">About this app</Link>
             </div>
           ) : (
             <div className="welcome-cta">
-              {accountType === 'driver' && <Link className="welcome-button primary" to="/points">View my points</Link>}
-              {accountType === 'sponsor' && <Link className="welcome-button primary" to="/drivers">Go to drivers</Link>}
-              {accountType === 'admin' && <Link className="welcome-button primary" to="/users">Manage users</Link>}
-              <Link className="welcome-button" to="/account">My account</Link>
+              {accountType === 'driver' && <Link className="button button-large button-primary" to="/points">View my points</Link>}
+              {accountType === 'sponsor' && <Link className="button button-large button-primary" to="/drivers">Go to drivers</Link>}
+              {accountType === 'admin' && <Link className="button button-large button-primary" to="/users">Manage users</Link>}
+              <Link className="button button-large" to="/account">My account</Link>
             </div>
           )}
 

@@ -35,32 +35,6 @@
   margin-top: 1.25rem;
 }
 
-.welcome-button {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: .5rem;
-  color: var(--ink);
-  display: inline-flex;
-  font-size: .875rem;
-  font-weight: 600;
-  padding: .625rem .875rem;
-  text-decoration: none;
-}
-
-.welcome-button.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #ffffff;
-}
-
-.welcome-button.primary:hover {
-  background: var(--accent-hover, var(--accent));
-}
-
-.welcome-button:not(.primary):hover {
-  background: var(--surface-2);
-}
-
 .welcome-link {
   align-self: center;
   color: var(--on-road-2);
