@@ -1080,9 +1080,10 @@
 }
 
 .driver-danger-area {
+  background: transparent;
   border: 1px solid #e0a9a4;
   border-radius: .7rem;
-  margin-top: 1.15rem;
+  margin-top: 2.25rem;
   padding: 1rem 1.15rem;
 }
 
@@ -1100,6 +1101,19 @@
 
 .driver-danger-area ul {
   font-size: .78rem;
+}
+
+.driver-danger-area li {
+  margin-bottom: .2rem;
+}
+
+.driver-danger-area .drivers-button {
+  border-radius: .5rem;
+  font-size: .825rem;
+  font-weight: 600;
+  line-height: normal;
+  min-height: 0;
+  padding: .5rem .9rem;
 }
 
 .driver-detail-loading {
@@ -1164,28 +1178,51 @@
 
 .remove-driver-dialog form {
   display: grid;
-  gap: .4rem;
+  gap: .3rem;
 }
 
 .remove-driver-dialog form p {
-  margin: 0 0 .4rem;
+  color: var(--ink-2);
+  font-size: .85rem;
+  margin: 0 0 .9rem;
+}
+
+.modal.remove-driver-dialog {
+  border-radius: .8rem;
+  max-height: 92vh;
+  max-width: 31rem;
+  padding: 1.2rem 1.3rem;
+}
+
+.remove-driver-dialog .modal-title {
+  font-size: 1.05rem;
+  margin: 0 0 .5rem;
+}
+
+.remove-driver-dialog .modal-body {
+  font-size: inherit;
+  line-height: normal;
 }
 
 .remove-driver-dialog label {
-  color: var(--ink-2);
+  color: var(--ink);
+  display: block;
   font-size: .78rem;
   font-weight: 700;
+  margin-bottom: 0;
 }
 
 .remove-driver-dialog textarea {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: .45rem;
+  border-radius: .5rem;
   color: var(--ink);
-  font: inherit;
-  min-height: 5rem;
-  padding: .6rem;
+  font-size: .9rem;
+  min-height: 4.6rem;
+  outline: none;
+  padding: .5rem .7rem;
   resize: vertical;
+  width: 100%;
 }
 
 .remove-driver-dialog textarea:focus {
@@ -1194,13 +1231,45 @@
   outline: 0;
 }
 
+.remove-driver-dialog textarea[aria-invalid="true"] {
+  background: #fbeae8;
+  border-color: #a8302a;
+}
+
 .remove-driver-dialog small {
-  color: var(--ink-2);
+  color: #8a8f89;
   font-size: .72rem;
 }
 
 .remove-driver-dialog small.error {
-  color: #b3372f;
+  color: #a8302a;
+  font-weight: 600;
+}
+
+.remove-driver-reason-meta {
+  align-items: baseline;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.remove-driver-dialog .modal-actions {
+  gap: .5rem;
+  margin-top: 1.1rem;
+}
+
+.remove-driver-dialog .modal-button {
+  align-items: center;
+  border-radius: .5rem;
+  display: inline-flex;
+  font-size: .825rem;
+  font-weight: 600;
+  padding: .5rem .9rem;
+}
+
+.remove-driver-dialog .modal-button.danger {
+  background: #a8302a;
+  border-color: #a8302a;
 }
 
 @media (max-width: 53.75rem) {
@@ -1299,6 +1368,15 @@
     flex: 1 1 100%;
     width: 100%;
   }
+
+  .remove-driver-dialog .modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .remove-driver-dialog .modal-button {
+    justify-content: center;
+    width: 100%;
+  }
 }
 
 /* The directory controls need deliberate rows before the cards become truly
@@ -1345,6 +1423,24 @@
   .point-history-type.deduction {
     background: #3b2220;
     color: #e5837b;
+  }
+
+  .remove-driver-dialog textarea[aria-invalid="true"] {
+    background: #3b2220;
+    border-color: #e5837b;
+  }
+
+  .remove-driver-dialog small {
+    color: #7f8680;
+  }
+
+  .remove-driver-dialog small.error {
+    color: #e5837b;
+  }
+
+  .remove-driver-dialog .modal-button.danger {
+    background: #e5837b;
+    border-color: #e5837b;
   }
 
   .driver-card.pending {

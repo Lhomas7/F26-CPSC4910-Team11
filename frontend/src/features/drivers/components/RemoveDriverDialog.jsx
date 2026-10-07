@@ -18,14 +18,15 @@ export default function RemoveDriverDialog({ driver, onRemoved, onCancel }) {
 
   const submit = async (event) => {
     event.preventDefault();
-    if (!reason.trim()) {
+    const cleanedReason = reason.trim().replace(/\s+/g, ' ');
+    if (!cleanedReason) {
       setError(`Enter a reason for ${dropping ? 'dropping' : 'rejecting'} this driver.`);
       return;
     }
     setBusy(true);
     setError('');
     try {
-      const record = await removeDriver(driver.id, reason);
+      const record = await removeDriver(driver.id, cleanedReason);
       onRemoved(record);
     } catch (requestError) {
       setError(requestError.data?.reason?.[0] || requestError.message || 'The driver could not be removed.');
@@ -42,7 +43,7 @@ export default function RemoveDriverDialog({ driver, onRemoved, onCancel }) {
         <>
           <button className="modal-button" type="button" onClick={onCancel} disabled={busy} data-autofocus>Cancel</button>
           <button className="modal-button danger" type="submit" form="remove-driver-form" disabled={busy}>
-            {busy ? `${dropping ? 'Dropping' : 'Rejecting'}…` : dropping ? 'Drop from organization' : 'Reject driver'}
+            {busy ? `${dropping ? 'Dropping' : 'Rejecting'}…` : dropping ? 'Drop from organization' : 'Reject application'}
           </button>
         </>
       )}
@@ -50,7 +51,7 @@ export default function RemoveDriverDialog({ driver, onRemoved, onCancel }) {
       <form id="remove-driver-form" onSubmit={submit} noValidate>
         <p>
           {dropping
-            ? `${driver.name} will be removed from your organization. Their point history is kept, and they can join another sponsor.`
+            ? `${driver.name} will be removed from ${driver.sponsor_name || 'your organization'}. Their point history is preserved, and they can apply to another sponsor.`
             : `${driver.name}'s application will be declined. They can apply to another sponsor.`}
         </p>
         <label htmlFor="remove-driver-reason">{dropping ? 'Reason for dropping' : 'Reason for rejecting'}</label>
@@ -58,14 +59,17 @@ export default function RemoveDriverDialog({ driver, onRemoved, onCancel }) {
           id="remove-driver-reason"
           value={reason}
           maxLength={MAX_REASON_LENGTH}
-          onChange={(event) => setReason(event.target.value)}
+          onChange={(event) => { setReason(event.target.value); setError(''); }}
           aria-invalid={Boolean(error)}
           aria-describedby="remove-driver-reason-help"
           disabled={busy}
         />
-        <small id="remove-driver-reason-help" className={error ? 'error' : ''} role={error ? 'alert' : undefined}>
-          {error || `Saved with the change. ${reason.length}/${MAX_REASON_LENGTH}`}
-        </small>
+        <div className="remove-driver-reason-meta">
+          <small id="remove-driver-reason-help" className={error ? 'error' : ''} role={error ? 'alert' : undefined}>
+            {error || 'Saved with the enrollment change for auditing.'}
+          </small>
+          <small>{reason.length}/{MAX_REASON_LENGTH}</small>
+        </div>
       </form>
     </Modal>
   );

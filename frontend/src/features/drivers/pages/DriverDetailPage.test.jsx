@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 
 import { useAuth } from '../../../auth/AuthContext';
@@ -105,12 +105,13 @@ test('rejecting a pending driver requires a reason and returns to the list', asy
   renderDetail();
 
   fireEvent.click(await screen.findByRole('button', { name: 'Reject application' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Reject driver' }));
+  const dialog = screen.getByRole('dialog', { name: 'Reject Jamie Rivera?' });
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Reject application' }));
   expect(screen.getByRole('alert')).toHaveTextContent('Enter a reason for rejecting this driver.');
   expect(api.removeDriver).not.toHaveBeenCalled();
 
   fireEvent.change(screen.getByLabelText('Reason for rejecting'), { target: { value: 'Missing CDL' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Reject driver' }));
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Reject application' }));
 
   await waitFor(() => expect(api.removeDriver).toHaveBeenCalledWith(7, 'Missing CDL'));
   expect(await screen.findByText('Jamie Rivera was rejected. The reason has been saved.')).toBeInTheDocument();
