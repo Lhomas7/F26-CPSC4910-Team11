@@ -61,17 +61,17 @@
 }
 
 .sponsor-detail-person p span {
-  background: #f8ecd4;
+  background: var(--warning-soft);
   border-radius: 999px;
-  color: #6b4508;
+  color: var(--warning-ink);
   font-weight: 700;
   margin-left: .35rem;
   padding: .12rem .5rem;
 }
 
 .sponsor-detail-avatar {
-  background: #f8ecd4;
-  color: #6b4508;
+  background: var(--warning-soft);
+  color: var(--warning-ink);
   font-size: .9rem;
   height: 3.25rem;
   width: 3.25rem;
@@ -154,7 +154,7 @@
 }
 
 .sponsor-detail-form label small {
-  color: #b3372f;
+  color: var(--danger);
 }
 
 .sponsor-detail-locked {
@@ -190,8 +190,8 @@
 }
 
 .sponsor-detail-error {
-  background: #fbeae8;
-  color: #b3372f;
+  background: var(--danger-soft);
+  color: var(--danger);
   margin: 1rem 1.25rem 0;
   padding: .65rem .8rem;
 }
@@ -209,18 +209,6 @@
 @keyframes sponsor-pulse {
   50% {
     opacity: .55;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .sponsor-detail-person p span,
-  .sponsor-detail-avatar {
-    background: #3a2f1a;
-    color: #f3d49a;
-  }
-
-  .sponsor-detail-error {
-    background: #3b2220;
   }
 }
 

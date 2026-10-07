@@ -208,12 +208,12 @@
 }
 
 .profile-form .profile-field-error {
-  color: #9e2f29;
+  color: var(--danger-ink);
   font-weight: 700;
 }
 
 .profile-form input[aria-invalid='true'] {
-  border-color: #b23d35;
+  border-color: var(--danger);
 }
 
 .profile-section-label {
@@ -287,8 +287,8 @@
 }
 
 .account-banner.error {
-  background: #fbeae8;
-  color: #9e2f29;
+  background: var(--danger-soft);
+  color: var(--danger-ink);
 }
 
 .password-form {
@@ -447,22 +447,6 @@
   width: 35%;
 }
 
-@media (prefers-color-scheme: dark) {
-  .profile-form .profile-field-error {
-    color: #e5766e;
-  }
-
-  .profile-form input[aria-invalid='true'] {
-    border-color: #e5766e;
-  }
-
-  .account-banner.error {
-    background: #3b2220;
-    border-color: #7c3c37;
-    color: #e5766e;
-  }
-}
-
 @media (max-width: 53.75rem) {
   .account-content {
     padding-left: 1rem;
@@ -547,6 +531,6 @@
 }
 
 .login-activity-list .failed .login-activity-status {
-  background: #fbeae8;
-  color: #9e2f29;
+  background: var(--danger-soft);
+  color: var(--danger-ink);
 }

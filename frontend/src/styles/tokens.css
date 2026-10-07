@@ -1,0 +1,76 @@
+/* Design tokens: every colour and shared value the app uses. Each token has a
+   light and a dark value, so components never need their own dark-mode
+   colour overrides; reference var(--token) and both themes follow.
+
+   Breakpoints can't be variables inside @media, so use these two everywhere:
+     53.75rem  tablet / half screen (sidebar becomes a top bar)
+     42rem     phone */
+:root {
+  --app-bar-height: 4rem;
+
+  /* Surfaces and text */
+  --bg: #f4f2eb;
+  --surface: #fffdf8;
+  --surface-2: #f8f6f0;
+  --line: #e1ddd2;
+  --line-soft: #ece9e0;
+  --ink: #1d201d;
+  --ink-2: #5c625d;
+  --ink-3: #8a8f89;
+
+  /* Brand */
+  --accent: #1e6b52;
+  --accent-strong: #155340;
+  --accent-soft: #e2efe7;
+  --on-accent: #ffffff;
+  --road: #2b302d;
+  --stripe: #f2c230;
+
+  /* The dark road panels (Login, Welcome, About) are dark in both themes, so
+     these don't change in dark mode. */
+  --on-road: #f4f5f2;
+  --on-road-2: #dfe3df;
+  --on-road-muted: #c9cec9;
+  --on-road-faint: #8f968f;
+  --road-raised: #3a403c;
+  --road-raised-2: #4a514c;
+
+  /* Status: success reuses the brand green */
+  --success: var(--accent);
+  --success-soft: var(--accent-soft);
+  --danger: #b3372f;
+  --danger-ink: #9e2f29;
+  --danger-soft: #fbeae8;
+  --danger-line: #dfaaa6;
+  --warning-ink: #6b4508;
+  --warning-soft: #f8ecd4;
+  --warning-line: #d9ae55;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141715;
+    --surface: #1c201d;
+    --surface-2: #222723;
+    --line: #323833;
+    --line-soft: #2a2f2b;
+    --ink: #e8ebe7;
+    --ink-2: #aab1ab;
+    --ink-3: #7f8680;
+
+    --accent: #4fb48d;
+    --accent-strong: #6cc9a4;
+    --accent-soft: #1d3a2f;
+    --on-accent: #0e1a15;
+    --road: #0e100f;
+    --stripe: #e2b52c;
+
+    --danger: #e5766e;
+    --danger-ink: #e5766e;
+    --danger-soft: #3b2220;
+    --danger-line: #7c3c37;
+    --warning-ink: #f3d49a;
+    --warning-soft: #3a2f1a;
+    --warning-line: #6d5526;
+  }
+}

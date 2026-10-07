@@ -145,8 +145,8 @@
 }
 
 .point-history-change.negative {
-  background: #fbeae8;
-  color: #b3372f;
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 
 .point-history-empty {
@@ -188,13 +188,6 @@
 
 .points-skeleton-list {
   height: 16rem;
-}
-
-@media (prefers-color-scheme: dark) {
-  .point-history-change.negative {
-    background: #3b2220;
-    color: #e5766e;
-  }
 }
 
 @media (max-width: 42rem) {

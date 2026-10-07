@@ -9,7 +9,7 @@
   background: var(--road);
   border: 1px solid var(--line);
   border-radius: .75rem;
-  color: #f4f5f2;
+  color: var(--on-road);
   overflow: hidden;
   padding: 1.75rem 1.875rem 0;
 }
@@ -22,7 +22,7 @@
 }
 
 .welcome-hero > p {
-  color: #c9cec9;
+  color: var(--on-road-muted);
   font-size: .95rem;
   margin: .625rem 0 0;
   max-width: 62ch;
@@ -63,7 +63,7 @@
 
 .welcome-link {
   align-self: center;
-  color: #dfe3df;
+  color: var(--on-road-2);
   font-size: .8rem;
 }
 

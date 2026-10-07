@@ -77,8 +77,8 @@
 }
 
 .modal-button.danger {
-  background: #b3372f;
-  border-color: #b3372f;
+  background: var(--danger);
+  border-color: var(--danger);
   color: white;
 }
 

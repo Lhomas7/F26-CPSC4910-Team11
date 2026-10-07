@@ -203,8 +203,8 @@
 }
 
 .users-avatar.sponsor {
-  background: #f8ecd4;
-  color: #6b4508;
+  background: var(--warning-soft);
+  color: var(--warning-ink);
 }
 
 .users-avatar.admin {
@@ -232,8 +232,8 @@
 }
 
 .users-role.sponsor {
-  background: #f8ecd4;
-  color: #6b4508;
+  background: var(--warning-soft);
+  color: var(--warning-ink);
 }
 
 .users-role.admin {
@@ -298,14 +298,6 @@
 .users-skeleton.circle {
   border-radius: 50%;
   height: 1.9rem;
-}
-
-@media (prefers-color-scheme: dark) {
-  .users-avatar.sponsor,
-  .users-role.sponsor {
-    background: #3a2f1a;
-    color: #f3d49a;
-  }
 }
 
 @media (max-width: 53.75rem) {
@@ -442,11 +434,5 @@
 }
 
 .users-settings-message.error {
-  color: #9e2f29;
-}
-
-@media (prefers-color-scheme: dark) {
-  .users-settings-message.error {
-    color: #e5766e;
-  }
+  color: var(--danger-ink);
 }

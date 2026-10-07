@@ -1,48 +1,3 @@
-:root {
-  --app-bar-height: 4rem;
-  --bg: #f4f2eb;
-  --surface: #fffdf8;
-  --surface-2: #f8f6f0;
-  --line: #e1ddd2;
-  --ink: #1d201d;
-  --ink-2: #5c625d;
-  --accent: #1e6b52;
-  --accent-soft: #e2efe7;
-  --road: #2b302d;
-  --stripe: #f2c230;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #141715;
-    --surface: #1c201d;
-    --surface-2: #222723;
-    --line: #323833;
-    --ink: #e8ebe7;
-    --ink-2: #aab1ab;
-    --accent: #4fb48d;
-    --accent-soft: #1d3a2f;
-    --road: #0e100f;
-    --stripe: #e2b52c;
-  }
-}
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-body {
-  background: var(--bg);
-  color: var(--ink);
-}
-
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
 .app-shell {
   display: flex;
   min-height: 100vh;
@@ -140,9 +95,9 @@ body {
 }
 
 .mfa-required-banner {
-  background: #fbeae8;
+  background: var(--danger-soft);
   border-bottom: 1px solid var(--line);
-  color: #9e2f29;
+  color: var(--danger-ink);
   font-size: .8rem;
   padding: .6rem 1.75rem;
 }
@@ -154,9 +109,7 @@ body {
 
 @media (prefers-color-scheme: dark) {
   .mfa-required-banner {
-    background: #3b2220;
-    border-color: #7c3c37;
-    color: #e5766e;
+    border-color: var(--danger-line);
   }
 }
 
@@ -501,7 +454,7 @@ body {
 }
 
 .impersonation-error {
-  color: #9f241d;
+  color: var(--danger-ink);
   font-weight: 700;
 }
 

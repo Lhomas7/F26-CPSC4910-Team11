@@ -8,21 +8,11 @@
   width: 100%;
 }
 
-.sr-only {
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
-  height: 1px;
-  overflow: hidden;
-  position: absolute;
-  white-space: nowrap;
-  width: 1px;
-}
-
 .road-hero {
   background: var(--road);
   border: 1px solid var(--line);
   border-radius: .75rem;
-  color: #f4f5f2;
+  color: var(--on-road);
   margin-bottom: 1.25rem;
   overflow: hidden;
   padding: 1.75rem 1.875rem 0;
@@ -36,7 +26,7 @@
 }
 
 .road-hero > p {
-  color: #c9cec9;
+  color: var(--on-road-muted);
   font-size: .95rem;
   margin: .625rem 0 0;
   max-width: 62ch;
@@ -55,7 +45,7 @@
   background: rgb(255 255 255 / 8%);
   border: 1px solid rgb(255 255 255 / 14%);
   border-radius: 999px;
-  color: #e8ebe7;
+  color: var(--on-road);
   font-size: .75rem;
   padding: .25rem .75rem;
 }
@@ -147,9 +137,9 @@
 }
 
 .points-steps li::before {
-  background: #f8ecd4;
+  background: var(--warning-soft);
   border-radius: 50%;
-  color: #6b4508;
+  color: var(--warning-ink);
   content: counter(step);
   display: grid;
   font-size: .75rem;
@@ -181,7 +171,7 @@
 
 /* Inline placeholders sized by their "Loading…" text, darker to sit on the road panel. */
 .about-skeleton {
-  background-image: linear-gradient(90deg, #3a403c, #4a514c, #3a403c);
+  background-image: linear-gradient(90deg, var(--road-raised), var(--road-raised-2), var(--road-raised));
   border-radius: .35rem;
   color: transparent;
   display: inline-block;
@@ -283,7 +273,7 @@
 }
 
 .about-edit-error {
-  color: #b3372f;
+  color: var(--danger);
   font-size: .75rem;
   margin: 0;
 }
@@ -297,14 +287,6 @@
   margin: 0 0 1rem;
   padding: .7rem .9rem;
 }
-
-@media (prefers-color-scheme: dark) {
-  .points-steps li::before {
-    background: #3a2f1a;
-    color: #f3d49a;
-  }
-}
-
 
 @media (max-width: 53.75rem) {
   .about-content {

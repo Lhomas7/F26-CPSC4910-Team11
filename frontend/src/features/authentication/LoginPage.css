@@ -6,7 +6,7 @@
 
 .login-road {
   background: var(--road);
-  color: #f4f5f2;
+  color: var(--on-road);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -43,7 +43,7 @@
 }
 
 .login-pitch p {
-  color: #c9cec9;
+  color: var(--on-road-muted);
   font-size: .95rem;
   margin-top: .875rem;
   max-width: 42ch;
@@ -55,7 +55,7 @@
 }
 
 .login-road-foot {
-  color: #8f968f;
+  color: var(--on-road-faint);
   display: flex;
   flex-wrap: wrap;
   font-size: .75rem;
@@ -65,7 +65,7 @@
 }
 
 .login-road-foot a {
-  color: #dfe3df;
+  color: var(--on-road-2);
 }
 
 .login-road-foot a:hover {
@@ -222,8 +222,8 @@
 }
 
 .login-input-error {
-  border-color: #b3372f;
-  background: #fdf1f0;
+  border-color: var(--danger);
+  background: var(--danger-soft);
 }
 
 .login-btn {
@@ -269,9 +269,9 @@
 }
 
 .login-alert-error {
-  background: var(--red-soft, #fcebea);
-  border: 1px solid #b3372f;
-  color: #b3372f;
+  background: var(--danger-soft);
+  border: 1px solid var(--danger);
+  color: var(--danger);
 }
 
 .login-alert-success {

@@ -121,7 +121,7 @@
 
 .add-user-field input[aria-invalid='true'],
 .add-user-field select[aria-invalid='true'] {
-  border-color: #b3372f;
+  border-color: var(--danger);
 }
 
 .add-user-field small {
@@ -131,7 +131,7 @@
 }
 
 .add-user-field small.error {
-  color: #b3372f;
+  color: var(--danger);
 }
 
 .add-user-note {
@@ -179,8 +179,8 @@
 }
 
 .add-user-banner {
-  background: #fbeae8;
-  color: #9e2f29;
+  background: var(--danger-soft);
+  color: var(--danger-ink);
   font-size: .78rem;
   margin: 1rem 1.25rem 0;
   padding: .6rem .75rem;
@@ -247,18 +247,6 @@
 .add-user-skeleton.block {
   height: 3rem;
   width: 100%;
-}
-
-@media (prefers-color-scheme: dark) {
-  .add-user-banner {
-    background: #3b2220;
-    border-color: #7c3c37;
-    color: #e5766e;
-  }
-
-  .add-user-field small.error {
-    color: #e5766e;
-  }
 }
 
 @media (max-width: 53.75rem) {
