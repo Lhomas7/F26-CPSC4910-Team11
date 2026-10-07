@@ -13,8 +13,8 @@ const drivers = [
   { id: 8, username: 'morgan.chen', name: 'Morgan Chen', status: 'pending', point_balance: 0 },
 ];
 
-function renderPage() {
-  return render(<MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><DriverListPage /></MemoryRouter>);
+function renderPage(initialEntries) {
+  return render(<MemoryRouter initialEntries={initialEntries} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><DriverListPage /></MemoryRouter>);
 }
 
 beforeEach(() => {
@@ -108,8 +108,34 @@ test('shows an error state and retries loading', async () => {
   api.getDrivers.mockRejectedValueOnce(new Error('Network unavailable')).mockResolvedValueOnce(drivers);
   renderPage();
 
+  expect(screen.getByRole('heading', { level: 1, name: 'Drivers' })).toBeInTheDocument();
   expect(await screen.findByRole('heading', { name: "Drivers couldn't be loaded" })).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
   await waitFor(() => expect(api.getDrivers).toHaveBeenCalledTimes(2));
   expect(await screen.findByRole('heading', { name: 'Driver directory' })).toBeInTheDocument();
+});
+
+test('keeps the page identity visible while drivers are loading', () => {
+  api.getDrivers.mockReturnValue(new Promise(() => {}));
+  renderPage();
+
+  expect(screen.getByRole('heading', { level: 1, name: 'Drivers' })).toBeInTheDocument();
+  expect(screen.getByLabelText('Loading drivers')).toBeInTheDocument();
+});
+
+test('shows a dedicated no-match state and clears active criteria', async () => {
+  renderPage();
+  await screen.findByRole('heading', { name: 'Driver directory' });
+
+  fireEvent.change(screen.getByLabelText('Search drivers'), { target: { value: 'nobody-here' } });
+  expect(screen.getByRole('heading', { name: 'No drivers match “nobody-here”' })).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Clear search and filters' }));
+  expect(screen.getByRole('link', { name: 'View Jamie Rivera' })).toBeInTheDocument();
+});
+
+test('displays a route success notice after a completed enrollment change', async () => {
+  renderPage([{ pathname: '/drivers', state: { notice: 'Jamie Rivera was dropped. The reason has been saved.' } }]);
+
+  expect(await screen.findByRole('status')).toHaveTextContent('Jamie Rivera was dropped. The reason has been saved.');
 });

@@ -64,21 +64,27 @@ export default function DriverListPage() {
   };
 
   if (error) return (
-    <main className="drivers-content">
-      <StatePanel tone="error" title="Drivers couldn't be loaded">
-        <p>{error}</p>
-        <button className="drivers-button primary" type="button" onClick={loadDrivers}>Try again</button>
-      </StatePanel>
-    </main>
+    <div className="drivers-page">
+      <PageHeader title="Drivers" subtitle="Manage enrollment, balances, and driver access" />
+      <main className="drivers-content">
+        <StatePanel tone="error" title="Drivers couldn't be loaded">
+          <p>{error}</p>
+          <button className="drivers-button primary" type="button" onClick={loadDrivers}>Try again</button>
+        </StatePanel>
+      </main>
+    </div>
   );
 
   if (!drivers) return (
-    <main className="drivers-content" aria-label="Loading drivers">
-      <div className="drivers-summary" aria-hidden="true">
-        {[0, 1, 2, 3].map((item) => <Skeleton key={item} className="drivers-skeleton drivers-skeleton-summary" />)}
-      </div>
-      <Skeleton className="drivers-skeleton drivers-skeleton-list" />
-    </main>
+    <div className="drivers-page">
+      <PageHeader title="Drivers" subtitle="Manage enrollment, balances, and driver access" />
+      <main className="drivers-content" aria-label="Loading drivers">
+        <div className="drivers-summary" aria-hidden="true">
+          {[0, 1, 2, 3].map((item) => <Skeleton key={item} className="drivers-skeleton drivers-skeleton-summary" />)}
+        </div>
+        <Skeleton className="drivers-skeleton drivers-skeleton-list" />
+      </main>
+    </div>
   );
 
   const hasFilters = Boolean(search.trim()) || statusFilter !== 'all';

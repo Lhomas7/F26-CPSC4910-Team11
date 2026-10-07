@@ -99,6 +99,42 @@ test('shows point history failures and allows retrying', async () => {
   expect(api.getPointHistory).toHaveBeenCalledTimes(2);
 });
 
+test('keeps the detail page identity visible while the driver is loading', () => {
+  api.getDriver.mockReturnValue(new Promise(() => {}));
+  api.getPointHistory.mockReturnValue(new Promise(() => {}));
+  renderDetail();
+
+  expect(screen.getByRole('heading', { level: 1, name: 'Driver details' })).toBeInTheDocument();
+  expect(screen.getByLabelText('Loading driver details')).toBeInTheDocument();
+});
+
+test('shows the organization-safe not-found state for a missing driver', async () => {
+  api.getDriver.mockRejectedValue(Object.assign(new Error('Not found'), { status: 404 }));
+  renderDetail();
+
+  expect(await screen.findByRole('heading', { name: "That driver isn't in your organization" })).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Back to drivers' })).toHaveAttribute('href', '/drivers');
+});
+
+test('shows a temporary driver failure and retries without leaving the page', async () => {
+  api.getDriver.mockRejectedValueOnce(new Error('Service unavailable')).mockResolvedValueOnce(driver);
+  renderDetail();
+
+  expect(await screen.findByRole('heading', { name: "This driver couldn't be loaded" })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+
+  expect(await screen.findByRole('heading', { level: 1, name: 'Jamie Rivera' })).toBeInTheDocument();
+  expect(api.getDriver).toHaveBeenCalledTimes(2);
+});
+
+test('shows the approved empty-history state', async () => {
+  api.getPointHistory.mockResolvedValue([]);
+  renderDetail();
+
+  expect(await screen.findByText('No point changes for Jamie Rivera yet.')).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Adjust points' })).toBeInTheDocument();
+});
+
 test('rejecting a pending driver requires a reason and returns to the list', async () => {
   api.getDriver.mockResolvedValue({ ...driver, status: 'pending', point_balance: 0 });
   api.removeDriver.mockResolvedValue({ id: 1, driver: 7, action: 'rejected', reason: 'Missing CDL' });
