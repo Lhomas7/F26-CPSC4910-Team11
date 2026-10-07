@@ -22,6 +22,7 @@ from .services import (
     DriverMembershipError,
     PointAdjustmentError,
     adjust_driver_points,
+    link_driver_to_sponsor,
     remove_driver_from_sponsor,
 )
 
@@ -49,7 +50,7 @@ class DriverViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = Driver.objects.filter(user=user)
         else:
             return Driver.objects.none()
-        return queryset.annotate(
+        return queryset.select_related('user', 'sponsor').annotate(
             calculated_point_balance=Coalesce(
                 Sum('point_transactions__point_change'),
                 Value(0),
@@ -140,37 +141,21 @@ class DriverViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['post'])
     def link(self, request):
-        user = request.user
-        if not hasattr(user, 'sponsor_account') or user.sponsor_account is None:
-            return Response(
-                {'detail': 'Only a sponsor can link a driver.'},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        username = (request.data.get('username') or '').strip()
-        if not username:
-            return Response(
-                {'detail': 'Username is required.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
         try:
-            driver = Driver.objects.get(user__username=username)
-        except Driver.DoesNotExist:
-            return Response(
-                {'detail': f'No driver found with username "{username}".'},
-                status=status.HTTP_404_NOT_FOUND,
+            driver = link_driver_to_sponsor(
+                username=request.data.get('username'),
+                changed_by_user=request.user,
             )
-
-        company = user.sponsor_account.company
-        if driver.sponsor is not None and driver.sponsor != company:
-            return Response(
-                {'detail': 'That driver is already assigned to another sponsor.'},
-                status=status.HTTP_400_BAD_REQUEST,
+        except DriverMembershipError as error:
+            response_status = (
+                status.HTTP_403_FORBIDDEN
+                if error.code == 'not_sponsor'
+                else status.HTTP_404_NOT_FOUND
+                if error.code == 'driver_not_found'
+                else status.HTTP_400_BAD_REQUEST
             )
+            return Response({error.field: error.message}, status=response_status)
 
-        driver.sponsor = company
-        driver.save()
         return Response(self.get_serializer(driver).data)
 
 

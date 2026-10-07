@@ -9,8 +9,8 @@ jest.mock('../../../api');
 jest.mock('../../../auth/AuthContext');
 
 const drivers = [
-  { id: 4, name: 'Jamie Rivera', status: 'approved', point_balance: 125 },
-  { id: 8, name: 'Morgan Chen', status: 'pending', point_balance: 0 },
+  { id: 4, username: 'jamie.rivera', name: 'Jamie Rivera', status: 'approved', point_balance: 125 },
+  { id: 8, username: 'morgan.chen', name: 'Morgan Chen', status: 'pending', point_balance: 0 },
 ];
 
 function renderPage() {
@@ -46,6 +46,16 @@ test('searches by driver name and filters enrollment status', async () => {
 
   fireEvent.change(screen.getByLabelText('Search drivers'), { target: { value: '' } });
   fireEvent.click(screen.getByRole('button', { name: /Pending 1/ }));
+  expect(screen.queryByRole('link', { name: 'View Jamie Rivera' })).not.toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'View Morgan Chen' })).toBeInTheDocument();
+});
+
+test('searches by driver username without case sensitivity', async () => {
+  renderPage();
+  await screen.findByRole('heading', { name: 'Driver directory' });
+
+  fireEvent.change(screen.getByLabelText('Search drivers'), { target: { value: 'MORGAN.CHEN' } });
+
   expect(screen.queryByRole('link', { name: 'View Jamie Rivera' })).not.toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'View Morgan Chen' })).toBeInTheDocument();
 });

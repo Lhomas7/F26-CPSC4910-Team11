@@ -40,7 +40,9 @@ export default function DriverListPage() {
     const query = search.trim().toLocaleLowerCase();
     return (drivers || []).filter((driver) => (
       (statusFilter === 'all' || driver.status === statusFilter)
-      && (!query || driver.name.toLocaleLowerCase().includes(query))
+      && (!query
+        || driver.name.toLocaleLowerCase().includes(query)
+        || driver.username?.toLocaleLowerCase().includes(query))
     ));
   }, [drivers, search, statusFilter]);
 

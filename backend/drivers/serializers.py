@@ -6,12 +6,22 @@ from .services.reasons import MAX_REASON_LENGTH
 
 
 class DriverSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
     point_balance = serializers.SerializerMethodField()
     sponsor_name = serializers.CharField(source='sponsor.name', read_only=True, default=None)
 
     class Meta:
         model = Driver
-        fields = ['id', 'user', 'name', 'sponsor', 'sponsor_name', 'status', 'point_balance']
+        fields = [
+            'id',
+            'user',
+            'username',
+            'name',
+            'sponsor',
+            'sponsor_name',
+            'status',
+            'point_balance',
+        ]
         read_only_fields = fields
 
     def get_point_balance(self, driver):

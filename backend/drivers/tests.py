@@ -470,9 +470,70 @@ class AdminDriverApiTests(RoleScopedDriverTestData):
     def test_driver_list_includes_sponsor_name(self):
         self.client.force_authenticate(self.sponsor_user)
 
-        names = {row['name']: row['sponsor_name'] for row in self.client.get(reverse('driver-list')).data}
+        response = self.client.get(reverse('driver-list'))
+        names = {row['name']: row['sponsor_name'] for row in response.data}
+        usernames = {row['name']: row['username'] for row in response.data}
 
         self.assertEqual(names, {'Avery Approved': 'Scope Freight', 'Blake Pending': 'Scope Freight'})
+        self.assertEqual(usernames, {
+            'Avery Approved': 'scope.approved',
+            'Blake Pending': 'scope.pending',
+        })
+
+
+class DriverLinkTests(RoleScopedDriverTestData):
+    def link(self, username, user=None):
+        self.client.force_authenticate(user or self.sponsor_user)
+        return self.client.post(
+            reverse('driver-link'),
+            {'username': username},
+            format='json',
+        )
+
+    def test_links_unassigned_driver_case_insensitively_as_pending(self):
+        user = get_user_model().objects.create_user(
+            username='Available.Driver',
+            password='ExamplePassword123!',
+        )
+        driver = Driver.objects.create(
+            user=user,
+            name='Available Driver',
+            status='approved',
+        )
+
+        response = self.link('available.driver')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        driver.refresh_from_db()
+        self.assertEqual(driver.sponsor, self.company)
+        self.assertEqual(driver.status, 'pending')
+        self.assertEqual(response.data['username'], 'Available.Driver')
+        self.assertEqual(response.data['status'], 'pending')
+
+    def test_does_not_reset_driver_already_linked_to_same_company(self):
+        response = self.link(self.approved.user.username)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('already linked to your organization', response.data['detail'])
+        self.approved.refresh_from_db()
+        self.assertEqual(self.approved.status, 'approved')
+        self.assertEqual(self.approved.sponsor, self.company)
+
+    def test_refuses_driver_linked_to_another_company(self):
+        response = self.link(self.outsider.user.username)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('another sponsor', response.data['detail'])
+        self.outsider.refresh_from_db()
+        self.assertEqual(self.outsider.sponsor, self.other_company)
+
+    def test_unknown_blank_and_non_sponsor_link_requests_are_rejected(self):
+        self.assertEqual(self.link('').status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(self.link('does.not.exist').status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(
+            self.link('scope.outsider', user=self.pending.user).status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
 
 
 class DriverApiMutationTests(RoleScopedDriverTestData):

@@ -11,6 +11,7 @@ jest.mock('../../../api');
 const driver = {
   id: 7,
   user: 12,
+  username: 'jamie.rivera',
   name: 'Jamie Rivera',
   sponsor: 3,
   status: 'approved',

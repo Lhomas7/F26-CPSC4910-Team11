@@ -16,6 +16,61 @@ class DriverMembershipError(ValueError):
 
 
 @transaction.atomic
+def link_driver_to_sponsor(*, username, changed_by_user):
+    """Link one unassigned driver to the sponsor as a pending application.
+
+    Locking the driver prevents two organizations from linking the same
+    account concurrently. An existing membership must be removed through the
+    audited removal workflow before another link can be created.
+    """
+    sponsor_account = getattr(changed_by_user, 'sponsor_account', None)
+    if not changed_by_user.is_active or sponsor_account is None:
+        raise DriverMembershipError(
+            'detail',
+            'Only a sponsor can link a driver.',
+            code='not_sponsor',
+        )
+
+    username = (username or '').strip()
+    if not username:
+        raise DriverMembershipError(
+            'detail',
+            'Username is required.',
+            code='missing_username',
+        )
+
+    try:
+        driver = (
+            Driver.objects.select_for_update()
+            .select_related('user', 'sponsor')
+            .get(user__username__iexact=username)
+        )
+    except Driver.DoesNotExist:
+        raise DriverMembershipError(
+            'detail',
+            f'No driver found with username "{username}".',
+            code='driver_not_found',
+        ) from None
+
+    if driver.sponsor_id is not None:
+        message = (
+            'That driver is already linked to your organization.'
+            if driver.sponsor_id == sponsor_account.company_id
+            else 'That driver is already assigned to another sponsor.'
+        )
+        raise DriverMembershipError(
+            'detail',
+            message,
+            code='already_linked',
+        )
+
+    driver.sponsor_id = sponsor_account.company_id
+    driver.status = 'pending'
+    driver.save(update_fields=['sponsor', 'status'])
+    return driver
+
+
+@transaction.atomic
 def remove_driver_from_sponsor(*, driver, changed_by_user, reason):
     """Reject a pending driver or drop an approved one, with an audited reason.
 
