@@ -203,7 +203,7 @@ function DriverWorkspace({
               <button className="drivers-button" type="button" onClick={onRetryHistory}>Try again</button>
             </div>
           ) : history ? (
-            <PointHistoryList entries={history} emptyText={`No point changes for ${driver.name} yet.`} />
+            <PointHistoryList detailStyle entries={history} emptyText={`No point changes for ${driver.name} yet.`} />
           ) : (
             <p className="point-history-empty" role="status">Loading history…</p>
           )}

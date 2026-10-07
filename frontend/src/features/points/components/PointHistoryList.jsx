@@ -23,14 +23,17 @@ function formatDate(isoDate) {
  * amount. `showDriver` adds the driver's name (linked for sponsors), for lists
  * that mix several drivers.
  */
-export default function PointHistoryList({ entries, showDriver = false, linkDrivers = false, emptyText = 'No point changes yet.' }) {
+export default function PointHistoryList({ entries, showDriver = false, linkDrivers = false, emptyText = 'No point changes yet.', detailStyle = false }) {
   if (!entries.length) return <p className="point-history-empty">{emptyText}</p>;
 
   return (
-    <ol className="point-history">
-      {entries.map((entry) => (
+    <ol className={`point-history${detailStyle ? ' point-history-detail' : ''}`}>
+      {entries.map((entry) => {
+        const deduction = entry.point_change < 0;
+        return (
         <li key={entry.id}>
           <div className="point-history-main">
+            {detailStyle && <span className={`point-history-type ${deduction ? 'deduction' : 'award'}`}>{deduction ? 'Deduction' : 'Award'}</span>}
             {showDriver && (
               <span className="point-history-driver">
                 {linkDrivers ? <Link to={`/drivers/${entry.driver}`}>{entry.driver_name}</Link> : entry.driver_name}
@@ -38,16 +41,18 @@ export default function PointHistoryList({ entries, showDriver = false, linkDriv
             )}
             <span className="point-history-reason">{entry.reason}</span>
             <span className="point-history-meta">
+              {detailStyle && entry.changed_by_name && <>{entry.changed_by_name} · </>}
               <time dateTime={entry.changed_at}>{formatDate(entry.changed_at)}</time>
-              {entry.changed_by_name && <> · by {entry.changed_by_name}</>}
+              {!detailStyle && entry.changed_by_name && <> · by {entry.changed_by_name}</>}
             </span>
           </div>
-          <strong className={`point-history-change ${entry.point_change < 0 ? 'negative' : 'positive'}`}>
+          <strong className={`point-history-change ${deduction ? 'negative' : 'positive'}`}>
             {formatPoints(entry.point_change)}
             <span className="sr-only"> points</span>
           </strong>
         </li>
-      ))}
+        );
+      })}
     </ol>
   );
 }

@@ -57,7 +57,10 @@ test('shows sponsor controls, the current balance and the point history', async 
   expect(screen.getByRole('heading', { name: 'Adjust points' })).toBeInTheDocument();
   expect(await screen.findByText('Late log')).toBeInTheDocument();
   expect(screen.getByText('Clean inspection')).toBeInTheDocument();
-  expect(screen.getByText(/Oct 5, 2026, \d{1,2}:00 [AP]M/)).toBeInTheDocument();
+  expect(screen.getByText('Deduction')).toBeInTheDocument();
+  expect(screen.getByText('Award', { selector: '.point-history-type.award' })).toBeInTheDocument();
+  const localTime = screen.getByText(/Oct 5, 2026, \d{1,2}:00 [AP]M/);
+  expect(localTime.closest('.point-history-meta')).toHaveTextContent(/^Pat Sponsor · Oct/);
   expect(api.getPointHistory).toHaveBeenCalledWith({ driver: '7' });
 });
 

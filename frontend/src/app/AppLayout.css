@@ -78,6 +78,7 @@ body {
   border-bottom: 1px solid var(--line);
   color: var(--ink);
   display: flex;
+  flex: 0 0 var(--app-bar-height);
   gap: .65rem;
   height: var(--app-bar-height);
   min-height: var(--app-bar-height);

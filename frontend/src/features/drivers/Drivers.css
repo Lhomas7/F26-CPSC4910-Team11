@@ -953,7 +953,7 @@
 }
 
 .driver-history > header {
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid #ece9e0;
   padding: .9rem 1.15rem;
 }
 
@@ -974,6 +974,84 @@
 
 .driver-history-body {
   min-height: 3rem;
+  padding: 1.05rem 1.15rem;
+}
+
+.driver-history .point-history-detail {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.driver-history .point-history-detail li {
+  align-items: initial;
+  border-bottom: 1px solid #ece9e0;
+  border-top: 0;
+  display: grid;
+  gap: .25rem .9rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: .8rem 0;
+}
+
+.driver-history .point-history-detail li:first-child {
+  padding-top: 0;
+}
+
+.driver-history .point-history-detail li:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.driver-history .point-history-detail .point-history-main {
+  display: grid;
+  gap: 0;
+}
+
+.point-history-type {
+  align-items: center;
+  border-radius: .3rem;
+  display: inline-flex;
+  font-size: .68rem;
+  font-weight: 700;
+  gap: .25rem;
+  justify-self: start;
+  letter-spacing: .02em;
+  padding: .1rem .4rem;
+  width: fit-content;
+}
+
+.point-history-type.award {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.point-history-type.deduction {
+  background: #fbeae8;
+  color: #a8302a;
+}
+
+.driver-history .point-history-detail .point-history-reason {
+  font-size: .88rem;
+  margin: .3rem 0 0;
+}
+
+.driver-history .point-history-detail .point-history-meta {
+  color: #8a8f89;
+  font-size: .74rem;
+  margin: .25rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+/* Keep the app's existing amount pill while adopting the mockup row layout. */
+.driver-history .point-history-detail .point-history-change {
+  align-self: start;
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  white-space: nowrap;
+}
+
+.driver-history .point-history-empty {
+  padding: 0;
 }
 
 .driver-history-error {
@@ -985,7 +1063,7 @@
   flex-wrap: wrap;
   gap: .75rem;
   justify-content: space-between;
-  margin: 1rem;
+  margin: 0;
   padding: .85rem 1rem;
 }
 
@@ -1205,6 +1283,17 @@
     width: 100%;
   }
 
+  .driver-history .point-history-detail li {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .driver-history .point-history-detail .point-history-change {
+    grid-column: 1;
+    grid-row: auto;
+    margin-top: .15rem;
+    justify-self: start;
+  }
+
   .driver-enrollment-actions .drivers-button,
   .driver-danger-area .drivers-button {
     flex: 1 1 100%;
@@ -1242,6 +1331,20 @@
 
   .point-adjustment-submit button.primary:hover {
     background: #6cc9a4;
+  }
+
+  .driver-history > header,
+  .driver-history .point-history-detail li {
+    border-color: #2a2f2b;
+  }
+
+  .driver-history .point-history-detail .point-history-meta {
+    color: #7f8680;
+  }
+
+  .point-history-type.deduction {
+    background: #3b2220;
+    color: #e5837b;
   }
 
   .driver-card.pending {
