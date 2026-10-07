@@ -4,21 +4,28 @@ import { Link, useLocation } from 'react-router-dom';
 import { getDrivers } from '../../../api';
 import PageHeader from '../../../app/PageHeader';
 import { useAuth } from '../../../auth/AuthContext';
-import Avatar from '../../../components/primitives/Avatar';
 import Skeleton from '../../../components/feedback/Skeleton';
 import StatePanel from '../../../components/feedback/StatePanel';
+import Avatar from '../../../components/primitives/Avatar';
+import { SearchIcon } from '../../../components/primitives/Icons';
 import DriverMfaRequirement from '../../sponsors/components/DriverMfaRequirement';
 import LinkDriverForm from '../components/LinkDriverForm';
 import '../Drivers.css';
 
+const FILTERS = [
+  ['all', 'Total drivers', 'Show all drivers'],
+  ['approved', 'Approved', 'Show approved only'],
+  ['pending', 'Pending', 'Show pending only'],
+];
+
 export default function DriverListPage() {
   const { user } = useAuth();
-  // Set by the driver page after a reject or drop.
-  const notice = useLocation().state?.notice;
+  const routeNotice = useLocation().state?.notice;
   const [drivers, setDrivers] = useState(null);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [notice, setNotice] = useState(routeNotice || '');
 
   const loadDrivers = useCallback(() => {
     setError(null);
@@ -46,6 +53,16 @@ export default function DriverListPage() {
     ));
   }, [drivers, search, statusFilter]);
 
+  const clearFilters = () => {
+    setSearch('');
+    setStatusFilter('all');
+  };
+
+  const handleLinked = async (driver) => {
+    await loadDrivers();
+    setNotice(`@${driver.username} was linked to ${user.company || 'your organization'} and is waiting for approval.`);
+  };
+
   if (error) return (
     <main className="drivers-content">
       <StatePanel tone="error" title="Drivers couldn't be loaded">
@@ -54,69 +71,130 @@ export default function DriverListPage() {
       </StatePanel>
     </main>
   );
+
   if (!drivers) return (
     <main className="drivers-content" aria-label="Loading drivers">
-      <Skeleton className="drivers-skeleton drivers-skeleton-summary" />
+      <div className="drivers-summary" aria-hidden="true">
+        {[0, 1, 2, 3].map((item) => <Skeleton key={item} className="drivers-skeleton drivers-skeleton-summary" />)}
+      </div>
       <Skeleton className="drivers-skeleton drivers-skeleton-list" />
     </main>
   );
 
+  const hasFilters = Boolean(search.trim()) || statusFilter !== 'all';
+
   return (
     <div className="drivers-page">
       <PageHeader title="Drivers" subtitle="Manage enrollment, balances, and driver access" />
-      <main className="drivers-content has-settings">
-        <div className="drivers-primary">
-          {notice && <p className="drivers-notice" role="status">{notice}</p>}
+      <main className="drivers-content">
+        {notice && (
+          <div className="drivers-notice" role="status">
+            <span>{notice}</span>
+            <button type="button" aria-label="Dismiss notice" onClick={() => setNotice('')}>×</button>
+          </div>
+        )}
+
+        {drivers.length > 0 && (
           <section className="drivers-summary" aria-label="Driver overview">
-            <div><span>Total drivers</span><strong>{counts.total}</strong></div>
-            <div><span>Approved</span><strong>{counts.approved}</strong></div>
-            <div><span>Pending</span><strong>{counts.pending}</strong></div>
-            <div><span>Total points</span><strong>{counts.points.toLocaleString()}</strong></div>
-          </section>
-
-          <section className="drivers-directory" aria-labelledby="drivers-directory-heading">
-            <div className="drivers-directory-heading">
-              <div><h2 id="drivers-directory-heading">Driver directory</h2><p>Select a driver to review details, adjust points, or manage enrollment.</p></div>
-              {drivers.length > 0 && <span>{visibleDrivers.length} shown</span>}
+            {FILTERS.map(([value, label, hint]) => (
+              <button
+                key={value}
+                type="button"
+                className={value === 'pending' ? 'pending' : ''}
+                aria-pressed={statusFilter === value}
+                onClick={() => setStatusFilter(value)}
+              >
+                <span>{label}</span>
+                <strong>{counts[value === 'all' ? 'total' : value]}</strong>
+                <small>{hint}</small>
+              </button>
+            ))}
+            <div>
+              <span>Total points</span>
+              <strong>{counts.points.toLocaleString()}</strong>
+              <small>Held by your drivers</small>
             </div>
+          </section>
+        )}
 
-            {drivers.length > 0 && (
+        <section className="drivers-directory" aria-labelledby="drivers-directory-heading">
+          <div className="drivers-directory-heading">
+            <div>
+              <h2 id="drivers-directory-heading">Driver directory</h2>
+              <p>Select a driver to review enrollment, adjust points, or see their history.</p>
+            </div>
+          </div>
+
+          {drivers.length > 0 && (
+            <>
               <div className="drivers-toolbar">
-                <label className="drivers-search" htmlFor="driver-search"><span className="sr-only">Search drivers</span><input id="driver-search" type="search" placeholder="Search by driver name" value={search} onChange={(event) => setSearch(event.target.value)} /></label>
+                <label className="drivers-search" htmlFor="driver-search">
+                  <SearchIcon className="drivers-search-icon" size={15} />
+                  <span className="sr-only">Search drivers</span>
+                  <input
+                    id="driver-search"
+                    type="search"
+                    aria-label="Search drivers"
+                    placeholder="Search by driver name or username"
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                  />
+                </label>
                 <div className="drivers-filters" role="group" aria-label="Filter by enrollment status">
                   {[
                     ['all', 'All', counts.total],
                     ['approved', 'Approved', counts.approved],
                     ['pending', 'Pending', counts.pending],
                   ].map(([value, label, count]) => (
-                    <button key={value} type="button" aria-pressed={statusFilter === value} onClick={() => setStatusFilter(value)}><span>{label}</span><small>{count}</small></button>
+                    <button key={value} type="button" aria-pressed={statusFilter === value} onClick={() => setStatusFilter(value)}>
+                      <span className="drivers-filter-content">
+                        <span className="drivers-filter-label">{label}</span>
+                        <span className="drivers-filter-count">{count}</span>
+                      </span>
+                    </button>
                   ))}
                 </div>
+                <LinkDriverForm company={user.company} onLinked={handleLinked} triggerClassName="drivers-toolbar-action" />
               </div>
-            )}
+              <p className="drivers-count" aria-live="polite">
+                {hasFilters ? `Showing ${visibleDrivers.length} of ${drivers.length} drivers` : `${drivers.length} drivers`}
+              </p>
+            </>
+          )}
 
-            {drivers.length === 0 ? (
-              <div className="drivers-empty"><Avatar className="drivers-empty-avatar" name="No drivers" /><h3>No drivers linked yet</h3><p>Use the Link a driver panel to add someone from your organization.</p></div>
-            ) : visibleDrivers.length === 0 ? (
-              <div className="drivers-empty"><h3>No matching drivers</h3><p>Try another name or status filter.</p><button type="button" onClick={() => { setSearch(''); setStatusFilter('all'); }}>Clear filters</button></div>
-            ) : (
-              <div className="driver-card-grid">
-                {visibleDrivers.map((driver) => (
-                  <article className="driver-card" key={driver.id}>
-                    <div className="driver-card-person"><Avatar className="driver-card-avatar" name={driver.name} /><div><h3>{driver.name}</h3><span className={`driver-status ${driver.status}`}>{driver.status === 'approved' ? 'Approved' : 'Pending approval'}</span></div></div>
-                    <div className="driver-card-balance"><span>Point balance</span><strong>{Number(driver.point_balance || 0).toLocaleString()}</strong></div>
-                    <Link to={`/drivers/${driver.id}`} aria-label={`View ${driver.name}`}>View driver <span aria-hidden="true">→</span></Link>
-                  </article>
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
+          {drivers.length === 0 ? (
+            <StatePanel title="No drivers linked yet">
+              <p>Add an existing driver account to your organization by username. Once linked, you can approve their enrollment and start awarding points.</p>
+              <LinkDriverForm company={user.company} onLinked={handleLinked} />
+            </StatePanel>
+          ) : visibleDrivers.length === 0 ? (
+            <StatePanel title={search.trim() ? `No drivers match “${search.trim()}”` : `No ${statusFilter} drivers yet`}>
+              <p>Try a different name or username, or clear the search and filters to see everyone.</p>
+              <button className="drivers-button" type="button" onClick={clearFilters}>Clear search and filters</button>
+            </StatePanel>
+          ) : (
+            <div className="driver-card-grid">
+              {visibleDrivers.map((driver) => (
+                <article className={`driver-card ${driver.status}`} key={driver.id}>
+                  <div className="driver-card-person">
+                    <Avatar className="driver-card-avatar" name={driver.name} />
+                    <div>
+                      <h3><Link to={`/drivers/${driver.id}`} aria-label={`View ${driver.name}`}>{driver.name}</Link></h3>
+                      <p className="driver-card-username">@{driver.username}</p>
+                      <span className={`driver-status ${driver.status}`}>{driver.status === 'approved' ? 'Approved' : 'Pending approval'}</span>
+                    </div>
+                  </div>
+                  <div className="driver-card-balance">
+                    <span>Point balance</span>
+                    <strong>{Number(driver.point_balance || 0).toLocaleString()} <small>pts</small></strong>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
 
-        <aside className="drivers-settings" aria-label="Driver management settings">
-          <LinkDriverForm onLinked={loadDrivers} />
-          <DriverMfaRequirement company={user.company} />
-        </aside>
+        <DriverMfaRequirement company={user.company} />
       </main>
     </div>
   );

@@ -4,133 +4,133 @@
 
 .drivers-content {
   display: grid;
-  gap: 1.25rem;
-  max-width: 76rem;
+  gap: 1.35rem;
+  margin: 0 auto;
+  max-width: 71rem;
   padding: 1.5rem 1.75rem 4rem;
+  width: 100%;
 }
 
-.drivers-content.has-settings {
-  align-items: start;
-  grid-template-columns: minmax(0, 1fr) 19rem;
-}
-
-.drivers-primary,
-.drivers-settings {
-  display: grid;
-  gap: 1rem;
-}
-
-/* As many stat boxes across as fit: 4 on a wide screen, 2x2 at half screen,
-   1 column only on a narrow phone. */
 .drivers-summary {
   display: grid;
-  gap: .75rem;
-  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: .65rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.drivers-summary > button,
 .drivers-summary > div {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: .65rem;
   display: grid;
-  gap: .25rem;
-  padding: .9rem 1rem;
+  gap: .2rem;
+  padding: .7rem .85rem;
+  text-align: left;
 }
 
-.drivers-summary span,
-.driver-card-balance span {
+.drivers-summary > button {
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.drivers-summary > button:hover {
+  background: var(--surface-2);
+  border-color: var(--ink-2);
+}
+
+.drivers-summary > button[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.drivers-summary > button.pending strong {
+  color: #8a5a05;
+}
+
+.drivers-summary span {
   color: var(--ink-2);
   font-size: .72rem;
 }
 
 .drivers-summary strong {
-  font-size: 1.3rem;
+  font-size: 1.5rem;
+  line-height: 1.1;
 }
 
-.drivers-summary > div:last-child strong {
-  color: var(--accent);
-}
-
-.drivers-directory,
-.driver-settings-card {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: .65rem;
+.drivers-summary small {
+  color: var(--ink-2);
+  font-size: .68rem;
 }
 
 .drivers-directory {
-  overflow: hidden;
+  min-width: 0;
 }
 
 .drivers-directory-heading {
-  align-items: center;
-  border-bottom: 1px solid var(--line);
+  align-items: flex-end;
   display: flex;
   justify-content: space-between;
-  padding: 1rem 1.1rem;
+  margin-bottom: .75rem;
 }
 
 .drivers-directory-heading h2,
-.drivers-directory-heading p,
-.driver-settings-heading h2,
-.driver-settings-heading p {
+.drivers-directory-heading p {
   margin: 0;
 }
 
-.drivers-directory-heading h2,
-.driver-settings-heading h2 {
-  font-size: .95rem;
+.drivers-directory-heading h2 {
+  font-size: 1rem;
 }
 
-.drivers-directory-heading p,
-.driver-settings-heading p {
+.drivers-directory-heading p {
   color: var(--ink-2);
-  font-size: .75rem;
+  font-size: .78rem;
   margin-top: .15rem;
 }
 
-.drivers-directory-heading > span {
-  background: var(--surface-2);
-  border-radius: 999px;
-  color: var(--ink-2);
-  font-size: .7rem;
-  padding: .25rem .55rem;
-}
-
-/* One row; the filters only drop to a second line when they don't fit. */
 .drivers-toolbar {
+  --drivers-control-height: 2.25rem;
   align-items: center;
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--line);
   display: flex;
   flex-wrap: wrap;
-  gap: .6rem .75rem;
-  justify-content: space-between;
-  padding: .7rem 1.1rem;
+  gap: .75rem;
 }
 
 .drivers-search {
-  flex: 1 1 12rem;
-  max-width: 22rem;
+  flex: 1 1 15rem;
+  min-width: 0;
+  position: relative;
 }
 
-.drivers-search input,
-.driver-settings-card input[type='text'],
-.driver-settings-card input:not([type]) {
+.drivers-search input {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: .45rem;
+  border-radius: .5rem;
   color: var(--ink);
   font: inherit;
-  padding: .55rem .65rem;
+  font-size: .85rem;
+  padding: .5rem .75rem .5rem 2.1rem;
   width: 100%;
 }
 
-.drivers-search input:focus,
-.driver-settings-card input:focus {
+.drivers-search input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
   outline: 0;
+}
+
+.drivers-search-icon {
+  color: var(--ink-2);
+  font-size: 1.25rem;
+  left: .65rem;
+  line-height: 1;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-55%);
+  z-index: 1;
 }
 
 .drivers-filters {
@@ -138,7 +138,6 @@
   flex-shrink: 0;
   gap: .35rem;
 }
-
 
 .drivers-filters button {
   align-items: center;
@@ -148,17 +147,29 @@
   color: var(--ink-2);
   cursor: pointer;
   display: inline-flex;
-  font: inherit;
-  font-size: .75rem;
-  gap: .3rem;
-  min-height: 2.15rem;
-  padding: 0 .65rem;
+  font-size: .78rem;
+  height: var(--drivers-control-height);
+  justify-content: center;
+  padding: 0 .7rem;
   white-space: nowrap;
 }
 
-.drivers-filters button small {
-  color: inherit;
-  opacity: .75;
+.drivers-filter-content {
+  align-items: baseline;
+  display: inline-flex;
+  gap: .25rem;
+  justify-content: center;
+  line-height: 1.2;
+}
+
+.drivers-filter-label {
+  line-height: inherit;
+}
+
+.drivers-filter-count {
+  color: var(--ink-2);
+  font-size: .7rem;
+  line-height: inherit;
 }
 
 .drivers-filters button[aria-pressed='true'] {
@@ -168,53 +179,115 @@
   font-weight: 700;
 }
 
+.drivers-filters button[aria-pressed='true'] .drivers-filter-count {
+  color: var(--stripe);
+}
+
+.drivers-count {
+  color: var(--ink-2);
+  font-size: .76rem;
+  margin: .8rem 0 .6rem;
+}
+
 .driver-card-grid {
   display: grid;
   gap: .7rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  padding: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
 }
 
 .driver-card {
-  background: var(--surface-2);
+  background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: .6rem;
+  border-left: 3px solid var(--accent);
+  border-radius: .65rem;
   display: grid;
-  gap: .9rem;
-  padding: .9rem;
-  transition: border-color 120ms ease, transform 120ms ease;
+  gap: .55rem;
+  padding: .85rem .95rem;
+  position: relative;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.driver-card.pending {
+  background: #f8ecd4;
+  border-left-color: #d9ae55;
 }
 
 .driver-card:hover,
 .driver-card:focus-within {
   border-color: var(--accent);
-  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.driver-card.pending:hover,
+.driver-card.pending:focus-within {
+  border-color: #d9ae55;
 }
 
 .driver-card-person {
-  align-items: center;
+  align-items: flex-start;
   display: flex;
-  gap: .7rem;
+  gap: .65rem;
+  min-width: 0;
+}
+
+.driver-card-person > div {
+  min-width: 0;
 }
 
 .driver-card-avatar {
   background: var(--accent-soft);
   color: var(--accent);
-  height: 2.6rem;
-  width: 2.6rem;
+  flex: 0 0 auto;
+  height: 2.4rem;
+  width: 2.4rem;
 }
 
 .driver-card h3 {
-  font-size: .9rem;
-  margin: 0 0 .25rem;
+  font-size: .95rem;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.driver-card h3 a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.driver-card h3 a::after {
+  content: '';
+  inset: 0;
+  position: absolute;
+}
+
+.driver-card:hover h3 a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.driver-card-username {
+  color: var(--ink-2);
+  font-size: .74rem;
+  margin: .1rem 0 .3rem;
+  overflow-wrap: anywhere;
 }
 
 .driver-status {
+  align-items: center;
   border-radius: 999px;
-  display: inline-block;
-  font-size: .67rem;
+  display: inline-flex;
+  font-size: .7rem;
   font-weight: 700;
-  padding: .18rem .45rem;
+  gap: .3rem;
+  padding: .12rem .5rem;
+  white-space: nowrap;
+}
+
+.driver-status::before {
+  background: currentColor;
+  border-radius: 50%;
+  content: '';
+  height: .4rem;
+  width: .4rem;
 }
 
 .driver-status.approved {
@@ -228,93 +301,30 @@
 }
 
 .driver-card-balance {
+  align-items: baseline;
+  border-top: 1px dashed var(--line);
   display: flex;
+  padding-top: .5rem;
   justify-content: space-between;
+}
+
+.driver-card-balance span {
+  color: var(--ink-2);
+  font-size: .74rem;
 }
 
 .driver-card-balance strong {
-  color: var(--accent);
+  font-size: 1.05rem;
 }
 
-.driver-card > a {
-  align-items: center;
-  border-top: 1px solid var(--line);
-  color: var(--accent);
-  display: flex;
-  font-size: .78rem;
-  font-weight: 800;
-  justify-content: space-between;
-  padding-top: .7rem;
-  text-decoration: none;
-}
-
-.driver-card > a:hover,
-.driver-card > a:focus-visible {
-  text-decoration: underline;
-}
-
-.drivers-empty {
-  align-items: center;
-  display: flex;
-  flex-direction: column;
-  padding: 2.5rem 1rem;
-  text-align: center;
-}
-
-.drivers-empty-avatar {
-  background: var(--surface-2);
+.driver-card-balance small {
   color: var(--ink-2);
-  height: 3rem;
-  width: 3rem;
+  font-size: .72rem;
+  font-weight: 600;
 }
 
-.drivers-empty h3 {
-  margin: .65rem 0 .2rem;
-}
-
-.drivers-empty p {
-  color: var(--ink-2);
-  margin: 0;
-}
-
-.drivers-empty button {
-  background: transparent;
-  border: 0;
-  color: var(--accent);
-  cursor: pointer;
-  font: inherit;
-  font-weight: 700;
-  margin-top: .7rem;
-}
-
-.driver-settings-card {
-  display: grid;
-  gap: .75rem;
-  padding: 1rem;
-}
-
-.driver-settings-heading {
-  align-items: flex-start;
-  display: flex;
-  gap: .65rem;
-}
-
-.driver-settings-heading > span {
-  align-items: center;
-  background: var(--accent-soft);
-  border-radius: .4rem;
-  color: var(--accent);
-  display: inline-flex;
-  flex: 0 0 2rem;
-  font-weight: 900;
-  height: 2rem;
-  justify-content: center;
-}
-
-.driver-settings-card > label:not(.driver-setting-switch) {
-  color: var(--ink-2);
-  font-size: .75rem;
-  font-weight: 700;
+.drivers-directory .state-panel {
+  margin-top: .75rem;
 }
 
 .drivers-button {
@@ -329,8 +339,10 @@
   font-size: .78rem;
   font-weight: 800;
   justify-content: center;
-  min-height: 2.35rem;
+  line-height: 1;
+  min-height: 2.25rem;
   padding: 0 .8rem;
+  text-align: center;
 }
 
 .drivers-button.primary {
@@ -344,26 +356,128 @@
   opacity: .55;
 }
 
-.driver-setting-switch {
-  align-items: center;
+.drivers-toolbar-action {
+  flex: 0 0 auto;
+  gap: .3rem;
+  height: var(--drivers-control-height);
+  line-height: normal;
+  margin-left: auto;
+  min-height: 0;
+  white-space: nowrap;
+}
+
+.drivers-add-icon {
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.link-driver-dialog {
+  max-width: 29rem;
+}
+
+.link-driver-dialog form {
+  display: grid;
+  gap: .3rem;
+  margin-top: .8rem;
+}
+
+.link-driver-dialog label {
+  color: var(--ink);
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.link-driver-dialog input {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .5rem;
+  color: var(--ink);
+  font: inherit;
+  padding: .5rem .7rem;
+}
+
+.link-driver-dialog input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: 0;
+}
+
+.link-driver-dialog input[aria-invalid='true'] {
+  border-color: #b3372f;
+}
+
+.link-driver-dialog small {
+  color: var(--ink-2);
+  font-size: .72rem;
+}
+
+.link-driver-dialog small.error {
+  color: #b3372f;
+}
+
+.driver-organization-settings {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: .65rem;
+  margin-top: .9rem;
+  padding: 1rem 1.1rem;
+}
+
+.driver-organization-settings > header {
+  border-bottom: 1px solid var(--line);
+  margin-bottom: .85rem;
+  padding-bottom: .6rem;
+}
+
+.driver-organization-settings h2,
+.driver-organization-settings header p,
+.driver-setting-row p {
+  margin: 0;
+}
+
+.driver-organization-settings h2 {
+  font-size: .85rem;
+}
+
+.driver-organization-settings header p {
+  color: var(--ink-2);
+  font-size: .74rem;
+  margin-top: .15rem;
+}
+
+.driver-setting-row {
+  align-items: flex-start;
   display: flex;
-  gap: .8rem;
+  flex-wrap: wrap;
+  gap: 1rem;
   justify-content: space-between;
 }
 
-.driver-setting-switch span {
-  display: grid;
-  gap: .15rem;
+.driver-setting-row > div {
+  flex: 1 1 22rem;
+  min-width: 0;
 }
 
-.driver-setting-switch strong {
-  font-size: .8rem;
+.driver-setting-row strong {
+  display: block;
+  font-size: .85rem;
 }
 
-.driver-setting-switch small,
-.mfa-required-hint {
+.driver-setting-row p {
   color: var(--ink-2);
-  font-size: .7rem;
+  font-size: .76rem;
+  margin-top: .2rem;
+  max-width: 56ch;
+}
+
+.driver-setting-switch {
+  align-items: center;
+  cursor: pointer;
+  display: inline-flex;
+  gap: .55rem;
+  font-size: .8rem;
+  font-weight: 600;
 }
 
 .driver-setting-switch input {
@@ -372,15 +486,10 @@
   width: 1.1rem;
 }
 
-.mfa-required-hint {
-  border-top: 1px solid var(--line);
-  margin: 0;
-  padding-top: .65rem;
-}
-
 .driver-settings-message {
+  border-radius: .45rem;
   font-size: .73rem;
-  margin: 0;
+  margin: .75rem 0 0;
   padding: .55rem .65rem;
 }
 
@@ -618,13 +727,28 @@
 }
 
 .drivers-notice {
+  align-items: flex-start;
   background: var(--accent-soft);
+  border: 1px solid var(--accent);
   border-radius: .5rem;
   color: var(--accent);
+  display: flex;
   font-size: .82rem;
   font-weight: 700;
+  gap: .75rem;
+  justify-content: space-between;
   margin: 0;
   padding: .7rem .9rem;
+}
+
+.drivers-notice button {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  line-height: 1;
+  padding: 0 .15rem;
 }
 
 .remove-driver-dialog form {
@@ -675,15 +799,16 @@
     padding-right: 1rem;
   }
 
-  .drivers-content.has-settings,
   .driver-card-grid {
     grid-template-columns: 1fr;
   }
 
   .drivers-summary {
     gap: .5rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .drivers-summary > button,
   .drivers-summary > div {
     padding: .65rem .8rem;
   }
@@ -693,7 +818,7 @@
   }
 
   .drivers-toolbar {
-    padding: .6rem .8rem;
+    align-items: stretch;
   }
 
   /* When the search has a line to itself, let it use the whole line. */
@@ -715,12 +840,32 @@
   }
 }
 
-@media (min-width: 42.01rem) and (max-width: 68rem) {
-  .drivers-content.has-settings {
-    grid-template-columns: 1fr;
+/* The directory controls need deliberate rows before the cards become truly
+   phone-sized; otherwise the action can wrap into an awkward partial row. */
+@media (max-width: 40.5rem) {
+  .drivers-search {
+    flex-basis: 100%;
   }
 
-  .drivers-settings {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .drivers-filters {
+    flex: 1 1 100%;
+    padding-bottom: .15rem;
+  }
+
+  .drivers-toolbar-action {
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .driver-card.pending {
+    background: #3a2f1a;
+    border-left-color: #6d5526;
+  }
+
+  .drivers-summary > button.pending strong,
+  .driver-status.pending {
+    color: #f0c977;
   }
 }

@@ -38,16 +38,22 @@ export default function DriverMfaRequirement({ company }) {
   };
 
   return (
-    <form onSubmit={(event) => event.preventDefault()} className="driver-settings-card mfa-required-toggle">
-      <div className="driver-settings-heading"><span aria-hidden="true">✓</span><div><h2>Driver security</h2><p>Set the sign-in requirement for your organization.</p></div></div>
-      <label className="driver-setting-switch" htmlFor="require-mfa">
-        <span><strong>Require driver MFA</strong><small>Drivers must configure two-factor authentication.</small></span>
-        <input id="require-mfa" type="checkbox" checked={required === true} onChange={toggle} disabled={busy || required === null} />
-      </label>
-      <p className="mfa-required-hint">
-        Applies to {company || 'your organization'}. Changing this setting notifies affected drivers.
-      </p>
+    <section className="driver-organization-settings" aria-labelledby="driver-settings-heading">
+      <header>
+        <h2 id="driver-settings-heading">Organization driver settings</h2>
+        <p>Applies to every driver at {company || 'your organization'}.</p>
+      </header>
+      <div className="driver-setting-row">
+        <div>
+          <strong>Require driver two-factor authentication</strong>
+          <p>Drivers at your organization must set up two-factor authentication before they can keep signing in. Changing this notifies affected drivers.</p>
+        </div>
+        <label className="driver-setting-switch" htmlFor="require-mfa">
+          <input id="require-mfa" type="checkbox" checked={required === true} onChange={toggle} disabled={busy || required === null} />
+          <span>{required ? 'Required' : 'Not required'}</span>
+        </label>
+      </div>
       {message && <p className={`driver-settings-message ${message.ok ? 'success' : 'error'}`} role={message.ok ? 'status' : 'alert'}>{message.text}</p>}
-    </form>
+    </section>
   );
 }

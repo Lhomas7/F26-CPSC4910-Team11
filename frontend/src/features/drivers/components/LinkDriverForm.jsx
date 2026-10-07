@@ -1,35 +1,91 @@
 import { useState } from 'react';
 
 import { linkDriver } from '../../../api';
+import Modal from '../../../components/feedback/Modal';
 
-export default function LinkDriverForm({ onLinked }) {
+export default function LinkDriverForm({ company, onLinked, triggerClassName = '' }) {
+  const [open, setOpen] = useState(false);
   const [username, setUsername] = useState('');
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState(null);
+  const [error, setError] = useState('');
+
+  const close = () => {
+    if (busy) return;
+    setOpen(false);
+    setUsername('');
+    setError('');
+  };
 
   const submit = async (event) => {
     event.preventDefault();
+    const normalizedUsername = username.trim();
+    if (!normalizedUsername) {
+      setError('Enter the driver’s username.');
+      return;
+    }
+
     setBusy(true);
-    setMessage(null);
+    setError('');
     try {
-      await linkDriver(username.trim());
+      const driver = await linkDriver(normalizedUsername);
+      setOpen(false);
       setUsername('');
-      setMessage({ ok: true, text: 'Driver linked.' });
-      onLinked();
-    } catch (error) {
-      setMessage({ ok: false, text: error.message });
+      onLinked(driver);
+    } catch (requestError) {
+      setError(requestError.message);
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <form className="driver-settings-card link-driver-form" onSubmit={submit}>
-      <div className="driver-settings-heading"><span aria-hidden="true">+</span><div><h2>Link a driver</h2><p>Add an existing driver account to your organization.</p></div></div>
-      <label htmlFor="link-username">Driver username</label>
-      <input id="link-username" value={username} onChange={(event) => setUsername(event.target.value)} placeholder="e.g. jamie.rivera" autoComplete="username" autoCapitalize="none" spellCheck="false" />
-      <button className="drivers-button primary" type="submit" disabled={busy || !username.trim()}>{busy ? 'Linking…' : 'Link driver'}</button>
-      {message && <p className={`driver-settings-message ${message.ok ? 'success' : 'error'}`} role={message.ok ? 'status' : 'alert'}>{message.text}</p>}
-    </form>
+    <>
+      <button
+        className={`drivers-button primary ${triggerClassName}`.trim()}
+        type="button"
+        onClick={() => setOpen(true)}
+      >
+        <span className="drivers-add-icon" aria-hidden="true">+</span>
+        <span>Link driver</span>
+      </button>
+      {open && (
+        <Modal
+          title="Link a driver"
+          onClose={close}
+          className="link-driver-dialog"
+          actions={(
+            <>
+              <button className="modal-button" type="button" onClick={close} disabled={busy}>Cancel</button>
+              <button className="modal-button primary" type="submit" form="link-driver-form" disabled={busy}>
+                {busy ? 'Linking…' : 'Link driver'}
+              </button>
+            </>
+          )}
+        >
+          <p>
+            Add an existing driver account to {company || 'your organization'} by username.
+            They join as a pending application until you approve them.
+          </p>
+          <form id="link-driver-form" onSubmit={submit} noValidate>
+            <label htmlFor="link-username">Driver username</label>
+            <input
+              id="link-username"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              placeholder="e.g. jamie.rivera"
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck="false"
+              aria-describedby="link-username-help"
+              aria-invalid={Boolean(error)}
+              data-autofocus
+            />
+            <small id="link-username-help" className={error ? 'error' : ''}>
+              {error || 'The driver gives you the username they sign in with.'}
+            </small>
+          </form>
+        </Modal>
+      )}
+    </>
   );
 }
