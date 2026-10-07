@@ -14,6 +14,7 @@ const driver = {
   username: 'jamie.rivera',
   name: 'Jamie Rivera',
   sponsor: 3,
+  sponsor_name: 'Palmetto Freight',
   status: 'approved',
   point_balance: 125,
 };
@@ -49,11 +50,14 @@ afterEach(() => jest.clearAllMocks());
 test('shows sponsor controls, the current balance and the point history', async () => {
   renderDetail();
 
-  expect(await screen.findByRole('heading', { name: 'Jamie Rivera' })).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { level: 1, name: 'Jamie Rivera' })).toBeInTheDocument();
+  expect(screen.getByText('@jamie.rivera')).toBeInTheDocument();
+  expect(screen.getByText('Palmetto Freight')).toBeInTheDocument();
   expect(screen.getByLabelText('Current balance: 125 points')).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: 'Adjust points' })).toBeInTheDocument();
   expect(await screen.findByText('Late log')).toBeInTheDocument();
   expect(screen.getByText('Clean inspection')).toBeInTheDocument();
+  expect(screen.getByText(/Oct 5, 2026, \d{1,2}:00 [AP]M/)).toBeInTheDocument();
   expect(api.getPointHistory).toHaveBeenCalledWith({ driver: '7' });
 });
 
@@ -61,8 +65,9 @@ test('does not offer adjustments until a pending driver is approved', async () =
   api.getDriver.mockResolvedValue({ ...driver, status: 'pending', point_balance: 0 });
   renderDetail();
 
-  expect(await screen.findByRole('button', { name: 'Approve Driver' })).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: 'Reject' })).toBeInTheDocument();
+  expect(await screen.findByRole('button', { name: 'Approve driver' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Reject application' })).toBeInTheDocument();
+  expect(screen.getByText('Point adjustments are unavailable until this driver is approved')).toBeInTheDocument();
   expect(screen.queryByRole('heading', { name: 'Adjust points' })).not.toBeInTheDocument();
 });
 
@@ -71,17 +76,19 @@ test('approves a pending driver through the dedicated action', async () => {
   api.approveDriver.mockResolvedValue({ ...driver, status: 'approved', point_balance: 0 });
   renderDetail();
 
-  fireEvent.click(await screen.findByRole('button', { name: 'Approve Driver' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Approve driver' }));
 
   await waitFor(() => expect(api.approveDriver).toHaveBeenCalledWith('7'));
   expect(await screen.findByRole('heading', { name: 'Adjust points' })).toBeInTheDocument();
+  expect(screen.getByRole('status')).toHaveTextContent('Jamie Rivera is approved');
 });
 
 test('shows point history failures and allows retrying', async () => {
   api.getPointHistory.mockRejectedValueOnce(new Error('History service unavailable'));
   renderDetail();
 
-  expect(await screen.findByText('History service unavailable')).toBeInTheDocument();
+  expect(await screen.findByText("Point history couldn't be loaded")).toBeInTheDocument();
+  expect(screen.getByText(/Everything else on this page is current/)).toBeInTheDocument();
   api.getPointHistory.mockResolvedValueOnce(history);
   fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
 
@@ -94,7 +101,7 @@ test('rejecting a pending driver requires a reason and returns to the list', asy
   api.removeDriver.mockResolvedValue({ id: 1, driver: 7, action: 'rejected', reason: 'Missing CDL' });
   renderDetail();
 
-  fireEvent.click(await screen.findByRole('button', { name: 'Reject' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Reject application' }));
   fireEvent.click(screen.getByRole('button', { name: 'Reject driver' }));
   expect(screen.getByRole('alert')).toHaveTextContent('Enter a reason for rejecting this driver.');
   expect(api.removeDriver).not.toHaveBeenCalled();

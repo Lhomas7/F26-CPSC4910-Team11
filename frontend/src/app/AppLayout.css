@@ -1,4 +1,5 @@
 :root {
+  --app-bar-height: 4rem;
   --bg: #f4f2eb;
   --surface: #fffdf8;
   --surface-2: #f8f6f0;
@@ -78,7 +79,8 @@ body {
   color: var(--ink);
   display: flex;
   gap: .65rem;
-  min-height: 4rem;
+  height: var(--app-bar-height);
+  min-height: var(--app-bar-height);
   padding: .875rem 1.125rem;
   text-decoration: none;
 }
@@ -162,10 +164,12 @@ body {
   background: var(--surface);
   border-bottom: 1px solid var(--line);
   display: flex;
+  flex: 0 0 var(--app-bar-height);
   gap: 1.25rem;
   justify-content: space-between;
-  min-height: 4rem;
-  padding: .65rem 1.5rem;
+  height: var(--app-bar-height);
+  min-height: var(--app-bar-height);
+  padding: .35rem 1.5rem;
 }
 
 .app-topbar-page {
@@ -373,6 +377,8 @@ body {
 
   .brand {
     border-bottom: 0;
+    flex: 0 0 auto;
+    height: auto;
     min-height: auto;
     padding: .625rem 1rem;
   }
@@ -437,7 +443,7 @@ body {
 
   .app-topbar {
     align-items: center;
-    padding: .65rem 1rem;
+    padding: .35rem 1rem;
   }
 
   .page-header {
@@ -453,7 +459,7 @@ body {
 @media (max-width: 38rem) {
   .app-topbar {
     gap: .75rem;
-    padding: .65rem .85rem;
+    padding: .35rem .85rem;
   }
 
   .app-topbar-page {

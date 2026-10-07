@@ -10,7 +10,7 @@ function firstError(error, field) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export default function PointAdjustmentPanel({ driverId, balance, onAdjusted }) {
+export default function PointAdjustmentPanel({ driverId, driverName, balance, onAdjusted }) {
   const [mode, setMode] = useState('award');
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
@@ -18,12 +18,14 @@ export default function PointAdjustmentPanel({ driverId, balance, onAdjusted }) 
   const [notice, setNotice] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [validationFailed, setValidationFailed] = useState(false);
 
   const changeMode = (nextMode) => {
     setMode(nextMode);
     setErrors({});
     setNotice('');
     setConfirming(false);
+    setValidationFailed(false);
   };
 
   const validate = () => {
@@ -48,9 +50,11 @@ export default function PointAdjustmentPanel({ driverId, balance, onAdjusted }) 
     setNotice('');
     const values = validate();
     if (!values.valid) {
+      setValidationFailed(true);
       setConfirming(false);
       return;
     }
+    setValidationFailed(false);
     if (mode === 'deduct' && !confirming) {
       setConfirming(true);
       return;
@@ -66,8 +70,8 @@ export default function PointAdjustmentPanel({ driverId, balance, onAdjusted }) 
       setReason('');
       setConfirming(false);
       setNotice(mode === 'award'
-        ? `${values.numericAmount.toLocaleString()} points awarded.`
-        : `${values.numericAmount.toLocaleString()} points deducted.`);
+        ? `${values.numericAmount.toLocaleString()} points awarded. ${driverName || 'The driver'}'s balance is now ${result.balance.toLocaleString()} points.`
+        : `${values.numericAmount.toLocaleString()} points deducted. ${driverName || 'The driver'}'s balance is now ${result.balance.toLocaleString()} points.`);
     } catch (error) {
       setErrors({
         amount: firstError(error, 'point_change'),
@@ -82,33 +86,50 @@ export default function PointAdjustmentPanel({ driverId, balance, onAdjusted }) 
 
   return (
     <section className="point-adjustment" aria-labelledby="point-adjustment-heading">
-      <div className="point-adjustment-heading">
-        <div><h2 id="point-adjustment-heading">Adjust points</h2><p>A reason is recorded with every change.</p></div>
-        <strong aria-label={`Current balance: ${balance.toLocaleString()} points`}>{balance.toLocaleString()} pts</strong>
-      </div>
-      <div className="point-adjustment-tabs" role="group" aria-label="Adjustment type">
-        <button type="button" className={mode === 'award' ? 'active' : ''} aria-pressed={mode === 'award'} onClick={() => changeMode('award')}>Award</button>
-        <button type="button" className={mode === 'deduct' ? 'active' : ''} aria-pressed={mode === 'deduct'} onClick={() => changeMode('deduct')}>Deduct</button>
-      </div>
-      {notice && <p className="point-adjustment-notice" role="status">{notice}</p>}
-      {errors.detail && <p className="point-adjustment-error" role="alert">{errors.detail}</p>}
-      <form onSubmit={submit} noValidate>
-        <label htmlFor="point-amount">Points</label>
-        <input id="point-amount" type="number" min="1" max={MAX_ADJUSTMENT} step="1" inputMode="numeric" value={amount} onChange={(event) => { setAmount(event.target.value); setErrors((current) => ({ ...current, amount: undefined })); setConfirming(false); }} disabled={saving} aria-invalid={Boolean(errors.amount)} />
-        {errors.amount && <small className="point-field-error">{errors.amount}</small>}
-        <label htmlFor="point-reason">Reason</label>
-        <textarea id="point-reason" maxLength={MAX_REASON_LENGTH} value={reason} onChange={(event) => { setReason(event.target.value); setErrors((current) => ({ ...current, reason: undefined })); setConfirming(false); }} disabled={saving} aria-invalid={Boolean(errors.reason)} />
-        <div className="point-reason-meta"><small className={errors.reason ? 'point-field-error' : ''}>{errors.reason || 'Required. This will appear in the transaction history.'}</small><small>{reason.length}/{MAX_REASON_LENGTH}</small></div>
+      <header className="point-adjustment-heading">
+        <h2 id="point-adjustment-heading">Adjust points</h2>
+        <p>A reason is recorded with every change and shown in the driver&apos;s point history.</p>
+      </header>
+      <div className="point-adjustment-body">
+        {notice && <p className="point-adjustment-notice" role="status">{notice}</p>}
+        {errors.detail && <p className="point-adjustment-error" role="alert">{errors.detail}</p>}
+        {validationFailed && (
+          <p className="point-adjustment-error" role="alert">
+            <strong>Nothing was saved.</strong> Fix the highlighted fields and try again.
+          </p>
+        )}
+        <div className="point-adjustment-tabs" role="group" aria-label="Adjustment type">
+          <button type="button" aria-pressed={mode === 'award'} onClick={() => changeMode('award')}>Award</button>
+          <button type="button" className="deduct" aria-pressed={mode === 'deduct'} onClick={() => changeMode('deduct')}>Deduct</button>
+        </div>
+        <form onSubmit={submit} noValidate>
+        <div className="point-adjustment-fields">
+          <div className="point-adjustment-field">
+            <label htmlFor="point-amount">Points</label>
+            <input id="point-amount" type="text" inputMode="numeric" autoComplete="off" value={amount} onChange={(event) => { setAmount(event.target.value); setErrors((current) => ({ ...current, amount: undefined })); setValidationFailed(false); setConfirming(false); }} disabled={saving} aria-invalid={Boolean(errors.amount)} aria-describedby="point-amount-help" />
+            <small id="point-amount-help" className={errors.amount ? 'point-field-error' : ''}>
+              {errors.amount || `Enter a whole number from 1 to ${MAX_ADJUSTMENT.toLocaleString()}.${mode === 'deduct' ? ` ${balance.toLocaleString()} points are available.` : ''}`}
+            </small>
+          </div>
+          <div className="point-adjustment-field">
+            <label htmlFor="point-reason">Reason</label>
+            <textarea id="point-reason" maxLength={MAX_REASON_LENGTH} value={reason} onChange={(event) => { setReason(event.target.value); setErrors((current) => ({ ...current, reason: undefined })); setValidationFailed(false); setConfirming(false); }} disabled={saving} aria-invalid={Boolean(errors.reason)} aria-describedby="point-reason-help" />
+            <div id="point-reason-help" className="point-reason-meta"><small className={errors.reason ? 'point-field-error' : ''}>{errors.reason || 'Required. This appears in the point history.'}</small><small>{reason.length}/{MAX_REASON_LENGTH}</small></div>
+          </div>
+        </div>
         {confirming && (
           <div className="point-confirmation" role="alertdialog" aria-labelledby="point-confirmation-title">
             <strong id="point-confirmation-title">Confirm point deduction</strong>
-            <p>Deduct {Number(amount).toLocaleString()} points? The new balance will be {(balance - Number(amount)).toLocaleString()}.</p>
-            <button type="button" onClick={() => setConfirming(false)} disabled={saving}>Go back</button>
-            <button className="danger" type="submit" disabled={saving}>{saving ? 'Deducting…' : 'Confirm deduction'}</button>
+            <p>Deduct {Number(amount).toLocaleString()} points from {driverName || 'this driver'}? Their balance will go from {balance.toLocaleString()} to {(balance - Number(amount)).toLocaleString()} points.</p>
+            <div className="point-confirmation-actions">
+              <button type="button" onClick={() => setConfirming(false)} disabled={saving}>Go back</button>
+              <button className="danger" type="submit" disabled={saving}>{saving ? 'Deducting…' : 'Confirm deduction'}</button>
+            </div>
           </div>
         )}
-        {!confirming && <button className={mode === 'deduct' ? 'danger' : 'primary'} type="submit" disabled={saving}>{saving ? 'Saving…' : mode === 'award' ? 'Award points' : 'Review deduction'}</button>}
-      </form>
+        {!confirming && <div className="point-adjustment-submit"><button className={mode === 'deduct' ? 'danger' : 'primary'} type="submit" disabled={saving}>{saving ? 'Saving…' : mode === 'award' ? 'Award points' : 'Review deduction'}</button></div>}
+        </form>
+      </div>
     </section>
   );
 }

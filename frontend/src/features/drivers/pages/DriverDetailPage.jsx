@@ -3,14 +3,15 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import { approveDriver, getDriver, getPointHistory } from '../../../api';
 import PageHeader from '../../../app/PageHeader';
+import Skeleton from '../../../components/feedback/Skeleton';
 import StatePanel from '../../../components/feedback/StatePanel';
+import Avatar from '../../../components/primitives/Avatar';
 import PointHistoryList from '../../points/components/PointHistoryList';
 import PointAdjustmentPanel from '../components/PointAdjustmentPanel';
 import RemoveDriverDialog from '../components/RemoveDriverDialog';
 import '../Drivers.css';
 
-// Sponsors only (the route enforces it): review one driver, approve, reject
-// or drop them, adjust points, and see their point history.
+// Sponsor-only workspace for enrollment decisions, point changes, and history.
 export default function DriverDetailPage() {
   const { driverId } = useParams();
   const navigate = useNavigate();
@@ -20,6 +21,12 @@ export default function DriverDetailPage() {
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [notice, setNotice] = useState('');
+
+  const loadDriver = useCallback(() => {
+    setError(null);
+    return getDriver(driverId).then(setDriver).catch(setError);
+  }, [driverId]);
 
   const loadHistory = useCallback(() => {
     setHistoryError('');
@@ -29,17 +36,19 @@ export default function DriverDetailPage() {
   }, [driverId]);
 
   useEffect(() => {
-    getDriver(driverId).then(setDriver).catch((requestError) => setError(requestError.message));
+    loadDriver();
     loadHistory();
-  }, [driverId, loadHistory]);
+  }, [loadDriver, loadHistory]);
 
   const approve = async () => {
     setSaving(true);
+    setNotice('');
     try {
       const updated = await approveDriver(driverId);
       setDriver(updated);
+      setNotice(`${updated.name} is approved. You can now award and deduct points.`);
     } catch (requestError) {
-      setError(requestError.message);
+      setError(requestError);
     } finally {
       setSaving(false);
     }
@@ -50,74 +59,186 @@ export default function DriverDetailPage() {
     navigate('/drivers', { state: { notice: `${driver.name} was ${done}. The reason has been saved.` } });
   };
 
-  if (error) {
-    return (
-      <main className="driver-detail-content">
-        <StatePanel headingLevel={1} tone="error" title="This driver couldn't be loaded">
-          <p>{error}</p>
-          <Link className="drivers-button" to="/drivers">Back to drivers</Link>
-        </StatePanel>
-      </main>
-    );
-  }
-  if (!driver) return <p className="driver-detail-content" role="status">Loading…</p>;
+  const title = driver?.name || 'Driver details';
+  const breadcrumbName = driver?.name || '…';
 
+  return (
+    <div className="driver-detail-page">
+      <PageHeader
+        title={title}
+        subtitle="Enrollment, points, and history"
+        breadcrumb={<><Link to="/drivers">Drivers</Link> / {breadcrumbName}</>}
+      />
+      <main className="driver-detail-content">
+        {error ? (
+          error.status === 404 ? (
+            <StatePanel headingLevel={1} title="That driver isn't in your organization">
+              <p>They may have been dropped, or the link may be wrong. Search the driver directory to find the driver you&apos;re after.</p>
+              <Link className="drivers-button primary" to="/drivers">Back to drivers</Link>
+            </StatePanel>
+          ) : (
+            <StatePanel headingLevel={1} tone="error" title="This driver couldn't be loaded">
+              <p>{error.message}</p>
+              <div className="driver-state-actions">
+                <button className="drivers-button primary" type="button" onClick={loadDriver}>Try again</button>
+                <Link className="drivers-button" to="/drivers">Back to drivers</Link>
+              </div>
+            </StatePanel>
+          )
+        ) : !driver ? (
+          <DriverDetailSkeleton />
+        ) : (
+          <DriverWorkspace
+            driver={driver}
+            history={history}
+            historyError={historyError}
+            saving={saving}
+            notice={notice}
+            onApprove={approve}
+            onAdjust={(balance) => {
+              setDriver((current) => ({ ...current, point_balance: balance }));
+              loadHistory();
+            }}
+            onRetryHistory={loadHistory}
+            onRemove={() => setRemoving(true)}
+          />
+        )}
+      </main>
+
+      {removing && <RemoveDriverDialog driver={driver} onRemoved={onRemoved} onCancel={() => setRemoving(false)} />}
+    </div>
+  );
+}
+
+function DriverWorkspace({
+  driver,
+  history,
+  historyError,
+  saving,
+  notice,
+  onApprove,
+  onAdjust,
+  onRetryHistory,
+  onRemove,
+}) {
   const pointBalance = Number(driver.point_balance ?? 0);
   const approved = driver.status === 'approved';
 
   return (
-    <div>
-      <PageHeader
-        title={driver.name}
-        subtitle="Driver details"
-        breadcrumb={<><Link to="/drivers">Drivers</Link> / {driver.name}</>}
-      />
-      <main className="driver-detail-content">
-        <section className="driver-summary" aria-label="Driver summary">
+    <>
+      {notice && <p className="driver-detail-notice" role="status">{notice}</p>}
+
+      <section className="driver-identity-card" aria-labelledby="driver-identity-name">
+        <div className={`driver-identity ${driver.status}`}>
+          <Avatar className="driver-identity-avatar" name={driver.name} />
+          <div className="driver-identity-copy">
+            <h2 id="driver-identity-name">{driver.name}</h2>
+            <p className="driver-identity-username">@{driver.username}</p>
+            <span className={`driver-status ${driver.status}`}>{approved ? 'Approved' : 'Pending approval'}</span>
+            <p className="driver-identity-organization">{driver.sponsor_name}</p>
+          </div>
+        </div>
+        <div className="driver-headline">
           <div>
-            <strong>Status</strong>
-            <p><span className={`driver-status ${driver.status}`}>{approved ? 'Approved' : 'Pending approval'}</span></p>
+            <span>Current balance</span>
+            <strong aria-label={`Current balance: ${pointBalance.toLocaleString()} points`}>{pointBalance.toLocaleString()} <small>pts</small></strong>
+            <p>Updated after every award or deduction</p>
           </div>
-          <div><strong>Point balance</strong><p className="driver-balance">{pointBalance.toLocaleString()} pts</p></div>
-          <div className="driver-summary-actions">
-            {!approved && (
-              <button className="drivers-button primary" type="button" onClick={approve} disabled={saving}>
-                {saving ? 'Approving…' : 'Approve Driver'}
-              </button>
-            )}
-            <button className="drivers-button danger" type="button" onClick={() => setRemoving(true)} disabled={saving}>
-              {approved ? 'Drop driver' : 'Reject'}
-            </button>
+          <div>
+            <span>Enrollment</span>
+            <strong className="driver-enrollment-value">{approved ? 'Approved' : 'Pending approval'}</strong>
+            <p>{approved ? 'Can receive point changes' : 'Waiting for your decision'}</p>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {approved && (
-          <PointAdjustmentPanel
-            driverId={driver.id}
-            balance={pointBalance}
-            onAdjusted={(balance) => {
-              setDriver((current) => ({ ...current, point_balance: balance }));
-              loadHistory();
-            }}
-          />
-        )}
+      {!approved && (
+        <>
+          <section className="driver-enrollment-card" aria-labelledby="driver-enrollment-heading">
+            <header>
+              <h2 id="driver-enrollment-heading">Enrollment review</h2>
+              <p>This driver applied to join {driver.sponsor_name || 'your organization'} and is waiting for your decision.</p>
+            </header>
+            <div>
+              <ul>
+                <li>Approving adds them to your driver list so you can award and deduct points.</li>
+                <li>Rejecting declines the application. A reason is required, and they can apply to another sponsor.</li>
+              </ul>
+              <div className="driver-enrollment-actions">
+                <button className="drivers-button primary" type="button" onClick={onApprove} disabled={saving}>
+                  {saving ? 'Approving…' : 'Approve driver'}
+                </button>
+                <button className="drivers-button danger-outline" type="button" onClick={onRemove} disabled={saving}>Reject application</button>
+              </div>
+            </div>
+          </section>
+          <div className="driver-adjustment-unavailable">
+            <strong>Point adjustments are unavailable until this driver is approved</strong>
+            Approve the application above to award or deduct points. Any existing balance is preserved.
+          </div>
+        </>
+      )}
 
-        <section className="driver-history" aria-labelledby="driver-history-heading">
+      {approved && (
+        <PointAdjustmentPanel
+          driverId={driver.id}
+          driverName={driver.name}
+          balance={pointBalance}
+          onAdjusted={onAdjust}
+        />
+      )}
+
+      <section className="driver-history" aria-labelledby="driver-history-heading">
+        <header>
           <h2 id="driver-history-heading">Point history</h2>
+          <p>Newest first. Times are shown in your local time zone.</p>
+        </header>
+        <div className="driver-history-body" aria-busy={!history && !historyError}>
           {historyError ? (
-            <StatePanel tone="error" title="Point history couldn't be loaded">
-              <p>{historyError}</p>
-              <button className="drivers-button" type="button" onClick={loadHistory}>Try again</button>
-            </StatePanel>
+            <div className="driver-history-error" role="alert">
+              <div>
+                <strong>Point history couldn&apos;t be loaded</strong>
+                <p>Everything else on this page is current. Recent point changes may not be shown here until this loads.</p>
+              </div>
+              <button className="drivers-button" type="button" onClick={onRetryHistory}>Try again</button>
+            </div>
           ) : history ? (
             <PointHistoryList entries={history} emptyText={`No point changes for ${driver.name} yet.`} />
           ) : (
             <p className="point-history-empty" role="status">Loading history…</p>
           )}
-        </section>
-      </main>
+        </div>
+      </section>
 
-      {removing && <RemoveDriverDialog driver={driver} onRemoved={onRemoved} onCancel={() => setRemoving(false)} />}
+      {approved && (
+        <section className="driver-danger-area" aria-labelledby="driver-danger-heading">
+          <h2 id="driver-danger-heading">Remove from organization</h2>
+          <p>Dropping a driver ends their enrollment with {driver.sponsor_name || 'your organization'}.</p>
+          <ul>
+            <li>They are removed from your driver list and stop earning points from you.</li>
+            <li>Their point history is preserved for your records.</li>
+            <li>They can apply to another sponsor afterward.</li>
+            <li>A reason is required and saved with the enrollment change for auditing.</li>
+          </ul>
+          <button className="drivers-button danger-outline" type="button" onClick={onRemove}>Drop driver</button>
+        </section>
+      )}
+    </>
+  );
+}
+
+function DriverDetailSkeleton() {
+  return (
+    <div className="driver-detail-loading" aria-label="Loading driver details">
+      <section className="driver-identity-card" aria-hidden="true">
+        <div className="driver-identity">
+          <Skeleton className="driver-detail-avatar-skeleton" />
+          <div className="driver-detail-copy-skeleton"><Skeleton /><Skeleton /><Skeleton /></div>
+        </div>
+        <div className="driver-headline"><Skeleton /><Skeleton /></div>
+      </section>
+      <Skeleton className="driver-detail-panel-skeleton" />
+      <Skeleton className="driver-detail-panel-skeleton tall" />
     </div>
   );
 }
