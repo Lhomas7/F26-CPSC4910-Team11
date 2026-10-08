@@ -404,6 +404,8 @@ If port 3000 is occupied, React may offer another port such as 3001. Django curr
 
 ## Testing and building
 
+The complete first-time setup, everyday commands, safe auto-fix order, and project conventions are documented in [Linting and formatting](docs/LINTING.md).
+
 ### Backend
 
 From `backend/` on Windows PowerShell:
@@ -541,6 +543,7 @@ See [`docs/PROJECT_TODO.md`](docs/PROJECT_TODO.md) for the detailed engineering,
 ## Documentation
 
 - [Engineering backlog and project TODO](docs/PROJECT_TODO.md)
+- [Linting, formatting, and local quality checks](docs/LINTING.md)
 - [Account input validation and normalization](docs/ACCOUNT_INPUT_VALIDATION.md)
 - [Session security: device check, timeouts, and sign-out](docs/SESSION_SECURITY.md)
 - [Current database ERD](docs/DATABASE_ERD.md)

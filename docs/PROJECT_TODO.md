@@ -534,8 +534,8 @@ add only layout and spacing.
 - [ ] Perform keyboard-only navigation checks.
 - [ ] Add automated accessibility checks.
 - [ ] Standardize user-facing success and error messages.
-- [ ] Add formatting and linting configuration.
-- [ ] Add `.editorconfig`.
+- [x] Add formatting and linting configuration for JavaScript, JSX, CSS, Markdown, and Python.
+- [x] Add cross-platform `.editorconfig` and `.gitattributes` policies.
 - [ ] Add dependency vulnerability scanning.
 - [ ] Define structured logging standards.
 - [ ] Add production error monitoring if schedule permits.
