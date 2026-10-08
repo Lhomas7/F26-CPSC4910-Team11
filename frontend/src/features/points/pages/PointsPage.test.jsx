@@ -45,6 +45,7 @@ test('drivers see their balance, sponsor and full history with reasons', async (
     {
       id: 4,
       name: 'Jamie Rivera',
+      username: 'jamie.rivera',
       status: 'approved',
       point_balance: 125,
       sponsor_name: 'Palmetto Freight',
@@ -53,9 +54,12 @@ test('drivers see their balance, sponsor and full history with reasons', async (
   api.getPointHistory.mockResolvedValue(history);
   renderPage();
 
-  expect(await screen.findByText('Sponsored by Palmetto Freight')).toBeInTheDocument();
+  expect(await screen.findByText('Palmetto Freight')).toBeInTheDocument();
+  expect(screen.getByText('Approved')).toBeInTheDocument();
   expect(screen.getByText('125')).toBeInTheDocument();
   expect(screen.getByText('Late log')).toBeInTheDocument();
+  expect(screen.getByText('Deduction')).toBeInTheDocument();
+  expect(screen.getByText('Award')).toBeInTheDocument();
   expect(screen.getByText('−10')).toBeInTheDocument();
   expect(screen.getByText('+135')).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Show history for' })).not.toBeInTheDocument();
@@ -64,24 +68,40 @@ test('drivers see their balance, sponsor and full history with reasons', async (
 test('sponsors see recent activity across drivers and can narrow it to one', async () => {
   useAuth.mockReturnValue({ user: { account_type: 'sponsor' } });
   api.getDrivers.mockResolvedValue([
-    { id: 4, name: 'Jamie Rivera', status: 'approved', point_balance: 125 },
-    { id: 8, name: 'Morgan Chen', status: 'pending', point_balance: 0 },
+    {
+      id: 4,
+      name: 'Jamie Rivera',
+      username: 'jamie.rivera',
+      status: 'approved',
+      point_balance: 125,
+    },
+    {
+      id: 8,
+      name: 'Morgan Chen',
+      username: 'morgan.chen',
+      status: 'pending',
+      point_balance: 0,
+    },
   ]);
   api.getPointHistory.mockResolvedValue(history);
   renderPage();
 
-  expect(await screen.findByRole('heading', { name: 'Recent activity' })).toBeInTheDocument();
-  expect(screen.getAllByRole('link', { name: 'Jamie Rivera' })[0]).toHaveAttribute(
+  expect(
+    await screen.findByRole('heading', { name: 'Recent activity across your organization' }),
+  ).toBeInTheDocument();
+  expect((await screen.findAllByRole('link', { name: 'Jamie Rivera' }))[0]).toHaveAttribute(
     'href',
     '/drivers/4',
   );
 
-  fireEvent.click(screen.getByRole('button', { name: 'Show history for' }));
-  fireEvent.click(screen.getByRole('option', { name: 'Jamie Rivera' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Viewing point activity for' }));
+  fireEvent.click(screen.getByRole('option', { name: /Jamie Rivera/ }));
 
-  await waitFor(() => expect(api.getPointHistory).toHaveBeenLastCalledWith({ driver: '4' }));
+  await waitFor(() =>
+    expect(api.getPointHistory).toHaveBeenLastCalledWith({ driver: '4', limit: 25 }),
+  );
   expect(
-    await screen.findByRole('heading', { name: "Jamie Rivera's history" }),
+    await screen.findByRole('heading', { name: "Jamie Rivera's point history" }),
   ).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Award or deduct points' })).toHaveAttribute(
     'href',

@@ -3,80 +3,218 @@
 }
 
 .points-content {
+  align-content: start;
   display: grid;
   gap: 1rem;
+  margin: 0 auto;
   max-width: 56rem;
   padding: 1.5rem 1.75rem 4rem;
+  width: 100%;
 }
-/* ---------- Balance card ---------- */
 
-.points-balance {
-  align-items: flex-start;
+/* ---------- Driver standing ---------- */
+
+.points-standing {
   display: grid;
-  gap: 0.3rem;
-  padding: 1.1rem 1.25rem;
+  gap: 1rem 1.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 1.15rem 1.25rem;
 }
 
-.points-balance > span {
+.points-standing-balance > span,
+.points-standing-facts dt,
+.points-scope-balance > span {
+  color: var(--ink-2);
+  display: block;
+  font-size: 0.72rem;
+}
+
+.points-standing-balance > strong {
+  color: var(--accent);
+  display: block;
+  font-size: 2.4rem;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.points-standing-balance small,
+.points-scope-balance small {
+  color: var(--ink-2);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.points-standing-facts {
+  align-content: start;
+  display: grid;
+  gap: 0.7rem;
+  margin: 0;
+  min-width: 0;
+}
+
+.points-standing-facts dd {
+  font-size: 0.92rem;
+  font-weight: 700;
+  margin: 0.08rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.points-standing-facts dd:has(.badge) {
+  line-height: 1;
+}
+
+.points-standing-facts .points-unassigned {
+  color: var(--ink-2);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.points-standing-guidance {
+  border-top: 1px solid var(--line-soft);
+  color: var(--ink-2);
+  font-size: 0.8rem;
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-top: 0.85rem;
+}
+
+/* ---------- Sponsor scope and summaries ---------- */
+
+.points-scope-notice {
+  width: 100%;
+}
+
+.points-scope-bar {
+  align-items: center;
+  display: flex;
+  gap: 0.7rem;
+  padding: 0.65rem 0.8rem;
+}
+
+.points-scope-bar > strong {
   color: var(--ink-2);
   font-size: 0.75rem;
 }
 
-.points-balance strong {
+.points-scope-select {
+  flex: 1 1 16rem;
+  max-width: 24rem;
+  min-width: 0;
+}
+
+.points-scope-clear {
+  flex: 0 0 auto;
+}
+
+.points-scope-driver {
+  display: grid;
+  gap: 1rem 1.75rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 1.05rem 1.15rem;
+}
+
+.points-scope-driver.pending {
+  border-color: var(--warning-line);
+}
+
+.points-scope-person {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.8rem;
+  min-width: 0;
+}
+
+.points-scope-person > div {
+  min-width: 0;
+}
+
+.points-scope-avatar {
+  background: var(--accent-soft);
   color: var(--accent);
+  flex: 0 0 auto;
+  font-size: 1rem;
+  height: 3rem;
+  width: 3rem;
+}
+
+.points-scope-driver.pending .points-scope-avatar {
+  background: var(--warning-soft);
+  color: var(--warning-ink);
+}
+
+.points-scope-person h2 {
+  font-size: 1.15rem;
+  line-height: 1.2;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.points-scope-person p {
+  color: var(--ink-2);
+  font-size: 0.8rem;
+  margin: 0.12rem 0 0.4rem;
+  overflow-wrap: anywhere;
+}
+
+.points-scope-balance {
+  min-width: 8rem;
+  text-align: right;
+}
+
+.points-scope-balance strong {
+  color: var(--accent);
+  display: block;
   font-size: 1.9rem;
   line-height: 1.1;
+  overflow-wrap: anywhere;
 }
 
-.points-balance small {
+.points-scope-action {
+  border-top: 1px solid var(--line-soft);
+  grid-column: 1 / -1;
+  padding-top: 0.85rem;
+}
+
+.points-scope-action p {
   color: var(--ink-2);
-  font-size: 0.8rem;
-  font-weight: 700;
+  font-size: 0.76rem;
+  margin: 0.4rem 0 0;
 }
 
-.points-balance p {
-  color: var(--ink-2);
-  font-size: 0.8rem;
-  margin: 0.2rem 0 0;
-}
-.points-balance .button {
-  margin-top: 0.35rem;
-}
+/* ---------- History ---------- */
 
-/* ---------- History card ---------- */
-
-/* No overflow clipping here: the driver dropdown's option list has to be able
-   to extend past the bottom of the card (e.g. when the history is empty). */
 .points-card {
+  min-width: 0;
   position: relative;
 }
 
-.points-card h2 {
-  font-size: 0.95rem;
-  margin: 0;
-}
-
-.points-card > h2,
 .points-card-heading {
   border-bottom: 1px solid var(--line);
   padding: 1rem 1.1rem;
 }
 
-.points-card-heading {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  justify-content: space-between;
+.points-card-heading h2,
+.points-card-heading p {
+  margin: 0;
 }
 
-.points-driver-filter {
-  flex: 0 1 13rem;
-  min-width: 10rem;
+.points-card-heading h2 {
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
 }
 
-.points-driver-filter .select-menu-trigger {
-  height: 2.15rem;
+.points-card-heading p {
+  color: var(--ink-2);
+  font-size: 0.74rem;
+  margin-top: 0.15rem;
+}
+
+.points-card-body {
+  position: relative;
+}
+
+.points-card-body[aria-busy='true'] .point-history {
+  opacity: 0.5;
 }
 
 .point-history {
@@ -85,22 +223,24 @@
   padding: 0;
 }
 
-.point-history li {
+.point-history > .point-history-entry {
   align-items: center;
   border-top: 1px solid var(--line);
   display: flex;
   gap: 1rem;
   justify-content: space-between;
   padding: 0.75rem 1.1rem;
+  width: 100%;
 }
 
-.point-history li:first-child {
+.point-history > .point-history-entry:first-child {
   border-top: 0;
 }
 
-.point-history-main {
+.point-history-entry > .point-history-main {
   display: grid;
-  gap: 0.15rem;
+  flex: 1 1 auto;
+  gap: 0.18rem;
   min-width: 0;
 }
 
@@ -118,13 +258,48 @@
   overflow-wrap: anywhere;
 }
 
-.point-history-meta {
+.point-history-meta,
+.point-history-org {
   color: var(--ink-2);
   font-size: 0.72rem;
+  overflow-wrap: anywhere;
 }
-.point-history-change {
-  flex-shrink: 0;
+
+.point-history-org {
+  color: var(--ink-3);
+  font-size: 0.7rem;
+}
+
+.point-history-entry > .point-history-change {
+  flex: 0 0 auto;
   font-size: 0.8rem;
+  margin-left: auto;
+}
+
+/* Preserve the card/header format established by the latest Driver Detail
+   refinements: type stays left and the signed amount stays right at all widths. */
+.point-history-detail > .point-history-entry {
+  display: block;
+}
+
+.point-history-detail > .point-history-entry > .point-history-main {
+  width: 100%;
+}
+
+.point-history-entry-heading {
+  align-items: center;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  justify-self: stretch;
+  width: 100%;
+}
+
+.point-history-entry-heading > .point-history-change {
+  font-size: 0.8rem;
+  grid-column: 2;
+  justify-self: end;
+  margin: 0;
 }
 
 .point-history-empty {
@@ -133,25 +308,115 @@
   margin: 0;
   padding: 1.25rem 1.1rem;
 }
-/* ---------- Shared bits ---------- */
+
+.points-inline-error {
+  align-items: flex-start;
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-line);
+  border-radius: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+  margin: 1rem;
+  padding: 0.85rem 1rem;
+}
+
+.points-inline-error strong {
+  color: var(--danger-ink);
+  display: block;
+  font-size: 0.85rem;
+}
+
+.points-inline-error p {
+  color: var(--ink-2);
+  font-size: 0.78rem;
+  margin: 0.2rem 0 0;
+}
+
+.points-more {
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: center;
+  padding: 0.8rem 1.1rem;
+}
+
+.points-all-shown {
+  border-top: 1px solid var(--line);
+  color: var(--ink-3);
+  font-size: 0.72rem;
+  margin: 0;
+  padding: 0.75rem 1.1rem;
+  text-align: center;
+}
+
+/* ---------- Loading ---------- */
 
 .points-skeleton {
   border-radius: 0.65rem;
+  display: block;
   height: 6rem;
-  margin-bottom: 1rem;
+}
+
+.points-skeleton-standing {
+  height: 8.5rem;
+}
+
+.points-skeleton-scope {
+  height: 3.5rem;
+}
+
+.points-skeleton-stat {
+  height: 4.75rem;
 }
 
 .points-skeleton-list {
-  height: 16rem;
+  height: 18rem;
+}
+
+@media (max-width: 53.75rem) {
+  .points-content {
+    padding: 1.25rem 1rem 4rem;
+  }
+
+  .points-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .points-scope-driver {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .points-scope-balance {
+    text-align: left;
+  }
 }
 
 @media (max-width: 42rem) {
-  .points-content {
-    padding-left: 1rem;
-    padding-right: 1rem;
+  .points-standing {
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .point-history li {
+  .points-standing-balance > strong {
+    font-size: 2rem;
+  }
+
+  .points-scope-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .points-scope-select {
+    flex-basis: auto;
+    max-width: none;
+  }
+
+  .points-scope-clear,
+  .points-scope-action .button {
+    width: 100%;
+  }
+
+  .point-history > .point-history-entry {
     padding: 0.7rem 0.85rem;
   }
 }

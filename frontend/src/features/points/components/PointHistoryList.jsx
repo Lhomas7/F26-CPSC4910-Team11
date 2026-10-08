@@ -15,6 +15,7 @@ function formatDate(isoDate) {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,
+    timeZoneName: 'short',
   });
 }
 
@@ -29,6 +30,7 @@ export default function PointHistoryList({
   linkDrivers = false,
   emptyText = 'No point changes yet.',
   detailStyle = false,
+  showSponsor = false,
 }) {
   if (!entries.length) return <p className="point-history-empty">{emptyText}</p>;
 
@@ -36,15 +38,26 @@ export default function PointHistoryList({
     <ol className={`point-history${detailStyle ? ' point-history-detail' : ''}`}>
       {entries.map((entry) => {
         const deduction = entry.point_change < 0;
+        const amount = (
+          <strong
+            className={`badge point-history-change ${deduction ? 'badge-danger' : 'badge-success'}`}
+          >
+            {formatPoints(entry.point_change)}
+            <span className="sr-only"> points</span>
+          </strong>
+        );
         return (
-          <li key={entry.id}>
+          <li className="point-history-entry" key={entry.id}>
             <div className="point-history-main">
               {detailStyle && (
-                <span
-                  className={`badge point-history-type ${deduction ? 'badge-danger' : 'badge-success'}`}
-                >
-                  {deduction ? 'Deduction' : 'Award'}
-                </span>
+                <div className="point-history-entry-heading">
+                  <span
+                    className={`badge point-history-type ${deduction ? 'badge-danger' : 'badge-success'}`}
+                  >
+                    {deduction ? 'Deduction' : 'Award'}
+                  </span>
+                  {amount}
+                </div>
               )}
               {showDriver && (
                 <span className="point-history-driver">
@@ -61,13 +74,11 @@ export default function PointHistoryList({
                 <time dateTime={entry.changed_at}>{formatDate(entry.changed_at)}</time>
                 {!detailStyle && entry.changed_by_name && <> · by {entry.changed_by_name}</>}
               </span>
+              {showSponsor && entry.sponsor_name && (
+                <span className="point-history-org">{entry.sponsor_name}</span>
+              )}
             </div>
-            <strong
-              className={`badge point-history-change ${deduction ? 'badge-danger' : 'badge-success'}`}
-            >
-              {formatPoints(entry.point_change)}
-              <span className="sr-only"> points</span>
-            </strong>
+            {!detailStyle && amount}
           </li>
         );
       })}

@@ -766,13 +766,10 @@
   padding: 0;
 }
 
-.driver-history .point-history-detail li {
-  align-items: initial;
+.driver-history .point-history-detail > .point-history-entry {
+  /* Badge placement belongs to the shared history header in Points.css. */
   border-bottom: 1px solid var(--line-soft);
   border-top: 0;
-  display: grid;
-  gap: 0.25rem 0.9rem;
-  grid-template-columns: minmax(0, 1fr) auto;
   padding: 0.8rem 0;
 }
 
@@ -786,9 +783,10 @@
 }
 
 .driver-history .point-history-detail .point-history-main {
-  display: grid;
   gap: 0;
+  width: 100%;
 }
+
 .point-history-type {
   border-radius: 0.3rem;
   justify-self: start;
@@ -805,14 +803,6 @@
   font-size: 0.74rem;
   margin: 0.25rem 0 0;
   overflow-wrap: anywhere;
-}
-
-/* Keep the app's existing amount pill while adopting the mockup row layout. */
-.driver-history .point-history-detail .point-history-change {
-  align-self: start;
-  grid-column: 2;
-  grid-row: 1 / span 3;
-  white-space: nowrap;
 }
 
 .driver-history .point-history-empty {
@@ -1033,6 +1023,7 @@
   .point-adjustment-fields {
     grid-template-columns: 1fr;
   }
+
 }
 
 @media (max-width: 42rem) {
@@ -1108,16 +1099,6 @@
     width: 100%;
   }
 
-  .driver-history .point-history-detail li {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .driver-history .point-history-detail .point-history-change {
-    grid-column: 1;
-    grid-row: auto;
-    margin-top: 0.15rem;
-    justify-self: start;
-  }
   .driver-enrollment-actions .button,
   .driver-danger-area .button {
     flex: 1 1 100%;
