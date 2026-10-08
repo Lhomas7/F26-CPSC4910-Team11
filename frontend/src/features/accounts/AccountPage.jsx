@@ -6,6 +6,7 @@ import PageHeader from '../../app/PageHeader';
 import Avatar from '../../components/primitives/Avatar';
 import Skeleton from '../../components/feedback/Skeleton';
 import StatePanel from '../../components/feedback/StatePanel';
+import useApiRequest from '../../hooks/useApiRequest';
 import { validateEmail, validatePhoneNumber } from '../../utils/accountValidation';
 import LoginActivityPanel from './LoginActivityPanel';
 import MfaPanel from './MfaPanel';
@@ -35,8 +36,7 @@ function ProfileSkeleton() {
 
 export default function AccountPage() {
   const { updateUser } = useAuth();
-  const [profile, setProfile] = useState(null);
-  const [status, setStatus] = useState('loading');
+  const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ name: '', username: '', email: '', phone_number: '' });
   const [pendingPicture, setPendingPicture] = useState(null);
@@ -46,17 +46,18 @@ export default function AccountPage() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [notice, setNotice] = useState('');
 
-  const loadProfile = useCallback(async () => {
-    setStatus('loading');
-    try {
-      const data = await api.getProfile();
-      setProfile(data);
-      setForm({ name: data.name, username: data.username, email: data.email, phone_number: data.phone_number || '' });
-      setStatus('ready');
-    } catch {
-      setStatus('error');
-    }
-  }, []);
+  const { data: profile, setData: setProfile, status: loadStatus, reload: loadProfile } = useApiRequest(
+    useCallback(() => api.getProfile(), []),
+    {
+      onSuccess: (data) => setForm({
+        name: data.name, username: data.username, email: data.email, phone_number: data.phone_number || '',
+      }),
+    },
+  );
+  // Any failed load (including 403/404) shows the retry panel.
+  let status = 'error';
+  if (saving) status = 'saving';
+  else if (loadStatus === 'loading' || loadStatus === 'ready') status = loadStatus;
 
   const refreshMfa = useCallback(async () => {
     try {
@@ -72,12 +73,11 @@ export default function AccountPage() {
     } catch {
       // Keep the current MFA view; a later action will refresh again.
     }
-  }, [updateUser, profile]);
+  }, [updateUser, profile, setProfile]);
 
   useEffect(() => {
     document.title = 'My account | Good Driver Incentive Program';
-    loadProfile();
-  }, [loadProfile]);
+  }, []);
 
   useEffect(() => {
     if (!pendingPicture) {
@@ -151,7 +151,7 @@ export default function AccountPage() {
       return;
     }
 
-    setStatus('saving');
+    setSaving(true);
     setFormError('');
     setFieldErrors({});
     setNotice('');
@@ -168,7 +168,6 @@ export default function AccountPage() {
       setRemovePicture(false);
       setEditing(false);
       setNotice('Profile saved. Your changes are live.');
-      setStatus('ready');
     } catch (error) {
       const responseErrors = error.data || {};
       const nextFieldErrors = {};
@@ -180,7 +179,8 @@ export default function AccountPage() {
       if (!Object.keys(nextFieldErrors).length) {
         setFormError(error.message || 'Your changes could not be saved.');
       }
-      setStatus('ready');
+    } finally {
+      setSaving(false);
     }
   };
 

@@ -1,25 +1,17 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { getAdminUsers, getDrivers, getPointHistory } from '../../../api';
 import Skeleton from '../../../components/feedback/Skeleton';
 import StatePanel from '../../../components/feedback/StatePanel';
+import useApiRequest from '../../../hooks/useApiRequest';
 import PointHistoryList from '../../points/components/PointHistoryList';
 
 const RECENT_ACTIVITY = 5;
 
-/** Runs `load` once and tracks its result; `data` stays null until it resolves. */
+/** Runs a module-level `load` once; `data` stays null until it resolves. */
 function useHomeData(load) {
-  const [data, setData] = useState(null);
-  const [error, setError] = useState(null);
-  useEffect(() => {
-    let active = true;
-    load()
-      .then((result) => { if (active) setData(result); })
-      .catch((requestError) => { if (active) setError(requestError.message); });
-    return () => { active = false; };
-  }, [load]);
-  return { data, error };
+  const { data, error } = useApiRequest(load);
+  return { data, error: error?.message ?? null };
 }
 
 function Stats({ items }) {

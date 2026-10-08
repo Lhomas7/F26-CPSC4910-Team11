@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import * as api from '../../api';
 import PageHeader from '../../app/PageHeader';
+import useApiRequest from '../../hooks/useApiRequest';
 import Avatar from '../../components/primitives/Avatar';
 import StatePanel from '../../components/feedback/StatePanel';
 import './AdminUserDetailPage.css';
@@ -22,10 +23,8 @@ export default function DriverDetailPage() {
   const { user, startImpersonation } = useAuth();
   const navigate = useNavigate();
   const { userId } = useParams();
-  const [account, setAccount] = useState(null);
-  const [organizations, setOrganizations] = useState([]);
   const [form, setForm] = useState(null);
-  const [status, setStatus] = useState('loading');
+  const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [errors, setErrors] = useState({});
   const [notice, setNotice] = useState('');
@@ -43,27 +42,22 @@ export default function DriverDetailPage() {
     }
   };
 
-  const load = useCallback(async () => {
-    if (user?.account_type !== 'admin') return;
-    setStatus('loading');
-    try {
-      const [details, companies] = await Promise.all([
+  const { data, setData, status, reload: load } = useApiRequest(
+    useCallback(async () => {
+      const [account, organizations] = await Promise.all([
         api.getAdminDriver(userId),
         api.getAdminSponsorOrganizations(),
       ]);
-      setAccount(details);
-      setForm(formFrom(details));
-      setOrganizations(companies);
-      setStatus('ready');
-    } catch (error) {
-      setStatus(error.status === 404 ? 'not-found' : error.status === 403 ? 'forbidden' : 'error');
-    }
-  }, [user, userId]);
+      return { account, organizations };
+    }, [userId]),
+    { skip: user?.account_type !== 'admin', onSuccess: ({ account }) => setForm(formFrom(account)) },
+  );
+  const account = data?.account;
+  const organizations = data?.organizations || [];
 
   useEffect(() => {
     document.title = 'Driver account | Good Driver Incentive Program';
-    if (user?.account_type === 'admin') load();
-  }, [load, user]);
+  }, []);
 
   const update = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -86,7 +80,7 @@ export default function DriverDetailPage() {
       setErrors(clientErrors);
       return;
     }
-    setStatus('saving');
+    setSaving(true);
     setErrors({});
     try {
       const saved = await api.updateAdminDriver(userId, {
@@ -96,14 +90,14 @@ export default function DriverDetailPage() {
         email: form.email.trim(),
         sponsor_org_id: form.sponsor_org_id ? Number(form.sponsor_org_id) : null,
       });
-      setAccount(saved);
+      setData((current) => ({ ...current, account: saved }));
       setForm(formFrom(saved));
       setEditing(false);
       setNotice('Driver account saved.');
-      setStatus('ready');
     } catch (error) {
       setErrors(error.data || { detail: error.message });
-      setStatus('ready');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -141,7 +135,7 @@ export default function DriverDetailPage() {
                 <label>Account status<select value={String(form.is_active)} onChange={(e) => update('is_active', e.target.value === 'true')}><option value="true">Active</option><option value="false">Inactive</option></select><small>An inactive account cannot sign in.</small></label>
                 <div className="sponsor-detail-locked"><span>Account type</span><strong>Driver</strong><small>Cannot be changed after account creation.</small></div>
               </div>
-              <div className="sponsor-detail-actions"><button type="button" onClick={cancel} disabled={status === 'saving'}>Cancel</button><button className="primary" type="submit" disabled={status === 'saving'}>{status === 'saving' ? 'Saving…' : 'Save changes'}</button></div>
+              <div className="sponsor-detail-actions"><button type="button" onClick={cancel} disabled={saving}>Cancel</button><button className="primary" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</button></div>
             </form>
           )}
         </section>

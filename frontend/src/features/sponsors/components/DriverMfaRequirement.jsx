@@ -1,20 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { getSponsorMfaSetting, sponsorMfaSettings } from '../../../api';
+import useApiRequest from '../../../hooks/useApiRequest';
 
 export default function DriverMfaRequirement({ company }) {
-  const [required, setRequired] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState(null);
-
-  useEffect(() => {
-    getSponsorMfaSetting()
-      .then((data) => {
-        setRequired(data.driver_mfa_required);
-        setMessage(null);
-      })
-      .catch((error) => setMessage({ ok: false, text: error.message }));
-  }, []);
+  const [toggleMessage, setMessage] = useState(null);
+  const { data, setData, error: loadError } = useApiRequest(getSponsorMfaSetting);
+  const required = data ? data.driver_mfa_required : null;
+  const setRequired = (value) => setData((current) => ({ ...current, driver_mfa_required: value }));
+  const message = toggleMessage || (loadError ? { ok: false, text: loadError.message } : null);
 
   const toggle = async (event) => {
     const next = event.target.checked;

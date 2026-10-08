@@ -50,7 +50,6 @@ test('renders release information returned by the API', async () => {
     'http://localhost:8000/api/about/',
     expect.objectContaining({
       headers: { Accept: 'application/json' },
-      signal: expect.any(AbortSignal),
     }),
   );
 });

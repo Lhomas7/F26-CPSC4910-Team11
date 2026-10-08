@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import * as api from '../../api';
+import useApiRequest from '../../hooks/useApiRequest';
 
 function formatTime(timestamp) {
   return new Date(timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
@@ -20,23 +21,11 @@ function AttemptList({ attempts }) {
 }
 
 export default function LoginActivityPanel() {
-  const [activity, setActivity] = useState(null);
-  const [status, setStatus] = useState('loading');
   const [expanded, setExpanded] = useState(false);
-
-  const loadActivity = useCallback(async () => {
-    setStatus('loading');
-    try {
-      setActivity(await api.getLoginAttempts());
-      setStatus('ready');
-    } catch {
-      setStatus('error');
-    }
-  }, []);
-
-  useEffect(() => {
-    loadActivity();
-  }, [loadActivity]);
+  const { data: activity, status: loadStatus, reload: loadActivity } = useApiRequest(
+    useCallback(() => api.getLoginAttempts(), []),
+  );
+  const status = loadStatus === 'loading' || loadStatus === 'ready' ? loadStatus : 'error';
 
   const recentIds = new Set((activity?.recent || []).map((attempt) => attempt.id));
   const hasMore = Boolean(activity?.last_24_hours.some((attempt) => !recentIds.has(attempt.id)));

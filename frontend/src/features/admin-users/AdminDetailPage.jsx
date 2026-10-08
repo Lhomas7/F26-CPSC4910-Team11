@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import * as api from '../../api';
 import PageHeader from '../../app/PageHeader';
+import useApiRequest from '../../hooks/useApiRequest';
 import Avatar from '../../components/primitives/Avatar';
 import StatePanel from '../../components/feedback/StatePanel';
 import { validateEmail, validateName, validateUsername } from '../../utils/accountValidation';
@@ -23,30 +24,20 @@ function formFrom(account) {
 export default function AdminDetailPage() {
   const { user } = useAuth();
   const { userId } = useParams();
-  const [account, setAccount] = useState(null);
   const [form, setForm] = useState(null);
-  const [status, setStatus] = useState('loading');
+  const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [errors, setErrors] = useState({});
   const [notice, setNotice] = useState('');
 
-  const load = useCallback(async () => {
-    if (user?.account_type !== 'admin') return;
-    setStatus('loading');
-    try {
-      const details = await api.getAdminAccount(userId);
-      setAccount(details);
-      setForm(formFrom(details));
-      setStatus('ready');
-    } catch (error) {
-      setStatus(error.status === 404 ? 'not-found' : error.status === 403 ? 'forbidden' : 'error');
-    }
-  }, [user, userId]);
+  const { data: account, setData: setAccount, status, reload: load } = useApiRequest(
+    useCallback(() => api.getAdminAccount(userId), [userId]),
+    { skip: user?.account_type !== 'admin', onSuccess: (details) => setForm(formFrom(details)) },
+  );
 
   useEffect(() => {
     document.title = 'Administrator account | Good Driver Incentive Program';
-    if (user?.account_type === 'admin') load();
-  }, [load, user]);
+  }, []);
 
   const update = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -75,7 +66,7 @@ export default function AdminDetailPage() {
       return;
     }
 
-    setStatus('saving');
+    setSaving(true);
     setErrors({});
     try {
       const saved = await api.updateAdminAccount(userId, {
@@ -89,10 +80,10 @@ export default function AdminDetailPage() {
       setForm(formFrom(saved));
       setEditing(false);
       setNotice('Administrator account saved.');
-      setStatus('ready');
     } catch (error) {
       setErrors(error.data || { detail: error.message });
-      setStatus('ready');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -129,7 +120,7 @@ export default function AdminDetailPage() {
                 <label>Account status<select value={String(form.is_active)} onChange={(event) => update('is_active', event.target.value === 'true')}><option value="true">Active</option><option value="false">Inactive</option></select><small>An inactive account cannot sign in.</small></label>
                 <div className="sponsor-detail-locked"><span>Account type</span><strong>Administrator</strong><small>Role and administrative privileges cannot be changed here.</small></div>
               </div>
-              <div className="sponsor-detail-actions"><button type="button" onClick={cancel} disabled={status === 'saving'}>Cancel</button><button className="primary" type="submit" disabled={status === 'saving'}>{status === 'saving' ? 'Saving…' : 'Save changes'}</button></div>
+              <div className="sponsor-detail-actions"><button type="button" onClick={cancel} disabled={saving}>Cancel</button><button className="primary" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</button></div>
             </form>
           )}
         </section>

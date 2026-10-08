@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 import { getDrivers } from '../../../api';
@@ -8,6 +8,7 @@ import Skeleton from '../../../components/feedback/Skeleton';
 import StatePanel from '../../../components/feedback/StatePanel';
 import Avatar from '../../../components/primitives/Avatar';
 import { SearchIcon } from '../../../components/primitives/Icons';
+import useApiRequest from '../../../hooks/useApiRequest';
 import DriverMfaRequirement from '../../sponsors/components/DriverMfaRequirement';
 import LinkDriverForm from '../components/LinkDriverForm';
 import '../Drivers.css';
@@ -21,20 +22,11 @@ const FILTERS = [
 export default function DriverListPage() {
   const { user } = useAuth();
   const routeNotice = useLocation().state?.notice;
-  const [drivers, setDrivers] = useState(null);
-  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [notice, setNotice] = useState(routeNotice || '');
 
-  const loadDrivers = useCallback(() => {
-    setError(null);
-    return getDrivers().then(setDrivers).catch((requestError) => setError(requestError.message));
-  }, []);
-
-  useEffect(() => {
-    loadDrivers();
-  }, [loadDrivers]);
+  const { data: drivers, status, error, reload: loadDrivers } = useApiRequest(useCallback(() => getDrivers(), []));
 
   const counts = useMemo(() => (drivers || []).reduce((result, driver) => ({
     ...result,
@@ -63,12 +55,12 @@ export default function DriverListPage() {
     setNotice(`@${driver.username} was linked to ${user.company || 'your organization'} and is waiting for approval.`);
   };
 
-  if (error) return (
+  if (status !== 'loading' && status !== 'ready') return (
     <div className="drivers-page">
       <PageHeader title="Drivers" subtitle="Manage enrollment, balances, and driver access" />
       <main className="drivers-content">
         <StatePanel tone="error" title="Drivers couldn't be loaded">
-          <p>{error}</p>
+          <p>{error.message}</p>
           <button className="button button-primary" type="button" onClick={loadDrivers}>Try again</button>
         </StatePanel>
       </main>

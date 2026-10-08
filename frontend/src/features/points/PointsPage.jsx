@@ -7,31 +7,24 @@ import { useAuth } from '../../auth/AuthContext';
 import Skeleton from '../../components/feedback/Skeleton';
 import StatePanel from '../../components/feedback/StatePanel';
 import SelectMenu from '../../components/forms/SelectMenu';
+import useApiRequest from '../../hooks/useApiRequest';
 import PointHistoryList from './components/PointHistoryList';
 import './Points.css';
 
 /** Load drivers and point history together, with loading and error states. */
 function usePointsData(historyFilter) {
-  const [drivers, setDrivers] = useState(null);
-  const [history, setHistory] = useState(null);
-  const [error, setError] = useState(null);
+  const { data, status, error, reload } = useApiRequest(useCallback(async () => {
+    const [drivers, history] = await Promise.all([getDrivers(), getPointHistory(historyFilter)]);
+    return { drivers, history };
+  }, [historyFilter]));
 
-  const load = useCallback(() => {
-    setError(null);
-    setHistory(null);
-    return Promise.all([getDrivers(), getPointHistory(historyFilter)])
-      .then(([driverList, entries]) => {
-        setDrivers(driverList);
-        setHistory(entries);
-      })
-      .catch((requestError) => setError(requestError.message));
-  }, [historyFilter]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  return { drivers, history, error, reload: load };
+  return {
+    drivers: data?.drivers ?? null,
+    // Hide the previous history while a different filter loads.
+    history: status === 'ready' ? data.history : null,
+    error: status === 'loading' || status === 'ready' ? null : error.message,
+    reload,
+  };
 }
 
 function LoadState({ error, onRetry }) {

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import * as api from '../../api';
 import PageHeader from '../../app/PageHeader';
+import useApiRequest from '../../hooks/useApiRequest';
 import Skeleton from '../../components/feedback/Skeleton';
 import StatePanel from '../../components/feedback/StatePanel';
 import PasswordInput from '../../components/forms/PasswordInput';
@@ -24,28 +25,23 @@ const ROLE_LABELS = { driver: 'Driver', sponsor: 'Sponsor', admin: 'Admin' };
 
 export default function AddUserPage() {
   const { user } = useAuth();
-  const [organizations, setOrganizations] = useState([]);
-  const [status, setStatus] = useState('loading');
+  const [phase, setPhase] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
   const [created, setCreated] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
 
-  const loadOrganizations = useCallback(async () => {
-    if (user?.account_type !== 'admin') return;
-    setStatus('loading');
-    try {
-      setOrganizations(await api.getAdminSponsorOrganizations());
-      setStatus('ready');
-    } catch (error) {
-      setStatus(error.status === 403 ? 'forbidden' : 'error');
-    }
-  }, [user]);
+  const { data, status: loadStatus, reload: loadOrganizations } = useApiRequest(
+    useCallback(() => api.getAdminSponsorOrganizations(), []),
+    { skip: user?.account_type !== 'admin' },
+  );
+  const organizations = data || [];
+  // 'saving', 'created' or 'forbidden' once the form is in use; otherwise the load status.
+  const status = phase || loadStatus;
 
   useEffect(() => {
     document.title = 'Add user | Good Driver Incentive Program';
-    if (user?.account_type === 'admin') loadOrganizations();
-  }, [loadOrganizations, user]);
+  }, []);
 
   const update = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -80,7 +76,7 @@ export default function AddUserPage() {
   const submit = async (event) => {
     event.preventDefault();
     if (!validate()) return;
-    setStatus('saving');
+    setPhase('saving');
     setErrors({});
     const payload = {
       first_name: form.first_name.trim(),
@@ -95,17 +91,17 @@ export default function AddUserPage() {
     };
     try {
       setCreated(await api.createAdminUser(payload));
-      setStatus('created');
+      setPhase('created');
     } catch (error) {
       if (error.status === 403) {
-        setStatus('forbidden');
+        setPhase('forbidden');
       } else {
         const data = error.data || {};
         setErrors({
           ...data,
           form: Object.keys(data).length ? 'Fix the highlighted fields and try again.' : 'The account could not be created. Try again.',
         });
-        setStatus('ready');
+        setPhase(null);
       }
     }
   };
@@ -115,7 +111,7 @@ export default function AddUserPage() {
     setErrors({});
     setCreated(null);
     setShowPassword(false);
-    setStatus('ready');
+    setPhase(null);
   };
 
   const fieldError = (name) => Array.isArray(errors[name]) ? errors[name][0] : errors[name];

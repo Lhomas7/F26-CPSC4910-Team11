@@ -1,23 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import * as api from '../../api';
+import useApiRequest from '../../hooks/useApiRequest';
 
 export default function RegistrationSettingsPanel() {
-  const [required, setRequired] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState(null);
-
-  useEffect(() => {
-    let active = true;
-    api.getRegistrationSettings()
-      .then((data) => {
-        if (active) setRequired(data.email_verification_required);
-      })
-      .catch((err) => {
-        if (active) setMessage({ ok: false, text: err.message || 'Account creation settings could not be loaded.' });
-      });
-    return () => { active = false; };
-  }, []);
+  const [toggleMessage, setMessage] = useState(null);
+  const { data, setData, error } = useApiRequest(api.getRegistrationSettings);
+  const required = data ? data.email_verification_required : null;
+  const setRequired = (value) => setData((current) => ({ ...current, email_verification_required: value }));
+  const message = toggleMessage || (error
+    ? { ok: false, text: error.message || 'Account creation settings could not be loaded.' }
+    : null);
 
   const toggle = async (event) => {
     const next = event.target.checked;

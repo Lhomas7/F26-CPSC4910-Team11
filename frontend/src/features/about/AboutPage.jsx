@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 
-import { API_URL } from '../../api';
+import { currentRelease } from '../../api';
 import PageHeader from '../../app/PageHeader';
 import { useAuth } from '../../auth/AuthContext';
 import RoadTruck from '../../components/branding/RoadTruck';
 import Skeleton from '../../components/feedback/Skeleton';
 import StatePanel from '../../components/feedback/StatePanel';
+import useApiRequest from '../../hooks/useApiRequest';
 import AboutEditForm from './AboutEditForm';
 import './AboutPage.css';
 
@@ -19,48 +20,17 @@ function formatReleaseDate(releaseDate) {
 
 export default function AboutPage() {
   const { user } = useAuth() || {};
-  const [release, setRelease] = useState(null);
   const [editing, setEditing] = useState(false);
   const [notice, setNotice] = useState('');
-  const [status, setStatus] = useState('loading');
-  const [requestNumber, setRequestNumber] = useState(0);
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    setStatus('loading');
-    fetch(`${API_URL}/about/`, {
-      headers: { Accept: 'application/json' },
-      signal: controller.signal,
-    }).then((response) => {
-        if (response.status === 404) {
-          return null;
-        }
-        if (!response.ok) {
-          throw new Error('About information could not be loaded.');
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setRelease(data);
-        setStatus(data ? 'ready' : 'empty');
-      })
-      .catch((requestError) => {
-        if (requestError.name !== 'AbortError') {
-          setStatus('error');
-        }
-      });
-
-    return () => controller.abort();
-  }, [requestNumber]);
+  // currentRelease() resolves null when no release has been published yet.
+  const { data: release, setData: setRelease, status: loadStatus, reload: retry } = useApiRequest(currentRelease);
+  const status = loadStatus === 'ready' && !release ? 'empty' : loadStatus;
 
   useEffect(() => {
     if (release) {
       document.title = `About | ${release.product_name}`;
     }
   }, [release]);
-
-  const retry = () => setRequestNumber((value) => value + 1);
 
   const ready = status === 'ready' && release;
   // Admins can edit the release in place (the server only accepts edits from admins).

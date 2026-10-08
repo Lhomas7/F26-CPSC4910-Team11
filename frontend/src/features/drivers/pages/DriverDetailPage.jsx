@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import { approveDriver, getDriver, getPointHistory } from '../../../api';
@@ -6,6 +6,7 @@ import PageHeader from '../../../app/PageHeader';
 import Skeleton from '../../../components/feedback/Skeleton';
 import StatePanel from '../../../components/feedback/StatePanel';
 import Avatar from '../../../components/primitives/Avatar';
+import useApiRequest from '../../../hooks/useApiRequest';
 import PointHistoryList from '../../points/components/PointHistoryList';
 import PointAdjustmentPanel from '../components/PointAdjustmentPanel';
 import RemoveDriverDialog from '../components/RemoveDriverDialog';
@@ -15,40 +16,29 @@ import '../Drivers.css';
 export default function DriverDetailPage() {
   const { driverId } = useParams();
   const navigate = useNavigate();
-  const [driver, setDriver] = useState(null);
-  const [history, setHistory] = useState(null);
-  const [historyError, setHistoryError] = useState('');
-  const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [approveError, setApproveError] = useState('');
   const [removing, setRemoving] = useState(false);
   const [notice, setNotice] = useState('');
 
-  const loadDriver = useCallback(() => {
-    setError(null);
-    return getDriver(driverId).then(setDriver).catch(setError);
-  }, [driverId]);
-
-  const loadHistory = useCallback(() => {
-    setHistoryError('');
-    return getPointHistory({ driver: driverId })
-      .then(setHistory)
-      .catch((requestError) => setHistoryError(requestError.message));
-  }, [driverId]);
-
-  useEffect(() => {
-    loadDriver();
-    loadHistory();
-  }, [loadDriver, loadHistory]);
+  const {
+    data: driver, setData: setDriver, status, error, reload: loadDriver,
+  } = useApiRequest(useCallback(() => getDriver(driverId), [driverId]));
+  const {
+    data: history, status: historyStatus, error: historyLoadError, reload: loadHistory,
+  } = useApiRequest(useCallback(() => getPointHistory({ driver: driverId }), [driverId]));
+  const historyError = historyStatus === 'error' ? historyLoadError.message : '';
 
   const approve = async () => {
     setSaving(true);
     setNotice('');
+    setApproveError('');
     try {
       const updated = await approveDriver(driverId);
       setDriver(updated);
       setNotice(`${updated.name} is approved. You can now award and deduct points.`);
     } catch (requestError) {
-      setError(requestError);
+      setApproveError(requestError.message || 'The driver could not be approved. Try again.');
     } finally {
       setSaving(false);
     }
@@ -70,8 +60,8 @@ export default function DriverDetailPage() {
         breadcrumb={<><Link to="/drivers">Drivers</Link> / {breadcrumbName}</>}
       />
       <main className="driver-detail-content">
-        {error ? (
-          error.status === 404 ? (
+        {status === 'not-found' || status === 'error' ? (
+          status === 'not-found' ? (
             <StatePanel headingLevel={1} title="That driver isn't in your organization">
               <p>They may have been dropped, or the link may be wrong. Search the driver directory to find the driver you&apos;re after.</p>
               <Link className="button button-primary" to="/drivers">Back to drivers</Link>
@@ -88,20 +78,23 @@ export default function DriverDetailPage() {
         ) : !driver ? (
           <DriverDetailSkeleton />
         ) : (
-          <DriverWorkspace
-            driver={driver}
-            history={history}
-            historyError={historyError}
-            saving={saving}
-            notice={notice}
-            onApprove={approve}
-            onAdjust={(balance) => {
-              setDriver((current) => ({ ...current, point_balance: balance }));
-              loadHistory();
-            }}
-            onRetryHistory={loadHistory}
-            onRemove={() => setRemoving(true)}
-          />
+          <>
+            {approveError && <p className="banner banner-error" role="alert">{approveError}</p>}
+            <DriverWorkspace
+              driver={driver}
+              history={history}
+              historyError={historyError}
+              saving={saving}
+              notice={notice}
+              onApprove={approve}
+              onAdjust={(balance) => {
+                setDriver((current) => ({ ...current, point_balance: balance }));
+                loadHistory();
+              }}
+              onRetryHistory={loadHistory}
+              onRemove={() => setRemoving(true)}
+            />
+          </>
         )}
       </main>
 

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import * as api from '../../api';
 import PageHeader from '../../app/PageHeader';
+import useApiRequest from '../../hooks/useApiRequest';
 import Skeleton from '../../components/feedback/Skeleton';
 import StatePanel from '../../components/feedback/StatePanel';
 import SelectMenu from '../../components/forms/SelectMenu';
@@ -32,27 +33,19 @@ function DirectorySkeleton() {
 
 export default function AdminUsersPage() {
   const { user } = useAuth();
-  const [users, setUsers] = useState([]);
-  const [status, setStatus] = useState('loading');
   const [query, setQuery] = useState('');
   const [role, setRole] = useState('all');
   const [organization, setOrganization] = useState('all');
 
-  const loadUsers = useCallback(async () => {
-    if (user?.account_type !== 'admin') return;
-    setStatus('loading');
-    try {
-      setUsers(await api.getAdminUsers());
-      setStatus('ready');
-    } catch (error) {
-      setStatus(error.status === 403 ? 'forbidden' : 'error');
-    }
-  }, [user]);
+  const { data, status, reload: loadUsers } = useApiRequest(
+    useCallback(() => api.getAdminUsers(), []),
+    { skip: user?.account_type !== 'admin' },
+  );
+  const users = useMemo(() => data || [], [data]);
 
   useEffect(() => {
     document.title = 'Users | Good Driver Incentive Program';
-    if (user?.account_type === 'admin') loadUsers();
-  }, [loadUsers, user]);
+  }, []);
 
   const counts = useMemo(() => users.reduce((result, current) => ({
     ...result,
