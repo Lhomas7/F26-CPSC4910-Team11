@@ -1046,15 +1046,23 @@
     align-items: stretch;
   }
 
-  /* When the search has a line to itself, let it use the whole line. */
+  /* The directory controls get their own rows so the action button never
+     wraps into an awkward partial row. */
   .drivers-search {
+    flex-basis: 100%;
     max-width: none;
   }
 
   .drivers-filters {
-    flex-shrink: 1;
+    flex: 1 1 100%;
     max-width: 100%;
     overflow-x: auto;
+    padding-bottom: .15rem;
+  }
+
+  .drivers-toolbar-action {
+    flex: 1 1 100%;
+    margin-left: 0;
   }
 
   .driver-identity {
@@ -1114,21 +1122,5 @@
   .remove-driver-dialog .button {
     justify-content: center;
     width: 100%;
-  }
-
-  /* Give the directory controls their own rows so the action button never
-     wraps into an awkward partial row. */
-  .drivers-search {
-    flex-basis: 100%;
-  }
-
-  .drivers-filters {
-    flex: 1 1 100%;
-    padding-bottom: .15rem;
-  }
-
-  .drivers-toolbar-action {
-    flex: 1 1 100%;
-    margin-left: 0;
   }
 }
