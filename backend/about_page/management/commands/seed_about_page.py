@@ -24,7 +24,5 @@ class Command(BaseCommand):
 
         action = 'Created' if created else 'Updated'
         self.stdout.write(
-            self.style.SUCCESS(
-                f'{action} About-page release: {release.version_number}'
-            )
+            self.style.SUCCESS(f'{action} About-page release: {release.version_number}')
         )

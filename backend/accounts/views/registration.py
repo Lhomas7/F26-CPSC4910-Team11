@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 from drivers.models import Driver
 
 from ..models import RegistrationSettings, SponsorAccount, SponsorCompany
+from ..sensitive import hide_sensitive_data
 from ..serializers import DriverRegistrationSerializer, SponsorRegistrationSerializer
 from ..services import get_public_user, normalize_company_name
 from ..services.delivery import send_code_to_address
@@ -20,7 +21,6 @@ from ..services.registration_verification import (
     create_registration_code,
     verify_registration_code,
 )
-from ..sensitive import hide_sensitive_data
 
 REGISTRATION_CODE_RESEND_SECONDS = 30
 INVALID_REGISTRATION_CODE_MESSAGE = 'Invalid or expired verification code.'
@@ -67,6 +67,7 @@ def check_email_verification(data):
         status=status.HTTP_202_ACCEPTED,
     )
 
+
 @hide_sensitive_data
 class DriverRegistrationView(AnonymousAPIView):
     def post(self, request):
@@ -83,7 +84,7 @@ class DriverRegistrationView(AnonymousAPIView):
         try:
             validate_password(data['password'], user)
         except DjangoValidationError as exc:
-            raise DRFValidationError({'password': list(exc.messages)})
+            raise DRFValidationError({'password': list(exc.messages)}) from exc
 
         verification_response = check_email_verification(data)
         if verification_response is not None:
@@ -113,7 +114,7 @@ class SponsorRegistrationView(AnonymousAPIView):
         try:
             validate_password(data['password'], user)
         except DjangoValidationError as exc:
-            raise DRFValidationError({'password': list(exc.messages)})
+            raise DRFValidationError({'password': list(exc.messages)}) from exc
 
         verification_response = check_email_verification(data)
         if verification_response is not None:
@@ -131,4 +132,3 @@ class SponsorRegistrationView(AnonymousAPIView):
         # establish a session right away and let the frontend show the setup wall.
         login(request, user)
         return Response(get_public_user(user), status=status.HTTP_201_CREATED)
-

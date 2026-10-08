@@ -41,7 +41,11 @@ def is_mfa_required(user):
     account_type = get_account_type(user)
     if account_type in ('admin', 'sponsor'):
         return True
-    if account_type == 'driver' and hasattr(user, 'driver_profile') and user.driver_profile.sponsor is not None:
+    if (
+        account_type == 'driver'
+        and hasattr(user, 'driver_profile')
+        and user.driver_profile.sponsor is not None
+    ):
         return user.driver_profile.sponsor.driver_mfa_required
     return False
 
@@ -84,9 +88,7 @@ def get_public_user(user):
     else:
         name = user.driver_profile.name
         company = (
-            user.driver_profile.sponsor.name
-            if user.driver_profile.sponsor is not None
-            else None
+            user.driver_profile.sponsor.name if user.driver_profile.sponsor is not None else None
         )
 
     return {

@@ -24,6 +24,6 @@ def hide_sensitive_data(view_class):
         handler = view_class.__dict__.get(name)
         if handler is not None:
             setattr(view_class, name, sensitive_variables()(handler))
-    return method_decorator(
-        sensitive_post_parameters(*SENSITIVE_POST_FIELDS), name='dispatch'
-    )(view_class)
+    return method_decorator(sensitive_post_parameters(*SENSITIVE_POST_FIELDS), name='dispatch')(
+        view_class
+    )
