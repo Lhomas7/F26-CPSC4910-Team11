@@ -49,34 +49,3 @@
   justify-content: flex-end;
   margin-top: 1.1rem;
 }
-
-.modal-button {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: .5rem;
-  color: var(--ink);
-  cursor: pointer;
-  font: inherit;
-  font-size: .875rem;
-  font-weight: 600;
-  padding: .5rem .95rem;
-}
-
-.modal-button:hover:not(:disabled) {
-  border-color: var(--ink-2);
-}
-
-.modal-button.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
-
-.modal-button.primary:hover:not(:disabled) {
-  filter: brightness(1.08);
-}
-
-.modal-button:disabled {
-  cursor: default;
-  opacity: .6;
-}

@@ -1,0 +1,265 @@
+.about-layout {
+  min-height: 100vh;
+}
+
+.about-content {
+  max-width: 67.5rem;
+  padding: 1.5rem 1.75rem 2.5rem;
+  width: 100%;
+}
+
+.road-hero {
+  background: var(--road);
+  border: 1px solid var(--line);
+  border-radius: .75rem;
+  color: var(--on-road);
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+  padding: 1.75rem 1.875rem 0;
+}
+
+.road-hero h2 {
+  font-size: clamp(1.5rem, 3.4vw, 2.125rem);
+  line-height: 1.15;
+  margin: 0;
+  max-width: 22ch;
+}
+
+.road-hero > p {
+  color: var(--on-road-muted);
+  font-size: .95rem;
+  margin: .625rem 0 0;
+  max-width: 62ch;
+}
+
+.release-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  list-style: none;
+  margin: 1.125rem 0 0;
+  padding: 0;
+}
+
+.release-facts li {
+  background: rgb(255 255 255 / 8%);
+  border: 1px solid rgb(255 255 255 / 14%);
+  border-radius: 999px;
+  color: var(--on-road);
+  font-size: .75rem;
+  padding: .25rem .75rem;
+}
+
+.release-facts b {
+  color: var(--stripe);
+  font-weight: 700;
+}
+
+.about-lane {
+  height: 2.125rem;
+  margin: 1.5rem -1.875rem 0;
+}
+
+.about-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1.1fr 1fr;
+}
+.about-card,
+.about-state {
+  padding: 1.125rem 1.25rem;
+}
+
+.about-card h3,
+.about-state h2 {
+  align-items: center;
+  display: flex;
+  font-size: .875rem;
+  justify-content: space-between;
+  margin: 0 0 .625rem;
+}
+
+.detail-rows {
+  margin: 0;
+}
+
+.detail-rows div {
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  font-size: .825rem;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: .55rem 0;
+}
+
+.detail-rows div:last-child {
+  border-bottom: 0;
+}
+
+.detail-rows dt {
+  color: var(--ink-2);
+}
+
+.detail-rows dd {
+  font-weight: 600;
+  margin: 0;
+  text-align: right;
+}
+
+.points-steps {
+  counter-reset: step;
+  display: grid;
+  gap: .75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.points-steps li {
+  align-items: center;
+  counter-increment: step;
+  display: grid;
+  font-size: .825rem;
+  gap: .625rem;
+  grid-template-columns: 1.75rem 1fr;
+}
+
+.points-steps li::before {
+  background: var(--warning-soft);
+  border-radius: 50%;
+  color: var(--warning-ink);
+  content: counter(step);
+  display: grid;
+  font-size: .75rem;
+  font-weight: 700;
+  height: 1.625rem;
+  place-items: center;
+  width: 1.625rem;
+}
+
+.about-state {
+  margin-bottom: 1.25rem;
+}
+
+.about-state p {
+  margin: .25rem 0 0;
+  max-width: 64ch;
+}
+
+.about-state button {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: .45rem;
+  color: white;
+  cursor: pointer;
+  font-weight: 700;
+  margin-top: .75rem;
+  padding: .45rem .875rem;
+}
+
+/* Inline placeholders sized by their "Loading…" text, darker to sit on the road panel. */
+.about-skeleton {
+  background-image: linear-gradient(90deg, var(--road-raised), var(--road-raised-2), var(--road-raised));
+  border-radius: .35rem;
+  color: transparent;
+  display: inline-block;
+  height: auto;
+  min-width: 6ch;
+}
+
+.skeleton-title {
+  height: 1.05em;
+  width: 14ch;
+}
+
+.skeleton-line {
+  display: block;
+  height: 1em;
+  margin-top: .35rem;
+  max-width: 100%;
+  width: 46ch;
+}
+
+.skeleton-line-short {
+  width: 30ch;
+}
+/* ---------- Admin release editor ---------- */
+
+.about-edit {
+  display: grid;
+  gap: .8rem;
+  margin-bottom: 1.25rem;
+}
+
+.about-edit-grid {
+  display: grid;
+  gap: .8rem;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+
+.about-edit label {
+  display: grid;
+  gap: .3rem;
+}
+
+.about-edit label > span {
+  color: var(--ink-2);
+  font-size: .75rem;
+  font-weight: 700;
+}
+
+.about-edit input,
+.about-edit textarea {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .45rem;
+  color: var(--ink);
+  font: inherit;
+  padding: .55rem .65rem;
+}
+
+.about-edit textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.about-edit input:focus,
+.about-edit textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: 0;
+}
+
+.about-edit-actions {
+  display: flex;
+  gap: .5rem;
+  justify-content: flex-end;
+}
+
+.about-edit-error {
+  color: var(--danger);
+  font-size: .75rem;
+  margin: 0;
+}
+.about-notice {
+  margin: 0 0 1rem;
+}
+
+@media (max-width: 53.75rem) {
+  .about-content {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .about-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .road-hero {
+    padding: 1.375rem 1.25rem 0;
+  }
+
+  .about-lane {
+    margin: 1.25rem -1.25rem 0;
+  }
+}

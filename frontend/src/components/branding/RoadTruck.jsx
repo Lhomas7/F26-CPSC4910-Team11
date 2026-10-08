@@ -1,12 +1,14 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-import { FireTruck, Flame, Impact, SemiTruck, Smoke, Wheel } from '../assets';
+import { Fire, FireTruck, Impact, SemiTruck, Smoke, Wheel } from '../assets';
 import './RoadTruck.css';
 
-// Matches the length of the road-truck-crash animation in RoadTruck.css.
+// Matches the length of the SemiTruck's crash="tip" animation (assets.css).
 export const CRASH_MS = 1800;
 
-// Decorative road lane with a truck driving along it.
+// Decorative road lane with a truck driving along it. Everything drawn here
+// is an asset; this component only decides what happens when.
+//
 // mode="loop" drives back and forth forever; mode="arrive" sits at the start
 // until `arrived` is true, then drives to the end once.
 // Easter eggs:
@@ -14,8 +16,8 @@ export const CRASH_MS = 1800;
 //   where it is, then carries on;
 // - while `wrecked` is true (the server is down) the truck flips onto its roof,
 //   loses a wheel and burns until `wrecked` goes back to false. The fire
-//   spreads along the truck until a fire truck shows up (after --rescue-delay) from whichever
-//   end of the road is further from the wreck and hoses it down.
+//   spreads along the truck until a fire truck shows up (after --rescue-delay)
+//   from whichever end of the road is further from the wreck and hoses it down.
 export default function RoadTruck({ mode = 'loop', arrived = false, crashKey = 0, wrecked = false, className = '' }) {
   const [crashed, setCrashed] = useState(false);
   const [rescue, setRescue] = useState(null);
@@ -49,34 +51,35 @@ export default function RoadTruck({ mode = 'loop', arrived = false, crashKey = 0
     'road-truck',
     `road-truck-${mode}`,
     mode === 'arrive' && arrived ? 'road-truck-arrived' : '',
+    // State markers (styling and tests hook onto these).
     wrecked ? 'road-truck-wrecked' : '',
     crashed && !wrecked ? 'road-truck-crashed' : '',
-    rescue?.side === 'right' ? 'road-truck-rescue-right' : '',
+    crashed || wrecked ? 'road-truck-stopped' : '',
   ].filter(Boolean).join(' ');
+
+  let crash;
+  if (wrecked) crash = 'flip';
+  else if (crashed) crash = 'tip';
 
   return (
     <div className={`road-lane ${className}`.trim()} aria-hidden="true" ref={laneRef}>
       <div className={truckClasses} ref={truckRef}>
-        <span className="road-truck-body">
-          <SemiTruck />
-        </span>
-        {(crashed || wrecked) && <Impact className="road-truck-impact" />}
-        {crashed && !wrecked && (
+        <SemiTruck className="road-truck-vehicle" crash={crash} />
+        {crash && <Impact className={`road-truck-impact road-truck-impact-${crash}`} />}
+        {crash === 'tip' && (
           <>
             <Smoke className="road-truck-smoke road-truck-smoke-a" />
             <Smoke className="road-truck-smoke road-truck-smoke-b" />
           </>
         )}
-        {wrecked && (
+        {crash === 'flip' && (
           <>
-            <Wheel className="road-truck-loose-wheel" />
-            <Flame className="road-truck-flame road-truck-flame-a" />
-            <Flame className="road-truck-flame road-truck-flame-b" />
-            <Flame className="road-truck-flame road-truck-flame-c" scale={0.88} />
-            <Flame className="road-truck-flame road-truck-flame-d" scale={0.8} />
-            <Smoke loop className="road-truck-plume road-truck-plume-a" scale={1.1} />
-            <Smoke loop className="road-truck-plume road-truck-plume-b" scale={1.1} />
-            <Smoke loop className="road-truck-plume road-truck-plume-c" scale={1.1} />
+            {/* The wheel rolls away from the side the fire truck comes from. */}
+            <Wheel
+              className={`road-truck-loose-wheel road-truck-loose-wheel-${rescue?.side === 'right' ? 'back' : 'front'}`}
+              rolling={rescue?.side === 'right' ? 'left' : 'right'}
+            />
+            <Fire className="road-truck-fire" />
           </>
         )}
       </div>

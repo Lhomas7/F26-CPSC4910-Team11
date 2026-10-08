@@ -1,5 +1,5 @@
 import { API_ACTIVITY_EVENT, SESSION_EXPIRED_EVENT } from '../auth/sessionEvents';
-import { ApiError, checkHealth, isOutageError, request } from './client';
+import { ApiError, NetworkError, checkHealth, isOutageError, request } from './client';
 
 function jsonResponse(status, data) {
   return new Response(JSON.stringify(data), {
@@ -25,11 +25,17 @@ afterEach(() => {
 });
 
 test('isOutageError flags unreachable servers and 5xx responses only', () => {
-  expect(isOutageError(new TypeError('Failed to fetch'))).toBe(true);
+  expect(isOutageError(new NetworkError())).toBe(true);
   expect(isOutageError(new ApiError('Server error', 503))).toBe(true);
   expect(isOutageError(new ApiError('Invalid username or password.', 400))).toBe(false);
+  expect(isOutageError(new TypeError('Application bug'))).toBe(false);
   expect(isOutageError(new Error('Something else'))).toBe(false);
   expect(isOutageError(null)).toBe(false);
+});
+
+test('request identifies a fetch failure as a network outage', async () => {
+  global.fetch = jest.fn().mockRejectedValue(new TypeError('Failed to fetch'));
+  await expect(request('/me/')).rejects.toBeInstanceOf(NetworkError);
 });
 
 test('checkHealth reports the health endpoint status without throwing', async () => {

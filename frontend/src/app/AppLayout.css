@@ -1,47 +1,3 @@
-:root {
-  --bg: #f4f2eb;
-  --surface: #fffdf8;
-  --surface-2: #f8f6f0;
-  --line: #e1ddd2;
-  --ink: #1d201d;
-  --ink-2: #5c625d;
-  --accent: #1e6b52;
-  --accent-soft: #e2efe7;
-  --road: #2b302d;
-  --stripe: #f2c230;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #141715;
-    --surface: #1c201d;
-    --surface-2: #222723;
-    --line: #323833;
-    --ink: #e8ebe7;
-    --ink-2: #aab1ab;
-    --accent: #4fb48d;
-    --accent-soft: #1d3a2f;
-    --road: #0e100f;
-    --stripe: #e2b52c;
-  }
-}
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-body {
-  background: var(--bg);
-  color: var(--ink);
-}
-
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
 .app-shell {
   display: flex;
   min-height: 100vh;
@@ -77,8 +33,10 @@ body {
   border-bottom: 1px solid var(--line);
   color: var(--ink);
   display: flex;
+  flex: 0 0 var(--app-bar-height);
   gap: .65rem;
-  min-height: 4rem;
+  height: var(--app-bar-height);
+  min-height: var(--app-bar-height);
   padding: .875rem 1.125rem;
   text-decoration: none;
 }
@@ -137,9 +95,9 @@ body {
 }
 
 .mfa-required-banner {
-  background: #fbeae8;
+  background: var(--danger-soft);
   border-bottom: 1px solid var(--line);
-  color: #9e2f29;
+  color: var(--danger-ink);
   font-size: .8rem;
   padding: .6rem 1.75rem;
 }
@@ -149,33 +107,9 @@ body {
   font-weight: 700;
 }
 
-.mfa-required-toggle {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: .7rem;
-  margin-bottom: 1rem;
-  padding: .8rem 1.1rem;
-}
-
-.mfa-required-toggle label {
-  align-items: center;
-  display: inline-flex;
-  font-size: .875rem;
-  font-weight: 700;
-  gap: .5rem;
-}
-
-.mfa-required-hint {
-  color: var(--ink-2);
-  font-size: .75rem;
-  margin: .35rem 0 0 1.6rem;
-}
-
 @media (prefers-color-scheme: dark) {
   .mfa-required-banner {
-    background: #3b2220;
-    border-color: #7c3c37;
-    color: #e5766e;
+    border-color: var(--danger-line);
   }
 }
 
@@ -184,10 +118,12 @@ body {
   background: var(--surface);
   border-bottom: 1px solid var(--line);
   display: flex;
+  flex: 0 0 var(--app-bar-height);
   gap: 1.25rem;
   justify-content: space-between;
-  min-height: 4rem;
-  padding: .65rem 1.5rem;
+  height: var(--app-bar-height);
+  min-height: var(--app-bar-height);
+  padding: .35rem 1.5rem;
 }
 
 .app-topbar-page {
@@ -395,6 +331,8 @@ body {
 
   .brand {
     border-bottom: 0;
+    flex: 0 0 auto;
+    height: auto;
     min-height: auto;
     padding: .625rem 1rem;
   }
@@ -459,7 +397,7 @@ body {
 
   .app-topbar {
     align-items: center;
-    padding: .65rem 1rem;
+    padding: .35rem 1rem;
   }
 
   .page-header {
@@ -472,10 +410,10 @@ body {
 
 }
 
-@media (max-width: 38rem) {
+@media (max-width: 42rem) {
   .app-topbar {
     gap: .75rem;
-    padding: .65rem .85rem;
+    padding: .35rem .85rem;
   }
 
   .app-topbar-page {
@@ -516,6 +454,12 @@ body {
 }
 
 .impersonation-error {
-  color: #9f241d;
+  color: var(--danger-ink);
   font-weight: 700;
+}
+
+/* Shown by RequireAuth when a signed-in user opens a page their role can't use. */
+.forbidden-page {
+  max-width: 40rem;
+  padding: 1.5rem 1.75rem;
 }

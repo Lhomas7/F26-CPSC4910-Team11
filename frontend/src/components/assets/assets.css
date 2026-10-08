@@ -15,6 +15,22 @@
 
 /* The drawing itself. Assets are drawn facing right; facing="left" mirrors
    this layer so callers can still animate or position the outer box freely. */
+/* Nested assets (e.g. the flames inside Fire) scale with their parent. */
+.asset-art .asset {
+  font-size: calc(var(--asset-scale, 1) * 1em);
+}
+
+/* Takes crash poses (below); fills the box so rotations pivot correctly. */
+.asset-pose {
+  --facing: 1;
+  inset: 0;
+  position: absolute;
+}
+
+.asset-facing-left .asset-pose {
+  --facing: -1;
+}
+
 .asset-art {
   inset: 0;
   position: absolute;
@@ -110,6 +126,43 @@
   top: 85%;
 }
 
+/* ---------- Crash poses (vehicles' `crash` prop) ----------
+   Mirrored for left-facing vehicles through --facing, so "nose" is always
+   the front. */
+.asset-crash-tip .asset-pose {
+  animation: asset-crash-tip 1.8s cubic-bezier(.3, .7, .4, 1);
+  transform-origin: right bottom;
+}
+
+.asset-facing-left.asset-crash-tip .asset-pose {
+  transform-origin: left bottom;
+}
+
+.asset-crash-flip .asset-pose {
+  animation: asset-crash-flip 1.1s cubic-bezier(.5, 0, .3, 1) forwards;
+  transform-origin: center;
+}
+
+@keyframes asset-crash-tip {
+  0% { transform: none; }
+  12% { transform: translateX(calc(var(--facing) * .19em)) rotate(calc(var(--facing) * -10deg)); }
+  22% { transform: translateX(calc(var(--facing) * -.125em)) rotate(calc(var(--facing) * 7deg)); }
+  34% { transform: translateX(calc(var(--facing) * .125em)) rotate(calc(var(--facing) * 22deg)); }
+  80% { transform: translateX(calc(var(--facing) * .125em)) rotate(calc(var(--facing) * 22deg)); }
+  92% { transform: rotate(calc(var(--facing) * -3deg)); }
+  100% { transform: none; }
+}
+
+@keyframes asset-crash-flip {
+  0% { transform: none; }
+  15% { transform: translateX(calc(var(--facing) * .25em)) rotate(calc(var(--facing) * -14deg)); }
+  30% { transform: translate(calc(var(--facing) * .375em), -.6em) rotate(calc(var(--facing) * -80deg)); }
+  55% { transform: translate(calc(var(--facing) * .5em), -.3em) rotate(calc(var(--facing) * -170deg)); }
+  70% { transform: translate(calc(var(--facing) * .5625em), .05em) rotate(calc(var(--facing) * -185deg)); }
+  85% { transform: translate(calc(var(--facing) * .5625em), 0) rotate(calc(var(--facing) * -177deg)); }
+  100% { transform: translate(calc(var(--facing) * .5625em), 0) rotate(calc(var(--facing) * -180deg)); }
+}
+
 @keyframes asset-wheel-spin {
   to { transform: rotate(360deg); }
 }
@@ -139,6 +192,17 @@
   .asset-art .asset-lightbar {
     animation: none;
   }
+
+  /* Crash poses jump straight to their worst moment. */
+  .asset-crash-tip .asset-pose {
+    animation: none;
+    transform: rotate(calc(var(--facing) * 22deg));
+  }
+
+  .asset-crash-flip .asset-pose {
+    animation: none;
+    transform: translateX(calc(var(--facing) * .5625em)) rotate(180deg);
+  }
 }
 
 /* Lone wheel (Wheel asset): always shows its spoke so it can be seen rolling. */
@@ -155,4 +219,24 @@
   position: absolute;
   top: 0;
   width: .06em;
+}
+
+/* Rolling away (Wheel `rolling`): a couple of bounces, then it rolls to a stop. */
+.asset-rolling .asset-pose {
+  animation: asset-roll-away 1.6s cubic-bezier(.2, .6, .35, 1) var(--roll-delay, 0s) forwards;
+}
+
+@keyframes asset-roll-away {
+  0% { transform: translate(0, 0) rotate(0); }
+  20% { transform: translate(calc(var(--roll) * var(--roll-distance, 3.75em) * .16), -.5em) rotate(calc(var(--roll) * 200deg)); }
+  40% { transform: translate(calc(var(--roll) * var(--roll-distance, 3.75em) * .37), 0) rotate(calc(var(--roll) * 420deg)); }
+  55% { transform: translate(calc(var(--roll) * var(--roll-distance, 3.75em) * .5), -.15em) rotate(calc(var(--roll) * 560deg)); }
+  100% { transform: translate(calc(var(--roll) * var(--roll-distance, 3.75em)), 0) rotate(calc(var(--roll) * 1080deg)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .asset-rolling .asset-pose {
+    animation: none;
+    transform: translateX(calc(var(--roll) * var(--roll-distance, 3.75em)));
+  }
 }

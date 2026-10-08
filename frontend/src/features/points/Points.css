@@ -1,0 +1,157 @@
+.points-page {
+  min-height: 100%;
+}
+
+.points-content {
+  display: grid;
+  gap: 1rem;
+  max-width: 56rem;
+  padding: 1.5rem 1.75rem 4rem;
+}
+/* ---------- Balance card ---------- */
+
+.points-balance {
+  align-items: flex-start;
+  display: grid;
+  gap: .3rem;
+  padding: 1.1rem 1.25rem;
+}
+
+.points-balance > span {
+  color: var(--ink-2);
+  font-size: .75rem;
+}
+
+.points-balance strong {
+  color: var(--accent);
+  font-size: 1.9rem;
+  line-height: 1.1;
+}
+
+.points-balance small {
+  color: var(--ink-2);
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+.points-balance p {
+  color: var(--ink-2);
+  font-size: .8rem;
+  margin: .2rem 0 0;
+}
+.points-balance .button {
+  margin-top: .35rem;
+}
+
+/* ---------- History card ---------- */
+
+/* No overflow clipping here: the driver dropdown's option list has to be able
+   to extend past the bottom of the card (e.g. when the history is empty). */
+.points-card {
+  position: relative;
+}
+
+.points-card h2 {
+  font-size: .95rem;
+  margin: 0;
+}
+
+.points-card > h2,
+.points-card-heading {
+  border-bottom: 1px solid var(--line);
+  padding: 1rem 1.1rem;
+}
+
+.points-card-heading {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem;
+  justify-content: space-between;
+}
+
+.points-driver-filter {
+  flex: 0 1 13rem;
+  min-width: 10rem;
+}
+
+.points-driver-filter .select-menu-trigger {
+  height: 2.15rem;
+}
+
+.point-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.point-history li {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: .75rem 1.1rem;
+}
+
+.point-history li:first-child {
+  border-top: 0;
+}
+
+.point-history-main {
+  display: grid;
+  gap: .15rem;
+  min-width: 0;
+}
+
+.point-history-driver {
+  font-size: .8rem;
+  font-weight: 800;
+}
+
+.point-history-driver a {
+  color: var(--ink);
+}
+
+.point-history-reason {
+  font-size: .85rem;
+  overflow-wrap: anywhere;
+}
+
+.point-history-meta {
+  color: var(--ink-2);
+  font-size: .72rem;
+}
+.point-history-change {
+  flex-shrink: 0;
+  font-size: .8rem;
+}
+
+.point-history-empty {
+  color: var(--ink-2);
+  font-size: .85rem;
+  margin: 0;
+  padding: 1.25rem 1.1rem;
+}
+/* ---------- Shared bits ---------- */
+
+.points-skeleton {
+  border-radius: .65rem;
+  height: 6rem;
+  margin-bottom: 1rem;
+}
+
+.points-skeleton-list {
+  height: 16rem;
+}
+
+@media (max-width: 42rem) {
+  .points-content {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .point-history li {
+    padding: .7rem .85rem;
+  }
+}

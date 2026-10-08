@@ -21,6 +21,16 @@ class MFAEnrolled(BasePermission):
         return (not status['required']) or status['enrolled']
 
 
+class AdminAccount(BasePermission):
+    """Limits an endpoint to admin accounts."""
+
+    message = 'Only admin accounts can do this.'
+
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(user and user.is_authenticated and get_account_type(user) == 'admin')
+
+
 class SponsorOrAdmin(BasePermission):
     """Limits an endpoint to sponsor and admin accounts."""
 

@@ -1,0 +1,143 @@
+.welcome-content {
+  display: grid;
+  gap: 1rem;
+  max-width: 56rem;
+  padding: 1.5rem 1.75rem 2.5rem;
+}
+
+.welcome-hero {
+  background: var(--road);
+  border: 1px solid var(--line);
+  border-radius: .75rem;
+  color: var(--on-road);
+  overflow: hidden;
+  padding: 1.75rem 1.875rem 0;
+}
+
+.welcome-hero h2 {
+  font-size: clamp(1.5rem, 3.4vw, 2.125rem);
+  line-height: 1.15;
+  margin: 0;
+  max-width: 22ch;
+}
+
+.welcome-hero > p {
+  color: var(--on-road-muted);
+  font-size: .95rem;
+  margin: .625rem 0 0;
+  max-width: 62ch;
+}
+
+.welcome-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .625rem;
+  margin-top: 1.25rem;
+}
+
+.welcome-link {
+  align-self: center;
+  color: var(--on-road-2);
+  font-size: .8rem;
+}
+
+.welcome-link:hover {
+  text-decoration: underline;
+}
+
+.welcome-lane {
+  margin: 1.5rem -1.875rem 0;
+}
+
+/* ---------- Signed-in dashboards ---------- */
+
+.home-dashboard {
+  display: grid;
+  gap: 1rem;
+}
+
+.home-stats {
+  display: grid;
+  gap: .75rem;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+}
+
+.home-columns {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+}
+
+.home-card {
+  overflow: hidden;
+}
+
+.home-card-heading {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: .75rem;
+  justify-content: space-between;
+  padding: .9rem 1.1rem;
+}
+
+.home-card-heading h3 {
+  font-size: .95rem;
+  margin: 0;
+}
+
+.home-card a {
+  color: var(--accent);
+  font-size: .8rem;
+  font-weight: 800;
+}
+
+.home-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.home-list li {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: .7rem 1.1rem;
+}
+
+.home-list li:first-child {
+  border-top: 0;
+}
+
+.home-list span {
+  font-size: .85rem;
+}
+
+.home-empty {
+  color: var(--ink-2);
+  font-size: .85rem;
+  margin: 0;
+  padding: 1.25rem 1.1rem;
+}
+
+.home-skeleton {
+  border-radius: .65rem;
+  height: 9rem;
+}
+
+@media (max-width: 53.75rem) {
+  .welcome-content {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .welcome-hero {
+    padding: 1.375rem 1.25rem 0;
+  }
+
+  .welcome-lane {
+    margin: 1.25rem -1.25rem 0;
+  }
+}

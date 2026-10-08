@@ -33,6 +33,7 @@ test('crashes when crashKey changes, then recovers', () => {
 
   rerender(<RoadTruck crashKey={1} />);
   expect(truck).toHaveClass('road-truck-crashed');
+  expect(container.querySelector('.road-truck-vehicle')).toHaveClass('asset-crash-tip');
   expect(container.querySelector('.road-truck-impact')).toBeInTheDocument();
 
   act(() => jest.advanceTimersByTime(CRASH_MS));
@@ -46,12 +47,14 @@ test('stays wrecked while wrecked is true and recovers when it clears', () => {
   const truck = container.querySelector('.road-truck');
 
   expect(truck).toHaveClass('road-truck-wrecked');
-  expect(container.querySelector('.road-truck-flame')).toBeInTheDocument();
+  expect(container.querySelector('.road-truck-vehicle')).toHaveClass('asset-crash-flip');
+  expect(container.querySelector('.road-truck-fire')).toBeInTheDocument();
   expect(container.querySelector('.road-truck-loose-wheel')).toBeInTheDocument();
 
   rerender(<RoadTruck />);
   expect(truck).not.toHaveClass('road-truck-wrecked');
-  expect(container.querySelector('.road-truck-flame')).not.toBeInTheDocument();
+  expect(container.querySelector('.road-truck-fire')).not.toBeInTheDocument();
+  expect(container.querySelector('.road-truck-vehicle')).not.toHaveClass('asset-crash-flip');
 });
 
 test('sends a fire truck from the end of the road furthest from the wreck', () => {
@@ -66,7 +69,8 @@ test('sends a fire truck from the end of the road furthest from the wreck', () =
   const rescue = container.querySelector('.road-rescue');
   expect(rescue).toHaveClass('road-rescue-from-right');
   expect(rescue).toHaveStyle({ '--wreck-left': '50px', '--wreck-right': '96px' });
-  expect(container.querySelector('.road-truck')).toHaveClass('road-truck-rescue-right');
+  expect(container.querySelector('.road-truck-loose-wheel')).toHaveClass('road-truck-loose-wheel-back', 'asset-rolling');
+  expect(container.querySelector('.road-truck-loose-wheel').style.getPropertyValue('--roll')).toBe('-1');
   expect(rescue.querySelector('.asset-fire-truck')).toHaveClass('asset-facing-left');
 
   rerender(<RoadTruck />);

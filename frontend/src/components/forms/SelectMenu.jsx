@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 
 import { ChevronDownIcon } from '../primitives/Icons';
+import './SelectMenu.css';
 
 export default function SelectMenu({ label, value, options, onChange, className = '' }) {
   const [open, setOpen] = useState(false);

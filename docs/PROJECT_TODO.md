@@ -424,34 +424,17 @@ React is not traditional MVC. Organize the frontend by feature while separating 
 
 ```text
 frontend/src/
-├── api/
-│   ├── about.js
-│   ├── accounts.js
-│   ├── adminUsers.js
-│   ├── authentication.js
-│   ├── client.js
-│   ├── client.test.js
-│   ├── drivers.js
-│   └── index.js
-├── app/
-│   ├── AppLayout.jsx
-│   ├── AppLayout.css
-│   ├── AppLayout.test.jsx
-│   ├── AppRoutes.jsx
-│   └── PageHeader.jsx
+├── api/                      # Shared client and domain endpoint modules
+├── app/                      # Routes, navigation, layout, and page headers
 ├── auth/                     # Authentication context and session events
-├── components/               # Shared UI primitives and visual system
-│   ├── assets/
-│   │   ├── effects/          # Collision, flame, impact, and smoke
-│   │   ├── people/           # People illustrations
-│   │   ├── scenery/          # Roads, places, signs, and street objects
-│   │   └── vehicles/         # Vehicle illustrations and shared wheels
+├── components/               # Shared UI used by more than one feature
+│   ├── assets/               # Illustrations: effects, people, scenery, vehicles
 │   ├── branding/             # BrandMark, ProgramPerks, and RoadTruck
 │   ├── feedback/             # Modal, ConfirmDialog, Skeleton, and StatePanel
 │   ├── forms/                # PasswordInput, PasswordRequirements, and SelectMenu
 │   └── primitives/           # Avatar and interface Icons
 ├── data/                     # Shared reference data
-├── features/
+├── features/                 # Each: pages/, components/, index.js, shared CSS
 │   ├── about/
 │   ├── accounts/
 │   ├── admin-users/
@@ -459,37 +442,40 @@ frontend/src/
 │   ├── drivers/
 │   ├── home/
 │   ├── legal/
-│   └── playground/           # Development-only shared-asset gallery
+│   ├── playground/           # Development-only shared-asset gallery
+│   ├── points/
+│   └── sponsors/
+├── hooks/                    # useApiRequest
+├── styles/                   # tokens, base, shared component classes, utilities
 └── utils/
 ```
 
-This tree reflects the current repository. Keep feature-specific pages, panels,
-tests, and styles in their owning feature. Move UI into `components/` only when
-it is reused across features or forms part of the shared visual system. Keep
-illustrated elements under `components/assets/` and group them by visual domain.
-Group the remaining shared UI by responsibility under `branding/`, `feedback/`,
-`forms/`, and `primitives/`; do not restore a flat components directory.
-Add `hooks/`, broader style-system directories, or new feature directories only
-when implemented code needs them rather than pre-creating empty abstractions.
+This tree reflects the current repository; see `frontend/README.md` for the
+layout inside each feature and the styling rules. Keep feature-specific pages,
+panels, tests, and styles in their owning feature, and import other features
+only through their `index.js`. Move UI into `components/` only when it is reused
+across features or forms part of the shared visual system. Global colours,
+element defaults, and shared UI classes live in `styles/`; feature stylesheets
+add only layout and spacing.
 
 - [x] Break `App.js` into routing and layout modules.
 - [x] Split the legacy `config/api.js` module into a shared client and domain modules.
 - [x] Place each feature page beside its tests and styles.
-- [ ] Rename the legacy combined `Drivers.jsx` module into separate list and detail pages.
-- [ ] Add feature entry points where they improve import readability without hiding ownership.
+- [x] Rename the legacy combined `Drivers.jsx` module into separate list and detail pages.
+- [x] Give every feature `pages/`, `components/`, and an `index.js` entry point.
 - [ ] Extract the shared driver/sponsor admin-account detail UI.
 - [x] Extract reusable loading and empty/error/informational state components (`Skeleton` and `StatePanel`).
-- [ ] Extend shared state handling to explicit forbidden and not-found variants when those views are implemented.
+- [x] Load page data through a shared hook (`useApiRequest`) with explicit forbidden and not-found states.
 - [ ] Extract reusable form fields and field-error components beyond the shared password and select controls.
-- [ ] Standardize buttons, cards, badges, avatars, banners, and design tokens.
+- [x] Standardize buttons, cards, badges, avatars, banners, stat tiles, filter chips, and design tokens (`src/styles/`).
 - [x] Centralize reusable illustrated assets by people, scenery, vehicles, and effects.
 - [x] Organize shared components into branding, feedback, forms, and primitive UI groups.
-- [ ] Adopt naming conventions:
-  - `*Page.jsx` for routed pages
-  - `*Form.jsx` for forms
-  - `*Card.jsx` for reusable display components
+- [x] Adopt naming and layout conventions:
+  - `*Page.jsx` for routed pages, in each feature's `pages/`
+  - `*Form.jsx`, `*Panel.jsx`, and `*Dialog.jsx` for feature pieces, in `components/`
   - `*.test.jsx` beside its implementation
-- [ ] Decide between feature CSS and CSS Modules.
+  - each feature exposes its public pieces through `index.js`
+- [x] Decide between feature CSS and CSS Modules: plain feature CSS on top of global tokens and shared classes.
 - [x] Preserve colocated frontend tests and keep the suite green during the initial architecture refactor.
 - [ ] Continue applying the established feature boundaries as Sprint 4 pages are added.
 - [ ] Evaluate replacing Create React App only if the benefit justifies the migration risk.

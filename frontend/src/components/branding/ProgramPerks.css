@@ -8,7 +8,7 @@
 
 .program-perks li {
   align-items: baseline;
-  color: #dfe3df;
+  color: var(--on-road-2);
   display: flex;
   font-size: .875rem;
   gap: .625rem;

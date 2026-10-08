@@ -81,12 +81,52 @@ src/
 │   ├── accounts/                 # Profile, password, MFA, and login activity
 │   ├── admin-users/              # User directory, creation, details, and settings
 │   ├── authentication/           # Login, registration, device check, and password reset
-│   ├── drivers/                  # Sponsor-facing driver workflow
+│   ├── drivers/                  # Driver pages, point controls, and linking workflow
 │   ├── home/                     # Public welcome page
 │   ├── legal/                    # Terms of Service and Privacy Notice
-│   └── playground/               # Development-only shared-asset gallery
+│   ├── playground/               # Development-only shared-asset gallery
+│   ├── points/                   # Point balances and history
+│   └── sponsors/                 # Sponsor-wide settings and controls
+├── hooks/                        # Shared hooks, e.g. useApiRequest for page loading
+├── styles/                       # Global styles, imported once in index.js
+│   ├── tokens.css                # Colours (light and dark), shared values, breakpoints
+│   ├── base.css                  # Element defaults and focus ring
+│   ├── components.css            # .button, .banner, .badge, .card, .stat, .chip
+│   └── utilities.css             # .sr-only and other helpers
 └── utils/                        # Shared validation and utility functions
 ```
+
+Every feature uses the same layout:
+
+```text
+features/<feature>/
+├── pages/            # Routed pages (*Page.jsx) with their tests
+├── components/       # Panels, forms, and dialogs used by this feature's pages
+├── <Feature>.css     # Styles shared by several files in the feature (optional)
+└── index.js          # What other code may import from the feature
+```
+
+`app/` and other features import a feature only through its `index.js`
+(`import { PointsPage } from '../features/points'`). A stylesheet sits beside
+the one file that imports it; when several files in a feature share it, it sits
+at the feature root.
+
+### Styling
+
+Colours and other shared values are CSS custom properties in
+`src/styles/tokens.css`, each with a light and a dark value, so components
+never write their own dark-mode colour overrides. Buttons, banners, badges,
+cards, stat tiles, and filter chips come from the shared classes in
+`src/styles/components.css` (`button button-primary`, `banner banner-error`,
+`badge badge-success`, `card`, …). Feature stylesheets add only layout and
+spacing, and use the two breakpoints documented in `tokens.css` (53.75rem and
+42rem).
+
+### Loading data
+
+Pages load data with `useApiRequest` from `src/hooks/`, which tracks
+loading/ready/error/forbidden/not-found states, retries, and ignores stale
+responses.
 
 Feature tests and styles should remain beside their implementations. Shared API
 transport belongs in `src/api/client.js`; domain endpoint functions belong in

@@ -1,5 +1,34 @@
+from pathlib import Path
+from uuid import uuid4
+
 from django.conf import settings
+from django.core.validators import FileExtensionValidator
 from django.db import models
+
+
+def account_profile_picture_upload_to(instance, filename):
+    """Store non-driver avatars without exposing user-provided filenames."""
+    extension = Path(filename).suffix.lower()
+    return f'account_profiles/{instance.user_id}/{uuid4().hex}{extension}'
+
+
+class AccountProfile(models.Model):
+    """Profile data shared by application users without a Driver record."""
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='account_profile',
+    )
+    profile_picture = models.ImageField(
+        upload_to=account_profile_picture_upload_to,
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(['jpg', 'jpeg', 'png', 'webp'])],
+    )
+
+    def __str__(self):
+        return self.user.get_username()
 
 
 class SponsorCompany(models.Model):
