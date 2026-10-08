@@ -6,7 +6,11 @@
 }
 
 .asset-road-dashed::before {
-  background: repeating-linear-gradient(to right, var(--stripe, #f2c230) 0 2.375rem, transparent 2.375rem 4.375rem);
+  background: repeating-linear-gradient(
+    to right,
+    var(--stripe, #f2c230) 0 2.375rem,
+    transparent 2.375rem 4.375rem
+  );
   content: '';
   height: 4px;
   left: 0;
@@ -20,7 +24,7 @@
   border-bottom: 2px solid rgb(232 235 231 / 55%);
   border-top: 2px solid rgb(232 235 231 / 55%);
   content: '';
-  inset: .3rem 0;
+  inset: 0.3rem 0;
   pointer-events: none;
   position: absolute;
 }

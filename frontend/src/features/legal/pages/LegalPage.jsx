@@ -18,7 +18,9 @@ function LegalPage({ title, summary, children }) {
           <BrandMark />
           <span>Good Driver</span>
         </Link>
-        <Link className="legal-return" to="/login">Return to sign in</Link>
+        <Link className="legal-return" to="/login">
+          Return to sign in
+        </Link>
       </header>
       <main className="legal-document">
         <header className="legal-title">
@@ -55,9 +57,9 @@ export function TermsPage() {
       <section>
         <h2>1. Acceptance of these terms</h2>
         <p>
-          By creating an account or using the application, you agree to these Terms of Service
-          and acknowledge the <Link to="/privacy">Privacy Notice</Link>. If you do not agree,
-          do not create an account or continue using the application.
+          By creating an account or using the application, you agree to these Terms of Service and
+          acknowledge the <Link to="/privacy">Privacy Notice</Link>. If you do not agree, do not
+          create an account or continue using the application.
         </p>
       </section>
 
@@ -66,8 +68,8 @@ export function TermsPage() {
         <p>
           The application was created by Team 11 as a senior computer-science project. It may be
           used for coursework, demonstrations, testing, and evaluation. It is not a production
-          fleet-management, employment, financial, safety-monitoring, or emergency service.
-          Features and stored demonstration data may change, become unavailable, or be reset.
+          fleet-management, employment, financial, safety-monitoring, or emergency service. Features
+          and stored demonstration data may change, become unavailable, or be reset.
         </p>
       </section>
 
@@ -86,19 +88,19 @@ export function TermsPage() {
       <section>
         <h2>4. Program roles and sponsor decisions</h2>
         <p>
-          Drivers, sponsor representatives, and administrators have different permissions.
-          Sponsor organizations are responsible for their program rules, driver relationships,
-          point decisions, reward availability, and the accuracy of information they enter.
-          Administrative access may include account management and clearly disclosed support or
-          impersonation tools that create audit records.
+          Drivers, sponsor representatives, and administrators have different permissions. Sponsor
+          organizations are responsible for their program rules, driver relationships, point
+          decisions, reward availability, and the accuracy of information they enter. Administrative
+          access may include account management and clearly disclosed support or impersonation tools
+          that create audit records.
         </p>
       </section>
 
       <section>
         <h2>5. Points, rewards, and program information</h2>
         <p>
-          Unless an authorized sponsor expressly states otherwise, points and rewards displayed
-          in this course application are demonstration records, have no cash value, are not
+          Unless an authorized sponsor expressly states otherwise, points and rewards displayed in
+          this course application are demonstration records, have no cash value, are not
           transferable, and do not create a promise of payment, employment benefit, or product
           availability. Sponsors may correct errors and establish their own eligibility rules.
         </p>
@@ -111,7 +113,10 @@ export function TermsPage() {
           <li>Use the application unlawfully or to harm, harass, or deceive another person.</li>
           <li>Access accounts, records, roles, or systems without authorization.</li>
           <li>Upload malicious code or interfere with availability or security controls.</li>
-          <li>Probe, scrape, overload, reverse engineer, or bypass restrictions except as expressly authorized for coursework or security testing.</li>
+          <li>
+            Probe, scrape, overload, reverse engineer, or bypass restrictions except as expressly
+            authorized for coursework or security testing.
+          </li>
           <li>Enter real sensitive information when sample or test information is sufficient.</li>
         </ul>
       </section>
@@ -128,8 +133,8 @@ export function TermsPage() {
       <section>
         <h2>8. Suspension and removal</h2>
         <p>
-          Project administrators may restrict, suspend, or remove accounts or content to protect
-          the system, enforce these terms, correct test data, comply with course requirements, or
+          Project administrators may restrict, suspend, or remove accounts or content to protect the
+          system, enforce these terms, correct test data, comply with course requirements, or
           respond to suspected misuse.
         </p>
       </section>
@@ -157,8 +162,8 @@ export function TermsPage() {
       <section>
         <h2>11. Changes and contact</h2>
         <p>
-          These terms may be updated as the project changes. A revised effective date will be
-          posted here. Questions should be directed to your sponsor organization, course project
+          These terms may be updated as the project changes. A revised effective date will be posted
+          here. Questions should be directed to your sponsor organization, course project
           administrator, or Team 11 through the contact channel provided with the application.
         </p>
       </section>
@@ -176,22 +181,43 @@ export function PrivacyPage() {
         <h2>1. Scope</h2>
         <p>
           This notice describes information handled by the Good Driver Incentive Program course
-          application. It does not govern independent practices of a sponsor organization,
-          school, communications provider, or other third party.
+          application. It does not govern independent practices of a sponsor organization, school,
+          communications provider, or other third party.
         </p>
       </section>
 
       <section>
         <h2>2. Information we collect</h2>
         <ul>
-          <li><strong>Account information:</strong> name, username, email address, password hash, account role, status, and sponsor-organization relationship.</li>
-          <li><strong>Profile information:</strong> information you update and an optional profile image.</li>
-          <li><strong>Security information:</strong> login-attempt records, session and CSRF cookies, MFA preferences, encrypted authenticator secrets, hashed verification or backup codes, and an optional telephone number for SMS verification.</li>
-          <li><strong>Program information:</strong> driver enrollment status, sponsor relationships, notifications, and other incentive-program records entered as features are enabled.</li>
-          <li><strong>Administrative audit information:</strong> administrator and target accounts, role, timestamps, action type, and IP address for impersonation or support sessions.</li>
-          <li><strong>Technical information:</strong> information ordinarily sent with web requests, such as request time, browser-generated headers, and security-cookie data.</li>
+          <li>
+            <strong>Account information:</strong> name, username, email address, password hash,
+            account role, status, and sponsor-organization relationship.
+          </li>
+          <li>
+            <strong>Profile information:</strong> information you update and an optional profile
+            image.
+          </li>
+          <li>
+            <strong>Security information:</strong> login-attempt records, session and CSRF cookies,
+            MFA preferences, encrypted authenticator secrets, hashed verification or backup codes,
+            and an optional telephone number for SMS verification.
+          </li>
+          <li>
+            <strong>Program information:</strong> driver enrollment status, sponsor relationships,
+            notifications, and other incentive-program records entered as features are enabled.
+          </li>
+          <li>
+            <strong>Administrative audit information:</strong> administrator and target accounts,
+            role, timestamps, action type, and IP address for impersonation or support sessions.
+          </li>
+          <li>
+            <strong>Technical information:</strong> information ordinarily sent with web requests,
+            such as request time, browser-generated headers, and security-cookie data.
+          </li>
         </ul>
-        <p>Do not submit highly sensitive personal information that the application does not request.</p>
+        <p>
+          Do not submit highly sensitive personal information that the application does not request.
+        </p>
       </section>
 
       <section>
@@ -220,12 +246,29 @@ export function PrivacyPage() {
       <section>
         <h2>5. When information may be shared</h2>
         <ul>
-          <li><strong>Within the program:</strong> authorized sponsors and administrators may see information required for their role.</li>
-          <li><strong>Service providers:</strong> hosting, database, email, or SMS providers may process information when those services are configured, including AWS-hosted infrastructure and Twilio for SMS delivery.</li>
-          <li><strong>Course personnel:</strong> instructors or evaluators may access the application and demonstration data for academic review and support.</li>
-          <li><strong>Safety and legal reasons:</strong> information may be disclosed when reasonably necessary to protect users or systems, investigate misuse, or comply with applicable law.</li>
+          <li>
+            <strong>Within the program:</strong> authorized sponsors and administrators may see
+            information required for their role.
+          </li>
+          <li>
+            <strong>Service providers:</strong> hosting, database, email, or SMS providers may
+            process information when those services are configured, including AWS-hosted
+            infrastructure and Twilio for SMS delivery.
+          </li>
+          <li>
+            <strong>Course personnel:</strong> instructors or evaluators may access the application
+            and demonstration data for academic review and support.
+          </li>
+          <li>
+            <strong>Safety and legal reasons:</strong> information may be disclosed when reasonably
+            necessary to protect users or systems, investigate misuse, or comply with applicable
+            law.
+          </li>
         </ul>
-        <p>The project does not currently sell personal information or use it for targeted advertising.</p>
+        <p>
+          The project does not currently sell personal information or use it for targeted
+          advertising.
+        </p>
       </section>
 
       <section>
@@ -243,8 +286,8 @@ export function PrivacyPage() {
         <p>
           The application uses measures such as password hashing, role-based access controls,
           security cookies, optional MFA, encrypted authenticator secrets, hashed one-time and
-          backup codes, and administrative audit records. No system can guarantee absolute
-          security. Use a unique password and promptly report suspected unauthorized access.
+          backup codes, and administrative audit records. No system can guarantee absolute security.
+          Use a unique password and promptly report suspected unauthorized access.
         </p>
       </section>
 
@@ -253,7 +296,10 @@ export function PrivacyPage() {
         <ul>
           <li>Review and update available profile information from the Account page.</li>
           <li>Manage available MFA methods and regenerate backup codes.</li>
-          <li>Ask a sponsor or project administrator about access, correction, or deletion of account information.</li>
+          <li>
+            Ask a sponsor or project administrator about access, correction, or deletion of account
+            information.
+          </li>
           <li>Decline to create an account if you do not accept this notice.</li>
         </ul>
         <p>
@@ -275,9 +321,9 @@ export function PrivacyPage() {
         <h2>10. Changes and contact</h2>
         <p>
           This notice may be revised as features and practices change. Material changes should be
-          reflected here with a new effective date. Privacy questions or requests should be sent
-          to your sponsor organization, course project administrator, or Team 11 through the
-          contact channel provided with the application.
+          reflected here with a new effective date. Privacy questions or requests should be sent to
+          your sponsor organization, course project administrator, or Team 11 through the contact
+          channel provided with the application.
         </p>
       </section>
     </LegalPage>

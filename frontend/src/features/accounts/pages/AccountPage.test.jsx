@@ -7,7 +7,16 @@ import AccountPage from './AccountPage';
 jest.mock('../../../auth/AuthContext');
 jest.mock('../../../api');
 
-const profile = { id: 7, username: 'driver.one', email: 'driver@example.com', phone_number: '', name: 'Driver One', account_type: 'driver', company: 'Palmetto Freight', avatar_url: null };
+const profile = {
+  id: 7,
+  username: 'driver.one',
+  email: 'driver@example.com',
+  phone_number: '',
+  name: 'Driver One',
+  account_type: 'driver',
+  company: 'Palmetto Freight',
+  avatar_url: null,
+};
 
 beforeEach(() => {
   useAuth.mockReturnValue({ updateUser: jest.fn() });
@@ -39,7 +48,14 @@ test('edits and saves profile fields while keeping locked fields read-only', asy
   fireEvent.click(await screen.findByRole('button', { name: 'Edit profile' }));
   fireEvent.change(screen.getByLabelText('Display name'), { target: { value: 'Updated Driver' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
-  await waitFor(() => expect(api.updateProfile).toHaveBeenCalledWith({ name: 'Updated Driver', username: 'driver.one', email: 'driver@example.com', phone_number: '' }));
+  await waitFor(() =>
+    expect(api.updateProfile).toHaveBeenCalledWith({
+      name: 'Updated Driver',
+      username: 'driver.one',
+      email: 'driver@example.com',
+      phone_number: '',
+    }),
+  );
   expect(await screen.findByText(/Profile saved/)).toBeInTheDocument();
   expect(updateUser).toHaveBeenCalledWith({ ...profile, name: 'Updated Driver' });
   expect(screen.queryByLabelText('Display name')).not.toBeInTheDocument();
@@ -56,7 +72,10 @@ test('cancel discards unsaved profile edits', async () => {
 });
 
 test('shows server validation errors without discarding edits', async () => {
-  api.updateProfile.mockRejectedValue({ message: 'Invalid profile.', data: { username: ['A user with this username already exists.'] } });
+  api.updateProfile.mockRejectedValue({
+    message: 'Invalid profile.',
+    data: { username: ['A user with this username already exists.'] },
+  });
   render(<AccountPage />);
   fireEvent.click(await screen.findByRole('button', { name: 'Edit profile' }));
   fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'existing.user' } });
@@ -88,18 +107,23 @@ test('can retry after the profile fails to load', async () => {
 
 test('selects and uploads a valid driver profile picture', async () => {
   const picture = new File(['picture'], 'driver.png', { type: 'image/png' });
-  api.updateProfile.mockResolvedValue({ ...profile, avatar_url: 'http://localhost:8000/media/driver.png' });
+  api.updateProfile.mockResolvedValue({
+    ...profile,
+    avatar_url: 'http://localhost:8000/media/driver.png',
+  });
   render(<AccountPage />);
   fireEvent.click(await screen.findByRole('button', { name: 'Edit profile' }));
   fireEvent.change(screen.getByLabelText('Choose picture'), { target: { files: [picture] } });
   fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
-  await waitFor(() => expect(api.updateProfile).toHaveBeenCalledWith({
-    name: 'Driver One',
-    username: 'driver.one',
-    email: 'driver@example.com',
-    phone_number: '',
-    profile_picture: picture,
-  }));
+  await waitFor(() =>
+    expect(api.updateProfile).toHaveBeenCalledWith({
+      name: 'Driver One',
+      username: 'driver.one',
+      email: 'driver@example.com',
+      phone_number: '',
+      profile_picture: picture,
+    }),
+  );
 });
 
 test('rejects an unsupported profile picture before upload', async () => {
@@ -140,10 +164,14 @@ test('lets a driver update their phone number', async () => {
   fireEvent.change(screen.getByLabelText('Phone'), { target: { value: '(864) 555-0101' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
-  await waitFor(() => expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({
-    email: 'driver@example.com',
-    phone_number: '(864) 555-0101',
-  })));
+  await waitFor(() =>
+    expect(api.updateProfile).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'driver@example.com',
+        phone_number: '(864) 555-0101',
+      }),
+    ),
+  );
   expect(await screen.findByText('+18645550101')).toBeInTheDocument();
 });
 
@@ -156,9 +184,13 @@ test('lets a driver clear their phone number', async () => {
   fireEvent.change(screen.getByLabelText('Phone'), { target: { value: '' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
-  await waitFor(() => expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({
-    phone_number: '',
-  })));
+  await waitFor(() =>
+    expect(api.updateProfile).toHaveBeenCalledWith(
+      expect.objectContaining({
+        phone_number: '',
+      }),
+    ),
+  );
   expect(await screen.findByText('Not provided')).toBeInTheDocument();
 });
 
@@ -185,38 +217,60 @@ test('clears a field error when the driver corrects that field', async () => {
 
   fireEvent.change(email, { target: { value: 'fixed@example.com' } });
   expect(email).not.toHaveAttribute('aria-invalid', 'true');
-  expect(screen.queryByText('Enter a valid email address with a complete domain.')).not.toBeInTheDocument();
+  expect(
+    screen.queryByText('Enter a valid email address with a complete domain.'),
+  ).not.toBeInTheDocument();
 });
 
 test('uploads a profile picture for an administrator', async () => {
-  const adminProfile = { ...profile, id: 1, username: 'team11.admin', email: 'admin@example.com', name: 'Team Administrator', account_type: 'admin', company: null };
+  const adminProfile = {
+    ...profile,
+    id: 1,
+    username: 'team11.admin',
+    email: 'admin@example.com',
+    name: 'Team Administrator',
+    account_type: 'admin',
+    company: null,
+  };
   const picture = new File(['picture'], 'admin.png', { type: 'image/png' });
   api.getProfile.mockResolvedValue(adminProfile);
-  api.updateProfile.mockResolvedValue({ ...adminProfile, avatar_url: 'http://localhost:8000/media/admin.png' });
+  api.updateProfile.mockResolvedValue({
+    ...adminProfile,
+    avatar_url: 'http://localhost:8000/media/admin.png',
+  });
   render(<AccountPage />);
 
   fireEvent.click(await screen.findByRole('button', { name: 'Edit profile' }));
   fireEvent.change(screen.getByLabelText('Choose picture'), { target: { files: [picture] } });
   fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
-  await waitFor(() => expect(api.updateProfile).toHaveBeenCalledWith({
-    name: 'Team Administrator',
-    username: 'team11.admin',
-    email: 'admin@example.com',
-    profile_picture: picture,
-  }));
+  await waitFor(() =>
+    expect(api.updateProfile).toHaveBeenCalledWith({
+      name: 'Team Administrator',
+      username: 'team11.admin',
+      email: 'admin@example.com',
+      profile_picture: picture,
+    }),
+  );
 });
 
-test.each(['sponsor', 'admin'])('shows recent sign-in activity to %s accounts', async (accountType) => {
-  api.getProfile.mockResolvedValue({ ...profile, account_type: accountType });
-  render(<AccountPage />);
-  expect(await screen.findByRole('heading', { name: 'Recent sign-in activity' })).toBeInTheDocument();
-  expect(api.getLoginAttempts).toHaveBeenCalled();
-});
+test.each(['sponsor', 'admin'])(
+  'shows recent sign-in activity to %s accounts',
+  async (accountType) => {
+    api.getProfile.mockResolvedValue({ ...profile, account_type: accountType });
+    render(<AccountPage />);
+    expect(
+      await screen.findByRole('heading', { name: 'Recent sign-in activity' }),
+    ).toBeInTheDocument();
+    expect(api.getLoginAttempts).toHaveBeenCalled();
+  },
+);
 
 test('does not show sign-in activity to drivers', async () => {
   render(<AccountPage />);
   expect(await screen.findByText('Driver One')).toBeInTheDocument();
-  expect(screen.queryByRole('heading', { name: 'Recent sign-in activity' })).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole('heading', { name: 'Recent sign-in activity' }),
+  ).not.toBeInTheDocument();
   expect(api.getLoginAttempts).not.toHaveBeenCalled();
 });

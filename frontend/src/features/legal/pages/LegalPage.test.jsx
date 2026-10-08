@@ -16,7 +16,8 @@ test('renders the course-project terms with a privacy link', () => {
 
   expect(screen.getByRole('heading', { name: 'Terms of Service', level: 1 })).toBeInTheDocument();
   expect(screen.getByText('Course-project notice')).toBeInTheDocument();
-  screen.getAllByRole('link', { name: 'Privacy Notice' })
+  screen
+    .getAllByRole('link', { name: 'Privacy Notice' })
     .forEach((link) => expect(link).toHaveAttribute('href', '/privacy'));
 });
 

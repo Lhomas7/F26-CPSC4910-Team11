@@ -17,9 +17,30 @@ function renderPage() {
 }
 
 const users = [
-  { id: 1, display_name: 'Kylie Gilbert', username: 'kgilbert', role: 'admin', sponsor_org: null, is_active: true },
-  { id: 2, display_name: 'Marcus Alvarez', username: 'malvarez', role: 'driver', sponsor_org: { id: 7, name: 'Palmetto Freight' }, is_active: true },
-  { id: 3, display_name: 'Dana Whitfield', username: 'dwhitfield', role: 'sponsor', sponsor_org: { id: 7, name: 'Palmetto Freight' }, is_active: false },
+  {
+    id: 1,
+    display_name: 'Kylie Gilbert',
+    username: 'kgilbert',
+    role: 'admin',
+    sponsor_org: null,
+    is_active: true,
+  },
+  {
+    id: 2,
+    display_name: 'Marcus Alvarez',
+    username: 'malvarez',
+    role: 'driver',
+    sponsor_org: { id: 7, name: 'Palmetto Freight' },
+    is_active: true,
+  },
+  {
+    id: 3,
+    display_name: 'Dana Whitfield',
+    username: 'dwhitfield',
+    role: 'sponsor',
+    sponsor_org: { id: 7, name: 'Palmetto Freight' },
+    is_active: false,
+  },
 ];
 
 beforeEach(() => {
@@ -41,7 +62,9 @@ test('loads and displays the admin user directory', async () => {
 test('searches and filters the loaded directory', async () => {
   renderPage();
   await screen.findByText('Marcus Alvarez');
-  fireEvent.change(screen.getByLabelText('Search by name or username'), { target: { value: 'dana' } });
+  fireEvent.change(screen.getByLabelText('Search by name or username'), {
+    target: { value: 'dana' },
+  });
   expect(screen.getByText('Dana Whitfield')).toBeInTheDocument();
   expect(screen.queryByText('Marcus Alvarez')).not.toBeInTheDocument();
 

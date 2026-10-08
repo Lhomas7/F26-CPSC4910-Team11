@@ -11,14 +11,14 @@
 .asset-building-lit .asset-bld-windows,
 .asset-building-lit .asset-house-window,
 .asset-building-lit .asset-shop-window {
-  filter: drop-shadow(0 0 .15em rgb(255 215 106 / 70%));
+  filter: drop-shadow(0 0 0.15em rgb(255 215 106 / 70%));
 }
 
 /* ---------- Shared parts ---------- */
 
 .asset-bld-body {
   background: var(--building-color);
-  border-radius: .1em .1em 0 0;
+  border-radius: 0.1em 0.1em 0 0;
   bottom: 0;
   left: 0;
   right: 0;
@@ -26,43 +26,43 @@
 
 /* A grid of windows: one window tile repeated with even spacing. */
 .asset-bld-windows {
-  background: linear-gradient(var(--window-color), var(--window-color)) 0 0 / .42em .4em space;
+  background: linear-gradient(var(--window-color), var(--window-color)) 0 0 / 0.42em 0.4em space;
 }
 
 .asset-bld-door {
   background: #3d5f6e;
-  border-radius: .06em .06em 0 0;
+  border-radius: 0.06em 0.06em 0 0;
   bottom: 0;
-  height: .78em;
-  left: calc(50% - .3em);
-  width: .6em;
+  height: 0.78em;
+  left: calc(50% - 0.3em);
+  width: 0.6em;
 }
 
 /* ---------- Office tower: height follows --floors ---------- */
 
 .asset-building-office {
-  --asset-h: calc(var(--floors) * .9em + 1.1em);
+  --asset-h: calc(var(--floors) * 0.9em + 1.1em);
   --asset-w: 2.6em;
 }
 
 .asset-building-office .asset-bld-body {
-  top: .55em;
+  top: 0.55em;
 }
 
 .asset-bld-ledge {
   background: var(--building-trim);
-  height: .16em;
-  left: -.08em;
-  right: -.08em;
-  top: .45em;
+  height: 0.16em;
+  left: -0.08em;
+  right: -0.08em;
+  top: 0.45em;
 }
 
 .asset-bld-antenna {
   background: var(--building-trim);
-  height: .5em;
+  height: 0.5em;
   left: 1.7em;
   top: 0;
-  width: .06em;
+  width: 0.06em;
 }
 
 /* Blinking aircraft warning light on the antenna. */
@@ -71,18 +71,18 @@
   background: #ff3b30;
   border-radius: 50%;
   content: '';
-  height: .12em;
-  left: -.03em;
+  height: 0.12em;
+  left: -0.03em;
   position: absolute;
-  top: -.06em;
-  width: .12em;
+  top: -0.06em;
+  width: 0.12em;
 }
 
 .asset-building-office .asset-bld-windows {
   bottom: 1em;
-  left: .3em;
-  right: .3em;
-  top: .85em;
+  left: 0.3em;
+  right: 0.3em;
+  top: 0.85em;
 }
 
 /* ---------- House ---------- */
@@ -94,8 +94,8 @@
 }
 
 .asset-building-house .asset-bld-body {
-  left: .15em;
-  right: .15em;
+  left: 0.15em;
+  right: 0.15em;
   top: 1em;
 }
 
@@ -103,33 +103,33 @@
   background: #8e3b2f;
   clip-path: polygon(50% 0, 100% 100%, 0 100%);
   height: 1.05em;
-  left: -.1em;
+  left: -0.1em;
   top: 0;
   width: 2.8em;
 }
 
 .asset-house-chimney {
   background: #7a4a3a;
-  height: .6em;
+  height: 0.6em;
   left: 1.8em;
-  top: .15em;
-  width: .3em;
+  top: 0.15em;
+  width: 0.3em;
 }
 
 .asset-building-house .asset-bld-door {
   background: #6b4a32;
-  left: .5em;
+  left: 0.5em;
 }
 
 .asset-house-window {
   background:
-    linear-gradient(#f4f5f2, #f4f5f2) center / .05em 100% no-repeat,
-    linear-gradient(#f4f5f2, #f4f5f2) center / 100% .05em no-repeat,
+    linear-gradient(#f4f5f2, #f4f5f2) center / 0.05em 100% no-repeat,
+    linear-gradient(#f4f5f2, #f4f5f2) center / 100% 0.05em no-repeat,
     var(--window-color);
-  height: .5em;
-  right: .45em;
+  height: 0.5em;
+  right: 0.45em;
   top: 1.3em;
-  width: .65em;
+  width: 0.65em;
 }
 
 /* ---------- Shop ---------- */
@@ -141,50 +141,54 @@
 }
 
 .asset-building-shop .asset-bld-body {
-  top: .45em;
+  top: 0.45em;
 }
 
 .asset-shop-sign {
   background: #1d201d;
-  border-radius: .06em;
-  height: .45em;
-  left: .3em;
-  right: .3em;
+  border-radius: 0.06em;
+  height: 0.45em;
+  left: 0.3em;
+  right: 0.3em;
   top: 0;
 }
 
 .asset-shop-sign::after {
-  background: repeating-linear-gradient(to right, var(--stripe, #f2c230) 0 .3em, transparent .3em .45em);
+  background: repeating-linear-gradient(
+    to right,
+    var(--stripe, #f2c230) 0 0.3em,
+    transparent 0.3em 0.45em
+  );
   content: '';
-  height: .08em;
-  left: .25em;
+  height: 0.08em;
+  left: 0.25em;
   position: absolute;
-  right: .25em;
-  top: calc(50% - .04em);
+  right: 0.25em;
+  top: calc(50% - 0.04em);
 }
 
 .asset-shop-awning {
-  background: repeating-linear-gradient(90deg, #d63b2f 0 .3em, #f4f5f2 .3em .6em);
-  border-radius: 0 0 .15em .15em;
-  height: .38em;
-  left: -.05em;
-  right: -.05em;
-  top: .95em;
+  background: repeating-linear-gradient(90deg, #d63b2f 0 0.3em, #f4f5f2 0.3em 0.6em);
+  border-radius: 0 0 0.15em 0.15em;
+  height: 0.38em;
+  left: -0.05em;
+  right: -0.05em;
+  top: 0.95em;
 }
 
 .asset-shop-window {
   background: var(--window-color);
-  height: .7em;
-  left: .3em;
+  height: 0.7em;
+  left: 0.3em;
   top: 1.48em;
   width: 1.7em;
 }
 
 .asset-building-shop .asset-bld-door {
-  height: .95em;
+  height: 0.95em;
   left: auto;
-  right: .4em;
-  width: .55em;
+  right: 0.4em;
+  width: 0.55em;
 }
 
 /* ---------- Warehouse / truck depot ---------- */
@@ -197,13 +201,24 @@
 
 .asset-building-warehouse .asset-bld-body {
   border-radius: 0;
-  top: .55em;
+  top: 0.55em;
 }
 
 .asset-depot-roof {
   background: var(--building-trim);
-  clip-path: polygon(0 100%, 0 40%, 25% 0, 25% 40%, 50% 0, 50% 40%, 75% 0, 75% 40%, 100% 0, 100% 100%);
-  height: .6em;
+  clip-path: polygon(
+    0 100%,
+    0 40%,
+    25% 0,
+    25% 40%,
+    50% 0,
+    50% 40%,
+    75% 0,
+    75% 40%,
+    100% 0,
+    100% 100%
+  );
+  height: 0.6em;
   left: 0;
   right: 0;
   top: 0;
@@ -212,28 +227,28 @@
 /* Good Driver green band under the roof line. */
 .asset-depot-band {
   background: #3fae86;
-  height: .14em;
+  height: 0.14em;
   left: 0;
   right: 0;
-  top: .6em;
+  top: 0.6em;
 }
 
 .asset-building-warehouse .asset-bld-windows {
-  height: .28em;
-  left: .4em;
-  right: .4em;
-  top: .9em;
+  height: 0.28em;
+  left: 0.4em;
+  right: 0.4em;
+  top: 0.9em;
 }
 
 .asset-depot-door {
-  background: repeating-linear-gradient(to bottom, #d6dbd6 0 .1em, #b9bfb9 .1em .2em);
+  background: repeating-linear-gradient(to bottom, #d6dbd6 0 0.1em, #b9bfb9 0.1em 0.2em);
   bottom: 0;
   height: 1.25em;
   width: 1.3em;
 }
 
 .asset-depot-door-a {
-  left: .55em;
+  left: 0.55em;
 }
 
 .asset-depot-door-b {
@@ -241,7 +256,9 @@
 }
 
 @keyframes asset-blink {
-  50% { opacity: 0; }
+  50% {
+    opacity: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

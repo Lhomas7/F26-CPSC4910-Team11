@@ -23,7 +23,13 @@ function formatDate(isoDate) {
  * amount. `showDriver` adds the driver's name (linked for sponsors), for lists
  * that mix several drivers.
  */
-export default function PointHistoryList({ entries, showDriver = false, linkDrivers = false, emptyText = 'No point changes yet.', detailStyle = false }) {
+export default function PointHistoryList({
+  entries,
+  showDriver = false,
+  linkDrivers = false,
+  emptyText = 'No point changes yet.',
+  detailStyle = false,
+}) {
   if (!entries.length) return <p className="point-history-empty">{emptyText}</p>;
 
   return (
@@ -31,26 +37,38 @@ export default function PointHistoryList({ entries, showDriver = false, linkDriv
       {entries.map((entry) => {
         const deduction = entry.point_change < 0;
         return (
-        <li key={entry.id}>
-          <div className="point-history-main">
-            {detailStyle && <span className={`badge point-history-type ${deduction ? 'badge-danger' : 'badge-success'}`}>{deduction ? 'Deduction' : 'Award'}</span>}
-            {showDriver && (
-              <span className="point-history-driver">
-                {linkDrivers ? <Link to={`/drivers/${entry.driver}`}>{entry.driver_name}</Link> : entry.driver_name}
+          <li key={entry.id}>
+            <div className="point-history-main">
+              {detailStyle && (
+                <span
+                  className={`badge point-history-type ${deduction ? 'badge-danger' : 'badge-success'}`}
+                >
+                  {deduction ? 'Deduction' : 'Award'}
+                </span>
+              )}
+              {showDriver && (
+                <span className="point-history-driver">
+                  {linkDrivers ? (
+                    <Link to={`/drivers/${entry.driver}`}>{entry.driver_name}</Link>
+                  ) : (
+                    entry.driver_name
+                  )}
+                </span>
+              )}
+              <span className="point-history-reason">{entry.reason}</span>
+              <span className="point-history-meta">
+                {detailStyle && entry.changed_by_name && <>{entry.changed_by_name} · </>}
+                <time dateTime={entry.changed_at}>{formatDate(entry.changed_at)}</time>
+                {!detailStyle && entry.changed_by_name && <> · by {entry.changed_by_name}</>}
               </span>
-            )}
-            <span className="point-history-reason">{entry.reason}</span>
-            <span className="point-history-meta">
-              {detailStyle && entry.changed_by_name && <>{entry.changed_by_name} · </>}
-              <time dateTime={entry.changed_at}>{formatDate(entry.changed_at)}</time>
-              {!detailStyle && entry.changed_by_name && <> · by {entry.changed_by_name}</>}
-            </span>
-          </div>
-          <strong className={`badge point-history-change ${deduction ? 'badge-danger' : 'badge-success'}`}>
-            {formatPoints(entry.point_change)}
-            <span className="sr-only"> points</span>
-          </strong>
-        </li>
+            </div>
+            <strong
+              className={`badge point-history-change ${deduction ? 'badge-danger' : 'badge-success'}`}
+            >
+              {formatPoints(entry.point_change)}
+              <span className="sr-only"> points</span>
+            </strong>
+          </li>
         );
       })}
     </ol>

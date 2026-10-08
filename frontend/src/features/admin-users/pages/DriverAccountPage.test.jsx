@@ -8,12 +8,33 @@ import DriverAccountPage from './DriverAccountPage';
 jest.mock('../../../auth/AuthContext');
 jest.mock('../../../api');
 
-const account = { id: 5, display_name: 'Tasha Greene', username: 'tasha.driver', email: 'tasha@example.com', role: 'driver', sponsor_org: { id: 7, name: 'Palmetto Freight' }, is_active: true, profile_picture_url: null };
-const organizations = [{ id: 7, name: 'Palmetto Freight' }, { id: 9, name: 'Blue Ridge Logistics' }];
+const account = {
+  id: 5,
+  display_name: 'Tasha Greene',
+  username: 'tasha.driver',
+  email: 'tasha@example.com',
+  role: 'driver',
+  sponsor_org: { id: 7, name: 'Palmetto Freight' },
+  is_active: true,
+  profile_picture_url: null,
+};
+const organizations = [
+  { id: 7, name: 'Palmetto Freight' },
+  { id: 9, name: 'Blue Ridge Logistics' },
+];
 const startImpersonation = jest.fn();
 
 function renderPage() {
-  return render(<MemoryRouter initialEntries={['/users/drivers/5']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><Routes><Route path="/users/drivers/:userId" element={<DriverAccountPage />} /></Routes></MemoryRouter>);
+  return render(
+    <MemoryRouter
+      initialEntries={['/users/drivers/5']}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
+      <Routes>
+        <Route path="/users/drivers/:userId" element={<DriverAccountPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
 }
 
 beforeEach(() => {
@@ -35,14 +56,28 @@ test('loads and displays driver account details', async () => {
 });
 
 test('edits, unassigns, and deactivates a driver account', async () => {
-  api.updateAdminDriver.mockResolvedValue({ ...account, display_name: 'Tasha Green', sponsor_org: null, is_active: false });
+  api.updateAdminDriver.mockResolvedValue({
+    ...account,
+    display_name: 'Tasha Green',
+    sponsor_org: null,
+    is_active: false,
+  });
   renderPage();
   fireEvent.click(await screen.findByRole('button', { name: 'Edit account' }));
   fireEvent.change(screen.getByLabelText('Full name'), { target: { value: 'Tasha Green' } });
   fireEvent.change(screen.getByLabelText(/^Sponsor organization/), { target: { value: '' } });
   fireEvent.change(screen.getByLabelText(/^Account status/), { target: { value: 'false' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
-  await waitFor(() => expect(api.updateAdminDriver).toHaveBeenCalledWith('5', expect.objectContaining({ display_name: 'Tasha Green', sponsor_org_id: null, is_active: false })));
+  await waitFor(() =>
+    expect(api.updateAdminDriver).toHaveBeenCalledWith(
+      '5',
+      expect.objectContaining({
+        display_name: 'Tasha Green',
+        sponsor_org_id: null,
+        is_active: false,
+      }),
+    ),
+  );
   expect(await screen.findByText('Driver account saved.')).toBeInTheDocument();
 });
 
@@ -53,7 +88,9 @@ test('starts a view-as session for the driver', async () => {
 });
 
 test('shows duplicate username errors while retaining edits', async () => {
-  api.updateAdminDriver.mockRejectedValue({ data: { username: ['That username is already taken.'] } });
+  api.updateAdminDriver.mockRejectedValue({
+    data: { username: ['That username is already taken.'] },
+  });
   renderPage();
   fireEvent.click(await screen.findByRole('button', { name: 'Edit account' }));
   fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'taken.user' } });

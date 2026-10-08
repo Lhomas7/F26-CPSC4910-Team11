@@ -25,14 +25,14 @@
 
 .add-user-body legend {
   color: var(--ink-2);
-  font-size: .75rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  margin-bottom: .4rem;
+  margin-bottom: 0.4rem;
 }
 
 .add-user-roles {
   display: grid;
-  gap: .6rem;
+  gap: 0.6rem;
   grid-template-columns: repeat(3, 1fr);
 }
 
@@ -50,19 +50,19 @@
 .add-user-roles span {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: .55rem;
+  border-radius: 0.55rem;
   cursor: pointer;
   display: grid;
-  padding: .7rem;
+  padding: 0.7rem;
 }
 
 .add-user-roles strong {
-  font-size: .8rem;
+  font-size: 0.8rem;
 }
 
 .add-user-roles small {
   color: var(--ink-2);
-  font-size: .68rem;
+  font-size: 0.68rem;
 }
 
 .add-user-roles input:checked + span {
@@ -84,12 +84,12 @@
 
 .add-user-field {
   display: grid;
-  gap: .3rem;
+  gap: 0.3rem;
 }
 
 .add-user-field label {
   color: var(--ink-2);
-  font-size: .75rem;
+  font-size: 0.75rem;
   font-weight: 700;
 }
 
@@ -101,10 +101,10 @@
 .add-user-field select {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: .5rem;
+  border-radius: 0.5rem;
   color: var(--ink);
   font: inherit;
-  padding: .55rem .7rem;
+  padding: 0.55rem 0.7rem;
   width: 100%;
 }
 
@@ -122,8 +122,8 @@
 
 .add-user-field small {
   color: var(--ink-2);
-  font-size: .68rem;
-  min-height: .95rem;
+  font-size: 0.68rem;
+  min-height: 0.95rem;
 }
 
 .add-user-field small.error {
@@ -133,9 +133,9 @@
 .add-user-note {
   border-left: 2px solid var(--line);
   color: var(--ink-2);
-  font-size: .72rem;
+  font-size: 0.72rem;
   margin: 0;
-  padding-left: .65rem;
+  padding-left: 0.65rem;
 }
 
 .add-user-divider {
@@ -146,9 +146,9 @@
   background: var(--surface-2);
   border-top: 1px solid var(--line);
   display: flex;
-  gap: .55rem;
+  gap: 0.55rem;
   justify-content: flex-end;
-  padding: .8rem 1.25rem;
+  padding: 0.8rem 1.25rem;
 }
 .add-user-banner {
   margin: 1rem 1.25rem 0;
@@ -168,13 +168,13 @@
   font-weight: 800;
   height: 2.5rem;
   justify-content: center;
-  margin-bottom: .75rem;
+  margin-bottom: 0.75rem;
   width: 2.5rem;
 }
 
 .add-user-summary {
   border: 1px solid var(--line);
-  border-radius: .55rem;
+  border-radius: 0.55rem;
   margin: 1rem 0;
 }
 
@@ -182,7 +182,7 @@
   border-bottom: 1px solid var(--line);
   display: flex;
   justify-content: space-between;
-  padding: .55rem .75rem;
+  padding: 0.55rem 0.75rem;
 }
 
 .add-user-summary div:last-child {
@@ -200,11 +200,11 @@
 
 .add-user-actions {
   display: flex;
-  gap: .5rem;
+  gap: 0.5rem;
 }
 
 .add-user-skeleton {
-  margin-bottom: .8rem;
+  margin-bottom: 0.8rem;
   width: 55%;
 }
 

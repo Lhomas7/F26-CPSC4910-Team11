@@ -25,10 +25,12 @@ let passwordPolicyRequest = null;
 // The policy only changes on deploy, so one request per page load is enough.
 export function passwordPolicy() {
   if (!passwordPolicyRequest) {
-    passwordPolicyRequest = request('/password-policy/').then(readJson).catch((error) => {
-      passwordPolicyRequest = null;
-      throw error;
-    });
+    passwordPolicyRequest = request('/password-policy/')
+      .then(readJson)
+      .catch((error) => {
+        passwordPolicyRequest = null;
+        throw error;
+      });
   }
   return passwordPolicyRequest;
 }

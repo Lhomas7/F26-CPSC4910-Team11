@@ -5,7 +5,10 @@ import useApiRequest, { statusForError } from './useApiRequest';
 function deferred() {
   let resolve;
   let reject;
-  const promise = new Promise((res, rej) => { resolve = res; reject = rej; });
+  const promise = new Promise((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
   return { promise, resolve, reject };
 }
 
@@ -59,9 +62,15 @@ test('ignores a slow earlier response once a newer request has started', async (
   const request = jest.fn().mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
   const { result } = renderHook(() => useApiRequest(request));
 
-  act(() => { result.current.reload(); });
-  await act(async () => { second.resolve('new'); });
-  await act(async () => { first.resolve('old'); });
+  act(() => {
+    result.current.reload();
+  });
+  await act(async () => {
+    second.resolve('new');
+  });
+  await act(async () => {
+    first.resolve('old');
+  });
 
   expect(result.current.data).toBe('new');
 });

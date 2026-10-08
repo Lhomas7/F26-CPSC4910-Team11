@@ -5,12 +5,12 @@
 
 .asset-cloud-puffs {
   background:
-    radial-gradient(circle at 30% 65%, #fff 0 .38em, transparent .39em),
-    radial-gradient(circle at 52% 42%, #fff 0 .5em, transparent .51em),
-    radial-gradient(circle at 74% 62%, #fff 0 .36em, transparent .37em),
-    linear-gradient(#fff, #fff) 50% 100% / 70% .38em no-repeat;
+    radial-gradient(circle at 30% 65%, #fff 0 0.38em, transparent 0.39em),
+    radial-gradient(circle at 52% 42%, #fff 0 0.5em, transparent 0.51em),
+    radial-gradient(circle at 74% 62%, #fff 0 0.36em, transparent 0.37em),
+    linear-gradient(#fff, #fff) 50% 100% / 70% 0.38em no-repeat;
   inset: 0;
-  opacity: .92;
+  opacity: 0.92;
 }
 
 .asset-drifting .asset-cloud-puffs {
@@ -27,14 +27,14 @@
   background: repeating-conic-gradient(#ffd34d 0 10deg, transparent 10deg 30deg);
   border-radius: 50%;
   inset: 0;
-  -webkit-mask: radial-gradient(circle, transparent 0 .5em, #000 .52em);
-  mask: radial-gradient(circle, transparent 0 .5em, #000 .52em);
+  -webkit-mask: radial-gradient(circle, transparent 0 0.5em, #000 0.52em);
+  mask: radial-gradient(circle, transparent 0 0.5em, #000 0.52em);
 }
 
 .asset-sun-disc {
   background: #ffc531;
   border-radius: 50%;
-  inset: .35em;
+  inset: 0.35em;
 }
 
 .asset-moon {
@@ -44,17 +44,23 @@
 
 .asset-moon-disc {
   border-radius: 50%;
-  box-shadow: inset -.28em .12em 0 0 #f3edd2;
+  box-shadow: inset -0.28em 0.12em 0 0 #f3edd2;
   inset: 0;
 }
 
 @keyframes asset-drift {
-  from { translate: -.3em 0; }
-  to { translate: .3em 0; }
+  from {
+    translate: -0.3em 0;
+  }
+  to {
+    translate: 0.3em 0;
+  }
 }
 
 @keyframes asset-turn {
-  to { rotate: 360deg; }
+  to {
+    rotate: 360deg;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

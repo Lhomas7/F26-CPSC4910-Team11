@@ -41,14 +41,30 @@ export default function DriverMfaRequirement({ company }) {
       <div className="driver-setting-row">
         <div>
           <strong>Require driver two-factor authentication</strong>
-          <p>Drivers at your organization must set up two-factor authentication before they can keep signing in. Changing this notifies affected drivers.</p>
+          <p>
+            Drivers at your organization must set up two-factor authentication before they can keep
+            signing in. Changing this notifies affected drivers.
+          </p>
         </div>
         <label className="driver-setting-switch" htmlFor="require-mfa">
-          <input id="require-mfa" type="checkbox" checked={required === true} onChange={toggle} disabled={busy || required === null} />
+          <input
+            id="require-mfa"
+            type="checkbox"
+            checked={required === true}
+            onChange={toggle}
+            disabled={busy || required === null}
+          />
           <span>{required ? 'Required' : 'Not required'}</span>
         </label>
       </div>
-      {message && <p className={`banner driver-settings-message ${message.ok ? 'banner-success' : 'banner-error'}`} role={message.ok ? 'status' : 'alert'}>{message.text}</p>}
+      {message && (
+        <p
+          className={`banner driver-settings-message ${message.ok ? 'banner-success' : 'banner-error'}`}
+          role={message.ok ? 'status' : 'alert'}
+        >
+          {message.text}
+        </p>
+      )}
     </section>
   );
 }

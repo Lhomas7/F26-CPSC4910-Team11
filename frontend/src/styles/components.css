@@ -14,18 +14,18 @@
   align-items: center;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: .45rem;
+  border-radius: 0.45rem;
   color: var(--ink);
   cursor: pointer;
   display: inline-flex;
   font: inherit;
-  font-size: .8rem;
+  font-size: 0.8rem;
   font-weight: 700;
-  gap: .35rem;
+  gap: 0.35rem;
   justify-content: center;
   line-height: 1.2;
   min-height: 2.25rem;
-  padding: .45rem .85rem;
+  padding: 0.45rem 0.85rem;
   text-align: center;
   text-decoration: none;
 }
@@ -69,10 +69,10 @@
   background: transparent;
   border-color: transparent;
   color: var(--ink-2);
-  font-size: .75rem;
+  font-size: 0.75rem;
   font-weight: 400;
   min-height: 0;
-  padding: .15rem;
+  padding: 0.15rem;
   text-decoration: underline;
 }
 
@@ -82,11 +82,11 @@
 }
 
 .button-large {
-  border-radius: .5rem;
-  font-size: .875rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
   font-weight: 600;
   min-height: 2.5rem;
-  padding: .55rem .95rem;
+  padding: 0.55rem 0.95rem;
 }
 
 .button-full-width {
@@ -95,7 +95,7 @@
 
 .button:disabled {
   cursor: not-allowed;
-  opacity: .6;
+  opacity: 0.6;
 }
 
 /* ---------- Banners ----------
@@ -103,12 +103,12 @@
 .banner {
   background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: .5rem;
+  border-radius: 0.5rem;
   color: var(--ink);
-  font-size: .82rem;
+  font-size: 0.82rem;
   line-height: 1.45;
   margin: 0;
-  padding: .65rem .8rem;
+  padding: 0.65rem 0.8rem;
 }
 
 .banner-success {
@@ -138,11 +138,11 @@
   border-radius: 999px;
   color: var(--ink-2);
   display: inline-flex;
-  font-size: .7rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  gap: .3rem;
+  gap: 0.3rem;
   line-height: 1.3;
-  padding: .12rem .55rem;
+  padding: 0.12rem 0.55rem;
   white-space: nowrap;
   width: max-content;
 }
@@ -171,8 +171,8 @@
   background: currentColor;
   border-radius: 50%;
   content: '';
-  height: .4rem;
-  width: .4rem;
+  height: 0.4rem;
+  width: 0.4rem;
 }
 
 /* ---------- Cards ----------
@@ -180,7 +180,7 @@
 .card {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: .65rem;
+  border-radius: 0.65rem;
 }
 
 /* ---------- Stat tiles ----------
@@ -190,18 +190,18 @@
 .stat {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: .65rem;
+  border-radius: 0.65rem;
   color: var(--ink);
   display: grid;
   font: inherit;
-  gap: .2rem;
-  padding: .7rem .85rem;
+  gap: 0.2rem;
+  padding: 0.7rem 0.85rem;
   text-align: left;
 }
 
 .stat-label {
   color: var(--ink-2);
-  font-size: .72rem;
+  font-size: 0.72rem;
 }
 
 .stat-value {
@@ -212,7 +212,7 @@
 
 .stat-note {
   color: var(--ink-2);
-  font-size: .68rem;
+  font-size: 0.68rem;
 }
 
 .stat-highlight .stat-value {
@@ -225,7 +225,9 @@
 
 button.stat {
   cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease;
 }
 
 button.stat:hover {
@@ -251,10 +253,10 @@ button.stat[aria-pressed='true'] {
   cursor: pointer;
   display: inline-flex;
   font: inherit;
-  font-size: .78rem;
+  font-size: 0.78rem;
   height: 2.25rem;
   justify-content: center;
-  padding: 0 .7rem;
+  padding: 0 0.7rem;
   white-space: nowrap;
 }
 
@@ -272,13 +274,13 @@ button.stat[aria-pressed='true'] {
 .chip-content {
   align-items: baseline;
   display: inline-flex;
-  gap: .25rem;
+  gap: 0.25rem;
   line-height: 1.2;
 }
 
 .chip-count {
   color: var(--ink-2);
-  font-size: .7rem;
+  font-size: 0.7rem;
 }
 
 .chip[aria-pressed='true'] .chip-count {
@@ -287,7 +289,7 @@ button.stat[aria-pressed='true'] {
 
 @media (max-width: 42rem) {
   .stat {
-    padding: .65rem .8rem;
+    padding: 0.65rem 0.8rem;
   }
 
   .stat-value {

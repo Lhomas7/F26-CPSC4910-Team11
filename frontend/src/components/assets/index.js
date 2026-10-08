@@ -22,7 +22,13 @@ export { GasStation, School } from './scenery/Places';
 export { Bush, Tree } from './scenery/Plants';
 export { Cloud, Moon, Sun } from './scenery/Sky';
 export { SchoolZoneSign, SpeedLimitSign, StopSign, YieldSign } from './scenery/Signs';
-export { Bench, FireHydrant, RoadBarrier, StreetLamp, TrafficCone } from './scenery/StreetFurniture';
+export {
+  Bench,
+  FireHydrant,
+  RoadBarrier,
+  StreetLamp,
+  TrafficCone,
+} from './scenery/StreetFurniture';
 export { default as TrafficLight } from './scenery/TrafficLight';
 
 // Effects

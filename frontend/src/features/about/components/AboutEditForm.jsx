@@ -25,9 +25,13 @@ export default function AboutEditForm({ release, onSaved, onCancel }) {
       const saved = await updateRelease({ ...form, team_number: Number(form.team_number) });
       onSaved(saved);
     } catch (requestError) {
-      setErrors(requestError.data && typeof requestError.data === 'object'
-        ? Object.fromEntries(Object.entries(requestError.data).map(([key, value]) => [key, [].concat(value)[0]]))
-        : { detail: requestError.message });
+      setErrors(
+        requestError.data && typeof requestError.data === 'object'
+          ? Object.fromEntries(
+              Object.entries(requestError.data).map(([key, value]) => [key, [].concat(value)[0]]),
+            )
+          : { detail: requestError.message },
+      );
       setBusy(false);
     }
   };
@@ -35,9 +39,17 @@ export default function AboutEditForm({ release, onSaved, onCancel }) {
   const error = (name) => errors[name];
 
   return (
-    <form className="card about-card about-edit" onSubmit={submit} aria-labelledby="about-edit-heading">
+    <form
+      className="card about-card about-edit"
+      onSubmit={submit}
+      aria-labelledby="about-edit-heading"
+    >
       <h3 id="about-edit-heading">Edit release details</h3>
-      {errors.detail && <p className="about-edit-error" role="alert">{errors.detail}</p>}
+      {errors.detail && (
+        <p className="about-edit-error" role="alert">
+          {errors.detail}
+        </p>
+      )}
       <div className="about-edit-grid">
         {FIELDS.map((field) => (
           <label key={field.name}>
@@ -65,11 +77,17 @@ export default function AboutEditForm({ release, onSaved, onCancel }) {
           disabled={busy}
           aria-invalid={Boolean(error('product_description'))}
         />
-        {error('product_description') && <small className="about-edit-error">{error('product_description')}</small>}
+        {error('product_description') && (
+          <small className="about-edit-error">{error('product_description')}</small>
+        )}
       </label>
       <div className="about-edit-actions">
-        <button className="button" type="button" onClick={onCancel} disabled={busy}>Cancel</button>
-        <button className="button button-primary" type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save changes'}</button>
+        <button className="button" type="button" onClick={onCancel} disabled={busy}>
+          Cancel
+        </button>
+        <button className="button button-primary" type="submit" disabled={busy}>
+          {busy ? 'Saving…' : 'Save changes'}
+        </button>
       </div>
     </form>
   );

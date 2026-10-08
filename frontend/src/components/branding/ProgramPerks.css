@@ -1,6 +1,6 @@
 .program-perks {
   display: grid;
-  gap: .625rem;
+  gap: 0.625rem;
   list-style: none;
   margin: 1.5rem 0 0;
   padding: 0;
@@ -10,13 +10,13 @@
   align-items: baseline;
   color: var(--on-road-2);
   display: flex;
-  font-size: .875rem;
-  gap: .625rem;
+  font-size: 0.875rem;
+  gap: 0.625rem;
 }
 
 .program-perks li::before {
   background: var(--stripe);
-  border-radius: .125rem;
+  border-radius: 0.125rem;
   content: '';
   flex-shrink: 0;
   height: 4px;

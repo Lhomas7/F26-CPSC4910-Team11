@@ -52,15 +52,78 @@ export function AppRoutes() {
       <Route path="/playground" element={<PlaygroundPage />} />
       <Route element={<AppLayout />}>
         <Route path="/" element={<WelcomePage />} />
-        <Route path="/points" element={<RequireAuth roles={PAGE_ROLES.points}><PointsPage /></RequireAuth>} />
-        <Route path="/drivers" element={<RequireAuth roles={PAGE_ROLES.drivers}><DriverListPage /></RequireAuth>} />
-        <Route path="/account" element={<RequireAuth><AccountPage /></RequireAuth>} />
-        <Route path="/users" element={<RequireAuth roles={PAGE_ROLES.users}><AdminUsersPage /></RequireAuth>} />
-        <Route path="/users/new" element={<RequireAuth roles={PAGE_ROLES.users}><AddUserPage /></RequireAuth>} />
-        <Route path="/users/sponsors/:userId" element={<RequireAuth roles={PAGE_ROLES.users}><SponsorAccountPage /></RequireAuth>} />
-        <Route path="/users/drivers/:userId" element={<RequireAuth roles={PAGE_ROLES.users}><DriverAccountPage /></RequireAuth>} />
-        <Route path="/users/admins/:userId" element={<RequireAuth roles={PAGE_ROLES.users}><AdminAccountPage /></RequireAuth>} />
-        <Route path="/drivers/:driverId" element={<RequireAuth roles={PAGE_ROLES.drivers}><DriverDetailPage /></RequireAuth>} />
+        <Route
+          path="/points"
+          element={
+            <RequireAuth roles={PAGE_ROLES.points}>
+              <PointsPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/drivers"
+          element={
+            <RequireAuth roles={PAGE_ROLES.drivers}>
+              <DriverListPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/account"
+          element={
+            <RequireAuth>
+              <AccountPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/users"
+          element={
+            <RequireAuth roles={PAGE_ROLES.users}>
+              <AdminUsersPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/users/new"
+          element={
+            <RequireAuth roles={PAGE_ROLES.users}>
+              <AddUserPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/users/sponsors/:userId"
+          element={
+            <RequireAuth roles={PAGE_ROLES.users}>
+              <SponsorAccountPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/users/drivers/:userId"
+          element={
+            <RequireAuth roles={PAGE_ROLES.users}>
+              <DriverAccountPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/users/admins/:userId"
+          element={
+            <RequireAuth roles={PAGE_ROLES.users}>
+              <AdminAccountPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/drivers/:driverId"
+          element={
+            <RequireAuth roles={PAGE_ROLES.drivers}>
+              <DriverDetailPage />
+            </RequireAuth>
+          }
+        />
         <Route path="/about" element={<AboutPage />} />
       </Route>
     </Routes>

@@ -50,8 +50,10 @@ function Loading({ error }) {
   return <Skeleton className="home-skeleton" />;
 }
 
-const loadDriverHome = () => Promise.all([getDrivers(), getPointHistory({ limit: RECENT_ACTIVITY })])
-  .then(([drivers, history]) => ({ record: drivers[0], history }));
+const loadDriverHome = () =>
+  Promise.all([getDrivers(), getPointHistory({ limit: RECENT_ACTIVITY })]).then(
+    ([drivers, history]) => ({ record: drivers[0], history }),
+  );
 
 function DriverHome() {
   const { data, error } = useHomeData(loadDriverHome);
@@ -74,8 +76,10 @@ function DriverHome() {
   );
 }
 
-const loadSponsorHome = () => Promise.all([getDrivers(), getPointHistory({ limit: RECENT_ACTIVITY })])
-  .then(([drivers, history]) => ({ drivers, history }));
+const loadSponsorHome = () =>
+  Promise.all([getDrivers(), getPointHistory({ limit: RECENT_ACTIVITY })]).then(
+    ([drivers, history]) => ({ drivers, history }),
+  );
 
 function SponsorHome() {
   const { data, error } = useHomeData(loadSponsorHome);
@@ -100,14 +104,23 @@ function SponsorHome() {
               {pending.slice(0, RECENT_ACTIVITY).map((driver) => (
                 <li key={driver.id}>
                   <span>{driver.name}</span>
-                  <Link to={`/drivers/${driver.id}`} aria-label={`Review ${driver.name}`}>Review</Link>
+                  <Link to={`/drivers/${driver.id}`} aria-label={`Review ${driver.name}`}>
+                    Review
+                  </Link>
                 </li>
               ))}
             </ul>
-          ) : <p className="home-empty">No applications waiting.</p>}
+          ) : (
+            <p className="home-empty">No applications waiting.</p>
+          )}
         </Card>
         <Card title="Recent driver activity" action={<Link to="/points">All points</Link>}>
-          <PointHistoryList entries={history} showDriver linkDrivers emptyText="No point changes yet." />
+          <PointHistoryList
+            entries={history}
+            showDriver
+            linkDrivers
+            emptyText="No point changes yet."
+          />
         </Card>
       </div>
     </>
@@ -121,7 +134,9 @@ function AdminHome() {
   if (!data) return <Loading error={error} />;
   const users = Array.isArray(data) ? data : [];
   const count = (role) => users.filter((current) => current.role === role).length;
-  const unassigned = users.filter((current) => current.role === 'driver' && !current.sponsor_org).length;
+  const unassigned = users.filter(
+    (current) => current.role === 'driver' && !current.sponsor_org,
+  ).length;
 
   return (
     <>
@@ -135,9 +150,18 @@ function AdminHome() {
       />
       <Card title="Shortcuts">
         <ul className="home-list">
-          <li><span>Review and update driver, sponsor and admin accounts</span><Link to="/users">Users</Link></li>
-          <li><span>Create a new account</span><Link to="/users/new">Add a user</Link></li>
-          <li><span>Edit the product and release details</span><Link to="/about">About page</Link></li>
+          <li>
+            <span>Review and update driver, sponsor and admin accounts</span>
+            <Link to="/users">Users</Link>
+          </li>
+          <li>
+            <span>Create a new account</span>
+            <Link to="/users/new">Add a user</Link>
+          </li>
+          <li>
+            <span>Edit the product and release details</span>
+            <Link to="/about">About page</Link>
+          </li>
         </ul>
       </Card>
     </>

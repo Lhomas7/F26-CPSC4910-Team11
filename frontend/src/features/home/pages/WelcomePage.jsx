@@ -19,7 +19,10 @@ export default function WelcomePage() {
 
   return (
     <div className="welcome-page">
-      <PageHeader title="Welcome" subtitle="Good Driver Incentive Program — safe miles add up to real rewards" />
+      <PageHeader
+        title="Welcome"
+        subtitle="Good Driver Incentive Program — safe miles add up to real rewards"
+      />
 
       <main className="welcome-content">
         <section className="welcome-hero" aria-labelledby="welcome-title">
@@ -29,24 +32,43 @@ export default function WelcomePage() {
             <h2 id="welcome-title">Safe miles add up to real rewards.</h2>
           )}
           <p>
-            Good Driver Incentive Program rewards truck drivers for driving well.
-            Sponsors award points for the behaviors they want to encourage, drivers
-            track their balance, and points are redeemed through each sponsor&apos;s
-            reward catalog.
+            Good Driver Incentive Program rewards truck drivers for driving well. Sponsors award
+            points for the behaviors they want to encourage, drivers track their balance, and points
+            are redeemed through each sponsor&apos;s reward catalog.
           </p>
 
           {!signedIn ? (
             <div className="welcome-cta">
-              <Link className="button button-large button-primary" to="/login">Sign in</Link>
-              <Link className="button button-large" to="/login?tab=register">Create an account</Link>
-              <Link className="welcome-link" to="/about">About this app</Link>
+              <Link className="button button-large button-primary" to="/login">
+                Sign in
+              </Link>
+              <Link className="button button-large" to="/login?tab=register">
+                Create an account
+              </Link>
+              <Link className="welcome-link" to="/about">
+                About this app
+              </Link>
             </div>
           ) : (
             <div className="welcome-cta">
-              {accountType === 'driver' && <Link className="button button-large button-primary" to="/points">View my points</Link>}
-              {accountType === 'sponsor' && <Link className="button button-large button-primary" to="/drivers">Go to drivers</Link>}
-              {accountType === 'admin' && <Link className="button button-large button-primary" to="/users">Manage users</Link>}
-              <Link className="button button-large" to="/account">My account</Link>
+              {accountType === 'driver' && (
+                <Link className="button button-large button-primary" to="/points">
+                  View my points
+                </Link>
+              )}
+              {accountType === 'sponsor' && (
+                <Link className="button button-large button-primary" to="/drivers">
+                  Go to drivers
+                </Link>
+              )}
+              {accountType === 'admin' && (
+                <Link className="button button-large button-primary" to="/users">
+                  Manage users
+                </Link>
+              )}
+              <Link className="button button-large" to="/account">
+                My account
+              </Link>
             </div>
           )}
 

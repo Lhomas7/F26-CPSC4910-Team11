@@ -27,7 +27,8 @@ export default function MfaSetupWall() {
   }, [updateUser, user]);
 
   useEffect(() => {
-    api.mfaStatus()
+    api
+      .mfaStatus()
       .then((data) => setMfa(data.mfa))
       .catch(() => setMfa({ required: true, enrolled: false, methods: [] }));
   }, []);
@@ -39,9 +40,8 @@ export default function MfaSetupWall() {
       <header className="mfa-wall-heading">
         <h1>Finish setting up your {roleLabel} account</h1>
         <p>
-          {`${roleLabel[0].toUpperCase()}${roleLabel.slice(1)}`} accounts require
-          two-factor authentication. Set it up below before you can continue into
-          the app.
+          {`${roleLabel[0].toUpperCase()}${roleLabel.slice(1)}`} accounts require two-factor
+          authentication. Set it up below before you can continue into the app.
         </p>
       </header>
 

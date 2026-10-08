@@ -14,16 +14,27 @@ export default function ConfirmDialog({
     <Modal
       title={title}
       onClose={busy ? undefined : onCancel}
-      actions={(
+      actions={
         <>
-          <button className="button button-large" type="button" onClick={onCancel} disabled={busy} data-autofocus>
+          <button
+            className="button button-large"
+            type="button"
+            onClick={onCancel}
+            disabled={busy}
+            data-autofocus
+          >
             {cancelLabel}
           </button>
-          <button className="button button-large button-primary" type="button" onClick={onConfirm} disabled={busy}>
+          <button
+            className="button button-large button-primary"
+            type="button"
+            onClick={onConfirm}
+            disabled={busy}
+          >
             {confirmLabel}
           </button>
         </>
-      )}
+      }
     >
       <p>{message}</p>
     </Modal>

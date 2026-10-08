@@ -2,9 +2,9 @@
   animation: skeleton-shimmer 1.2s linear infinite;
   background: linear-gradient(90deg, var(--line), var(--surface-2), var(--line));
   background-size: 200% 100%;
-  border-radius: .3rem;
+  border-radius: 0.3rem;
   display: block;
-  height: .8rem;
+  height: 0.8rem;
 }
 
 @keyframes skeleton-shimmer {

@@ -110,10 +110,20 @@ export default function PasswordPanel() {
             onToggleVisible={() => setConfirmationVisible((current) => !current)}
             disabled={busy}
           />
-          {error && <p className="banner banner-error account-banner" role="alert">{error}</p>}
-          {success && <p className="banner banner-success account-banner" role="status">{success}</p>}
+          {error && (
+            <p className="banner banner-error account-banner" role="alert">
+              {error}
+            </p>
+          )}
+          {success && (
+            <p className="banner banner-success account-banner" role="status">
+              {success}
+            </p>
+          )}
           <div className="account-card-footer">
-            <button className="button" type="button" onClick={closePanel} disabled={busy}>Cancel</button>
+            <button className="button" type="button" onClick={closePanel} disabled={busy}>
+              Cancel
+            </button>
             <button className="button button-primary" type="submit" disabled={busy}>
               {busy ? 'Changing password…' : 'Save new password'}
             </button>

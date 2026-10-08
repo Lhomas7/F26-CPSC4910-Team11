@@ -4,23 +4,23 @@
   --asset-w: 2.4em;
   --car-color: #3a7bd5;
   --cabin-color: var(--car-color);
-  --wheel-size: .46em;
+  --wheel-size: 0.46em;
 }
 
 .asset-car-cabin {
   background: var(--cabin-color);
-  border-radius: .4em .55em 0 0;
-  height: .5em;
-  left: .5em;
-  top: .05em;
+  border-radius: 0.4em 0.55em 0 0;
+  height: 0.5em;
+  left: 0.5em;
+  top: 0.05em;
   width: 1.3em;
 }
 
 .asset-car-window {
-  border-radius: .3em .42em 0 0;
-  height: .3em;
-  left: .62em;
-  top: .14em;
+  border-radius: 0.3em 0.42em 0 0;
+  height: 0.3em;
+  left: 0.62em;
+  top: 0.14em;
   width: 1.06em;
 }
 
@@ -31,38 +31,38 @@
   height: 100%;
   left: 48%;
   position: absolute;
-  width: .07em;
+  width: 0.07em;
 }
 
 .asset-car-body {
   background: var(--car-color);
-  border-radius: .16em .32em .14em .14em;
-  bottom: .2em;
-  height: .42em;
+  border-radius: 0.16em 0.32em 0.14em 0.14em;
+  bottom: 0.2em;
+  height: 0.42em;
   left: 0;
   width: 100%;
 }
 
 .asset-car-headlight {
   background: #ffe9a3;
-  border-radius: .05em;
-  bottom: .44em;
-  height: .1em;
-  right: .03em;
-  width: .14em;
+  border-radius: 0.05em;
+  bottom: 0.44em;
+  height: 0.1em;
+  right: 0.03em;
+  width: 0.14em;
 }
 
 .asset-car-taillight {
   background: #e5482f;
-  border-radius: .05em;
-  bottom: .44em;
-  height: .1em;
-  left: .02em;
-  width: .1em;
+  border-radius: 0.05em;
+  bottom: 0.44em;
+  height: 0.1em;
+  left: 0.02em;
+  width: 0.1em;
 }
 
 .asset-car-wheel-a {
-  left: .3em;
+  left: 0.3em;
 }
 
 .asset-car-wheel-b {
@@ -80,10 +80,10 @@
 }
 
 .asset-car-lightbar {
-  height: .16em;
-  left: .86em;
-  top: -.1em;
-  width: .56em;
+  height: 0.16em;
+  left: 0.86em;
+  top: -0.1em;
+  width: 0.56em;
 }
 
 /* Taxi: yellow with a checker band and a roof sign. */
@@ -92,21 +92,21 @@
 }
 
 .asset-taxi .asset-car-body::after {
-  background: repeating-linear-gradient(to right, #1d201d 0 .08em, transparent .08em .16em);
+  background: repeating-linear-gradient(to right, #1d201d 0 0.08em, transparent 0.08em 0.16em);
   content: '';
-  height: .08em;
-  left: .2em;
+  height: 0.08em;
+  left: 0.2em;
   position: absolute;
-  right: .2em;
-  top: .1em;
+  right: 0.2em;
+  top: 0.1em;
 }
 
 .asset-taxi-sign {
   background: #f4f5f2;
-  border: .04em solid #1d201d;
-  border-radius: .06em .06em 0 0;
-  height: .16em;
+  border: 0.04em solid #1d201d;
+  border-radius: 0.06em 0.06em 0 0;
+  height: 0.16em;
   left: 1em;
-  top: -.12em;
-  width: .36em;
+  top: -0.12em;
+  width: 0.36em;
 }

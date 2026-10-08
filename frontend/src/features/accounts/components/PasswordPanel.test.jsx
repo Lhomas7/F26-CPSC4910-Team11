@@ -54,11 +54,17 @@ test('submits a valid password and clears the fields', async () => {
   api.changePassword.mockResolvedValue({});
   render(<PasswordPanel />);
   openPanel();
-  fireEvent.change(screen.getByLabelText('New password'), { target: { value: 'ValidPassword!22' } });
-  fireEvent.change(screen.getByLabelText('Confirm new password'), { target: { value: 'ValidPassword!22' } });
+  fireEvent.change(screen.getByLabelText('New password'), {
+    target: { value: 'ValidPassword!22' },
+  });
+  fireEvent.change(screen.getByLabelText('Confirm new password'), {
+    target: { value: 'ValidPassword!22' },
+  });
   fireEvent.click(screen.getByRole('button', { name: 'Save new password' }));
 
-  await waitFor(() => expect(api.changePassword).toHaveBeenCalledWith('ValidPassword!22', 'ValidPassword!22'));
+  await waitFor(() =>
+    expect(api.changePassword).toHaveBeenCalledWith('ValidPassword!22', 'ValidPassword!22'),
+  );
   expect(await screen.findByRole('status')).toHaveTextContent('Password changed successfully');
   expect(screen.getByLabelText('New password')).toHaveValue('');
   expect(screen.getByLabelText('Confirm new password')).toHaveValue('');
@@ -67,7 +73,9 @@ test('submits a valid password and clears the fields', async () => {
 test('clears sensitive values when the panel closes', () => {
   render(<PasswordPanel />);
   openPanel();
-  fireEvent.change(screen.getByLabelText('New password'), { target: { value: 'UnsubmittedPassword!2' } });
+  fireEvent.change(screen.getByLabelText('New password'), {
+    target: { value: 'UnsubmittedPassword!2' },
+  });
   fireEvent.click(screen.getByRole('button', { name: 'Close' }));
   openPanel();
 

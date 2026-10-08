@@ -5,9 +5,7 @@ const PageHeaderTargetContext = createContext(undefined);
 
 export function PageHeaderTargetProvider({ target, children }) {
   return (
-    <PageHeaderTargetContext.Provider value={target}>
-      {children}
-    </PageHeaderTargetContext.Provider>
+    <PageHeaderTargetContext.Provider value={target}>{children}</PageHeaderTargetContext.Provider>
   );
 }
 
