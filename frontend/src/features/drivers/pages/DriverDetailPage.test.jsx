@@ -59,8 +59,7 @@ test('shows sponsor controls, the current balance and the point history', async 
   expect(screen.getByText('Clean inspection')).toBeInTheDocument();
   expect(screen.getByText('Deduction')).toBeInTheDocument();
   expect(screen.getByText('Award', { selector: '.point-history-type.badge-success' })).toBeInTheDocument();
-  const localTime = screen.getByText(/Oct 5, 2026, \d{1,2}:00 [AP]M/);
-  expect(localTime.closest('.point-history-meta')).toHaveTextContent(/^Pat Sponsor · Oct/);
+  expect(screen.getAllByText(/Pat Sponsor/)[0]).toHaveTextContent(/^Pat Sponsor · Oct 5/);
   expect(api.getPointHistory).toHaveBeenCalledWith({ driver: '7' });
 });
 

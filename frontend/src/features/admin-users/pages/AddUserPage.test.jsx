@@ -64,7 +64,7 @@ test('requires an organization when creating a sponsor', async () => {
 test('does not load the form for non-admin users', () => {
   useAuth.mockReturnValue({ user: { account_type: 'driver' } });
   renderPage();
-  expect(screen.getByRole('heading', { name: /don\'t have access/i })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: /don't have access/i })).toBeInTheDocument();
   expect(api.getAdminSponsorOrganizations).not.toHaveBeenCalled();
 });
 

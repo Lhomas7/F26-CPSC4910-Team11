@@ -54,7 +54,7 @@ test('stays open to show backup codes after enrolling, and closes once acknowled
 
   // Regression guard: this used to unmount the whole wall (and the reveal
   // with it) the instant MFA became enrolled, before the codes were shown.
-  await waitFor(() => expect(screen.getByLabelText('Backup codes')).toBeInTheDocument());
+  expect(await screen.findByLabelText('Backup codes')).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: 'Finish setting up your administrator account' }))
     .toBeInTheDocument();
 

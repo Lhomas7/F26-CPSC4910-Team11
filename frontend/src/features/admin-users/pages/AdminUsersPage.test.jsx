@@ -67,7 +67,7 @@ test('filters users by sponsor organization', async () => {
 test('does not call the API for a non-admin user', () => {
   useAuth.mockReturnValue({ user: { account_type: 'driver' } });
   renderPage();
-  expect(screen.getByRole('heading', { name: /don\'t have access/i })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: /don't have access/i })).toBeInTheDocument();
   expect(api.getAdminUsers).not.toHaveBeenCalled();
 });
 

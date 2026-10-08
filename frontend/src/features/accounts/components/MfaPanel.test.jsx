@@ -92,11 +92,11 @@ test('shows backup codes once, in a copyable box, after the first method is veri
   render(<MfaPanel mfa={notEnrolled()} onRefreshed={onRefreshed} />);
 
   fireEvent.click(screen.getByRole('button', { name: 'Set up 2FA' }));
-  await waitFor(() => screen.getByLabelText('Verification code'));
+  await screen.findByLabelText('Verification code');
   fireEvent.change(screen.getByLabelText('Verification code'), { target: { value: '123456' } });
   fireEvent.click(screen.getByRole('button', { name: 'Verify and enable' }));
 
-  await waitFor(() => expect(screen.getByLabelText('Backup codes')).toBeInTheDocument());
+  expect(await screen.findByLabelText('Backup codes')).toBeInTheDocument();
   expect(screen.getByLabelText('Backup codes')).toHaveValue(Array.from({ length: 10 }, (_, i) => `CODE${i}`).join('\n'));
   // Regression guard: a parent (e.g. the admin/sponsor setup wall) may unmount
   // this panel as soon as it sees MFA is enrolled, so the reveal must not be

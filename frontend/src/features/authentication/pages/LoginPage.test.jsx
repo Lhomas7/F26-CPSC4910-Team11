@@ -5,6 +5,10 @@ import { useAuth } from '../../../auth/AuthContext';
 import * as api from '../../../api';
 import LoginPage from './LoginPage';
 
+// The road truck is decorative and aria-hidden, so its animation-state tests
+// intentionally inspect CSS classes rather than querying an accessible role.
+/* eslint-disable testing-library/no-container, testing-library/no-node-access */
+
 jest.mock('../../../auth/AuthContext');
 jest.mock('../../../api');
 

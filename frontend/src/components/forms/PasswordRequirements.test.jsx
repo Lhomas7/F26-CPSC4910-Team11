@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import * as api from '../../api';
@@ -13,7 +13,7 @@ const POLICY = {
 
 function renderInField() {
   return render(
-    <div>
+    <div data-testid="password-field">
       <label htmlFor="pw">Password</label>
       <input id="pw" />
       <PasswordRequirements />
@@ -21,12 +21,8 @@ function renderInField() {
   );
 }
 
-// Opening fetches the policy; settle that request inside act so the
-// resulting state update is part of the click.
 async function open(toggle) {
-  await act(async () => {
-    userEvent.click(toggle);
-  });
+  userEvent.click(toggle);
 }
 
 beforeEach(() => {
@@ -83,7 +79,7 @@ test('the popover stays inside a short window and scrolls instead', async () => 
   window.innerHeight = 300;
   renderInField();
   // The field sits near the bottom of the 300px-tall window.
-  jest.spyOn(screen.getByLabelText('Password').parentElement, 'getBoundingClientRect')
+  jest.spyOn(screen.getByTestId('password-field'), 'getBoundingClientRect')
     .mockReturnValue({ top: 280, bottom: 320, left: 0, right: 200 });
 
   try {
