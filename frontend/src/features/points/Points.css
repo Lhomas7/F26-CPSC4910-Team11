@@ -130,6 +130,31 @@
   margin-left: auto;
 }
 
+/* Detail entries have a full-width header: type at left, amount at right. */
+.point-history-detail > .point-history-entry {
+  display: block;
+}
+
+.point-history-detail > .point-history-entry > .point-history-main {
+  width: 100%;
+}
+
+.point-history-entry-heading {
+  align-items: center;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  justify-self: stretch;
+  width: 100%;
+}
+
+.point-history-entry-heading > .point-history-change {
+  font-size: 0.8rem;
+  grid-column: 2;
+  justify-self: end;
+  margin: 0;
+}
+
 .point-history-empty {
   color: var(--ink-2);
   font-size: 0.85rem;

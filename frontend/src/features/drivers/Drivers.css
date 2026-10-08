@@ -767,6 +767,7 @@
 }
 
 .driver-history .point-history-detail > .point-history-entry {
+  /* Badge placement belongs to the shared history header in Points.css. */
   border-bottom: 1px solid var(--line-soft);
   border-top: 0;
   padding: 0.8rem 0;
@@ -784,21 +785,6 @@
 .driver-history .point-history-detail .point-history-main {
   gap: 0;
   width: 100%;
-}
-
-/* Both badges share the first row, above the reason and author/date. */
-.point-history-entry-heading {
-  align-items: center;
-  display: flex;
-  gap: 1rem;
-  justify-content: space-between;
-  width: 100%;
-}
-
-.point-history-entry-heading > .point-history-change {
-  flex: 0 0 auto;
-  font-size: 0.8rem;
-  margin-left: auto;
 }
 
 .point-history-type {
