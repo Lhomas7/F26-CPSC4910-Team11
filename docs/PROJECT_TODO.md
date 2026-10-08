@@ -6,45 +6,45 @@
 ## Contents
 
 - [Good Driver Incentive Program — Project TODO](#good-driver-incentive-program--project-todo)
-	- [Contents](#contents)
-	- [How to use this document](#how-to-use-this-document)
-	- [P0 — Team workflow and release safety](#p0--team-workflow-and-release-safety)
-		- [Branching and pull requests](#branching-and-pull-requests)
-		- [Commit format](#commit-format)
-		- [Professor-required sprint tags](#professor-required-sprint-tags)
-		- [Git releases and prior-sprint demos](#git-releases-and-prior-sprint-demos)
-		- [Release flow](#release-flow)
-	- [P0 — GitHub Actions, secrets, and deployment](#p0--github-actions-secrets-and-deployment)
-		- [Repository and environment secrets](#repository-and-environment-secrets)
-		- [Continuous integration workflow](#continuous-integration-workflow)
-		- [Release workflow](#release-workflow)
-		- [Deployment workflow](#deployment-workflow)
-		- [Production runtime](#production-runtime)
-	- [P0 — Security and production configuration](#p0--security-and-production-configuration)
-	- [P1 — Database documentation and design](#p1--database-documentation-and-design)
-		- [Diagrams](#diagrams)
-		- [Data dictionary](#data-dictionary)
-		- [Schema review and refactoring](#schema-review-and-refactoring)
-	- [P1 — Input normalization and auditability](#p1--input-normalization-and-auditability)
-		- [Input normalization](#input-normalization)
-		- [Audit logging](#audit-logging)
-	- [P1 — Application architecture](#p1--application-architecture)
-		- [Frontend reorganization](#frontend-reorganization)
-		- [Application logo and browser metadata](#application-logo-and-browser-metadata)
-		- [Backend reorganization](#backend-reorganization)
-	- [P1 — Sponsor organization management](#p1--sponsor-organization-management)
-	- [P1 — Quality standards](#p1--quality-standards)
-	- [P2 — Product roadmap](#p2--product-roadmap)
-	- [Recommended execution order](#recommended-execution-order)
-	- [Definition of done](#definition-of-done)
+  - [Contents](#contents)
+  - [How to use this document](#how-to-use-this-document)
+  - [P0 — Team workflow and release safety](#p0--team-workflow-and-release-safety)
+    - [Branching and pull requests](#branching-and-pull-requests)
+    - [Commit format](#commit-format)
+    - [Professor-required sprint tags](#professor-required-sprint-tags)
+    - [Git releases and prior-sprint demos](#git-releases-and-prior-sprint-demos)
+    - [Release flow](#release-flow)
+  - [P0 — GitHub Actions, secrets, and deployment](#p0--github-actions-secrets-and-deployment)
+    - [Repository and environment secrets](#repository-and-environment-secrets)
+    - [Continuous integration workflow](#continuous-integration-workflow)
+    - [Release workflow](#release-workflow)
+    - [Deployment workflow](#deployment-workflow)
+    - [Production runtime](#production-runtime)
+  - [P0 — Security and production configuration](#p0--security-and-production-configuration)
+  - [P1 — Database documentation and design](#p1--database-documentation-and-design)
+    - [Diagrams](#diagrams)
+    - [Data dictionary](#data-dictionary)
+    - [Schema review and refactoring](#schema-review-and-refactoring)
+  - [P1 — Input normalization and auditability](#p1--input-normalization-and-auditability)
+    - [Input normalization](#input-normalization)
+    - [Audit logging](#audit-logging)
+  - [P1 — Application architecture](#p1--application-architecture)
+    - [Frontend reorganization](#frontend-reorganization)
+    - [Application logo and browser metadata](#application-logo-and-browser-metadata)
+    - [Backend reorganization](#backend-reorganization)
+  - [P1 — Sponsor organization management](#p1--sponsor-organization-management)
+  - [P1 — Quality standards](#p1--quality-standards)
+  - [P2 — Product roadmap](#p2--product-roadmap)
+  - [Recommended execution order](#recommended-execution-order)
+  - [Definition of done](#definition-of-done)
 
 ## How to use this document
 
-| Priority | Meaning | Expected handling |
-| --- | --- | --- |
-| **P0** | Release, security, or team-process blocker | Schedule before or at the start of the next feature sprint |
-| **P1** | Important engineering foundation | Assign to a sprint with an owner and acceptance criteria |
-| **P2** | Planned product capability | Convert into user stories before implementation |
+| Priority | Meaning                                    | Expected handling                                          |
+| -------- | ------------------------------------------ | ---------------------------------------------------------- |
+| **P0**   | Release, security, or team-process blocker | Schedule before or at the start of the next feature sprint |
+| **P1**   | Important engineering foundation           | Assign to a sprint with an owner and acceptance criteria   |
+| **P2**   | Planned product capability                 | Convert into user stories before implementation            |
 
 Every checked item should have evidence when applicable: a pull request, test, diagram, release, deployment log, or documentation link.
 
@@ -185,18 +185,18 @@ flowchart LR
 
 Proposed secrets and variables:
 
-| Name | Type | Purpose |
-| --- | --- | --- |
-| `DJANGO_SECRET_KEY` | Environment secret | Django cryptographic signing |
-| `DB_NAME` | Environment variable or secret | Application database name |
-| `DB_USER` | Environment secret | Restricted application DB user |
-| `DB_PASSWORD` | Environment secret | Application DB password |
-| `DB_HOST` | Environment variable or secret | RDS hostname |
-| `DB_PORT` | Environment variable | MySQL port, normally `3306` |
-| `TOTP_ENCRYPTION_KEY` | Environment secret | Encryption for stored MFA seeds |
-| `REACT_APP_API_URL` | Environment variable | Frontend API origin |
-| `AWS_ROLE_ARN` | Environment variable | OIDC deployment role, if adopted |
-| Email/SMS provider keys | Environment secrets | Notification delivery |
+| Name                    | Type                           | Purpose                          |
+| ----------------------- | ------------------------------ | -------------------------------- |
+| `DJANGO_SECRET_KEY`     | Environment secret             | Django cryptographic signing     |
+| `DB_NAME`               | Environment variable or secret | Application database name        |
+| `DB_USER`               | Environment secret             | Restricted application DB user   |
+| `DB_PASSWORD`           | Environment secret             | Application DB password          |
+| `DB_HOST`               | Environment variable or secret | RDS hostname                     |
+| `DB_PORT`               | Environment variable           | MySQL port, normally `3306`      |
+| `TOTP_ENCRYPTION_KEY`   | Environment secret             | Encryption for stored MFA seeds  |
+| `REACT_APP_API_URL`     | Environment variable           | Frontend API origin              |
+| `AWS_ROLE_ARN`          | Environment variable           | OIDC deployment role, if adopted |
+| Email/SMS provider keys | Environment secrets            | Notification delivery            |
 
 > [!NOTE]
 > GitHub secrets are available to Actions, but they do not automatically configure a developer's local machine or a running server. Local development still uses an ignored `.env`; deployment must pass secrets into the runtime environment.
@@ -320,23 +320,23 @@ settings code alone.
 - [ ] Document every current and future application table.
 - [ ] Include the following for each field:
 
-| Attribute | Required documentation |
-| --- | --- |
-| Model/table | Django model and physical table name |
-| Field/column | Application and database names |
-| Purpose | Business meaning, not merely the code name |
-| Type | Django type and database type |
-| Size | Maximum length or numeric precision |
-| Null/default | Nullability and default behavior |
-| Keys | Primary, foreign, and unique keys |
-| Constraints | Allowed values and cross-field rules |
-| Normalization | Trimming, casing, formatting, and canonical form |
-| Sensitivity | Public, internal, personal, credential, or secret |
-| Authorization | Roles allowed to read or modify it |
-| Source | User input, system generated, or imported |
-| Retention | Archive/deletion expectations |
-| API mapping | Serializer/API field names |
-| Example | A safe, fictional example value |
+| Attribute     | Required documentation                            |
+| ------------- | ------------------------------------------------- |
+| Model/table   | Django model and physical table name              |
+| Field/column  | Application and database names                    |
+| Purpose       | Business meaning, not merely the code name        |
+| Type          | Django type and database type                     |
+| Size          | Maximum length or numeric precision               |
+| Null/default  | Nullability and default behavior                  |
+| Keys          | Primary, foreign, and unique keys                 |
+| Constraints   | Allowed values and cross-field rules              |
+| Normalization | Trimming, casing, formatting, and canonical form  |
+| Sensitivity   | Public, internal, personal, credential, or secret |
+| Authorization | Roles allowed to read or modify it                |
+| Source        | User input, system generated, or imported         |
+| Retention     | Archive/deletion expectations                     |
+| API mapping   | Serializer/API field names                        |
+| Example       | A safe, fictional example value                   |
 
 Initial models to document:
 
@@ -615,4 +615,4 @@ A story is complete only when all applicable items are satisfied:
 
 ---
 
-_Last reviewed: 2026-10-01_
+_Last reviewed: 2026-10-01._

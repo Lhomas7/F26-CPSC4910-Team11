@@ -381,18 +381,18 @@ erDiagram
 
 Mermaid ER diagrams cannot fully express every composite index, so these constraints supplement the diagrams:
 
-| Table | Columns | Constraint or index |
-| --- | --- | --- |
-| `accounts_loginattempt` | `user_id`, `timestamp` (descending) | Non-unique composite index |
-| `accounts_mfacode` | `user_id`, `purpose`, `used` | Non-unique composite index |
-| `accounts_registrationemailcode` | `email`, `used` | Non-unique composite index |
-| `accounts_trusteddevice` | `user_id`, `token_hash` | Non-unique composite index |
-| `auth_group_permissions` | `group_id`, `permission_id` | Composite unique constraint |
-| `auth_permission` | `content_type_id`, `codename` | Composite unique constraint |
-| `auth_user_groups` | `user_id`, `group_id` | Composite unique constraint |
-| `auth_user_user_permissions` | `user_id`, `permission_id` | Composite unique constraint |
-| `django_content_type` | `app_label`, `model` | Composite unique constraint |
-| `django_session` | `expire_date` | Non-unique index |
+| Table                            | Columns                             | Constraint or index         |
+| -------------------------------- | ----------------------------------- | --------------------------- |
+| `accounts_loginattempt`          | `user_id`, `timestamp` (descending) | Non-unique composite index  |
+| `accounts_mfacode`               | `user_id`, `purpose`, `used`        | Non-unique composite index  |
+| `accounts_registrationemailcode` | `email`, `used`                     | Non-unique composite index  |
+| `accounts_trusteddevice`         | `user_id`, `token_hash`             | Non-unique composite index  |
+| `auth_group_permissions`         | `group_id`, `permission_id`         | Composite unique constraint |
+| `auth_permission`                | `content_type_id`, `codename`       | Composite unique constraint |
+| `auth_user_groups`               | `user_id`, `group_id`               | Composite unique constraint |
+| `auth_user_user_permissions`     | `user_id`, `permission_id`          | Composite unique constraint |
+| `django_content_type`            | `app_label`, `model`                | Composite unique constraint |
+| `django_session`                 | `expire_date`                       | Non-unique index            |
 
 Foreign-key indexes and single-column unique indexes are shown by `FK` and `UK` markers in the diagrams.
 
