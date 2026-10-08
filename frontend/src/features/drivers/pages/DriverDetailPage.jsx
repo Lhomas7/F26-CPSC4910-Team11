@@ -7,7 +7,7 @@ import Skeleton from '../../../components/feedback/Skeleton';
 import StatePanel from '../../../components/feedback/StatePanel';
 import Avatar from '../../../components/primitives/Avatar';
 import useApiRequest from '../../../hooks/useApiRequest';
-import PointHistoryList from '../../points/components/PointHistoryList';
+import { PointHistoryList } from '../../points';
 import PointAdjustmentPanel from '../components/PointAdjustmentPanel';
 import RemoveDriverDialog from '../components/RemoveDriverDialog';
 import '../Drivers.css';

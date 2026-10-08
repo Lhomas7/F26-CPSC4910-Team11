@@ -4,7 +4,7 @@ import { getAdminUsers, getDrivers, getPointHistory } from '../../../api';
 import Skeleton from '../../../components/feedback/Skeleton';
 import StatePanel from '../../../components/feedback/StatePanel';
 import useApiRequest from '../../../hooks/useApiRequest';
-import PointHistoryList from '../../points/components/PointHistoryList';
+import { PointHistoryList } from '../../points';
 
 const RECENT_ACTIVITY = 5;
 

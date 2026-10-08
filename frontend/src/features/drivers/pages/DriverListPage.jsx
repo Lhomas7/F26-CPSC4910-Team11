@@ -9,7 +9,7 @@ import StatePanel from '../../../components/feedback/StatePanel';
 import Avatar from '../../../components/primitives/Avatar';
 import { SearchIcon } from '../../../components/primitives/Icons';
 import useApiRequest from '../../../hooks/useApiRequest';
-import DriverMfaRequirement from '../../sponsors/components/DriverMfaRequirement';
+import { DriverMfaRequirement } from '../../sponsors';
 import LinkDriverForm from '../components/LinkDriverForm';
 import '../Drivers.css';
 

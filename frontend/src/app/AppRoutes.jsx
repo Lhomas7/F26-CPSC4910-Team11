@@ -2,21 +2,21 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 import { useAuth } from '../auth/AuthContext';
 import StatePanel from '../components/feedback/StatePanel';
-import AboutPage from '../features/about/AboutPage';
-import AccountPage from '../features/accounts/AccountPage';
-import AddUserPage from '../features/admin-users/AddUserPage';
-import AdminDetailPage from '../features/admin-users/AdminDetailPage';
-import AdminUsersPage from '../features/admin-users/AdminUsersPage';
-import AdminDriverDetailPage from '../features/admin-users/DriverDetailPage';
-import SponsorDetailPage from '../features/admin-users/SponsorDetailPage';
-import ForgotPasswordPage from '../features/authentication/ForgotPasswordPage';
-import LoginPage from '../features/authentication/LoginPage';
-import ResetPasswordPage from '../features/authentication/ResetPasswordPage';
-import { PrivacyPage, TermsPage } from '../features/legal/LegalPage';
+import { AboutPage } from '../features/about';
+import { AccountPage } from '../features/accounts';
+import {
+  AddUserPage,
+  AdminAccountPage,
+  AdminUsersPage,
+  DriverAccountPage,
+  SponsorAccountPage,
+} from '../features/admin-users';
+import { ForgotPasswordPage, LoginPage, ResetPasswordPage } from '../features/authentication';
 import { DriverDetailPage, DriverListPage } from '../features/drivers';
-import WelcomePage from '../features/home/WelcomePage';
-import PlaygroundPage from '../features/playground/PlaygroundPage';
-import PointsPage from '../features/points/PointsPage';
+import { WelcomePage } from '../features/home';
+import { PrivacyPage, TermsPage } from '../features/legal';
+import { PlaygroundPage } from '../features/playground';
+import { PointsPage } from '../features/points';
 import { AppLayout } from './AppLayout';
 import { PAGE_ROLES } from './navigation';
 
@@ -57,9 +57,9 @@ export function AppRoutes() {
         <Route path="/account" element={<RequireAuth><AccountPage /></RequireAuth>} />
         <Route path="/users" element={<RequireAuth roles={PAGE_ROLES.users}><AdminUsersPage /></RequireAuth>} />
         <Route path="/users/new" element={<RequireAuth roles={PAGE_ROLES.users}><AddUserPage /></RequireAuth>} />
-        <Route path="/users/sponsors/:userId" element={<RequireAuth roles={PAGE_ROLES.users}><SponsorDetailPage /></RequireAuth>} />
-        <Route path="/users/drivers/:userId" element={<RequireAuth roles={PAGE_ROLES.users}><AdminDriverDetailPage /></RequireAuth>} />
-        <Route path="/users/admins/:userId" element={<RequireAuth roles={PAGE_ROLES.users}><AdminDetailPage /></RequireAuth>} />
+        <Route path="/users/sponsors/:userId" element={<RequireAuth roles={PAGE_ROLES.users}><SponsorAccountPage /></RequireAuth>} />
+        <Route path="/users/drivers/:userId" element={<RequireAuth roles={PAGE_ROLES.users}><DriverAccountPage /></RequireAuth>} />
+        <Route path="/users/admins/:userId" element={<RequireAuth roles={PAGE_ROLES.users}><AdminAccountPage /></RequireAuth>} />
         <Route path="/drivers/:driverId" element={<RequireAuth roles={PAGE_ROLES.drivers}><DriverDetailPage /></RequireAuth>} />
         <Route path="/about" element={<AboutPage />} />
       </Route>

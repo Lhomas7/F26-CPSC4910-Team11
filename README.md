@@ -146,7 +146,10 @@ F26-CPSC4910-Team11/
 │   │   │   ├── home/             # Public welcome page
 │   │   │   ├── legal/            # Terms of Service and Privacy Notice
 │   │   │   ├── playground/       # Development-only shared-asset gallery
+│   │   │   ├── points/           # Point balances and history
 │   │   │   └── sponsors/         # Sponsor-wide settings and controls
+│   │   ├── hooks/                # Shared React hooks (data loading)
+│   │   ├── styles/               # Global tokens, base styles, and shared UI classes
 │   │   └── utils/                # Shared frontend validation utilities
 │   ├── .env.example
 │   ├── package.json
