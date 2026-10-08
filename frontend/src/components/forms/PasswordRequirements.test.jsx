@@ -21,8 +21,9 @@ function renderInField() {
   );
 }
 
-async function open(toggle) {
+async function open(toggle, expectedContent = POLICY.requirements[0]) {
   userEvent.click(toggle);
+  return screen.findByText(expectedContent);
 }
 
 beforeEach(() => {
@@ -71,7 +72,10 @@ test('a failed request shows a fallback message', async () => {
   api.passwordPolicy.mockRejectedValue(new Error('offline'));
   renderInField();
 
-  await open(screen.getByRole('button', { name: 'Show password requirements' }));
+  await open(
+    screen.getByRole('button', { name: 'Show password requirements' }),
+    /requirements couldn.t be loaded/i,
+  );
 
   expect(await screen.findByText(/requirements couldn.t be loaded/i)).toBeInTheDocument();
 });
