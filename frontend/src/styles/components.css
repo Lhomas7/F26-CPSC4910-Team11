@@ -223,6 +223,13 @@
   color: var(--warning-ink);
 }
 
+/* Shared summary layout used by Drivers, Points, and role dashboards. */
+.stat-grid {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 button.stat {
   cursor: pointer;
   transition:
@@ -288,6 +295,10 @@ button.stat[aria-pressed='true'] {
 }
 
 @media (max-width: 42rem) {
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .stat {
     padding: 0.65rem 0.8rem;
   }

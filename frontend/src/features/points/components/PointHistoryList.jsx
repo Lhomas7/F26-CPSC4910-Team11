@@ -15,6 +15,7 @@ function formatDate(isoDate) {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,
+    timeZoneName: 'short',
   });
 }
 
@@ -29,6 +30,7 @@ export default function PointHistoryList({
   linkDrivers = false,
   emptyText = 'No point changes yet.',
   detailStyle = false,
+  showSponsor = false,
 }) {
   if (!entries.length) return <p className="point-history-empty">{emptyText}</p>;
 
@@ -72,6 +74,9 @@ export default function PointHistoryList({
                 <time dateTime={entry.changed_at}>{formatDate(entry.changed_at)}</time>
                 {!detailStyle && entry.changed_by_name && <> · by {entry.changed_by_name}</>}
               </span>
+              {showSponsor && entry.sponsor_name && (
+                <span className="point-history-org">{entry.sponsor_name}</span>
+              )}
             </div>
             {!detailStyle && amount}
           </li>

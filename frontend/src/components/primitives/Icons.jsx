@@ -78,3 +78,18 @@ export function SearchIcon(props) {
     </SvgIcon>
   );
 }
+
+export function ArrowRightIcon(props) {
+  return (
+    <SvgIcon {...props}>
+      <path d="M5 12h13" stroke="currentColor" strokeLinecap="round" strokeWidth="2" />
+      <path
+        d="m13 6 6 6-6 6"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
+    </SvgIcon>
+  );
+}
