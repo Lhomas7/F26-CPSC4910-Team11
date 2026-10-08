@@ -7,7 +7,10 @@ export default function SelectMenu({ label, value, options, onChange, className 
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
   const listboxId = useId();
-  const selectedIndex = Math.max(0, options.findIndex((option) => String(option.value) === String(value)));
+  const selectedIndex = Math.max(
+    0,
+    options.findIndex((option) => String(option.value) === String(value)),
+  );
   const selectedOption = options[selectedIndex];
 
   useEffect(() => {

@@ -110,7 +110,9 @@ def remove_driver_from_sponsor(*, driver, changed_by_user, reason):
     )
     reason = normalize_reason(
         reason,
-        subject='dropping this driver' if action == DriverStatusChange.DROPPED else 'rejecting this driver',
+        subject='dropping this driver'
+        if action == DriverStatusChange.DROPPED
+        else 'rejecting this driver',
         error=lambda code, message: DriverMembershipError('reason', message, code=code),
     )
 

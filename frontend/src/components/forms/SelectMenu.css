@@ -8,15 +8,15 @@
   align-items: center;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: .5rem;
+  border-radius: 0.5rem;
   color: var(--ink);
   cursor: pointer;
   display: flex;
   font: inherit;
-  font-size: .78rem;
+  font-size: 0.78rem;
   height: var(--select-menu-height, 2.25rem);
   justify-content: space-between;
-  padding: 0 .6rem 0 .7rem;
+  padding: 0 0.6rem 0 0.7rem;
   text-align: left;
   width: 100%;
 }
@@ -31,7 +31,7 @@
 
 .select-menu-chevron {
   flex: 0 0 auto;
-  margin-left: .6rem;
+  margin-left: 0.6rem;
   transition: transform 120ms ease;
 }
 
@@ -42,13 +42,13 @@
 .select-menu-options {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: .55rem;
-  box-shadow: 0 .65rem 1.5rem rgb(0 0 0 / 18%);
+  border-radius: 0.55rem;
+  box-shadow: 0 0.65rem 1.5rem rgb(0 0 0 / 18%);
   left: 0;
   min-width: 100%;
-  padding: .35rem;
+  padding: 0.35rem;
   position: absolute;
-  top: calc(100% + .35rem);
+  top: calc(100% + 0.35rem);
   width: max-content;
   z-index: 20;
 }
@@ -56,13 +56,13 @@
 .select-menu-option {
   background: transparent;
   border: 0;
-  border-radius: .35rem;
+  border-radius: 0.35rem;
   color: var(--ink);
   cursor: pointer;
   display: block;
   font: inherit;
-  font-size: .78rem;
-  padding: .5rem .6rem;
+  font-size: 0.78rem;
+  padding: 0.5rem 0.6rem;
   text-align: left;
   width: 100%;
 }

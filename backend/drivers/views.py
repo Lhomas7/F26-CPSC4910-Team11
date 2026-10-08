@@ -36,6 +36,7 @@ class DriverViewSet(viewsets.ReadOnlyModelViewSet):
     router actions. Membership and point changes must use the audited domain
     actions below instead.
     """
+
     serializer_class = DriverSerializer
     permission_classes = [IsAuthenticated, MFAEnrolled]
 
@@ -89,10 +90,13 @@ class DriverViewSet(viewsets.ReadOnlyModelViewSet):
                 status=response_status,
             )
 
-        return Response({
-            'transaction': PointTransactionSerializer(result.transaction).data,
-            'balance': result.balance,
-        }, status=status.HTTP_201_CREATED)
+        return Response(
+            {
+                'transaction': PointTransactionSerializer(result.transaction).data,
+                'balance': result.balance,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
@@ -188,5 +192,5 @@ class PointHistoryView(generics.ListAPIView):
 
         limit = self.request.query_params.get('limit')
         if limit and limit.isdigit():
-            queryset = queryset[:min(int(limit), MAX_POINT_HISTORY_LIMIT)]
+            queryset = queryset[: min(int(limit), MAX_POINT_HISTORY_LIMIT)]
         return queryset

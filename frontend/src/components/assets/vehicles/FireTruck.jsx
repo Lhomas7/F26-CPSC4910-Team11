@@ -4,9 +4,20 @@ import './FireTruck.css';
 // Red engine with a ladder and light bar. `spraying` turns on a water arc
 // from the ladder nozzle out in front of the cab; set --spray-delay and
 // --spray-length on the asset (or an ancestor) to time and size it.
-export default function FireTruck({ moving = false, speeding = false, crash, lights = true, spraying = false, ...frame }) {
+export default function FireTruck({
+  moving = false,
+  speeding = false,
+  crash,
+  lights = true,
+  spraying = false,
+  ...frame
+}) {
   return (
-    <AssetFrame name="fire-truck" modifiers={vehicleModifiers({ moving, speeding, crash, lights })} {...frame}>
+    <AssetFrame
+      name="fire-truck"
+      modifiers={vehicleModifiers({ moving, speeding, crash, lights })}
+      {...frame}
+    >
       {speeding && <SpeedLines />}
       <span className="asset-fire-body" />
       <span className="asset-fire-ladder" />

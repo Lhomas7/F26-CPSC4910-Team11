@@ -30,25 +30,44 @@ function completeIdentityFields() {
   fireEvent.change(screen.getByLabelText('Last name'), { target: { value: 'Rivera' } });
   fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'jamie.rivera' } });
   fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'jamie@example.com' } });
-  fireEvent.change(screen.getByLabelText('Temporary password'), { target: { value: 'ExamplePassword123!' } });
-  fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: 'ExamplePassword123!' } });
+  fireEvent.change(screen.getByLabelText('Temporary password'), {
+    target: { value: 'ExamplePassword123!' },
+  });
+  fireEvent.change(screen.getByLabelText('Confirm password'), {
+    target: { value: 'ExamplePassword123!' },
+  });
 }
 
 test('creates a driver with the selected sponsor organization', async () => {
-  api.createAdminUser.mockResolvedValue({ id: 4, display_name: 'Jamie Rivera', username: 'jamie.rivera', role: 'driver', sponsor_org: organizations[0], is_active: true });
+  api.createAdminUser.mockResolvedValue({
+    id: 4,
+    display_name: 'Jamie Rivera',
+    username: 'jamie.rivera',
+    role: 'driver',
+    sponsor_org: organizations[0],
+    is_active: true,
+  });
   renderPage();
   await screen.findByRole('button', { name: 'Create driver account' });
   completeIdentityFields();
   fireEvent.change(screen.getByLabelText(/Sponsor organization/), { target: { value: '7' } });
   fireEvent.click(screen.getByRole('button', { name: 'Create driver account' }));
 
-  await waitFor(() => expect(api.createAdminUser).toHaveBeenCalledWith({
-    first_name: 'Jamie', last_name: 'Rivera', username: 'jamie.rivera',
-    email: 'jamie@example.com', role: 'driver', sponsor_org_id: 7,
-    password: 'ExamplePassword123!',
-    password_confirm: 'ExamplePassword123!',
-  }));
-  expect(await screen.findByRole('heading', { name: 'Driver account created' })).toBeInTheDocument();
+  await waitFor(() =>
+    expect(api.createAdminUser).toHaveBeenCalledWith({
+      first_name: 'Jamie',
+      last_name: 'Rivera',
+      username: 'jamie.rivera',
+      email: 'jamie@example.com',
+      role: 'driver',
+      sponsor_org_id: 7,
+      password: 'ExamplePassword123!',
+      password_confirm: 'ExamplePassword123!',
+    }),
+  );
+  expect(
+    await screen.findByRole('heading', { name: 'Driver account created' }),
+  ).toBeInTheDocument();
 });
 
 test('requires an organization when creating a sponsor', async () => {
@@ -69,7 +88,10 @@ test('does not load the form for non-admin users', () => {
 });
 
 test('shows duplicate username returned by the API', async () => {
-  api.createAdminUser.mockRejectedValue({ status: 400, data: { username: ['That username is already taken.'] } });
+  api.createAdminUser.mockRejectedValue({
+    status: 400,
+    data: { username: ['That username is already taken.'] },
+  });
   renderPage();
   await screen.findByRole('button', { name: 'Create driver account' });
   completeIdentityFields();

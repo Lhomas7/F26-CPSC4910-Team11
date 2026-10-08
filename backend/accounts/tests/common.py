@@ -1,7 +1,6 @@
 from contextlib import contextmanager
 
 import pyotp
-
 from django.core import mail
 from django.test import override_settings
 
@@ -25,4 +24,3 @@ class MailAssertMixin:
             mail.outbox = []
             yield
             self.assertEqual(len(mail.outbox), count)
-

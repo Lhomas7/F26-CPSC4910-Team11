@@ -21,7 +21,9 @@ export default function AssetFrame({
     facing === 'left' ? 'asset-facing-left' : '',
     ...modifiers.filter(Boolean).map((modifier) => `asset-${modifier}`),
     className,
-  ].filter(Boolean).join(' ');
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <span className={classes} style={{ '--asset-scale': scale, ...style }} aria-hidden="true">

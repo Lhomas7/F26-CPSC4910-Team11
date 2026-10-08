@@ -2,9 +2,7 @@ import { API_ACTIVITY_EVENT, SESSION_EXPIRED_EVENT } from '../auth/sessionEvents
 
 const DEFAULT_API_URL = 'http://localhost:8000/api';
 
-export const API_URL = (
-  process.env.REACT_APP_API_URL || DEFAULT_API_URL
-).replace(/\/+$/, '');
+export const API_URL = (process.env.REACT_APP_API_URL || DEFAULT_API_URL).replace(/\/+$/, '');
 
 function readCookie(name) {
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
@@ -73,7 +71,10 @@ export async function request(path, { method = 'GET', body, headers } = {}) {
     throw new NetworkError(undefined, error);
   }
   if (response.status === 401) {
-    const data = await response.clone().json().catch(() => ({}));
+    const data = await response
+      .clone()
+      .json()
+      .catch(() => ({}));
     if (data.code === 'session_expired') {
       window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
     }

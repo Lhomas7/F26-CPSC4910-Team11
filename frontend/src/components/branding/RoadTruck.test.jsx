@@ -69,8 +69,13 @@ test('sends a fire truck from the end of the road furthest from the wreck', () =
   const rescue = container.querySelector('.road-rescue');
   expect(rescue).toHaveClass('road-rescue-from-right');
   expect(rescue).toHaveStyle({ '--wreck-left': '50px', '--wreck-right': '96px' });
-  expect(container.querySelector('.road-truck-loose-wheel')).toHaveClass('road-truck-loose-wheel-back', 'asset-rolling');
-  expect(container.querySelector('.road-truck-loose-wheel').style.getPropertyValue('--roll')).toBe('-1');
+  expect(container.querySelector('.road-truck-loose-wheel')).toHaveClass(
+    'road-truck-loose-wheel-back',
+    'asset-rolling',
+  );
+  expect(container.querySelector('.road-truck-loose-wheel').style.getPropertyValue('--roll')).toBe(
+    '-1',
+  );
   expect(rescue.querySelector('.asset-fire-truck')).toHaveClass('asset-facing-left');
 
   rerender(<RoadTruck />);

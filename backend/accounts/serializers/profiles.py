@@ -43,7 +43,7 @@ class ChangePasswordSerializer(serializers.Serializer):
             try:
                 django_validate_password(attrs['password'], user)
             except DjangoValidationError as exc:
-                raise serializers.ValidationError({'password': list(exc.messages)})
+                raise serializers.ValidationError({'password': list(exc.messages)}) from exc
         return attrs
 
 
@@ -128,9 +128,9 @@ class SelfProfileSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         if attrs.get('profile_picture') and attrs.get('remove_profile_picture'):
-            raise serializers.ValidationError({
-                'profile_picture': 'Choose a new picture or remove the current one, not both.'
-            })
+            raise serializers.ValidationError(
+                {'profile_picture': 'Choose a new picture or remove the current one, not both.'}
+            )
         return attrs
 
     def validate_email(self, value):
@@ -138,9 +138,7 @@ class SelfProfileSerializer(serializers.ModelSerializer):
         if self.instance is not None:
             duplicate = duplicate.exclude(pk=self.instance.pk)
         if duplicate.exists():
-            raise serializers.ValidationError(
-                'A user with this email address already exists.'
-            )
+            raise serializers.ValidationError('A user with this email address already exists.')
         return value
 
     def validate_username(self, value):
@@ -153,9 +151,7 @@ class SelfProfileSerializer(serializers.ModelSerializer):
         if self.instance is not None:
             duplicate = duplicate.exclude(pk=self.instance.pk)
         if duplicate.exists():
-            raise serializers.ValidationError(
-                'A user with this username already exists.'
-            )
+            raise serializers.ValidationError('A user with this username already exists.')
         return value
 
     def validate_name(self, value):
@@ -194,7 +190,9 @@ class SelfProfileSerializer(serializers.ModelSerializer):
             'username': user.get_username(),
             'email': user.email,
             'name': name,
-            'phone_number': user.driver_profile.phone_number if hasattr(user, 'driver_profile') else None,
+            'phone_number': user.driver_profile.phone_number
+            if hasattr(user, 'driver_profile')
+            else None,
             'account_type': self.get_account_type(user),
             'company': self.get_company(user),
             'avatar_url': self.get_avatar_url(user),

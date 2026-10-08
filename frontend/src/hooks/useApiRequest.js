@@ -52,7 +52,9 @@ export default function useApiRequest(request, { skip = false, onSuccess } = {})
     if (skip) return undefined;
     reload();
     // Bumping the id on cleanup makes any in-flight response stale.
-    return () => { latest.current += 1; };
+    return () => {
+      latest.current += 1;
+    };
   }, [reload, skip]);
 
   const setData = useCallback((update) => {

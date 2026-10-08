@@ -14,7 +14,14 @@ const drivers = [
 ];
 
 function renderPage(initialEntries) {
-  return render(<MemoryRouter initialEntries={initialEntries} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><DriverListPage /></MemoryRouter>);
+  return render(
+    <MemoryRouter
+      initialEntries={initialEntries}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
+      <DriverListPage />
+    </MemoryRouter>,
+  );
 }
 
 beforeEach(() => {
@@ -30,8 +37,14 @@ test('shows the sponsor overview, visible usernames, and whole-card driver links
 
   expect(await screen.findByRole('heading', { name: 'Driver directory' })).toBeInTheDocument();
   expect(screen.getByText('125', { selector: '.drivers-summary strong' })).toBeInTheDocument();
-  expect(screen.getByRole('link', { name: 'View Jamie Rivera' })).toHaveAttribute('href', '/drivers/4');
-  expect(screen.getByRole('link', { name: 'View Morgan Chen' })).toHaveAttribute('href', '/drivers/8');
+  expect(screen.getByRole('link', { name: 'View Jamie Rivera' })).toHaveAttribute(
+    'href',
+    '/drivers/4',
+  );
+  expect(screen.getByRole('link', { name: 'View Morgan Chen' })).toHaveAttribute(
+    'href',
+    '/drivers/8',
+  );
   expect(screen.getByText('@jamie.rivera')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Link driver' })).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: 'Organization driver settings' })).toBeInTheDocument();
@@ -87,14 +100,22 @@ test('uses summary cards as synchronized status filters', async () => {
 });
 
 test('links a driver from the modal and announces the pending enrollment', async () => {
-  const linkedDriver = { id: 12, username: 'alex.moreno', name: 'Alex Moreno', status: 'pending', point_balance: 0 };
+  const linkedDriver = {
+    id: 12,
+    username: 'alex.moreno',
+    name: 'Alex Moreno',
+    status: 'pending',
+    point_balance: 0,
+  };
   api.getDrivers.mockResolvedValueOnce(drivers).mockResolvedValueOnce([...drivers, linkedDriver]);
   api.linkDriver.mockResolvedValue(linkedDriver);
   renderPage();
   await screen.findByRole('heading', { name: 'Driver directory' });
 
   fireEvent.click(screen.getByRole('button', { name: 'Link driver' }));
-  fireEvent.change(screen.getByLabelText('Driver username'), { target: { value: '  alex.moreno  ' } });
+  fireEvent.change(screen.getByLabelText('Driver username'), {
+    target: { value: '  alex.moreno  ' },
+  });
   fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Link driver' }));
 
   await waitFor(() => expect(api.linkDriver).toHaveBeenCalledWith('alex.moreno'));
@@ -105,11 +126,15 @@ test('links a driver from the modal and announces the pending enrollment', async
 });
 
 test('shows an error state and retries loading', async () => {
-  api.getDrivers.mockRejectedValueOnce(new Error('Network unavailable')).mockResolvedValueOnce(drivers);
+  api.getDrivers
+    .mockRejectedValueOnce(new Error('Network unavailable'))
+    .mockResolvedValueOnce(drivers);
   renderPage();
 
   expect(screen.getByRole('heading', { level: 1, name: 'Drivers' })).toBeInTheDocument();
-  expect(await screen.findByRole('heading', { name: "Drivers couldn't be loaded" })).toBeInTheDocument();
+  expect(
+    await screen.findByRole('heading', { name: "Drivers couldn't be loaded" }),
+  ).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
   await waitFor(() => expect(api.getDrivers).toHaveBeenCalledTimes(2));
   expect(await screen.findByRole('heading', { name: 'Driver directory' })).toBeInTheDocument();
@@ -128,14 +153,23 @@ test('shows a dedicated no-match state and clears active criteria', async () => 
   await screen.findByRole('heading', { name: 'Driver directory' });
 
   fireEvent.change(screen.getByLabelText('Search drivers'), { target: { value: 'nobody-here' } });
-  expect(screen.getByRole('heading', { name: 'No drivers match “nobody-here”' })).toBeInTheDocument();
+  expect(
+    screen.getByRole('heading', { name: 'No drivers match “nobody-here”' }),
+  ).toBeInTheDocument();
 
   fireEvent.click(screen.getByRole('button', { name: 'Clear search and filters' }));
   expect(screen.getByRole('link', { name: 'View Jamie Rivera' })).toBeInTheDocument();
 });
 
 test('displays a route success notice after a completed enrollment change', async () => {
-  renderPage([{ pathname: '/drivers', state: { notice: 'Jamie Rivera was dropped. The reason has been saved.' } }]);
+  renderPage([
+    {
+      pathname: '/drivers',
+      state: { notice: 'Jamie Rivera was dropped. The reason has been saved.' },
+    },
+  ]);
 
-  expect(await screen.findByRole('status')).toHaveTextContent('Jamie Rivera was dropped. The reason has been saved.');
+  expect(await screen.findByRole('status')).toHaveTextContent(
+    'Jamie Rivera was dropped. The reason has been saved.',
+  );
 });

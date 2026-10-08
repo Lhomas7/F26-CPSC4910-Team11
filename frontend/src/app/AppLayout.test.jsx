@@ -120,7 +120,10 @@ test('an expired session is sent to the sign-in page', () => {
   });
 
   render(
-    <MemoryRouter initialEntries={['/about']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <MemoryRouter
+      initialEntries={['/about']}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
       <Routes>
         <Route element={<AppLayout />}>
           <Route path="/about" element={<p>About page</p>} />

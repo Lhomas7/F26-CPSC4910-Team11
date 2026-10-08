@@ -10,7 +10,9 @@ const PERKS = [
 export default function ProgramPerks({ className = '' }) {
   return (
     <ul className={`program-perks ${className}`.trim()}>
-      {PERKS.map((perk) => <li key={perk}>{perk}</li>)}
+      {PERKS.map((perk) => (
+        <li key={perk}>{perk}</li>
+      ))}
     </ul>
   );
 }

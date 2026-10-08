@@ -76,8 +76,14 @@ export default function Modal({ title, children, actions, onClose, className = '
         aria-describedby={children ? bodyId : undefined}
         tabIndex="-1"
       >
-        <h2 id={titleId} className="modal-title">{title}</h2>
-        {children && <div id={bodyId} className="modal-body">{children}</div>}
+        <h2 id={titleId} className="modal-title">
+          {title}
+        </h2>
+        {children && (
+          <div id={bodyId} className="modal-body">
+            {children}
+          </div>
+        )}
         {actions && <div className="modal-actions">{actions}</div>}
       </div>
     </div>,

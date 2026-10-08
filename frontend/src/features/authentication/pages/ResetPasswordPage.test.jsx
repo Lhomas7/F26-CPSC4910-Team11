@@ -25,7 +25,9 @@ function renderPage() {
 
 function fillAndSubmit(password, confirmation = password) {
   fireEvent.change(screen.getByLabelText('New password'), { target: { value: password } });
-  fireEvent.change(screen.getByLabelText('Confirm new password'), { target: { value: confirmation } });
+  fireEvent.change(screen.getByLabelText('Confirm new password'), {
+    target: { value: confirmation },
+  });
   fireEvent.click(screen.getByRole('button', { name: 'Reset password' }));
 }
 
@@ -53,12 +55,14 @@ test('submits the uid and token from the link and shows success', async () => {
 
   fillAndSubmit(VALID_PASSWORD);
 
-  await waitFor(() => expect(api.confirmPasswordReset).toHaveBeenCalledWith({
-    uid: 'Mg',
-    token: 'abc-123',
-    password: VALID_PASSWORD,
-    passwordConfirm: VALID_PASSWORD,
-  }));
+  await waitFor(() =>
+    expect(api.confirmPasswordReset).toHaveBeenCalledWith({
+      uid: 'Mg',
+      token: 'abc-123',
+      password: VALID_PASSWORD,
+      passwordConfirm: VALID_PASSWORD,
+    }),
+  );
   expect(await screen.findByRole('status')).toHaveTextContent(/password has been reset/i);
   expect(screen.getByRole('link', { name: 'Go to sign in' })).toHaveAttribute('href', '/login');
 });
@@ -73,7 +77,10 @@ test('offers a new link when the link is invalid or expired', async () => {
   fillAndSubmit(VALID_PASSWORD);
 
   expect(await screen.findByRole('alert')).toHaveTextContent(/invalid or has expired/i);
-  expect(screen.getByRole('link', { name: 'Request a new link' })).toHaveAttribute('href', '/forgot-password');
+  expect(screen.getByRole('link', { name: 'Request a new link' })).toHaveAttribute(
+    'href',
+    '/forgot-password',
+  );
 });
 
 test('keeps the form open when the server rejects the password', async () => {

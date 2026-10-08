@@ -14,12 +14,13 @@
   --catch: 0;
   --lit-at: calc(var(--fire-spread) * var(--catch) + var(--fire-delay));
   animation:
-    asset-fire-show .01s linear var(--lit-at) forwards,
-    asset-fire-grow calc(var(--fire-spread) * (1 - var(--catch)) + 2s) ease-in var(--lit-at) forwards,
+    asset-fire-show 0.01s linear var(--lit-at) forwards,
+    asset-fire-grow calc(var(--fire-spread) * (1 - var(--catch)) + 2s) ease-in var(--lit-at)
+      forwards,
     asset-fire-douse 4s ease-out var(--fire-doused-at) forwards;
   opacity: 0;
-  scale: .7;
-  top: .15em;
+  scale: 0.7;
+  top: 0.15em;
   transform-origin: 50% 100%;
 }
 
@@ -29,27 +30,27 @@
 }
 
 .asset-fire-flame-2 {
-  --catch: .2;
-  --flicker-speed: .4s;
+  --catch: 0.2;
+  --flicker-speed: 0.4s;
   left: 1.05em;
 }
 
 .asset-fire-flame-3 {
-  --catch: .45;
-  --flicker-speed: .3s;
-  left: .45em;
+  --catch: 0.45;
+  --flicker-speed: 0.3s;
+  left: 0.45em;
 }
 
 .asset-fire-flame-4 {
-  --catch: .7;
-  --flicker-speed: .38s;
+  --catch: 0.7;
+  --flicker-speed: 0.38s;
   left: 2.2em;
 }
 
 /* Smoke keeps puffing, thickens while the fire grows, and settles once doused. */
 .asset-fire-plume {
   --smoke-color: rgb(150 155 150 / 75%);
-  --smoke-delay: calc(var(--fire-delay) + .1s);
+  --smoke-delay: calc(var(--fire-delay) + 0.1s);
   --smoke-drift-x: -1.1em;
   --smoke-drift-y: -1.6em;
   --smoke-duration: 2.4s;
@@ -62,7 +63,7 @@
 }
 
 .asset-fire-plume-2 {
-  --smoke-delay: calc(var(--fire-delay) + .9s);
+  --smoke-delay: calc(var(--fire-delay) + 0.9s);
   left: 1.35em;
 }
 
@@ -72,27 +73,45 @@
 }
 
 @keyframes asset-fire-show {
-  to { opacity: 1; }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes asset-fire-grow {
-  from { scale: .7; }
-  to { scale: 1.45; }
+  from {
+    scale: 0.7;
+  }
+  to {
+    scale: 1.45;
+  }
 }
 
 @keyframes asset-fire-douse {
-  from { scale: 1.45; }
-  to { scale: .4; }
+  from {
+    scale: 1.45;
+  }
+  to {
+    scale: 0.4;
+  }
 }
 
 @keyframes asset-fire-smoke-grow {
-  from { scale: 1; }
-  to { scale: 1.4; }
+  from {
+    scale: 1;
+  }
+  to {
+    scale: 1.4;
+  }
 }
 
 @keyframes asset-fire-smoke-settle {
-  from { scale: 1.4; }
-  to { scale: 1; }
+  from {
+    scale: 1.4;
+  }
+  to {
+    scale: 1;
+  }
 }
 
 /* Reduced motion: the flames are simply there; no smoke. */

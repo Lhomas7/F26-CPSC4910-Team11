@@ -3,7 +3,6 @@ import io
 
 import pyotp
 import qrcode
-
 from django.core.cache import cache
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -13,6 +12,7 @@ from rest_framework.views import APIView
 from drivers.models import Driver
 
 from ..permissions import MFAEnrolled
+from ..sensitive import hide_sensitive_data
 from ..serializers import (
     BackupCodesRegenerateSerializer,
     MFADisableSerializer,
@@ -35,7 +35,6 @@ from ..services.mfa import (
     verify_code,
 )
 from ..services.notify import notify_driver_mfa_change
-from ..sensitive import hide_sensitive_data
 
 MFA_METHOD_LABELS = {
     'email': 'email code',
@@ -49,12 +48,8 @@ def notify_method_change(user, method, action):
     if not hasattr(user, 'driver_profile'):
         return
     label = MFA_METHOD_LABELS.get(method, method)
-    message = (
-        f'You {action} {label} two-factor authentication '
-        'on your Good Driver account.'
-    )
+    message = f'You {action} {label} two-factor authentication on your Good Driver account.'
     notify_driver_mfa_change(user.driver_profile, message)
-
 
 
 def totp_qr_payload(user, secret):
@@ -122,7 +117,6 @@ class MFASetupView(APIView):
         else:
             send_sms_code(phone_number, raw_code)
         return Response({'method': method, 'detail': 'Verification code sent.'})
-
 
 
 @hide_sensitive_data
@@ -384,4 +378,3 @@ class SponsorMFASettingsView(APIView):
             )
 
         return Response({'driver_mfa_required': driver_mfa_required})
-

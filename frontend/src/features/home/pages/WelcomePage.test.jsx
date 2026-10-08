@@ -9,7 +9,15 @@ jest.mock('../../../api');
 jest.mock('../../../auth/AuthContext');
 
 const recent = [
-  { id: 1, driver: 4, driver_name: 'Jamie Rivera', point_change: 50, reason: 'Clean inspection', changed_by_name: 'Pat Sponsor', changed_at: '2026-10-01T12:00:00Z' },
+  {
+    id: 1,
+    driver: 4,
+    driver_name: 'Jamie Rivera',
+    point_change: 50,
+    reason: 'Clean inspection',
+    changed_by_name: 'Pat Sponsor',
+    changed_at: '2026-10-01T12:00:00Z',
+  },
 ];
 
 beforeEach(() => {
@@ -34,7 +42,10 @@ test('renders the welcome copy and anonymous CTAs', () => {
 
   expect(screen.getByRole('heading', { level: 1, name: 'Welcome' })).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/login');
-  expect(screen.getByRole('link', { name: 'Create an account' })).toHaveAttribute('href', '/login?tab=register');
+  expect(screen.getByRole('link', { name: 'Create an account' })).toHaveAttribute(
+    'href',
+    '/login?tab=register',
+  );
   expect(screen.queryByRole('link', { name: 'Go to drivers' })).not.toBeInTheDocument();
 });
 
@@ -44,7 +55,9 @@ test('greets a signed-in user by name', async () => {
   });
   renderWelcomePage();
 
-  expect(screen.getByRole('heading', { level: 2, name: 'Welcome back, Jamie Rivera' })).toBeInTheDocument();
+  expect(
+    screen.getByRole('heading', { level: 2, name: 'Welcome back, Jamie Rivera' }),
+  ).toBeInTheDocument();
   expect(await screen.findByText('Not linked yet')).toBeInTheDocument();
 });
 
@@ -63,7 +76,15 @@ test('a driver gets a points shortcut and their balance with recent activity', a
   useAuth.mockReturnValue({
     user: { name: 'Jamie Rivera', username: 'jamie.rivera', account_type: 'driver' },
   });
-  api.getDrivers.mockResolvedValue([{ id: 4, name: 'Jamie Rivera', status: 'approved', point_balance: 50, sponsor_name: 'Palmetto Freight' }]);
+  api.getDrivers.mockResolvedValue([
+    {
+      id: 4,
+      name: 'Jamie Rivera',
+      status: 'approved',
+      point_balance: 50,
+      sponsor_name: 'Palmetto Freight',
+    },
+  ]);
   api.getPointHistory.mockResolvedValue(recent);
   renderWelcomePage();
 
@@ -76,7 +97,9 @@ test('a driver gets a points shortcut and their balance with recent activity', a
 });
 
 test('a sponsor dashboard lists pending applications and recent driver activity', async () => {
-  useAuth.mockReturnValue({ user: { name: 'Ava Chen', username: 'ava.chen', account_type: 'sponsor' } });
+  useAuth.mockReturnValue({
+    user: { name: 'Ava Chen', username: 'ava.chen', account_type: 'sponsor' },
+  });
   api.getDrivers.mockResolvedValue([
     { id: 4, name: 'Jamie Rivera', status: 'approved', point_balance: 50 },
     { id: 8, name: 'Morgan Chen', status: 'pending', point_balance: 0 },
@@ -84,13 +107,18 @@ test('a sponsor dashboard lists pending applications and recent driver activity'
   api.getPointHistory.mockResolvedValue(recent);
   renderWelcomePage();
 
-  expect(await screen.findByRole('link', { name: 'Review Morgan Chen' })).toHaveAttribute('href', '/drivers/8');
+  expect(await screen.findByRole('link', { name: 'Review Morgan Chen' })).toHaveAttribute(
+    'href',
+    '/drivers/8',
+  );
   expect(screen.getByText('Clean inspection')).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Jamie Rivera' })).toHaveAttribute('href', '/drivers/4');
 });
 
 test('an admin gets account counts and shortcuts', async () => {
-  useAuth.mockReturnValue({ user: { name: 'Sam Admin', username: 'sam.admin', account_type: 'admin' } });
+  useAuth.mockReturnValue({
+    user: { name: 'Sam Admin', username: 'sam.admin', account_type: 'admin' },
+  });
   api.getAdminUsers.mockResolvedValue([
     { id: 1, role: 'driver', sponsor_org: null },
     { id: 2, role: 'driver', sponsor_org: { id: 3 } },

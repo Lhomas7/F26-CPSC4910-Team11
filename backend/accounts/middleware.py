@@ -14,7 +14,6 @@ from .services.session_state import (
     timeout_policy,
 )
 
-
 IMPERSONATION_TARGET_KEY = 'admin_impersonation_target_id'
 IMPERSONATION_STARTED_KEY = 'admin_impersonation_started_at'
 IMPERSONATION_DURATION = timedelta(minutes=30)
@@ -136,7 +135,9 @@ class AdminImpersonationMiddleware:
                     and request.path.startswith(self.blocked_mutation_prefixes)
                 ):
                     return JsonResponse(
-                        {'detail': 'Stop viewing as this user before changing account, security, or admin settings.'},
+                        {
+                            'detail': 'Stop viewing as this user before changing account, security, or admin settings.'
+                        },
                         status=403,
                     )
 

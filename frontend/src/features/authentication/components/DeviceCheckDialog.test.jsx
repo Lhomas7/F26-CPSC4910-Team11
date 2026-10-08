@@ -9,7 +9,7 @@ function renderDialog(props = {}) {
   return { handlers };
 }
 
-test('only asks whether this is the user\'s device', () => {
+test("only asks whether this is the user's device", () => {
   renderDialog();
 
   const dialog = screen.getByRole('dialog', { name: 'Is this your device?' });

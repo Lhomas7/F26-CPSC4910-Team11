@@ -21,8 +21,9 @@ function renderInField() {
   );
 }
 
-async function open(toggle) {
+async function open(toggle, expectedContent = POLICY.requirements[0]) {
   userEvent.click(toggle);
+  return screen.findByText(expectedContent);
 }
 
 beforeEach(() => {
@@ -43,8 +44,10 @@ test('requirements stay hidden until the toggle is clicked', async () => {
   expect(await screen.findByText('At least 12 characters')).toBeInTheDocument();
   expect(screen.getByText('At least 2 numbers')).toBeInTheDocument();
   expect(screen.getByText('! @ #')).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: 'Hide password requirements' }))
-    .toHaveAttribute('aria-controls', popover.id);
+  expect(screen.getByRole('button', { name: 'Hide password requirements' })).toHaveAttribute(
+    'aria-controls',
+    popover.id,
+  );
 });
 
 test('the toggle, Escape, and an outside click all close the popover', async () => {
@@ -69,7 +72,10 @@ test('a failed request shows a fallback message', async () => {
   api.passwordPolicy.mockRejectedValue(new Error('offline'));
   renderInField();
 
-  await open(screen.getByRole('button', { name: 'Show password requirements' }));
+  await open(
+    screen.getByRole('button', { name: 'Show password requirements' }),
+    /requirements couldn.t be loaded/i,
+  );
 
   expect(await screen.findByText(/requirements couldn.t be loaded/i)).toBeInTheDocument();
 });
@@ -79,7 +85,8 @@ test('the popover stays inside a short window and scrolls instead', async () => 
   window.innerHeight = 300;
   renderInField();
   // The field sits near the bottom of the 300px-tall window.
-  jest.spyOn(screen.getByTestId('password-field'), 'getBoundingClientRect')
+  jest
+    .spyOn(screen.getByTestId('password-field'), 'getBoundingClientRect')
     .mockReturnValue({ top: 280, bottom: 320, left: 0, right: 200 });
 
   try {

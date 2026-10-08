@@ -24,8 +24,8 @@ export default function ForgotPasswordPage() {
     try {
       const result = await api.requestPasswordReset(email.trim());
       setMessage(
-        result?.detail
-        || 'If an account uses that email address, a password reset link has been sent.',
+        result?.detail ||
+          'If an account uses that email address, a password reset link has been sent.',
       );
     } catch (requestError) {
       setError(requestError.message || 'The reset request could not be sent.');
@@ -41,36 +41,56 @@ export default function ForgotPasswordPage() {
           <h2>Forgot your password?</h2>
           {message ? (
             <>
-              <p className="banner banner-success" role="status">{message}</p>
-              <p className="login-sub">
-                The link expires after a short time and can only be used once. Check your
-                spam folder if it does not arrive within a few minutes.
+              <p className="banner banner-success" role="status">
+                {message}
               </p>
-              <p className="login-help"><Link className="login-link" to="/login">Back to sign in</Link></p>
+              <p className="login-sub">
+                The link expires after a short time and can only be used once. Check your spam
+                folder if it does not arrive within a few minutes.
+              </p>
+              <p className="login-help">
+                <Link className="login-link" to="/login">
+                  Back to sign in
+                </Link>
+              </p>
             </>
           ) : (
             <form className="login-form" onSubmit={submit} noValidate>
               <p className="login-sub">
-                Enter the email address on your account and we will send you a link to
-                choose a new password.
+                Enter the email address on your account and we will send you a link to choose a new
+                password.
               </p>
-              {error && <p className="banner banner-error" role="alert">{error}</p>}
+              {error && (
+                <p className="banner banner-error" role="alert">
+                  {error}
+                </p>
+              )}
               <div className="login-field">
                 <label htmlFor="forgot-email">Email</label>
                 <input
                   id="forgot-email"
                   type="email"
-                  className={error && !email.trim() ? 'login-input login-input-error' : 'login-input'}
+                  className={
+                    error && !email.trim() ? 'login-input login-input-error' : 'login-input'
+                  }
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   autoComplete="email"
                   disabled={busy}
                 />
               </div>
-              <button className="button button-large button-primary login-button" type="submit" disabled={busy}>
+              <button
+                className="button button-large button-primary login-button"
+                type="submit"
+                disabled={busy}
+              >
                 {busy ? 'Sending…' : 'Send reset link'}
               </button>
-              <p className="login-help"><Link className="login-link" to="/login">Back to sign in</Link></p>
+              <p className="login-help">
+                <Link className="login-link" to="/login">
+                  Back to sign in
+                </Link>
+              </p>
             </form>
           )}
         </div>

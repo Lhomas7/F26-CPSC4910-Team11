@@ -292,10 +292,12 @@ class PointAdjustmentAPITests(APITestCase):
     def test_rejects_invalid_and_excessive_adjustments(self):
         for value in (0, 1_000_001, -1):
             with self.subTest(value=value):
-                response = self.post({
-                    'point_change': value,
-                    'reason': 'Adjustment reason',
-                })
+                response = self.post(
+                    {
+                        'point_change': value,
+                        'reason': 'Adjustment reason',
+                    }
+                )
                 self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
                 self.assertIn('point_change', response.data)
 
@@ -435,12 +437,16 @@ class RoleScopedDriverTestData(APITestCase):
         enroll_totp(cls.other_sponsor_user)
 
         def make_driver(username, name, company, status_value):
-            user = get_user_model().objects.create_user(username=username, password='ExamplePassword123!')
+            user = get_user_model().objects.create_user(
+                username=username, password='ExamplePassword123!'
+            )
             return Driver.objects.create(user=user, name=name, sponsor=company, status=status_value)
 
         cls.approved = make_driver('scope.approved', 'Avery Approved', cls.company, 'approved')
         cls.pending = make_driver('scope.pending', 'Blake Pending', cls.company, 'pending')
-        cls.outsider = make_driver('scope.outsider', 'Casey Outsider', cls.other_company, 'approved')
+        cls.outsider = make_driver(
+            'scope.outsider', 'Casey Outsider', cls.other_company, 'approved'
+        )
         for driver, company, change, reason in (
             (cls.approved, cls.company, 50, 'Clean inspection'),
             (cls.approved, cls.company, -10, 'Late log'),
@@ -449,7 +455,9 @@ class RoleScopedDriverTestData(APITestCase):
             PointTransaction.objects.create(
                 driver=driver,
                 sponsor=company,
-                changed_by_user=cls.sponsor_user if company == cls.company else cls.other_sponsor_user,
+                changed_by_user=cls.sponsor_user
+                if company == cls.company
+                else cls.other_sponsor_user,
                 point_change=change,
                 reason=reason,
             )
@@ -474,11 +482,16 @@ class AdminDriverApiTests(RoleScopedDriverTestData):
         names = {row['name']: row['sponsor_name'] for row in response.data}
         usernames = {row['name']: row['username'] for row in response.data}
 
-        self.assertEqual(names, {'Avery Approved': 'Scope Freight', 'Blake Pending': 'Scope Freight'})
-        self.assertEqual(usernames, {
-            'Avery Approved': 'scope.approved',
-            'Blake Pending': 'scope.pending',
-        })
+        self.assertEqual(
+            names, {'Avery Approved': 'Scope Freight', 'Blake Pending': 'Scope Freight'}
+        )
+        self.assertEqual(
+            usernames,
+            {
+                'Avery Approved': 'scope.approved',
+                'Blake Pending': 'scope.pending',
+            },
+        )
 
 
 class DriverLinkTests(RoleScopedDriverTestData):
@@ -547,7 +560,11 @@ class DriverApiMutationTests(RoleScopedDriverTestData):
             self.client.delete(detail_url),
         )
 
-        self.assertTrue(all(response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED for response in responses))
+        self.assertTrue(
+            all(
+                response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED for response in responses
+            )
+        )
         self.pending.refresh_from_db()
         self.assertEqual(self.pending.status, 'pending')
 
@@ -573,7 +590,9 @@ class DriverApiMutationTests(RoleScopedDriverTestData):
 class DriverRemovalTests(RoleScopedDriverTestData):
     def remove(self, driver, data, user=None):
         self.client.force_authenticate(user or self.sponsor_user)
-        return self.client.post(reverse('driver-remove', kwargs={'pk': driver.pk}), data, format='json')
+        return self.client.post(
+            reverse('driver-remove', kwargs={'pk': driver.pk}), data, format='json'
+        )
 
     def test_rejecting_a_pending_driver_unlinks_them_with_an_audited_reason(self):
         response = self.remove(self.pending, {'reason': '  Missing   CDL details '})
@@ -610,11 +629,15 @@ class DriverRemovalTests(RoleScopedDriverTestData):
 
     def test_only_the_drivers_own_sponsor_can_remove_them(self):
         self.assertEqual(
-            self.remove(self.pending, {'reason': 'Not ours'}, user=self.other_sponsor_user).status_code,
+            self.remove(
+                self.pending, {'reason': 'Not ours'}, user=self.other_sponsor_user
+            ).status_code,
             status.HTTP_404_NOT_FOUND,
         )
         self.assertEqual(
-            self.remove(self.pending, {'reason': 'Admin attempt'}, user=self.admin_user).status_code,
+            self.remove(
+                self.pending, {'reason': 'Admin attempt'}, user=self.admin_user
+            ).status_code,
             status.HTTP_403_FORBIDDEN,
         )
         self.assertEqual(

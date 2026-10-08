@@ -28,9 +28,7 @@ class PasswordPolicyRulesTests(APITestCase):
         self.assert_rejected_with(
             'abcdefghiA12!', 'Password must contain at least two uppercase letters.'
         )
-        self.assert_rejected_with(
-            'abcdefghAB1!x', 'Password must contain at least two numbers.'
-        )
+        self.assert_rejected_with('abcdefghAB1!x', 'Password must contain at least two numbers.')
         self.assert_rejected_with(
             'abcdefghAB12x', 'Password must contain at least one approved symbol.'
         )
@@ -57,9 +55,7 @@ class PasswordPolicyViewTests(APITestCase):
         for text, _check, _message in PASSWORD_RULES:
             self.assertIn(text, requirements)
         self.assertIn(PASSWORD_IDENTITY_REQUIREMENT, requirements)
-        self.assertEqual(
-            set(response.data['special_characters']), PASSWORD_SPECIAL_CHARACTERS
-        )
+        self.assertEqual(set(response.data['special_characters']), PASSWORD_SPECIAL_CHARACTERS)
 
     def test_django_validator_rules_are_listed_without_the_weaker_minimum(self):
         requirements = self.client.get(self.url).data['requirements']

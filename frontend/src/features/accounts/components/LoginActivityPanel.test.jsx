@@ -40,14 +40,20 @@ test('show more reveals the last 24 hours and show less collapses it', async () 
   fireEvent.click(toggle);
   expect(rows()).toHaveLength(5);
   expect(screen.getByText('Sign-in attempts in the last 24 hours')).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: 'Show less' })).toHaveAttribute('aria-expanded', 'true');
+  expect(screen.getByRole('button', { name: 'Show less' })).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  );
 
   fireEvent.click(screen.getByRole('button', { name: 'Show less' }));
   expect(rows()).toHaveLength(3);
 });
 
 test('hides show more when the last 24 hours adds nothing new', async () => {
-  api.getLoginAttempts.mockResolvedValue({ recent: attempts.slice(0, 3), last_24_hours: attempts.slice(0, 2) });
+  api.getLoginAttempts.mockResolvedValue({
+    recent: attempts.slice(0, 3),
+    last_24_hours: attempts.slice(0, 2),
+  });
   render(<LoginActivityPanel />);
 
   expect(await screen.findAllByRole('listitem')).toHaveLength(3);
@@ -64,7 +70,10 @@ test('shows an empty state when there are no attempts', async () => {
 
 test('shows an error and retries loading', async () => {
   api.getLoginAttempts.mockRejectedValueOnce(new Error('Network down'));
-  api.getLoginAttempts.mockResolvedValueOnce({ recent: attempts.slice(0, 1), last_24_hours: attempts.slice(0, 1) });
+  api.getLoginAttempts.mockResolvedValueOnce({
+    recent: attempts.slice(0, 1),
+    last_24_hours: attempts.slice(0, 1),
+  });
   render(<LoginActivityPanel />);
 
   expect(await screen.findByRole('alert')).toHaveTextContent("couldn't be loaded");

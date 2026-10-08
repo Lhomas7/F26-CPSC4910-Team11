@@ -8,12 +8,33 @@ import SponsorAccountPage from './SponsorAccountPage';
 jest.mock('../../../auth/AuthContext');
 jest.mock('../../../api');
 
-const account = { id: 8, first_name: 'Dana', last_name: 'Whitfield', username: 'dana.sponsor', email: 'dana@example.com', role: 'sponsor', sponsor_org: { id: 7, name: 'Palmetto Freight' }, is_active: true };
-const organizations = [{ id: 7, name: 'Palmetto Freight' }, { id: 9, name: 'Blue Ridge Logistics' }];
+const account = {
+  id: 8,
+  first_name: 'Dana',
+  last_name: 'Whitfield',
+  username: 'dana.sponsor',
+  email: 'dana@example.com',
+  role: 'sponsor',
+  sponsor_org: { id: 7, name: 'Palmetto Freight' },
+  is_active: true,
+};
+const organizations = [
+  { id: 7, name: 'Palmetto Freight' },
+  { id: 9, name: 'Blue Ridge Logistics' },
+];
 const startImpersonation = jest.fn();
 
 function renderPage() {
-  return render(<MemoryRouter initialEntries={['/users/sponsors/8']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><Routes><Route path="/users/sponsors/:userId" element={<SponsorAccountPage />} /></Routes></MemoryRouter>);
+  return render(
+    <MemoryRouter
+      initialEntries={['/users/sponsors/8']}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
+      <Routes>
+        <Route path="/users/sponsors/:userId" element={<SponsorAccountPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
 }
 
 beforeEach(() => {
@@ -34,14 +55,24 @@ test('loads and displays sponsor account details', async () => {
 });
 
 test('edits and saves the sponsor account', async () => {
-  api.updateAdminSponsor.mockResolvedValue({ ...account, first_name: 'Danielle', sponsor_org: organizations[1], is_active: false });
+  api.updateAdminSponsor.mockResolvedValue({
+    ...account,
+    first_name: 'Danielle',
+    sponsor_org: organizations[1],
+    is_active: false,
+  });
   renderPage();
   fireEvent.click(await screen.findByRole('button', { name: 'Edit account' }));
   fireEvent.change(screen.getByLabelText('First name'), { target: { value: 'Danielle' } });
   fireEvent.change(screen.getByLabelText('Sponsor organization'), { target: { value: '9' } });
   fireEvent.change(screen.getByLabelText(/^Account status/), { target: { value: 'false' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
-  await waitFor(() => expect(api.updateAdminSponsor).toHaveBeenCalledWith('8', expect.objectContaining({ first_name: 'Danielle', sponsor_org_id: 9, is_active: false })));
+  await waitFor(() =>
+    expect(api.updateAdminSponsor).toHaveBeenCalledWith(
+      '8',
+      expect.objectContaining({ first_name: 'Danielle', sponsor_org_id: 9, is_active: false }),
+    ),
+  );
   expect(await screen.findByText('Sponsor account saved.')).toBeInTheDocument();
 });
 
@@ -52,7 +83,9 @@ test('starts a view-as session for the sponsor', async () => {
 });
 
 test('shows server validation errors and stays in edit mode', async () => {
-  api.updateAdminSponsor.mockRejectedValue({ data: { username: ['That username is already taken.'] } });
+  api.updateAdminSponsor.mockRejectedValue({
+    data: { username: ['That username is already taken.'] },
+  });
   renderPage();
   fireEvent.click(await screen.findByRole('button', { name: 'Edit account' }));
   fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));

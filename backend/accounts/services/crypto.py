@@ -1,5 +1,4 @@
 from cryptography.fernet import Fernet
-
 from django.conf import settings
 
 

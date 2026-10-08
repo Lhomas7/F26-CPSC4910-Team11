@@ -39,6 +39,7 @@ class SponsorCompany(models.Model):
     def __str__(self):
         return self.name
 
+
 class LoginAttempt(models.Model):
     # Linked by FK (not just username) so history follows the account through
     # username changes. Null for attempts against usernames that don't exist.
@@ -60,6 +61,7 @@ class LoginAttempt(models.Model):
     def __str__(self):
         result = 'Success' if self.successful else 'Failure'
         return f'{self.username} - {result} - {self.timestamp}'
+
 
 class SponsorAccount(models.Model):
     user = models.OneToOneField(
@@ -103,7 +105,9 @@ class MFASettings(models.Model):
 class MFACode(models.Model):
     PURPOSE_CHOICES = [('enroll', 'Enroll'), ('login', 'Login'), ('reset', 'Reset')]
     METHOD_CHOICES = [('email', 'Email'), ('sms', 'SMS')]
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='mfa_codes')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='mfa_codes'
+    )
     purpose = models.CharField(max_length=10, choices=PURPOSE_CHOICES)
     method = models.CharField(max_length=10, choices=METHOD_CHOICES)
     code_hash = models.CharField(max_length=128)
@@ -169,7 +173,9 @@ class RegistrationEmailCode(models.Model):
 
 
 class DriverNotification(models.Model):
-    driver = models.ForeignKey('drivers.Driver', on_delete=models.CASCADE, related_name='notifications')
+    driver = models.ForeignKey(
+        'drivers.Driver', on_delete=models.CASCADE, related_name='notifications'
+    )
     message = models.CharField(max_length=500)
     read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

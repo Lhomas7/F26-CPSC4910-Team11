@@ -5,7 +5,10 @@ import { useAuth } from '../../../auth/AuthContext';
 import AboutPage from './AboutPage';
 
 jest.mock('../../../auth/AuthContext');
-jest.mock('../../../api', () => ({ ...jest.requireActual('../../../api'), updateRelease: jest.fn() }));
+jest.mock('../../../api', () => ({
+  ...jest.requireActual('../../../api'),
+  updateRelease: jest.fn(),
+}));
 
 const release = {
   team_number: 11,
@@ -39,9 +42,7 @@ test('renders release information returned by the API', async () => {
 
   render(<AboutPage />);
 
-  expect(
-    await screen.findByRole('heading', { name: release.product_name }),
-  ).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: release.product_name })).toBeInTheDocument();
   expect(screen.getByText(release.product_description)).toBeInTheDocument();
   expect(screen.getByText('Team 11')).toBeInTheDocument();
   expect(screen.getAllByText('Sprint 1')).toHaveLength(2);
@@ -59,8 +60,12 @@ test('explains when no release has been added yet', async () => {
 
   render(<AboutPage />);
 
-  expect(await screen.findByRole('heading', { name: 'No release information yet' })).toBeInTheDocument();
-  expect(screen.getByText(/add the product and release details in Django Admin/i)).toBeInTheDocument();
+  expect(
+    await screen.findByRole('heading', { name: 'No release information yet' }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText(/add the product and release details in Django Admin/i),
+  ).toBeInTheDocument();
 });
 
 test('shows a readable error when the API request fails', async () => {
@@ -92,9 +97,7 @@ test('allows a failed request to be retried', async () => {
 
   fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
 
-  expect(
-    await screen.findByRole('heading', { name: release.product_name }),
-  ).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: release.product_name })).toBeInTheDocument();
   expect(global.fetch).toHaveBeenCalledTimes(2);
 });
 
@@ -109,7 +112,11 @@ test('admins can edit the release details in place', async () => {
   fireEvent.change(screen.getByLabelText('Version'), { target: { value: 'Sprint 4' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
-  await waitFor(() => expect(updateRelease).toHaveBeenCalledWith(expect.objectContaining({ version_number: 'Sprint 4', team_number: 11 })));
+  await waitFor(() =>
+    expect(updateRelease).toHaveBeenCalledWith(
+      expect.objectContaining({ version_number: 'Sprint 4', team_number: 11 }),
+    ),
+  );
   expect(await screen.findByRole('status', { name: '' })).toBeInTheDocument();
   expect(screen.getByText('Release details saved.')).toBeInTheDocument();
   expect(screen.getAllByText('Sprint 4').length).toBeGreaterThan(0);
