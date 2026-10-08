@@ -766,18 +766,10 @@
   padding: 0;
 }
 
-.driver-history .point-history-detail li {
-  align-items: flex-start;
+.driver-history .point-history-detail > .point-history-entry {
   border-bottom: 1px solid var(--line-soft);
   border-top: 0;
-  display: grid;
-  gap: 0.25rem 0.9rem;
-  grid-template-columns: minmax(0, 1fr) auto;
   padding: 0.8rem 0;
-  display: flex;
-  gap: .9rem;
-  justify-content: space-between;
-  padding: .8rem 0;
 }
 
 .driver-history .point-history-detail li:first-child {
@@ -790,11 +782,25 @@
 }
 
 .driver-history .point-history-detail .point-history-main {
-  display: grid;
-  flex: 1 1 auto;
   gap: 0;
-  min-width: 0;
+  width: 100%;
 }
+
+/* Both badges share the first row, above the reason and author/date. */
+.point-history-entry-heading {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.point-history-entry-heading > .point-history-change {
+  flex: 0 0 auto;
+  font-size: 0.8rem;
+  margin-left: auto;
+}
+
 .point-history-type {
   border-radius: 0.3rem;
   justify-self: start;
@@ -811,15 +817,6 @@
   font-size: 0.74rem;
   margin: 0.25rem 0 0;
   overflow-wrap: anywhere;
-}
-
-/* Preserve the amount pill and pin it to the card's right edge at every width. */
-.driver-history .point-history-detail .point-history-change {
-  align-self: start;
-  flex: 0 0 auto;
-  margin-left: auto;
-  text-align: right;
-  white-space: nowrap;
 }
 
 .driver-history .point-history-empty {
@@ -1040,6 +1037,7 @@
   .point-adjustment-fields {
     grid-template-columns: 1fr;
   }
+
 }
 
 @media (max-width: 42rem) {
@@ -1115,16 +1113,6 @@
     width: 100%;
   }
 
-  .driver-history .point-history-detail li {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .driver-history .point-history-detail .point-history-change {
-    grid-column: 1;
-    grid-row: auto;
-    margin-top: 0.15rem;
-    justify-self: start;
-  }
   .driver-enrollment-actions .button,
   .driver-danger-area .button {
     flex: 1 1 100%;
