@@ -96,7 +96,7 @@ export default function AboutPage() {
                 <li>Version <b>{ready ? release.version_number : <Skeleton className="about-skeleton">Loading</Skeleton>}</b></li>
                 <li>Released <b>{ready ? formatReleaseDate(release.release_date) : <Skeleton className="about-skeleton">Loading date</Skeleton>}</b></li>
               </ul>
-              <RoadTruck className="about-lane" mode="arrive" arrived={Boolean(ready)} />
+              <RoadTruck className="about-lane" />
             </section>
 
             <div className="about-grid">
