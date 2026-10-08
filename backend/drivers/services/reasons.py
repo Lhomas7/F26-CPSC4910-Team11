@@ -1,6 +1,5 @@
 import unicodedata
 
-
 MAX_REASON_LENGTH = 500
 
 

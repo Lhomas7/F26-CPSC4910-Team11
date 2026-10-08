@@ -18,34 +18,37 @@
   background: #9aa29b;
   bottom: 0;
   height: 2.2em;
-  left: .4em;
-  width: .1em;
+  left: 0.4em;
+  width: 0.1em;
 }
 
 /* Price board: three rows of digits. */
 .asset-gas-board {
   background:
-    repeating-linear-gradient(to right, #ffb020 0 .08em, transparent .08em .13em) .15em .3em / .55em .1em no-repeat,
-    repeating-linear-gradient(to right, #ffb020 0 .08em, transparent .08em .13em) .15em .55em / .55em .1em no-repeat,
-    repeating-linear-gradient(to right, #3ccf6e 0 .08em, transparent .08em .13em) .15em .8em / .55em .1em no-repeat,
-    linear-gradient(#d63b2f 0 .16em, #1d201d .16em);
-  border-radius: .06em;
+    repeating-linear-gradient(to right, #ffb020 0 0.08em, transparent 0.08em 0.13em) 0.15em 0.3em /
+      0.55em 0.1em no-repeat,
+    repeating-linear-gradient(to right, #ffb020 0 0.08em, transparent 0.08em 0.13em) 0.15em 0.55em /
+      0.55em 0.1em no-repeat,
+    repeating-linear-gradient(to right, #3ccf6e 0 0.08em, transparent 0.08em 0.13em) 0.15em 0.8em /
+      0.55em 0.1em no-repeat,
+    linear-gradient(#d63b2f 0 0.16em, #1d201d 0.16em);
+  border-radius: 0.06em;
   height: 1.05em;
   left: 0;
-  top: .2em;
-  width: .9em;
+  top: 0.2em;
+  width: 0.9em;
 }
 
 .asset-place-lit .asset-gas-board {
-  box-shadow: 0 0 .3em rgb(255 176 32 / 45%);
+  box-shadow: 0 0 0.3em rgb(255 176 32 / 45%);
 }
 
 .asset-gas-canopy {
   background: linear-gradient(#f4f5f2 0 55%, #d63b2f 55%);
-  border-radius: .06em;
-  height: .45em;
+  border-radius: 0.06em;
+  height: 0.45em;
   left: 1.1em;
-  top: .35em;
+  top: 0.35em;
   width: 3.9em;
 }
 
@@ -54,9 +57,9 @@
   background: linear-gradient(rgb(255 240 200 / 45%), transparent);
   content: '';
   height: 2.5em;
-  left: .2em;
+  left: 0.2em;
   position: absolute;
-  right: .2em;
+  right: 0.2em;
   top: 100%;
 }
 
@@ -64,57 +67,65 @@
   background: #c9cec9;
   bottom: 0;
   height: 2.6em;
-  width: .14em;
+  width: 0.14em;
 }
 
-.asset-gas-pillar-a { left: 1.4em; }
-.asset-gas-pillar-b { left: 4.55em; }
+.asset-gas-pillar-a {
+  left: 1.4em;
+}
+.asset-gas-pillar-b {
+  left: 4.55em;
+}
 
 .asset-gas-island {
   background: #9aa29b;
   bottom: 0;
-  height: .12em;
+  height: 0.12em;
   left: 1.85em;
   width: 2.4em;
 }
 
 .asset-gas-pump {
   background: #3fae86;
-  border-radius: .08em .08em 0 0;
-  bottom: .12em;
-  height: .95em;
-  width: .45em;
+  border-radius: 0.08em 0.08em 0 0;
+  bottom: 0.12em;
+  height: 0.95em;
+  width: 0.45em;
 }
 
 /* Screen and hose nozzle. */
 .asset-gas-pump::before {
   background: var(--window-color);
   content: '';
-  height: .2em;
-  left: .08em;
+  height: 0.2em;
+  left: 0.08em;
   position: absolute;
-  top: .12em;
-  width: .29em;
+  top: 0.12em;
+  width: 0.29em;
 }
 
 .asset-gas-pump::after {
   background: #1d201d;
-  border-radius: .03em;
+  border-radius: 0.03em;
   content: '';
-  height: .34em;
+  height: 0.34em;
   position: absolute;
-  right: -.07em;
-  top: .38em;
-  width: .07em;
+  right: -0.07em;
+  top: 0.38em;
+  width: 0.07em;
 }
 
-.asset-gas-pump-a { left: 2.15em; }
-.asset-gas-pump-b { left: 3.45em; }
+.asset-gas-pump-a {
+  left: 2.15em;
+}
+.asset-gas-pump-b {
+  left: 3.45em;
+}
 
 .asset-gas-shop {
   background: #e8dcc0;
-  border-radius: .06em .06em 0 0;
-  border-top: .14em solid #d63b2f;
+  border-radius: 0.06em 0.06em 0 0;
+  border-top: 0.14em solid #d63b2f;
   bottom: 0;
   height: 1.7em;
   left: 5.25em;
@@ -123,18 +134,18 @@
 
 .asset-gas-shop-window {
   background: var(--window-color);
-  height: .5em;
+  height: 0.5em;
   left: 5.45em;
   top: 2.15em;
-  width: .7em;
+  width: 0.7em;
 }
 
 .asset-gas-shop-door {
   background: #3d5f6e;
   bottom: 0;
-  height: .85em;
+  height: 0.85em;
   left: 6.35em;
-  width: .45em;
+  width: 0.45em;
 }
 
 /* ---------- School ---------- */
@@ -147,7 +158,7 @@
 
 .asset-school-wing {
   background:
-    repeating-linear-gradient(to bottom, transparent 0 .16em, rgb(0 0 0 / 9%) .16em .18em),
+    repeating-linear-gradient(to bottom, transparent 0 0.16em, rgb(0 0 0 / 9%) 0.16em 0.18em),
     var(--brick);
   bottom: 0;
   height: 2.4em;
@@ -157,24 +168,28 @@
 
 .asset-school-roof {
   background: #8e3b2f;
-  height: .12em;
-  left: -.05em;
+  height: 0.12em;
+  left: -0.05em;
   top: 1.22em;
   width: 7.1em;
 }
 
 .asset-school-windows {
-  background: linear-gradient(var(--window-color), var(--window-color)) 0 0 / .44em .5em space;
-  bottom: .4em;
+  background: linear-gradient(var(--window-color), var(--window-color)) 0 0 / 0.44em 0.5em space;
+  bottom: 0.4em;
   height: 1.45em;
   width: 2.3em;
 }
 
-.asset-school-windows-a { left: .3em; }
-.asset-school-windows-b { left: 4.4em; }
+.asset-school-windows-a {
+  left: 0.3em;
+}
+.asset-school-windows-b {
+  left: 4.4em;
+}
 
 .asset-place-lit .asset-school-windows {
-  filter: drop-shadow(0 0 .15em rgb(255 215 106 / 70%));
+  filter: drop-shadow(0 0 0.15em rgb(255 215 106 / 70%));
 }
 
 .asset-school-center {
@@ -187,16 +202,16 @@
 
 .asset-school-tower {
   background: #a34a35;
-  height: .85em;
+  height: 0.85em;
   left: 3.05em;
-  top: .45em;
-  width: .9em;
+  top: 0.45em;
+  width: 0.9em;
 }
 
 .asset-school-tower-cap {
   background: #6b3a2c;
   clip-path: polygon(50% 0, 100% 100%, 0 100%);
-  height: .45em;
+  height: 0.45em;
   left: 2.95em;
   top: 0;
   width: 1.1em;
@@ -204,12 +219,12 @@
 
 .asset-school-clock {
   background: #f4f5f2;
-  border: .05em solid #1d201d;
+  border: 0.05em solid #1d201d;
   border-radius: 50%;
-  height: .48em;
+  height: 0.48em;
   left: 3.26em;
-  top: .62em;
-  width: .48em;
+  top: 0.62em;
+  width: 0.48em;
 }
 
 /* Clock hands. */
@@ -217,21 +232,21 @@
 .asset-school-clock::after {
   background: #1d201d;
   content: '';
-  left: calc(50% - .015em);
+  left: calc(50% - 0.015em);
   position: absolute;
   transform-origin: 50% 100%;
-  width: .03em;
+  width: 0.03em;
 }
 
 .asset-school-clock::before {
-  height: .16em;
-  top: .03em;
+  height: 0.16em;
+  top: 0.03em;
 }
 
 .asset-school-clock::after {
-  height: .12em;
+  height: 0.12em;
   rotate: 120deg;
-  top: .07em;
+  top: 0.07em;
 }
 
 .asset-art .asset-school-sign {
@@ -239,30 +254,32 @@
   background: #f4f5f2;
   color: #1d201d;
   display: flex;
-  font: 800 .14em/1 system-ui, sans-serif;
+  font:
+    800 0.14em/1 system-ui,
+    sans-serif;
   height: 1.6em;
   justify-content: center;
   left: 21em;
-  letter-spacing: .08em;
+  letter-spacing: 0.08em;
   top: 11.8em;
   width: 8.6em;
 }
 
 .asset-school-door {
   background:
-    linear-gradient(#3a2a1e, #3a2a1e) center / .04em 100% no-repeat,
+    linear-gradient(#3a2a1e, #3a2a1e) center / 0.04em 100% no-repeat,
     #6b4a32;
-  border-radius: .25em .25em 0 0;
-  bottom: .12em;
-  height: .82em;
+  border-radius: 0.25em 0.25em 0 0;
+  bottom: 0.12em;
+  height: 0.82em;
   left: 3.17em;
-  width: .66em;
+  width: 0.66em;
 }
 
 .asset-school-steps {
   background: #c9cec9;
   bottom: 0;
-  height: .12em;
+  height: 0.12em;
   left: 2.95em;
   width: 1.1em;
 }
@@ -272,24 +289,28 @@
   bottom: 0;
   height: 3.65em;
   left: 6.75em;
-  width: .06em;
+  width: 0.06em;
 }
 
 .asset-school-flag {
   animation: asset-flag-wave 1.6s ease-in-out infinite alternate;
   background:
     linear-gradient(#3a4f9a, #3a4f9a) 0 0 / 42% 54% no-repeat,
-    repeating-linear-gradient(#c8102e 0 .055em, #f4f5f2 .055em .11em);
-  height: .4em;
+    repeating-linear-gradient(#c8102e 0 0.055em, #f4f5f2 0.055em 0.11em);
+  height: 0.4em;
   left: 6.81em;
-  top: .08em;
+  top: 0.08em;
   transform-origin: 0 50%;
-  width: .62em;
+  width: 0.62em;
 }
 
 @keyframes asset-flag-wave {
-  from { transform: skewY(-5deg) scaleX(.94); }
-  to { transform: skewY(5deg) scaleX(1); }
+  from {
+    transform: skewY(-5deg) scaleX(0.94);
+  }
+  to {
+    transform: skewY(5deg) scaleX(1);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

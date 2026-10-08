@@ -34,5 +34,7 @@ export function getPointHistory({ driver, limit } = {}) {
 
 /** Reject a pending driver or drop an approved one; the server records the reason. */
 export function removeDriver(driverId, reason) {
-  return request(`/sponsor/drivers/${driverId}/remove/`, { method: 'POST', body: { reason } }).then(readJson);
+  return request(`/sponsor/drivers/${driverId}/remove/`, { method: 'POST', body: { reason } }).then(
+    readJson,
+  );
 }

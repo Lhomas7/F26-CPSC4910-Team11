@@ -45,7 +45,9 @@ export default function LinkDriverForm({ company, onLinked, triggerClassName = '
         type="button"
         onClick={() => setOpen(true)}
       >
-        <span className="drivers-add-icon" aria-hidden="true">+</span>
+        <span className="drivers-add-icon" aria-hidden="true">
+          +
+        </span>
         <span>Link driver</span>
       </button>
       {open && (
@@ -53,18 +55,25 @@ export default function LinkDriverForm({ company, onLinked, triggerClassName = '
           title="Link a driver"
           onClose={close}
           className="link-driver-dialog"
-          actions={(
+          actions={
             <>
-              <button className="button button-large" type="button" onClick={close} disabled={busy}>Cancel</button>
-              <button className="button button-large button-primary" type="submit" form="link-driver-form" disabled={busy}>
+              <button className="button button-large" type="button" onClick={close} disabled={busy}>
+                Cancel
+              </button>
+              <button
+                className="button button-large button-primary"
+                type="submit"
+                form="link-driver-form"
+                disabled={busy}
+              >
                 {busy ? 'Linking…' : 'Link driver'}
               </button>
             </>
-          )}
+          }
         >
           <p>
-            Add an existing driver account to {company || 'your organization'} by username.
-            They join as a pending application until you approve them.
+            Add an existing driver account to {company || 'your organization'} by username. They
+            join as a pending application until you approve them.
           </p>
           <form id="link-driver-form" onSubmit={submit} noValidate>
             <label htmlFor="link-username">Driver username</label>

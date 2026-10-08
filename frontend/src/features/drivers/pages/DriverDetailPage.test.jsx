@@ -20,8 +20,24 @@ const driver = {
 };
 
 const history = [
-  { id: 2, driver: 7, driver_name: 'Jamie Rivera', point_change: -10, reason: 'Late log', changed_by_name: 'Pat Sponsor', changed_at: '2026-10-05T12:00:00Z' },
-  { id: 1, driver: 7, driver_name: 'Jamie Rivera', point_change: 135, reason: 'Clean inspection', changed_by_name: 'Pat Sponsor', changed_at: '2026-10-01T12:00:00Z' },
+  {
+    id: 2,
+    driver: 7,
+    driver_name: 'Jamie Rivera',
+    point_change: -10,
+    reason: 'Late log',
+    changed_by_name: 'Pat Sponsor',
+    changed_at: '2026-10-05T12:00:00Z',
+  },
+  {
+    id: 1,
+    driver: 7,
+    driver_name: 'Jamie Rivera',
+    point_change: 135,
+    reason: 'Clean inspection',
+    changed_by_name: 'Pat Sponsor',
+    changed_at: '2026-10-01T12:00:00Z',
+  },
 ];
 
 function DriversListStub() {
@@ -30,7 +46,10 @@ function DriversListStub() {
 
 function renderDetail() {
   return render(
-    <MemoryRouter initialEntries={['/drivers/7']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <MemoryRouter
+      initialEntries={['/drivers/7']}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
       <Routes>
         <Route path="/drivers/:driverId" element={<DriverDetailPage />} />
         <Route path="/drivers" element={<DriversListStub />} />
@@ -50,7 +69,9 @@ afterEach(() => jest.clearAllMocks());
 test('shows sponsor controls, the current balance and the point history', async () => {
   renderDetail();
 
-  expect(await screen.findByRole('heading', { level: 1, name: 'Jamie Rivera' })).toBeInTheDocument();
+  expect(
+    await screen.findByRole('heading', { level: 1, name: 'Jamie Rivera' }),
+  ).toBeInTheDocument();
   expect(screen.getByText('@jamie.rivera')).toBeInTheDocument();
   expect(screen.getByText('Palmetto Freight')).toBeInTheDocument();
   expect(screen.getByLabelText('Current balance: 125 points')).toBeInTheDocument();
@@ -58,7 +79,9 @@ test('shows sponsor controls, the current balance and the point history', async 
   expect(await screen.findByText('Late log')).toBeInTheDocument();
   expect(screen.getByText('Clean inspection')).toBeInTheDocument();
   expect(screen.getByText('Deduction')).toBeInTheDocument();
-  expect(screen.getByText('Award', { selector: '.point-history-type.badge-success' })).toBeInTheDocument();
+  expect(
+    screen.getByText('Award', { selector: '.point-history-type.badge-success' }),
+  ).toBeInTheDocument();
   expect(screen.getAllByText(/Pat Sponsor/)[0]).toHaveTextContent(/^Pat Sponsor · Oct 5/);
   expect(api.getPointHistory).toHaveBeenCalledWith({ driver: '7' });
 });
@@ -69,7 +92,9 @@ test('does not offer adjustments until a pending driver is approved', async () =
 
   expect(await screen.findByRole('button', { name: 'Approve driver' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Reject application' })).toBeInTheDocument();
-  expect(screen.getByText('Point adjustments are unavailable until this driver is approved')).toBeInTheDocument();
+  expect(
+    screen.getByText('Point adjustments are unavailable until this driver is approved'),
+  ).toBeInTheDocument();
   expect(screen.queryByRole('heading', { name: 'Adjust points' })).not.toBeInTheDocument();
 });
 
@@ -111,18 +136,26 @@ test('shows the organization-safe not-found state for a missing driver', async (
   api.getDriver.mockRejectedValue(Object.assign(new Error('Not found'), { status: 404 }));
   renderDetail();
 
-  expect(await screen.findByRole('heading', { name: "That driver isn't in your organization" })).toBeInTheDocument();
+  expect(
+    await screen.findByRole('heading', { name: "That driver isn't in your organization" }),
+  ).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Back to drivers' })).toHaveAttribute('href', '/drivers');
 });
 
 test('shows a temporary driver failure and retries without leaving the page', async () => {
-  api.getDriver.mockRejectedValueOnce(new Error('Service unavailable')).mockResolvedValueOnce(driver);
+  api.getDriver
+    .mockRejectedValueOnce(new Error('Service unavailable'))
+    .mockResolvedValueOnce(driver);
   renderDetail();
 
-  expect(await screen.findByRole('heading', { name: "This driver couldn't be loaded" })).toBeInTheDocument();
+  expect(
+    await screen.findByRole('heading', { name: "This driver couldn't be loaded" }),
+  ).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
 
-  expect(await screen.findByRole('heading', { level: 1, name: 'Jamie Rivera' })).toBeInTheDocument();
+  expect(
+    await screen.findByRole('heading', { level: 1, name: 'Jamie Rivera' }),
+  ).toBeInTheDocument();
   expect(api.getDriver).toHaveBeenCalledTimes(2);
 });
 
@@ -136,7 +169,12 @@ test('shows the approved empty-history state', async () => {
 
 test('rejecting a pending driver requires a reason and returns to the list', async () => {
   api.getDriver.mockResolvedValue({ ...driver, status: 'pending', point_balance: 0 });
-  api.removeDriver.mockResolvedValue({ id: 1, driver: 7, action: 'rejected', reason: 'Missing CDL' });
+  api.removeDriver.mockResolvedValue({
+    id: 1,
+    driver: 7,
+    action: 'rejected',
+    reason: 'Missing CDL',
+  });
   renderDetail();
 
   fireEvent.click(await screen.findByRole('button', { name: 'Reject application' }));
@@ -145,22 +183,30 @@ test('rejecting a pending driver requires a reason and returns to the list', asy
   expect(screen.getByRole('alert')).toHaveTextContent('Enter a reason for rejecting this driver.');
   expect(api.removeDriver).not.toHaveBeenCalled();
 
-  fireEvent.change(screen.getByLabelText('Reason for rejecting'), { target: { value: 'Missing CDL' } });
+  fireEvent.change(screen.getByLabelText('Reason for rejecting'), {
+    target: { value: 'Missing CDL' },
+  });
   fireEvent.click(within(dialog).getByRole('button', { name: 'Reject application' }));
 
   await waitFor(() => expect(api.removeDriver).toHaveBeenCalledWith(7, 'Missing CDL'));
-  expect(await screen.findByText('Jamie Rivera was rejected. The reason has been saved.')).toBeInTheDocument();
+  expect(
+    await screen.findByText('Jamie Rivera was rejected. The reason has been saved.'),
+  ).toBeInTheDocument();
 });
 
 test('dropping an approved driver shows server reason errors', async () => {
-  api.removeDriver.mockRejectedValue(Object.assign(new Error('Bad request'), {
-    data: { reason: ['Reasons must be 500 characters or fewer.'] },
-  }));
+  api.removeDriver.mockRejectedValue(
+    Object.assign(new Error('Bad request'), {
+      data: { reason: ['Reasons must be 500 characters or fewer.'] },
+    }),
+  );
   renderDetail();
 
   fireEvent.click(await screen.findByRole('button', { name: 'Drop driver' }));
   fireEvent.change(screen.getByLabelText('Reason for dropping'), { target: { value: 'Too long' } });
   fireEvent.click(screen.getByRole('button', { name: 'Drop from organization' }));
 
-  expect(await screen.findByRole('alert')).toHaveTextContent('Reasons must be 500 characters or fewer.');
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Reasons must be 500 characters or fewer.',
+  );
 });

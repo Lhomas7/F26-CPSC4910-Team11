@@ -13,7 +13,7 @@
 
 .drivers-summary {
   display: grid;
-  gap: .65rem;
+  gap: 0.65rem;
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
@@ -25,7 +25,7 @@
   align-items: flex-end;
   display: flex;
   justify-content: space-between;
-  margin-bottom: .75rem;
+  margin-bottom: 0.75rem;
 }
 
 .drivers-directory-heading h2,
@@ -39,8 +39,8 @@
 
 .drivers-directory-heading p {
   color: var(--ink-2);
-  font-size: .78rem;
-  margin-top: .15rem;
+  font-size: 0.78rem;
+  margin-top: 0.15rem;
 }
 
 .drivers-toolbar {
@@ -48,7 +48,7 @@
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: .75rem;
+  gap: 0.75rem;
 }
 
 .drivers-search {
@@ -60,11 +60,11 @@
 .drivers-search input {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: .5rem;
+  border-radius: 0.5rem;
   color: var(--ink);
   font: inherit;
-  font-size: .85rem;
-  padding: .5rem .75rem .5rem 2.1rem;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem 0.5rem 2.1rem;
   width: 100%;
 }
 
@@ -77,7 +77,7 @@
 .drivers-search-icon {
   color: var(--ink-2);
   font-size: 1.25rem;
-  left: .65rem;
+  left: 0.65rem;
   line-height: 1;
   position: absolute;
   top: 50%;
@@ -88,27 +88,29 @@
 .drivers-filters {
   display: flex;
   flex-shrink: 0;
-  gap: .35rem;
+  gap: 0.35rem;
 }
 
 .drivers-count {
   color: var(--ink-2);
-  font-size: .76rem;
-  margin: .8rem 0 .6rem;
+  font-size: 0.76rem;
+  margin: 0.8rem 0 0.6rem;
 }
 
 .driver-card-grid {
   display: grid;
-  gap: .7rem;
+  gap: 0.7rem;
   grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
 }
 .driver-card {
   border-left: 3px solid var(--accent);
   display: grid;
-  gap: .55rem;
-  padding: .85rem .95rem;
+  gap: 0.55rem;
+  padding: 0.85rem 0.95rem;
   position: relative;
-  transition: background 120ms ease, border-color 120ms ease;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease;
 }
 
 .driver-card.pending {
@@ -130,7 +132,7 @@
 .driver-card-person {
   align-items: flex-start;
   display: flex;
-  gap: .65rem;
+  gap: 0.65rem;
   min-width: 0;
 }
 
@@ -147,7 +149,7 @@
 }
 
 .driver-card h3 {
-  font-size: .95rem;
+  font-size: 0.95rem;
   margin: 0;
   overflow-wrap: anywhere;
 }
@@ -170,8 +172,8 @@
 
 .driver-card-username {
   color: var(--ink-2);
-  font-size: .74rem;
-  margin: .1rem 0 .3rem;
+  font-size: 0.74rem;
+  margin: 0.1rem 0 0.3rem;
   overflow-wrap: anywhere;
 }
 
@@ -179,13 +181,13 @@
   align-items: baseline;
   border-top: 1px dashed var(--line);
   display: flex;
-  padding-top: .5rem;
+  padding-top: 0.5rem;
   justify-content: space-between;
 }
 
 .driver-card-balance span {
   color: var(--ink-2);
-  font-size: .74rem;
+  font-size: 0.74rem;
 }
 
 .driver-card-balance strong {
@@ -194,17 +196,17 @@
 
 .driver-card-balance small {
   color: var(--ink-2);
-  font-size: .72rem;
+  font-size: 0.72rem;
   font-weight: 600;
 }
 
 .drivers-directory .state-panel {
-  margin-top: .75rem;
+  margin-top: 0.75rem;
 }
 
 .drivers-toolbar-action {
   flex: 0 0 auto;
-  gap: .3rem;
+  gap: 0.3rem;
   height: var(--drivers-control-height);
   line-height: normal;
   margin-left: auto;
@@ -224,23 +226,23 @@
 
 .link-driver-dialog form {
   display: grid;
-  gap: .3rem;
-  margin-top: .8rem;
+  gap: 0.3rem;
+  margin-top: 0.8rem;
 }
 
 .link-driver-dialog label {
   color: var(--ink);
-  font-size: .78rem;
+  font-size: 0.78rem;
   font-weight: 700;
 }
 
 .link-driver-dialog input {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: .5rem;
+  border-radius: 0.5rem;
   color: var(--ink);
   font: inherit;
-  padding: .5rem .7rem;
+  padding: 0.5rem 0.7rem;
 }
 
 .link-driver-dialog input:focus {
@@ -255,7 +257,7 @@
 
 .link-driver-dialog small {
   color: var(--ink-2);
-  font-size: .72rem;
+  font-size: 0.72rem;
 }
 
 .link-driver-dialog small.error {
@@ -265,15 +267,15 @@
 .driver-organization-settings {
   background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: .65rem;
-  margin-top: .9rem;
+  border-radius: 0.65rem;
+  margin-top: 0.9rem;
   padding: 1rem 1.1rem;
 }
 
 .driver-organization-settings > header {
   border-bottom: 1px solid var(--line);
-  margin-bottom: .85rem;
-  padding-bottom: .6rem;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.6rem;
 }
 
 .driver-organization-settings h2,
@@ -283,13 +285,13 @@
 }
 
 .driver-organization-settings h2 {
-  font-size: .85rem;
+  font-size: 0.85rem;
 }
 
 .driver-organization-settings header p {
   color: var(--ink-2);
-  font-size: .74rem;
-  margin-top: .15rem;
+  font-size: 0.74rem;
+  margin-top: 0.15rem;
 }
 
 .driver-setting-row {
@@ -307,13 +309,13 @@
 
 .driver-setting-row strong {
   display: block;
-  font-size: .85rem;
+  font-size: 0.85rem;
 }
 
 .driver-setting-row p {
   color: var(--ink-2);
-  font-size: .76rem;
-  margin-top: .2rem;
+  font-size: 0.76rem;
+  margin-top: 0.2rem;
   max-width: 56ch;
 }
 
@@ -321,8 +323,8 @@
   align-items: center;
   cursor: pointer;
   display: inline-flex;
-  gap: .55rem;
-  font-size: .8rem;
+  gap: 0.55rem;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 
@@ -332,7 +334,7 @@
   width: 1.1rem;
 }
 .driver-settings-message {
-  margin: .75rem 0 0;
+  margin: 0.75rem 0 0;
 }
 
 .drivers-skeleton {
@@ -355,7 +357,7 @@
 .driver-identity {
   align-items: flex-start;
   display: flex;
-  gap: .9rem;
+  gap: 0.9rem;
   padding: 1.05rem 1.15rem;
 }
 
@@ -386,15 +388,15 @@
 
 .driver-identity-username {
   color: var(--ink-2);
-  font-size: .85rem;
-  margin: .18rem 0 .45rem;
+  font-size: 0.85rem;
+  margin: 0.18rem 0 0.45rem;
   overflow-wrap: anywhere;
 }
 
 .driver-identity-organization {
   color: var(--ink-2);
-  font-size: .76rem;
-  margin: .45rem 0 0;
+  font-size: 0.76rem;
+  margin: 0.45rem 0 0;
 }
 
 .driver-headline {
@@ -403,7 +405,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 1.5rem;
-  padding: .9rem 1.15rem;
+  padding: 0.9rem 1.15rem;
 }
 
 .driver-headline > div {
@@ -413,7 +415,7 @@
 .driver-headline span {
   color: var(--ink-2);
   display: block;
-  font-size: .74rem;
+  font-size: 0.74rem;
 }
 
 .driver-headline strong {
@@ -425,7 +427,7 @@
 
 .driver-headline strong small {
   color: var(--ink-2);
-  font-size: .9rem;
+  font-size: 0.9rem;
   font-weight: 600;
 }
 
@@ -435,8 +437,8 @@
 
 .driver-headline p {
   color: var(--ink-2);
-  font-size: .72rem;
-  margin: .15rem 0 0;
+  font-size: 0.72rem;
+  margin: 0.15rem 0 0;
 }
 
 .driver-enrollment-card {
@@ -446,8 +448,8 @@
 .driver-enrollment-card > header {
   background: var(--warning-soft);
   border-bottom: 1px solid var(--warning-line);
-  border-radius: .65rem .65rem 0 0;
-  padding: .9rem 1.15rem;
+  border-radius: 0.65rem 0.65rem 0 0;
+  padding: 0.9rem 1.15rem;
 }
 
 .driver-enrollment-card h2,
@@ -457,13 +459,13 @@
 
 .driver-enrollment-card h2 {
   color: var(--warning-ink);
-  font-size: .95rem;
+  font-size: 0.95rem;
 }
 
 .driver-enrollment-card header p {
   color: var(--ink-2);
-  font-size: .78rem;
-  margin-top: .2rem;
+  font-size: 0.78rem;
+  margin-top: 0.2rem;
 }
 
 .driver-enrollment-card > div {
@@ -473,37 +475,37 @@
 .driver-enrollment-card ul,
 .driver-danger-area ul {
   color: var(--ink-2);
-  font-size: .84rem;
+  font-size: 0.84rem;
   margin: 0 0 1rem;
   padding-left: 1.1rem;
 }
 
 .driver-enrollment-card li,
 .driver-danger-area li {
-  margin-bottom: .25rem;
+  margin-bottom: 0.25rem;
 }
 
 .driver-enrollment-actions,
 .driver-state-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: .6rem;
+  gap: 0.6rem;
 }
 
 .driver-adjustment-unavailable {
   background: var(--surface-2);
   border: 1px dashed var(--line);
-  border-radius: .6rem;
+  border-radius: 0.6rem;
   color: var(--ink-2);
-  font-size: .82rem;
-  padding: .85rem 1rem;
+  font-size: 0.82rem;
+  padding: 0.85rem 1rem;
 }
 
 .driver-adjustment-unavailable strong {
   color: var(--ink);
   display: block;
-  font-size: .85rem;
-  margin-bottom: .2rem;
+  font-size: 0.85rem;
+  margin-bottom: 0.2rem;
 }
 
 .point-adjustment {
@@ -513,7 +515,7 @@
 
 .point-adjustment-heading {
   border-bottom: 1px solid var(--line-soft);
-  padding: .9rem 1.15rem;
+  padding: 0.9rem 1.15rem;
 }
 
 .point-adjustment-heading h2,
@@ -522,13 +524,13 @@
 }
 
 .point-adjustment-heading h2 {
-  font-size: .95rem;
+  font-size: 0.95rem;
 }
 
 .point-adjustment-heading p {
   color: var(--ink-2);
-  font-size: .78rem;
-  margin-top: .2rem;
+  font-size: 0.78rem;
+  margin-top: 0.2rem;
   max-width: 58ch;
 }
 
@@ -538,7 +540,7 @@
 
 .point-adjustment-tabs {
   border: 1px solid var(--line);
-  border-radius: .6rem;
+  border-radius: 0.6rem;
   display: inline-flex;
   margin-bottom: 1rem;
   overflow: hidden;
@@ -549,21 +551,21 @@
   border: 0;
   color: var(--ink-2);
   cursor: pointer;
-  font-size: .85rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  padding: .55rem 1.15rem;
+  padding: 0.55rem 1.15rem;
 }
 
 .point-adjustment-tabs button + button {
   border-left: 1px solid var(--line);
 }
 
-.point-adjustment-tabs button[aria-pressed="true"] {
+.point-adjustment-tabs button[aria-pressed='true'] {
   background: var(--accent);
   color: var(--on-accent);
 }
 
-.point-adjustment-tabs button.deduct[aria-pressed="true"] {
+.point-adjustment-tabs button.deduct[aria-pressed='true'] {
   background: var(--danger);
   color: white;
 }
@@ -577,12 +579,12 @@
 .point-adjustment-field {
   align-items: start;
   display: grid;
-  gap: .3rem;
+  gap: 0.3rem;
   grid-template-rows: auto auto 1fr;
 }
 
 .point-adjustment label {
-  font-size: .78rem;
+  font-size: 0.78rem;
   font-weight: 700;
   line-height: 1.2;
 }
@@ -591,11 +593,11 @@
 .point-adjustment textarea {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: .5rem;
+  border-radius: 0.5rem;
   color: var(--ink);
-  font-size: .9rem;
+  font-size: 0.9rem;
   outline: none;
-  padding: .5rem .7rem;
+  padding: 0.5rem 0.7rem;
   width: 100%;
 }
 
@@ -616,8 +618,8 @@
   outline: 0;
 }
 
-.point-adjustment input[aria-invalid="true"],
-.point-adjustment textarea[aria-invalid="true"] {
+.point-adjustment input[aria-invalid='true'],
+.point-adjustment textarea[aria-invalid='true'] {
   background: var(--danger-soft);
   border-color: var(--danger);
 }
@@ -625,7 +627,7 @@
 .point-adjustment-field > small,
 .point-reason-meta small {
   color: var(--ink-3);
-  font-size: .72rem;
+  font-size: 0.72rem;
 }
 
 .point-reason-meta {
@@ -649,28 +651,28 @@
 .point-confirmation {
   background: var(--danger-soft);
   border: 1px solid var(--danger-line);
-  border-radius: .6rem;
+  border-radius: 0.6rem;
   margin-top: 1rem;
-  padding: .9rem 1rem;
+  padding: 0.9rem 1rem;
 }
 
 .point-confirmation strong {
   color: var(--danger);
   display: block;
-  font-size: .88rem;
-  margin-bottom: .25rem;
+  font-size: 0.88rem;
+  margin-bottom: 0.25rem;
 }
 
 .point-confirmation p {
   color: var(--ink-2);
-  font-size: .82rem;
-  margin: 0 0 .8rem;
+  font-size: 0.82rem;
+  margin: 0 0 0.8rem;
 }
 
 .point-confirmation-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: .5rem;
+  gap: 0.5rem;
 }
 
 .point-adjustment-submit {
@@ -682,14 +684,14 @@
   align-items: center;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: .5rem;
+  border-radius: 0.5rem;
   color: var(--ink);
   cursor: pointer;
   display: inline-flex;
-  font-size: .825rem;
+  font-size: 0.825rem;
   font-weight: 600;
-  gap: .4rem;
-  padding: .5rem .9rem;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
   white-space: nowrap;
 }
 
@@ -721,12 +723,12 @@
 }
 
 .point-confirmation-actions button.danger:hover {
-  filter: brightness(.93);
+  filter: brightness(0.93);
 }
 
 .point-adjustment button:disabled {
   cursor: not-allowed;
-  opacity: .55;
+  opacity: 0.55;
 }
 
 .driver-history {
@@ -735,7 +737,7 @@
 
 .driver-history > header {
   border-bottom: 1px solid var(--line-soft);
-  padding: .9rem 1.15rem;
+  padding: 0.9rem 1.15rem;
 }
 
 .driver-history h2,
@@ -744,13 +746,13 @@
 }
 
 .driver-history h2 {
-  font-size: .95rem;
+  font-size: 0.95rem;
 }
 
 .driver-history header p {
   color: var(--ink-2);
-  font-size: .78rem;
-  margin-top: .2rem;
+  font-size: 0.78rem;
+  margin-top: 0.2rem;
 }
 
 .driver-history-body {
@@ -769,9 +771,9 @@
   border-bottom: 1px solid var(--line-soft);
   border-top: 0;
   display: grid;
-  gap: .25rem .9rem;
+  gap: 0.25rem 0.9rem;
   grid-template-columns: minmax(0, 1fr) auto;
-  padding: .8rem 0;
+  padding: 0.8rem 0;
 }
 
 .driver-history .point-history-detail li:first-child {
@@ -788,20 +790,20 @@
   gap: 0;
 }
 .point-history-type {
-  border-radius: .3rem;
+  border-radius: 0.3rem;
   justify-self: start;
-  letter-spacing: .02em;
+  letter-spacing: 0.02em;
 }
 
 .driver-history .point-history-detail .point-history-reason {
-  font-size: .88rem;
-  margin: .3rem 0 0;
+  font-size: 0.88rem;
+  margin: 0.3rem 0 0;
 }
 
 .driver-history .point-history-detail .point-history-meta {
   color: var(--ink-3);
-  font-size: .74rem;
-  margin: .25rem 0 0;
+  font-size: 0.74rem;
+  margin: 0.25rem 0 0;
   overflow-wrap: anywhere;
 }
 
@@ -821,61 +823,61 @@
   align-items: flex-start;
   background: var(--danger-soft);
   border: 1px solid var(--danger-line);
-  border-radius: .55rem;
+  border-radius: 0.55rem;
   display: flex;
   flex-wrap: wrap;
-  gap: .75rem;
+  gap: 0.75rem;
   justify-content: space-between;
   margin: 0;
-  padding: .85rem 1rem;
+  padding: 0.85rem 1rem;
 }
 
 .driver-history-error strong {
   color: var(--danger);
   display: block;
-  font-size: .86rem;
+  font-size: 0.86rem;
 }
 
 .driver-history-error p {
   color: var(--ink-2);
-  font-size: .78rem;
-  margin: .2rem 0 0;
+  font-size: 0.78rem;
+  margin: 0.2rem 0 0;
 }
 
 .driver-danger-area {
   background: transparent;
   border: 1px solid var(--danger-line);
-  border-radius: .7rem;
+  border-radius: 0.7rem;
   margin-top: 2.25rem;
   padding: 1rem 1.15rem;
 }
 
 .driver-danger-area h2 {
   color: var(--danger);
-  font-size: .9rem;
-  margin: 0 0 .2rem;
+  font-size: 0.9rem;
+  margin: 0 0 0.2rem;
 }
 
 .driver-danger-area > p {
   color: var(--ink-2);
-  font-size: .78rem;
-  margin: 0 0 .7rem;
+  font-size: 0.78rem;
+  margin: 0 0 0.7rem;
 }
 
 .driver-danger-area ul {
-  font-size: .78rem;
+  font-size: 0.78rem;
 }
 
 .driver-danger-area li {
-  margin-bottom: .2rem;
+  margin-bottom: 0.2rem;
 }
 .driver-danger-area .button {
-  border-radius: .5rem;
-  font-size: .825rem;
+  border-radius: 0.5rem;
+  font-size: 0.825rem;
   font-weight: 600;
   line-height: normal;
   min-height: 0;
-  padding: .5rem .9rem;
+  padding: 0.5rem 0.9rem;
 }
 
 .driver-detail-loading {
@@ -893,12 +895,19 @@
 .driver-detail-copy-skeleton {
   display: grid;
   flex: 1;
-  gap: .45rem;
+  gap: 0.45rem;
 }
 
-.driver-detail-copy-skeleton .skeleton:nth-child(1) { height: 1.35rem; width: 11rem; }
-.driver-detail-copy-skeleton .skeleton:nth-child(2) { width: 7.5rem; }
-.driver-detail-copy-skeleton .skeleton:nth-child(3) { width: 5.5rem; }
+.driver-detail-copy-skeleton .skeleton:nth-child(1) {
+  height: 1.35rem;
+  width: 11rem;
+}
+.driver-detail-copy-skeleton .skeleton:nth-child(2) {
+  width: 7.5rem;
+}
+.driver-detail-copy-skeleton .skeleton:nth-child(3) {
+  width: 5.5rem;
+}
 
 .driver-headline > .skeleton {
   height: 2.4rem;
@@ -915,7 +924,7 @@
 .drivers-notice {
   align-items: flex-start;
   display: flex;
-  gap: .75rem;
+  gap: 0.75rem;
   justify-content: space-between;
   margin: 0;
 }
@@ -927,22 +936,22 @@
   cursor: pointer;
   font: inherit;
   line-height: 1;
-  padding: 0 .15rem;
+  padding: 0 0.15rem;
 }
 
 .remove-driver-dialog form {
   display: grid;
-  gap: .3rem;
+  gap: 0.3rem;
 }
 
 .remove-driver-dialog form p {
   color: var(--ink-2);
-  font-size: .85rem;
-  margin: 0 0 .9rem;
+  font-size: 0.85rem;
+  margin: 0 0 0.9rem;
 }
 
 .modal.remove-driver-dialog {
-  border-radius: .8rem;
+  border-radius: 0.8rem;
   max-height: 92vh;
   max-width: 31rem;
   padding: 1.2rem 1.3rem;
@@ -950,7 +959,7 @@
 
 .remove-driver-dialog .modal-title {
   font-size: 1.05rem;
-  margin: 0 0 .5rem;
+  margin: 0 0 0.5rem;
 }
 
 .remove-driver-dialog .modal-body {
@@ -961,7 +970,7 @@
 .remove-driver-dialog label {
   color: var(--ink);
   display: block;
-  font-size: .78rem;
+  font-size: 0.78rem;
   font-weight: 700;
   margin-bottom: 0;
 }
@@ -969,12 +978,12 @@
 .remove-driver-dialog textarea {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: .5rem;
+  border-radius: 0.5rem;
   color: var(--ink);
-  font-size: .9rem;
+  font-size: 0.9rem;
   min-height: 4.6rem;
   outline: none;
-  padding: .5rem .7rem;
+  padding: 0.5rem 0.7rem;
   resize: vertical;
   width: 100%;
 }
@@ -985,14 +994,14 @@
   outline: 0;
 }
 
-.remove-driver-dialog textarea[aria-invalid="true"] {
+.remove-driver-dialog textarea[aria-invalid='true'] {
   background: var(--danger-soft);
   border-color: var(--danger);
 }
 
 .remove-driver-dialog small {
   color: var(--ink-3);
-  font-size: .72rem;
+  font-size: 0.72rem;
 }
 
 .remove-driver-dialog small.error {
@@ -1008,16 +1017,16 @@
 }
 
 .remove-driver-dialog .modal-actions {
-  gap: .5rem;
+  gap: 0.5rem;
   margin-top: 1.1rem;
 }
 .remove-driver-dialog .button {
   align-items: center;
-  border-radius: .5rem;
+  border-radius: 0.5rem;
   display: inline-flex;
-  font-size: .825rem;
+  font-size: 0.825rem;
   font-weight: 600;
-  padding: .5rem .9rem;
+  padding: 0.5rem 0.9rem;
 }
 
 @media (max-width: 53.75rem) {
@@ -1038,7 +1047,7 @@
   }
 
   .drivers-summary {
-    gap: .5rem;
+    gap: 0.5rem;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1046,24 +1055,32 @@
     align-items: stretch;
   }
 
-  /* When the search has a line to itself, let it use the whole line. */
+  /* The directory controls get their own rows so the action button never
+     wraps into an awkward partial row. */
   .drivers-search {
+    flex-basis: 100%;
     max-width: none;
   }
 
   .drivers-filters {
-    flex-shrink: 1;
+    flex: 1 1 100%;
     max-width: 100%;
     overflow-x: auto;
+    padding-bottom: 0.15rem;
+  }
+
+  .drivers-toolbar-action {
+    flex: 1 1 100%;
+    margin-left: 0;
   }
 
   .driver-identity {
-    gap: .7rem;
+    gap: 0.7rem;
   }
 
   .driver-identity-avatar,
   .driver-detail-avatar-skeleton {
-    font-size: .9rem;
+    font-size: 0.9rem;
     height: 2.6rem;
     width: 2.6rem;
   }
@@ -1098,7 +1115,7 @@
   .driver-history .point-history-detail .point-history-change {
     grid-column: 1;
     grid-row: auto;
-    margin-top: .15rem;
+    margin-top: 0.15rem;
     justify-self: start;
   }
   .driver-enrollment-actions .button,
@@ -1114,21 +1131,5 @@
   .remove-driver-dialog .button {
     justify-content: center;
     width: 100%;
-  }
-
-  /* Give the directory controls their own rows so the action button never
-     wraps into an awkward partial row. */
-  .drivers-search {
-    flex-basis: 100%;
-  }
-
-  .drivers-filters {
-    flex: 1 1 100%;
-    padding-bottom: .15rem;
-  }
-
-  .drivers-toolbar-action {
-    flex: 1 1 100%;
-    margin-left: 0;
   }
 }

@@ -18,7 +18,13 @@ export const CRASH_MS = 1800;
 //   loses a wheel and burns until `wrecked` goes back to false. The fire
 //   spreads along the truck until a fire truck shows up (after --rescue-delay)
 //   from whichever end of the road is further from the wreck and hoses it down.
-export default function RoadTruck({ mode = 'loop', arrived = false, crashKey = 0, wrecked = false, className = '' }) {
+export default function RoadTruck({
+  mode = 'loop',
+  arrived = false,
+  crashKey = 0,
+  wrecked = false,
+  className = '',
+}) {
   const [crashed, setCrashed] = useState(false);
   const [rescue, setRescue] = useState(null);
   const laneRef = useRef(null);
@@ -55,7 +61,9 @@ export default function RoadTruck({ mode = 'loop', arrived = false, crashKey = 0
     wrecked ? 'road-truck-wrecked' : '',
     crashed && !wrecked ? 'road-truck-crashed' : '',
     crashed || wrecked ? 'road-truck-stopped' : '',
-  ].filter(Boolean).join(' ');
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   let crash;
   if (wrecked) crash = 'flip';
@@ -86,7 +94,10 @@ export default function RoadTruck({ mode = 'loop', arrived = false, crashKey = 0
       {rescue && (
         <div
           className={`road-rescue road-rescue-from-${rescue.side}`}
-          style={{ '--wreck-left': `${rescue.wreckLeft}px`, '--wreck-right': `${rescue.wreckRight}px` }}
+          style={{
+            '--wreck-left': `${rescue.wreckLeft}px`,
+            '--wreck-right': `${rescue.wreckRight}px`,
+          }}
         >
           <FireTruck facing={rescue.side === 'right' ? 'left' : 'right'} spraying />
         </div>

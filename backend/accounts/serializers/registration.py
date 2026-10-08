@@ -28,17 +28,13 @@ class RegistrationSerializer(serializers.Serializer):
         if not value:
             raise serializers.ValidationError('Username is required.')
         if get_user_model().objects.filter(username__iexact=value).exists():
-            raise serializers.ValidationError(
-                'A user with this username already exists.'
-            )
+            raise serializers.ValidationError('A user with this username already exists.')
         return value
 
     def validate_email(self, value):
         value = value.strip().lower()
         if get_user_model().objects.filter(email__iexact=value).exists():
-            raise serializers.ValidationError(
-                'A user with this email address already exists.'
-            )
+            raise serializers.ValidationError('A user with this email address already exists.')
         return value
 
     def validate_password(self, value):

@@ -56,15 +56,12 @@ def is_trusted(request, user):
 def recent_failures(user):
     """Failed sign-ins for this user in the window, since their last success."""
     since = timezone.now() - timedelta(minutes=settings.SUSPICIOUS_FAILURE_WINDOW_MINUTES)
-    last_success = (
-        LoginAttempt.objects.filter(user=user, successful=True)
-        .aggregate(latest=Max('timestamp'))['latest']
-    )
+    last_success = LoginAttempt.objects.filter(user=user, successful=True).aggregate(
+        latest=Max('timestamp')
+    )['latest']
     if last_success and last_success > since:
         since = last_success
-    return LoginAttempt.objects.filter(
-        user=user, successful=False, timestamp__gt=since
-    ).count()
+    return LoginAttempt.objects.filter(user=user, successful=False, timestamp__gt=since).count()
 
 
 def device_check_reason(request, user):

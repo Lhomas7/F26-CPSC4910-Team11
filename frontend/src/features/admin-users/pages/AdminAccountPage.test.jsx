@@ -19,7 +19,16 @@ const account = {
 };
 
 function renderPage() {
-  return render(<MemoryRouter initialEntries={['/users/admins/8']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><Routes><Route path="/users/admins/:userId" element={<AdminAccountPage />} /></Routes></MemoryRouter>);
+  return render(
+    <MemoryRouter
+      initialEntries={['/users/admins/8']}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
+      <Routes>
+        <Route path="/users/admins/:userId" element={<AdminAccountPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
 }
 
 beforeEach(() => {
@@ -37,22 +46,33 @@ test('loads and displays another administrator account', async () => {
 });
 
 test('edits and saves another administrator account', async () => {
-  api.updateAdminAccount.mockResolvedValue({ ...account, first_name: 'Danielle', is_active: false });
+  api.updateAdminAccount.mockResolvedValue({
+    ...account,
+    first_name: 'Danielle',
+    is_active: false,
+  });
   renderPage();
   fireEvent.click(await screen.findByRole('button', { name: 'Edit account' }));
   fireEvent.change(screen.getByLabelText('First name'), { target: { value: 'Danielle' } });
   fireEvent.change(screen.getByLabelText(/^Account status/), { target: { value: 'false' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
-  await waitFor(() => expect(api.updateAdminAccount).toHaveBeenCalledWith('8', expect.objectContaining({
-    first_name: 'Danielle',
-    is_active: false,
-  })));
+  await waitFor(() =>
+    expect(api.updateAdminAccount).toHaveBeenCalledWith(
+      '8',
+      expect.objectContaining({
+        first_name: 'Danielle',
+        is_active: false,
+      }),
+    ),
+  );
   expect(await screen.findByText('Administrator account saved.')).toBeInTheDocument();
 });
 
 test('shows server validation errors and remains in edit mode', async () => {
-  api.updateAdminAccount.mockRejectedValue({ data: { username: ['That username is already taken.'] } });
+  api.updateAdminAccount.mockRejectedValue({
+    data: { username: ['That username is already taken.'] },
+  });
   renderPage();
   fireEvent.click(await screen.findByRole('button', { name: 'Edit account' }));
   fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));

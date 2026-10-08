@@ -9,59 +9,59 @@
   background: #4f5963;
   bottom: 0;
   height: 3em;
-  left: .12em;
-  width: .12em;
+  left: 0.12em;
+  width: 0.12em;
 }
 
 .asset-lamp-base {
   background: #3a403c;
-  border-radius: .05em .05em 0 0;
+  border-radius: 0.05em 0.05em 0 0;
   bottom: 0;
-  height: .22em;
-  left: .05em;
-  width: .26em;
+  height: 0.22em;
+  left: 0.05em;
+  width: 0.26em;
 }
 
 .asset-lamp-arm {
   background: #4f5963;
-  border-radius: 0 .1em 0 0;
-  height: .09em;
-  left: .12em;
-  top: .22em;
-  width: .62em;
+  border-radius: 0 0.1em 0 0;
+  height: 0.09em;
+  left: 0.12em;
+  top: 0.22em;
+  width: 0.62em;
 }
 
 .asset-lamp-head {
   background: #3a403c;
-  border-radius: .06em .06em .16em .16em;
-  height: .16em;
-  left: .56em;
-  top: .26em;
-  width: .38em;
+  border-radius: 0.06em 0.06em 0.16em 0.16em;
+  height: 0.16em;
+  left: 0.56em;
+  top: 0.26em;
+  width: 0.38em;
 }
 
 .asset-lamp-bulb {
   background: #c9cec9;
-  border-radius: 0 0 .1em .1em;
-  height: .06em;
-  left: .62em;
-  top: .41em;
-  width: .26em;
+  border-radius: 0 0 0.1em 0.1em;
+  height: 0.06em;
+  left: 0.62em;
+  top: 0.41em;
+  width: 0.26em;
 }
 
 .asset-lamp-glow {
   background: radial-gradient(ellipse at 50% 0, rgb(255 233 163 / 50%), transparent 70%);
   clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%);
   height: 2.75em;
-  left: -.05em;
+  left: -0.05em;
   opacity: 0;
-  top: .45em;
+  top: 0.45em;
   width: 1.6em;
 }
 
 .asset-lamp-lit .asset-lamp-bulb {
   background: #ffe9a3;
-  box-shadow: 0 0 .25em #ffe9a3;
+  box-shadow: 0 0 0.25em #ffe9a3;
 }
 
 .asset-lamp-lit .asset-lamp-glow {
@@ -71,101 +71,105 @@
 /* ---------- Bench ---------- */
 
 .asset-bench {
-  --asset-h: .75em;
+  --asset-h: 0.75em;
   --asset-w: 1.6em;
 }
 
 .asset-bench-back {
-  background: repeating-linear-gradient(to bottom, #8a5a36 0 .08em, transparent .08em .14em);
-  height: .3em;
-  left: .05em;
+  background: repeating-linear-gradient(to bottom, #8a5a36 0 0.08em, transparent 0.08em 0.14em);
+  height: 0.3em;
+  left: 0.05em;
   top: 0;
   width: 1.5em;
 }
 
 .asset-bench-seat {
   background: #8a5a36;
-  border-radius: .03em;
-  height: .09em;
+  border-radius: 0.03em;
+  height: 0.09em;
   left: 0;
-  top: .38em;
+  top: 0.38em;
   width: 1.6em;
 }
 
 .asset-bench-leg {
   background: #3a403c;
   bottom: 0;
-  height: .38em;
-  width: .08em;
+  height: 0.38em;
+  width: 0.08em;
 }
 
-.asset-bench-leg-a { left: .15em; }
-.asset-bench-leg-b { right: .15em; }
+.asset-bench-leg-a {
+  left: 0.15em;
+}
+.asset-bench-leg-b {
+  right: 0.15em;
+}
 
 /* ---------- Fire hydrant ---------- */
 
 .asset-hydrant {
-  --asset-h: .72em;
-  --asset-w: .5em;
+  --asset-h: 0.72em;
+  --asset-w: 0.5em;
 }
 
 .asset-hydrant-cap {
   background: #b5291f;
-  border-radius: .12em .12em 0 0;
-  height: .14em;
-  left: .1em;
+  border-radius: 0.12em 0.12em 0 0;
+  height: 0.14em;
+  left: 0.1em;
   top: 0;
-  width: .3em;
+  width: 0.3em;
 }
 
 .asset-hydrant-body {
   background: #d63b2f;
-  height: .48em;
-  left: .12em;
-  top: .12em;
-  width: .26em;
+  height: 0.48em;
+  left: 0.12em;
+  top: 0.12em;
+  width: 0.26em;
 }
 
 .asset-hydrant-nozzle {
   background: #b5291f;
-  border-radius: .03em;
-  height: .1em;
-  left: .04em;
-  top: .28em;
-  width: .42em;
+  border-radius: 0.03em;
+  height: 0.1em;
+  left: 0.04em;
+  top: 0.28em;
+  width: 0.42em;
 }
 
 .asset-hydrant-base {
   background: #b5291f;
   bottom: 0;
-  height: .08em;
-  left: .07em;
-  width: .36em;
+  height: 0.08em;
+  left: 0.07em;
+  width: 0.36em;
 }
 
 /* ---------- Traffic cone ---------- */
 
 .asset-cone {
-  --asset-h: .7em;
-  --asset-w: .5em;
+  --asset-h: 0.7em;
+  --asset-w: 0.5em;
 }
 
 .asset-cone-body {
   background: linear-gradient(#ff7a1a 0 35%, #f4f5f2 35% 55%, #ff7a1a 55%);
-  bottom: .06em;
+  bottom: 0.06em;
   clip-path: polygon(40% 0, 60% 0, 100% 100%, 0 100%);
-  left: .05em;
+  left: 0.05em;
   top: 0;
-  width: .4em;
+  width: 0.4em;
 }
 
 .asset-cone-base {
   background: #e56a10;
-  border-radius: .02em;
+  border-radius: 0.02em;
   bottom: 0;
-  height: .07em;
+  height: 0.07em;
   left: 0;
-  width: .5em;
+  width: 0.5em;
 }
 
 /* ---------- Road-closed barrier ---------- */
@@ -176,33 +180,41 @@
 }
 
 .asset-barrier-board {
-  background: repeating-linear-gradient(45deg, #ff7a1a 0 .14em, #f4f5f2 .14em .28em);
-  border-radius: .03em;
-  height: .2em;
+  background: repeating-linear-gradient(45deg, #ff7a1a 0 0.14em, #f4f5f2 0.14em 0.28em);
+  border-radius: 0.03em;
+  height: 0.2em;
   left: 0;
   width: 2em;
 }
 
-.asset-barrier-board-a { top: .3em; }
-.asset-barrier-board-b { top: .62em; }
+.asset-barrier-board-a {
+  top: 0.3em;
+}
+.asset-barrier-board-b {
+  top: 0.62em;
+}
 
 .asset-barrier-leg {
   background: #9aa29b;
   bottom: 0;
-  height: .9em;
-  width: .08em;
+  height: 0.9em;
+  width: 0.08em;
 }
 
-.asset-barrier-leg-a { left: .25em; }
-.asset-barrier-leg-b { right: .25em; }
+.asset-barrier-leg-a {
+  left: 0.25em;
+}
+.asset-barrier-leg-b {
+  right: 0.25em;
+}
 
 .asset-barrier-lamp {
   background: #8a6a14;
   border-radius: 50%;
-  height: .18em;
-  left: .2em;
-  top: .1em;
-  width: .18em;
+  height: 0.18em;
+  left: 0.2em;
+  top: 0.1em;
+  width: 0.18em;
 }
 
 .asset-barrier-blinking .asset-barrier-lamp {
@@ -210,7 +222,10 @@
 }
 
 @keyframes asset-amber-blink {
-  50% { background: #ffc531; box-shadow: 0 0 .25em #ffc531; }
+  50% {
+    background: #ffc531;
+    box-shadow: 0 0 0.25em #ffc531;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,22 +1,11 @@
-import logging
-import re
-from contextlib import contextmanager
-from datetime import timedelta
-from io import BytesIO, StringIO
+from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from unittest.mock import patch
-
-import pyotp
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.hashers import make_password
-from django.core import mail
-from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 from django.urls import reverse
-from django.utils import timezone
 from PIL import Image
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -24,18 +13,9 @@ from rest_framework.test import APITestCase
 from drivers.models import Driver
 
 from ..models import (
-    AdminImpersonationEvent,
-    DriverNotification,
-    LoginAttempt,
-    MFABackupCode,
-    MFACode,
-    MFASettings,
-    SponsorAccount,
     SponsorCompany,
 )
-from ..middleware import IMPERSONATION_STARTED_KEY
-from ..services.crypto import decrypt_secret, encrypt_secret
-from ..services.mfa import backup_codes_remaining, create_mfa_code
+
 
 class SelfProfileTests(APITestCase):
     url = reverse('accounts:self-profile')
@@ -206,12 +186,8 @@ class SelfProfileTests(APITestCase):
     def test_rejects_username_outside_the_shared_account_rules(self):
         self.client.force_authenticate(self.user)
 
-        invalid_characters = self.client.patch(
-            self.url, {'username': 'driver one'}, format='json'
-        )
-        too_short = self.client.patch(
-            self.url, {'username': 'ab'}, format='json'
-        )
+        invalid_characters = self.client.patch(self.url, {'username': 'driver one'}, format='json')
+        too_short = self.client.patch(self.url, {'username': 'ab'}, format='json')
 
         self.assertEqual(invalid_characters.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('username', invalid_characters.data)
@@ -244,9 +220,9 @@ class SelfProfileTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.driver.refresh_from_db()
-        self.assertTrue(self.driver.profile_picture.name.startswith(
-            f'driver_profiles/{self.driver.pk}/'
-        ))
+        self.assertTrue(
+            self.driver.profile_picture.name.startswith(f'driver_profiles/{self.driver.pk}/')
+        )
         self.assertNotIn('My Vacation Photo', self.driver.profile_picture.name)
         self.assertTrue(Path(self.driver.profile_picture.path).exists())
         self.assertIn('/media/driver_profiles/', response.data['avatar_url'])
@@ -362,24 +338,27 @@ class AdminSelfProfileTests(APITestCase):
 
         get_response = self.client.get(self.profile_url)
         self.assertEqual(get_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(get_response.data, {
-            'id': self.admin.id,
-            'username': 'team11.admin',
-            'email': 'admin@example.com',
-            'name': 'Team Administrator',
-            'phone_number': None,
-            'account_type': 'admin',
-            'company': None,
-            'avatar_url': None,
-            'mfa': {
-                'required': True,
-                'enrolled': False,
-                'methods': [],
-                'default_method': 'totp',
-                'allowed_methods': ['totp'],
-                'backup_codes_remaining': 0,
+        self.assertEqual(
+            get_response.data,
+            {
+                'id': self.admin.id,
+                'username': 'team11.admin',
+                'email': 'admin@example.com',
+                'name': 'Team Administrator',
+                'phone_number': None,
+                'account_type': 'admin',
+                'company': None,
+                'avatar_url': None,
+                'mfa': {
+                    'required': True,
+                    'enrolled': False,
+                    'methods': [],
+                    'default_method': 'totp',
+                    'allowed_methods': ['totp'],
+                    'backup_codes_remaining': 0,
+                },
             },
-        })
+        )
 
         patch_response = self.client.patch(
             self.profile_url,

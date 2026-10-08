@@ -12,7 +12,13 @@ function PasswordField({ id, label, ...inputProps }) {
   return (
     <div className="login-field">
       <label htmlFor={id}>{label}</label>
-      <PasswordInput id={id} label={label} className="login-input" autoComplete="new-password" {...inputProps} />
+      <PasswordInput
+        id={id}
+        label={label}
+        className="login-input"
+        autoComplete="new-password"
+        {...inputProps}
+      />
     </div>
   );
 }
@@ -49,10 +55,11 @@ export default function ResetPasswordPage() {
       // and for a password that fails server-side rules; only the first kind has
       // no field-level errors.
       const data = requestError.data || {};
-      const isLinkProblem = requestError.status === 400
-        && typeof data.detail === 'string'
-        && !data.password
-        && !data.password_confirm;
+      const isLinkProblem =
+        requestError.status === 400 &&
+        typeof data.detail === 'string' &&
+        !data.password &&
+        !data.password_confirm;
       if (isLinkProblem) {
         setLinkInvalid(true);
       } else {
@@ -67,12 +74,16 @@ export default function ResetPasswordPage() {
   if (done) {
     content = (
       <>
-        <div className="login-check" aria-hidden="true">✓</div>
+        <div className="login-check" aria-hidden="true">
+          ✓
+        </div>
         <h2>Password reset</h2>
         <p className="banner banner-success" role="status">
           Your password has been reset. You can now sign in with it.
         </p>
-        <Link className="button button-large button-primary login-button" to="/login">Go to sign in</Link>
+        <Link className="button button-large button-primary login-button" to="/login">
+          Go to sign in
+        </Link>
       </>
     );
   } else if (linkInvalid) {
@@ -82,14 +93,20 @@ export default function ResetPasswordPage() {
         <p className="banner banner-error" role="alert">
           This password reset link is invalid or has expired.
         </p>
-        <Link className="button button-large button-primary login-button" to="/forgot-password">Request a new link</Link>
+        <Link className="button button-large button-primary login-button" to="/forgot-password">
+          Request a new link
+        </Link>
       </>
     );
   } else {
     content = (
       <form className="login-form" onSubmit={submit} noValidate>
         <h2>Choose a new password</h2>
-        {error && <p className="banner banner-error" role="alert">{error}</p>}
+        {error && (
+          <p className="banner banner-error" role="alert">
+            {error}
+          </p>
+        )}
         <PasswordField
           id="reset-password"
           label="New password"
@@ -105,7 +122,11 @@ export default function ResetPasswordPage() {
           onChange={(event) => setConfirmation(event.target.value)}
           disabled={busy}
         />
-        <button className="button button-large button-primary login-button" type="submit" disabled={busy}>
+        <button
+          className="button button-large button-primary login-button"
+          type="submit"
+          disabled={busy}
+        >
           {busy ? 'Resetting…' : 'Reset password'}
         </button>
       </form>

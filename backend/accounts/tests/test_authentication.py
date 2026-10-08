@@ -1,26 +1,14 @@
-import logging
 import re
-from contextlib import contextmanager
-from datetime import timedelta
-from io import BytesIO, StringIO
-from pathlib import Path
-from tempfile import TemporaryDirectory
 from unittest.mock import patch
-
-import pyotp
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.hashers import make_password
 from django.contrib.sessions.models import Session
 from django.core import mail
 from django.core.cache import cache
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import RequestFactory, SimpleTestCase, override_settings
 from django.urls import reverse
-from django.utils import timezone
 from django.views.debug import ExceptionReporter
-from PIL import Image
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -30,17 +18,14 @@ from ..models import (
     AdminImpersonationEvent,
     DriverNotification,
     LoginAttempt,
-    MFABackupCode,
-    MFACode,
     MFASettings,
     SponsorAccount,
     SponsorCompany,
 )
-from ..middleware import IMPERSONATION_STARTED_KEY
-from ..services.crypto import decrypt_secret, encrypt_secret
-from .common import enroll_totp
-from ..services.mfa import backup_codes_remaining, create_mfa_code
+from ..services.mfa import create_mfa_code
 from ..views import LoginView
+from .common import enroll_totp
+
 
 class ChangePasswordTests(APITestCase):
     url = reverse('accounts:change-password')
@@ -90,9 +75,6 @@ class ChangePasswordTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('password', response.data)
-
-
-
 
 
 class LoginAttemptLoggingTests(APITestCase):
@@ -544,6 +526,7 @@ class PasswordResetTests(APITestCase):
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password('ExamplePassword123!'))
 
+
 class PasswordResetExcludesAdminsTests(APITestCase):
     request_url = reverse('accounts:password-reset')
 
@@ -583,8 +566,9 @@ class PasswordResetExcludesAdminsTests(APITestCase):
         )
         Driver.objects.create(user=user, name='Driver One', status='approved')
 
-        response = self.client.post(self.request_url, {'email': 'driver@example.com'}, format='json')
+        response = self.client.post(
+            self.request_url, {'email': 'driver@example.com'}, format='json'
+        )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(mail.outbox), 1)
-

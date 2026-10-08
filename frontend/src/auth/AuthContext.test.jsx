@@ -12,7 +12,9 @@ function SignedInStatus() {
   return (
     <>
       <p>{user ? `Signed in as ${user.username}` : 'Signed out'}</p>
-      <button type="button" onClick={signOut}>Sign out</button>
+      <button type="button" onClick={signOut}>
+        Sign out
+      </button>
     </>
   );
 }
@@ -61,8 +63,13 @@ function SessionStatus() {
     <>
       <p>Device check: {user?.session?.device_check || 'none'}</p>
       <p>Name: {user?.name}</p>
-      <button type="button" onClick={() => answerDeviceCheck(true)}>Trust</button>
-      <button type="button" onClick={() => updateUser({ ...user, session: undefined, name: 'Renamed' })}>
+      <button type="button" onClick={() => answerDeviceCheck(true)}>
+        Trust
+      </button>
+      <button
+        type="button"
+        onClick={() => updateUser({ ...user, session: undefined, name: 'Renamed' })}
+      >
         Rename
       </button>
     </>
@@ -88,7 +95,9 @@ function renderWithPendingDeviceCheck() {
 }
 
 test('answering the device check stores the session the server returns', async () => {
-  api.deviceCheck.mockResolvedValue({ session: { device_check: null, idle_timeout_seconds: null } });
+  api.deviceCheck.mockResolvedValue({
+    session: { device_check: null, idle_timeout_seconds: null },
+  });
   renderWithPendingDeviceCheck();
   expect(await screen.findByText('Device check: new_device')).toBeInTheDocument();
 

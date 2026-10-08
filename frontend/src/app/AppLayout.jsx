@@ -4,7 +4,12 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import BrandMark from '../components/branding/BrandMark';
 import ConfirmDialog from '../components/feedback/ConfirmDialog';
-import { AccountIcon, ChevronDownIcon, SignOutIcon, UserIcon } from '../components/primitives/Icons';
+import {
+  AccountIcon,
+  ChevronDownIcon,
+  SignOutIcon,
+  UserIcon,
+} from '../components/primitives/Icons';
 import { MfaSetupWall } from '../features/accounts';
 import { DeviceCheckDialog } from '../features/authentication';
 import './AppLayout.css';
@@ -142,11 +147,12 @@ export function AppLayout() {
   const [endingViewAs, setEndingViewAs] = useState(false);
   const [viewAsError, setViewAsError] = useState('');
   const [pageHeaderTarget, setPageHeaderTarget] = useState(null);
-  const mfaWallNeeded = user
-    && (user.account_type === 'sponsor' || user.account_type === 'admin')
-    && user.mfa
-    && user.mfa.required
-    && !user.mfa.enrolled;
+  const mfaWallNeeded =
+    user &&
+    (user.account_type === 'sponsor' || user.account_type === 'admin') &&
+    user.mfa &&
+    user.mfa.required &&
+    !user.mfa.enrolled;
 
   // A timed-out session goes straight to sign-in, even from public pages.
   useEffect(() => {
@@ -167,7 +173,9 @@ export function AppLayout() {
 
   return (
     <div className="app-shell">
-      <a className="skip-link" href="#main-content">Skip to content</a>
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
       <aside className="site-sidebar">
         <Link className="brand" to="/" aria-label="Good Driver home">
           <BrandMark />
@@ -189,8 +197,8 @@ export function AppLayout() {
         {user?.impersonation?.active && (
           <div className="impersonation-banner" role="status">
             <span>
-              <strong>Viewing as {user.name || user.username}</strong>
-              {' '}({user.account_type}). You are still signed in as {user.impersonation.admin.name}.
+              <strong>Viewing as {user.name || user.username}</strong> ({user.account_type}). You
+              are still signed in as {user.impersonation.admin.name}.
             </span>
             {viewAsError && <span className="impersonation-error">{viewAsError}</span>}
             <button type="button" onClick={stopViewingAs} disabled={endingViewAs}>
@@ -199,10 +207,7 @@ export function AppLayout() {
           </div>
         )}
         {user?.session?.device_check && (
-          <DeviceCheckDialog
-            onAnswer={answerDeviceCheck}
-            onSignOut={signOut}
-          />
+          <DeviceCheckDialog onAnswer={answerDeviceCheck} onSignOut={signOut} />
         )}
         <header className="app-topbar">
           <div className="app-topbar-page" ref={setPageHeaderTarget} />
@@ -215,9 +220,8 @@ export function AppLayout() {
               <>
                 {user && user.mfa && user.mfa.required && !user.mfa.enrolled && (
                   <div className="mfa-required-banner">
-                    Your sponsor requires two-factor authentication. Set it up to keep
-                    signing in without interruption.{' '}
-                    <Link to="/account">Set up now</Link>
+                    Your sponsor requires two-factor authentication. Set it up to keep signing in
+                    without interruption. <Link to="/account">Set up now</Link>
                   </div>
                 )}
                 <Outlet />

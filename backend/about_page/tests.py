@@ -8,7 +8,7 @@ from .models import AboutPageRelease
 
 
 class CurrentAboutPageReleaseTests(APITestCase):
-    url = reverse("about_page:current-release")
+    url = reverse('about_page:current-release')
 
     def setUp(self):
         # Data migrations (e.g. seeding the Sprint 3 release) run once when
@@ -22,8 +22,8 @@ class CurrentAboutPageReleaseTests(APITestCase):
             team_number=11,
             version_number=version_number,
             release_date=release_date,
-            product_name="Good Driver Incentive Program",
-            product_description="A rewards program for safer driving.",
+            product_name='Good Driver Incentive Program',
+            product_description='A rewards program for safer driving.',
         )
 
     def test_returns_clear_404_when_no_release_exists(self):
@@ -31,12 +31,12 @@ class CurrentAboutPageReleaseTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(
-            response.data["detail"],
-            "No About page release information is available.",
+            response.data['detail'],
+            'No About page release information is available.',
         )
 
     def test_returns_only_public_about_fields(self):
-        self.create_release("Sprint 1", date(2026, 9, 15))
+        self.create_release('Sprint 1', date(2026, 9, 15))
 
         response = self.client.get(self.url)
 
@@ -44,23 +44,23 @@ class CurrentAboutPageReleaseTests(APITestCase):
         self.assertEqual(
             set(response.data),
             {
-                "team_number",
-                "version_number",
-                "release_date",
-                "product_name",
-                "product_description",
+                'team_number',
+                'version_number',
+                'release_date',
+                'product_name',
+                'product_description',
             },
         )
 
     def test_returns_release_with_newest_release_date(self):
-        self.create_release("Sprint 3", date(2026, 9, 30))
-        self.create_release("Sprint 2", date(2026, 9, 29))
-        self.create_release("Sprint 1", date(2026, 9, 15))
+        self.create_release('Sprint 3', date(2026, 9, 30))
+        self.create_release('Sprint 2', date(2026, 9, 29))
+        self.create_release('Sprint 1', date(2026, 9, 15))
 
         response = self.client.get(self.url)
 
-        self.assertEqual(response.data["version_number"], "Sprint 3")
-        self.assertEqual(response.data["release_date"], "2026-09-30")
+        self.assertEqual(response.data['version_number'], 'Sprint 3')
+        self.assertEqual(response.data['release_date'], '2026-09-30')
 
 
 class AboutPageEditTests(APITestCase):
@@ -79,11 +79,14 @@ class AboutPageEditTests(APITestCase):
             product_description='Rewards safe driving.',
         )
         cls.admin_user = get_user_model().objects.create_user(
-            username='about.admin', password='ExamplePassword123!', is_staff=True,
+            username='about.admin',
+            password='ExamplePassword123!',
+            is_staff=True,
         )
         enroll_totp(cls.admin_user)
         cls.sponsor_user = get_user_model().objects.create_user(
-            username='about.sponsor', password='ExamplePassword123!',
+            username='about.sponsor',
+            password='ExamplePassword123!',
         )
         SponsorAccount.objects.create(
             user=cls.sponsor_user,
@@ -108,8 +111,12 @@ class AboutPageEditTests(APITestCase):
     def test_everyone_else_can_only_read_it(self):
         url = reverse('about_page:current-release')
         self.assertEqual(self.client.get(url).status_code, 200)
-        self.assertIn(self.client.patch(url, {'product_name': 'Nope'}, format='json').status_code, (401, 403))
+        self.assertIn(
+            self.client.patch(url, {'product_name': 'Nope'}, format='json').status_code, (401, 403)
+        )
         self.client.force_authenticate(self.sponsor_user)
-        self.assertEqual(self.client.patch(url, {'product_name': 'Nope'}, format='json').status_code, 403)
+        self.assertEqual(
+            self.client.patch(url, {'product_name': 'Nope'}, format='json').status_code, 403
+        )
         self.release.refresh_from_db()
         self.assertEqual(self.release.product_name, 'Good Driver')

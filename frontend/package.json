@@ -9,7 +9,7 @@
     "@testing-library/user-event": "^13.5.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "react-router-dom": "6.30.1",
+    "react-router-dom": "^6.30.6",
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"
   },
@@ -17,7 +17,16 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "lint": "npm run lint:js && npm run lint:css",
+    "lint:fix": "npm run lint:js:fix && npm run lint:css:fix",
+    "lint:js": "eslint \"src/**/*.{js,jsx}\"",
+    "lint:js:fix": "eslint \"src/**/*.{js,jsx}\" --fix",
+    "lint:css": "stylelint \"src/**/*.css\"",
+    "lint:css:fix": "stylelint \"src/**/*.css\" --fix",
+    "format": "prettier --write \"src/**/*.{js,jsx,css,json}\"",
+    "format:check": "prettier --check \"src/**/*.{js,jsx,css,json}\"",
+    "lint:docs": "markdownlint-cli2 \"../*.md\" \"../docs/**/*.md\""
   },
   "eslintConfig": {
     "extends": [
@@ -36,5 +45,11 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "markdownlint-cli2": "^0.23.3",
+    "prettier": "^3.9.9",
+    "stylelint": "^17.16.0",
+    "stylelint-config-standard": "^40.0.0"
   }
 }

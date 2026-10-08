@@ -41,7 +41,10 @@ test('request identifies a fetch failure as a network outage', async () => {
 test('checkHealth reports the health endpoint status without throwing', async () => {
   global.fetch = jest.fn().mockResolvedValue({ ok: true });
   await expect(checkHealth()).resolves.toBe(true);
-  expect(global.fetch).toHaveBeenCalledWith(expect.stringMatching(/\/health\/$/), expect.any(Object));
+  expect(global.fetch).toHaveBeenCalledWith(
+    expect.stringMatching(/\/health\/$/),
+    expect.any(Object),
+  );
 
   global.fetch = jest.fn().mockResolvedValue({ ok: false });
   await expect(checkHealth()).resolves.toBe(false);
@@ -59,9 +62,11 @@ test('every request is reported as activity', async () => {
 });
 
 test('a session_expired 401 announces the expiry and still returns the response', async () => {
-  global.fetch = jest.fn().mockResolvedValue(
-    jsonResponse(401, { detail: 'Your session expired.', code: 'session_expired' }),
-  );
+  global.fetch = jest
+    .fn()
+    .mockResolvedValue(
+      jsonResponse(401, { detail: 'Your session expired.', code: 'session_expired' }),
+    );
   const response = await request('/me/');
   expect(expired).toHaveBeenCalledTimes(1);
   expect(response.status).toBe(401);

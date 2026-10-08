@@ -51,7 +51,10 @@ test('shows an impersonation warning and returns to the administrator account', 
   };
   global.fetch = jest.fn((url) => {
     if (url.endsWith('/me/')) {
-      return Promise.resolve({ ok: true, json: async () => ({ authenticated: true, user: impersonatedUser }) });
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ authenticated: true, user: impersonatedUser }),
+      });
     }
     if (url.endsWith('/admin/impersonation/stop/')) {
       return Promise.resolve({ ok: true, json: async () => adminUser });

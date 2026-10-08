@@ -5,7 +5,11 @@ import './SemiTruck.css';
 // bumper and exhaust stack.
 export default function SemiTruck({ moving = false, speeding = false, crash, ...frame }) {
   return (
-    <AssetFrame name="semi-truck" modifiers={vehicleModifiers({ moving, speeding, crash })} {...frame}>
+    <AssetFrame
+      name="semi-truck"
+      modifiers={vehicleModifiers({ moving, speeding, crash })}
+      {...frame}
+    >
       {speeding && <SpeedLines />}
       <span className="asset-semi-exhaust" />
       <span className="asset-semi-trailer" />

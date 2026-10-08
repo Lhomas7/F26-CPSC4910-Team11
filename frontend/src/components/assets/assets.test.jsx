@@ -90,14 +90,26 @@ test('vehicles mirror, drive, speed and switch lights off', () => {
   const { container } = render(<PoliceCar facing="left" speeding lights={false} />);
   const car = container.querySelector('.asset-police-car');
 
-  expect(car).toHaveClass('asset-facing-left', 'asset-moving', 'asset-speeding', 'asset-lights-off');
+  expect(car).toHaveClass(
+    'asset-facing-left',
+    'asset-moving',
+    'asset-speeding',
+    'asset-lights-off',
+  );
   expect(car.querySelector('.asset-speed-lines')).toBeInTheDocument();
 });
 
 test('Car takes a colour and FireTruck can spray', () => {
-  const { container } = render(<><Car color="#ff0000" /><FireTruck spraying /></>);
+  const { container } = render(
+    <>
+      <Car color="#ff0000" />
+      <FireTruck spraying />
+    </>,
+  );
 
-  expect(container.querySelector('.asset-sedan').style.getPropertyValue('--car-color')).toBe('#ff0000');
+  expect(container.querySelector('.asset-sedan').style.getPropertyValue('--car-color')).toBe(
+    '#ff0000',
+  );
   expect(container.querySelector('.asset-fire-spray')).toBeInTheDocument();
 });
 
@@ -111,10 +123,18 @@ test('Building variants, traffic light states and collision delay set their clas
     </>,
   );
 
-  expect(container.querySelector('.asset-building')).toHaveClass('asset-building-warehouse', 'asset-building-lit');
+  expect(container.querySelector('.asset-building')).toHaveClass(
+    'asset-building-warehouse',
+    'asset-building-lit',
+  );
   expect(container.querySelector('.asset-traffic-light')).toHaveClass('asset-signal-state-red');
-  expect(container.querySelector('.asset-collision').style.getPropertyValue('--collision-delay')).toBe('1.5s');
-  expect(container.querySelector('.asset-road')).not.toHaveClass('asset-road-dashed', 'asset-road-shoulders');
+  expect(
+    container.querySelector('.asset-collision').style.getPropertyValue('--collision-delay'),
+  ).toBe('1.5s');
+  expect(container.querySelector('.asset-road')).not.toHaveClass(
+    'asset-road-dashed',
+    'asset-road-shoulders',
+  );
 });
 
 test('new asset options set their classes and content', () => {
@@ -155,7 +175,10 @@ test('vehicles take crash poses, wheels roll away, and fire takes its timing', (
   const car = container.querySelector('.asset-sedan');
   expect(car).toHaveClass('asset-crash-tip');
   expect(car).not.toHaveClass('asset-moving');
-  expect(container.querySelector('.asset-school-bus')).toHaveClass('asset-crash-flip', 'asset-facing-left');
+  expect(container.querySelector('.asset-school-bus')).toHaveClass(
+    'asset-crash-flip',
+    'asset-facing-left',
+  );
 
   const wheel = container.querySelector('.asset-spare-wheel');
   expect(wheel).toHaveClass('asset-rolling');

@@ -4,7 +4,12 @@ import './Car.css';
 function Sedan({ name, color, moving, speeding, crash, lights, extras, frame }) {
   const style = color ? { '--car-color': color, ...frame.style } : frame.style;
   return (
-    <AssetFrame name={name} modifiers={['car', ...vehicleModifiers({ moving, speeding, crash, lights })]} {...frame} style={style}>
+    <AssetFrame
+      name={name}
+      modifiers={['car', ...vehicleModifiers({ moving, speeding, crash, lights })]}
+      {...frame}
+      style={style}
+    >
       {speeding && <SpeedLines />}
       <span className="asset-car-cabin" />
       <span className="asset-window asset-car-window" />
@@ -20,7 +25,16 @@ function Sedan({ name, color, moving, speeding, crash, lights, extras, frame }) 
 
 /** Everyday sedan. `color` is any CSS colour. */
 export default function Car({ color, moving = false, speeding = false, crash, ...frame }) {
-  return <Sedan name="sedan" color={color} moving={moving} speeding={speeding} crash={crash} frame={frame} />;
+  return (
+    <Sedan
+      name="sedan"
+      color={color}
+      moving={moving}
+      speeding={speeding}
+      crash={crash}
+      frame={frame}
+    />
+  );
 }
 
 /** Black-and-white patrol car with a light bar. */

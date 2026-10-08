@@ -2,1158 +2,1157 @@
 // See THIRD_PARTY_NOTICES.md at the repository root.
 const COUNTRY_CODES = [
   {
-    "name": "Afghanistan",
-    "dialCode": "+93",
-    "code": "AF",
-    "nationalNumberLength": 9
+    name: 'Afghanistan',
+    dialCode: '+93',
+    code: 'AF',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Albania",
-    "dialCode": "+355",
-    "code": "AL",
-    "nationalNumberLength": 9
+    name: 'Albania',
+    dialCode: '+355',
+    code: 'AL',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Algeria",
-    "dialCode": "+213",
-    "code": "DZ",
-    "nationalNumberLength": 9
+    name: 'Algeria',
+    dialCode: '+213',
+    code: 'DZ',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Andorra",
-    "dialCode": "+376",
-    "code": "AD",
-    "nationalNumberLength": 9
+    name: 'Andorra',
+    dialCode: '+376',
+    code: 'AD',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Angola",
-    "dialCode": "+244",
-    "code": "AO",
-    "nationalNumberLength": 9
+    name: 'Angola',
+    dialCode: '+244',
+    code: 'AO',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Antigua and Barbuda",
-    "dialCode": "+1",
-    "code": "AG",
-    "nationalNumberLength": 10
+    name: 'Antigua and Barbuda',
+    dialCode: '+1',
+    code: 'AG',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Argentina",
-    "dialCode": "+54",
-    "code": "AR",
-    "nationalNumberLength": 10
+    name: 'Argentina',
+    dialCode: '+54',
+    code: 'AR',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Armenia",
-    "dialCode": "+374",
-    "code": "AM",
-    "nationalNumberLength": 8
+    name: 'Armenia',
+    dialCode: '+374',
+    code: 'AM',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Australia",
-    "dialCode": "+61",
-    "code": "AU",
-    "nationalNumberLength": 9
+    name: 'Australia',
+    dialCode: '+61',
+    code: 'AU',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Austria",
-    "dialCode": "+43",
-    "code": "AT",
-    "nationalNumberLength": 13
+    name: 'Austria',
+    dialCode: '+43',
+    code: 'AT',
+    nationalNumberLength: 13,
   },
   {
-    "name": "Azerbaijan",
-    "dialCode": "+994",
-    "code": "AZ",
-    "nationalNumberLength": 9
+    name: 'Azerbaijan',
+    dialCode: '+994',
+    code: 'AZ',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Bahamas",
-    "dialCode": "+1",
-    "code": "BS",
-    "nationalNumberLength": 10
+    name: 'Bahamas',
+    dialCode: '+1',
+    code: 'BS',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Bahrain",
-    "dialCode": "+973",
-    "code": "BH",
-    "nationalNumberLength": 8
+    name: 'Bahrain',
+    dialCode: '+973',
+    code: 'BH',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Bangladesh",
-    "dialCode": "+880",
-    "code": "BD",
-    "nationalNumberLength": 11
+    name: 'Bangladesh',
+    dialCode: '+880',
+    code: 'BD',
+    nationalNumberLength: 11,
   },
   {
-    "name": "Barbados",
-    "dialCode": "+1",
-    "code": "BB",
-    "nationalNumberLength": 10
+    name: 'Barbados',
+    dialCode: '+1',
+    code: 'BB',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Belarus",
-    "dialCode": "+375",
-    "code": "BY",
-    "nationalNumberLength": 9
+    name: 'Belarus',
+    dialCode: '+375',
+    code: 'BY',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Belgium",
-    "dialCode": "+32",
-    "code": "BE",
-    "nationalNumberLength": 10
+    name: 'Belgium',
+    dialCode: '+32',
+    code: 'BE',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Belize",
-    "dialCode": "+501",
-    "code": "BZ",
-    "nationalNumberLength": 7
+    name: 'Belize',
+    dialCode: '+501',
+    code: 'BZ',
+    nationalNumberLength: 7,
   },
   {
-    "name": "Benin",
-    "dialCode": "+229",
-    "code": "BJ",
-    "nationalNumberLength": 8
+    name: 'Benin',
+    dialCode: '+229',
+    code: 'BJ',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Bhutan",
-    "dialCode": "+975",
-    "code": "BT",
-    "nationalNumberLength": 8
+    name: 'Bhutan',
+    dialCode: '+975',
+    code: 'BT',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Bolivia",
-    "dialCode": "+591",
-    "code": "BO",
-    "nationalNumberLength": 8
+    name: 'Bolivia',
+    dialCode: '+591',
+    code: 'BO',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Bosnia and Herzegovina",
-    "dialCode": "+387",
-    "code": "BA",
-    "nationalNumberLength": 8
+    name: 'Bosnia and Herzegovina',
+    dialCode: '+387',
+    code: 'BA',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Botswana",
-    "dialCode": "+267",
-    "code": "BW",
-    "nationalNumberLength": 8
+    name: 'Botswana',
+    dialCode: '+267',
+    code: 'BW',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Brazil",
-    "dialCode": "+55",
-    "code": "BR",
-    "nationalNumberLength": 11
+    name: 'Brazil',
+    dialCode: '+55',
+    code: 'BR',
+    nationalNumberLength: 11,
   },
   {
-    "name": "Brunei",
-    "dialCode": "+673",
-    "code": "BN",
-    "nationalNumberLength": 8
+    name: 'Brunei',
+    dialCode: '+673',
+    code: 'BN',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Bulgaria",
-    "dialCode": "+359",
-    "code": "BG",
-    "nationalNumberLength": 9
+    name: 'Bulgaria',
+    dialCode: '+359',
+    code: 'BG',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Burkina Faso",
-    "dialCode": "+226",
-    "code": "BF",
-    "nationalNumberLength": 8
+    name: 'Burkina Faso',
+    dialCode: '+226',
+    code: 'BF',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Burundi",
-    "dialCode": "+257",
-    "code": "BI",
-    "nationalNumberLength": 8
+    name: 'Burundi',
+    dialCode: '+257',
+    code: 'BI',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Cambodia",
-    "dialCode": "+855",
-    "code": "KH",
-    "nationalNumberLength": 9
+    name: 'Cambodia',
+    dialCode: '+855',
+    code: 'KH',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Cameroon",
-    "dialCode": "+237",
-    "code": "CM",
-    "nationalNumberLength": 8
+    name: 'Cameroon',
+    dialCode: '+237',
+    code: 'CM',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Canada",
-    "dialCode": "+1",
-    "code": "CA",
-    "nationalNumberLength": 10
+    name: 'Canada',
+    dialCode: '+1',
+    code: 'CA',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Cape Verde",
-    "dialCode": "+238",
-    "code": "CV",
-    "nationalNumberLength": 7
+    name: 'Cape Verde',
+    dialCode: '+238',
+    code: 'CV',
+    nationalNumberLength: 7,
   },
   {
-    "name": "Central African Republic",
-    "dialCode": "+236",
-    "code": "CF",
-    "nationalNumberLength": 7
+    name: 'Central African Republic',
+    dialCode: '+236',
+    code: 'CF',
+    nationalNumberLength: 7,
   },
   {
-    "name": "Chad",
-    "dialCode": "+235",
-    "code": "TD",
-    "nationalNumberLength": 8
+    name: 'Chad',
+    dialCode: '+235',
+    code: 'TD',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Chile",
-    "dialCode": "+56",
-    "code": "CL",
-    "nationalNumberLength": 9
+    name: 'Chile',
+    dialCode: '+56',
+    code: 'CL',
+    nationalNumberLength: 9,
   },
   {
-    "name": "China",
-    "dialCode": "+86",
-    "code": "CN",
-    "nationalNumberLength": 11
+    name: 'China',
+    dialCode: '+86',
+    code: 'CN',
+    nationalNumberLength: 11,
   },
   {
-    "name": "Colombia",
-    "dialCode": "+57",
-    "code": "CO",
-    "nationalNumberLength": 10
+    name: 'Colombia',
+    dialCode: '+57',
+    code: 'CO',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Comoros",
-    "dialCode": "+269",
-    "code": "KM",
-    "nationalNumberLength": 7
+    name: 'Comoros',
+    dialCode: '+269',
+    code: 'KM',
+    nationalNumberLength: 7,
   },
   {
-    "name": "Congo",
-    "dialCode": "+242",
-    "code": "CG",
-    "nationalNumberLength": 9
+    name: 'Congo',
+    dialCode: '+242',
+    code: 'CG',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Costa Rica",
-    "dialCode": "+506",
-    "code": "CR",
-    "nationalNumberLength": 8
+    name: 'Costa Rica',
+    dialCode: '+506',
+    code: 'CR',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Croatia",
-    "dialCode": "+385",
-    "code": "HR",
-    "nationalNumberLength": 9
+    name: 'Croatia',
+    dialCode: '+385',
+    code: 'HR',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Cuba",
-    "dialCode": "+53",
-    "code": "CU",
-    "nationalNumberLength": 8
+    name: 'Cuba',
+    dialCode: '+53',
+    code: 'CU',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Cyprus",
-    "dialCode": "+357",
-    "code": "CY",
-    "nationalNumberLength": 8
+    name: 'Cyprus',
+    dialCode: '+357',
+    code: 'CY',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Czech Republic",
-    "dialCode": "+420",
-    "code": "CZ",
-    "nationalNumberLength": 9
+    name: 'Czech Republic',
+    dialCode: '+420',
+    code: 'CZ',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Denmark",
-    "dialCode": "+45",
-    "code": "DK",
-    "nationalNumberLength": 8
+    name: 'Denmark',
+    dialCode: '+45',
+    code: 'DK',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Djibouti",
-    "dialCode": "+253",
-    "code": "DJ",
-    "nationalNumberLength": 8
+    name: 'Djibouti',
+    dialCode: '+253',
+    code: 'DJ',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Dominica",
-    "dialCode": "+1",
-    "code": "DM",
-    "nationalNumberLength": 10
+    name: 'Dominica',
+    dialCode: '+1',
+    code: 'DM',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Dominican Republic",
-    "dialCode": "+1",
-    "code": "DO",
-    "nationalNumberLength": 10
+    name: 'Dominican Republic',
+    dialCode: '+1',
+    code: 'DO',
+    nationalNumberLength: 10,
   },
   {
-    "name": "East Timor",
-    "dialCode": "+670",
-    "code": "TL",
-    "nationalNumberLength": 7
+    name: 'East Timor',
+    dialCode: '+670',
+    code: 'TL',
+    nationalNumberLength: 7,
   },
   {
-    "name": "Ecuador",
-    "dialCode": "+593",
-    "code": "EC",
-    "nationalNumberLength": 9
+    name: 'Ecuador',
+    dialCode: '+593',
+    code: 'EC',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Egypt",
-    "dialCode": "+20",
-    "code": "EG",
-    "nationalNumberLength": 10
+    name: 'Egypt',
+    dialCode: '+20',
+    code: 'EG',
+    nationalNumberLength: 10,
   },
   {
-    "name": "El Salvador",
-    "dialCode": "+503",
-    "code": "SV",
-    "nationalNumberLength": 8
+    name: 'El Salvador',
+    dialCode: '+503',
+    code: 'SV',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Equatorial Guinea",
-    "dialCode": "+240",
-    "code": "GQ",
-    "nationalNumberLength": 7
+    name: 'Equatorial Guinea',
+    dialCode: '+240',
+    code: 'GQ',
+    nationalNumberLength: 7,
   },
   {
-    "name": "Eritrea",
-    "dialCode": "+291",
-    "code": "ER",
-    "nationalNumberLength": 7
+    name: 'Eritrea',
+    dialCode: '+291',
+    code: 'ER',
+    nationalNumberLength: 7,
   },
   {
-    "name": "Estonia",
-    "dialCode": "+372",
-    "code": "EE",
-    "nationalNumberLength": 8
+    name: 'Estonia',
+    dialCode: '+372',
+    code: 'EE',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Eswatini",
-    "dialCode": "+268",
-    "code": "SZ",
-    "nationalNumberLength": 8
+    name: 'Eswatini',
+    dialCode: '+268',
+    code: 'SZ',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Ethiopia",
-    "dialCode": "+251",
-    "code": "ET",
-    "nationalNumberLength": 9
+    name: 'Ethiopia',
+    dialCode: '+251',
+    code: 'ET',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Fiji",
-    "dialCode": "+679",
-    "code": "FJ",
-    "nationalNumberLength": 7
+    name: 'Fiji',
+    dialCode: '+679',
+    code: 'FJ',
+    nationalNumberLength: 7,
   },
   {
-    "name": "Finland",
-    "dialCode": "+358",
-    "code": "FI",
-    "nationalNumberLength": 10
+    name: 'Finland',
+    dialCode: '+358',
+    code: 'FI',
+    nationalNumberLength: 10,
   },
   {
-    "name": "France",
-    "dialCode": "+33",
-    "code": "FR",
-    "nationalNumberLength": 9
+    name: 'France',
+    dialCode: '+33',
+    code: 'FR',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Gabon",
-    "dialCode": "+241",
-    "code": "GA",
-    "nationalNumberLength": 7
+    name: 'Gabon',
+    dialCode: '+241',
+    code: 'GA',
+    nationalNumberLength: 7,
   },
   {
-    "name": "Gambia",
-    "dialCode": "+220",
-    "code": "GM",
-    "nationalNumberLength": 7
+    name: 'Gambia',
+    dialCode: '+220',
+    code: 'GM',
+    nationalNumberLength: 7,
   },
   {
-    "name": "Georgia",
-    "dialCode": "+995",
-    "code": "GE",
-    "nationalNumberLength": 9
+    name: 'Georgia',
+    dialCode: '+995',
+    code: 'GE',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Germany",
-    "dialCode": "+49",
-    "code": "DE",
-    "nationalNumberLength": 11
+    name: 'Germany',
+    dialCode: '+49',
+    code: 'DE',
+    nationalNumberLength: 11,
   },
   {
-    "name": "Ghana",
-    "dialCode": "+233",
-    "code": "GH",
-    "nationalNumberLength": 9
+    name: 'Ghana',
+    dialCode: '+233',
+    code: 'GH',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Greece",
-    "dialCode": "+30",
-    "code": "GR",
-    "nationalNumberLength": 10
+    name: 'Greece',
+    dialCode: '+30',
+    code: 'GR',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Grenada",
-    "dialCode": "+1",
-    "code": "GD",
-    "nationalNumberLength": 10
+    name: 'Grenada',
+    dialCode: '+1',
+    code: 'GD',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Guatemala",
-    "dialCode": "+502",
-    "code": "GT",
-    "nationalNumberLength": 8
+    name: 'Guatemala',
+    dialCode: '+502',
+    code: 'GT',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Guinea",
-    "dialCode": "+224",
-    "code": "GN",
-    "nationalNumberLength": 8
+    name: 'Guinea',
+    dialCode: '+224',
+    code: 'GN',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Guinea-Bissau",
-    "dialCode": "+245",
-    "code": "GW",
-    "nationalNumberLength": 8
+    name: 'Guinea-Bissau',
+    dialCode: '+245',
+    code: 'GW',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Guyana",
-    "dialCode": "+592",
-    "code": "GY",
-    "nationalNumberLength": 7
+    name: 'Guyana',
+    dialCode: '+592',
+    code: 'GY',
+    nationalNumberLength: 7,
   },
   {
-    "name": "Haiti",
-    "dialCode": "+509",
-    "code": "HT",
-    "nationalNumberLength": 8
+    name: 'Haiti',
+    dialCode: '+509',
+    code: 'HT',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Honduras",
-    "dialCode": "+504",
-    "code": "HN",
-    "nationalNumberLength": 8
+    name: 'Honduras',
+    dialCode: '+504',
+    code: 'HN',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Hungary",
-    "dialCode": "+36",
-    "code": "HU",
-    "nationalNumberLength": 9
+    name: 'Hungary',
+    dialCode: '+36',
+    code: 'HU',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Iceland",
-    "dialCode": "+354",
-    "code": "IS",
-    "nationalNumberLength": 7
+    name: 'Iceland',
+    dialCode: '+354',
+    code: 'IS',
+    nationalNumberLength: 7,
   },
   {
-    "name": "India",
-    "dialCode": "+91",
-    "code": "IN",
-    "nationalNumberLength": 10
+    name: 'India',
+    dialCode: '+91',
+    code: 'IN',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Indonesia",
-    "dialCode": "+62",
-    "code": "ID",
-    "nationalNumberLength": 11
+    name: 'Indonesia',
+    dialCode: '+62',
+    code: 'ID',
+    nationalNumberLength: 11,
   },
   {
-    "name": "Iran",
-    "dialCode": "+98",
-    "code": "IR",
-    "nationalNumberLength": 10
+    name: 'Iran',
+    dialCode: '+98',
+    code: 'IR',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Iraq",
-    "dialCode": "+964",
-    "code": "IQ",
-    "nationalNumberLength": 10
+    name: 'Iraq',
+    dialCode: '+964',
+    code: 'IQ',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Ireland",
-    "dialCode": "+353",
-    "code": "IE",
-    "nationalNumberLength": 10
+    name: 'Ireland',
+    dialCode: '+353',
+    code: 'IE',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Israel",
-    "dialCode": "+972",
-    "code": "IL",
-    "nationalNumberLength": 9
+    name: 'Israel',
+    dialCode: '+972',
+    code: 'IL',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Italy",
-    "dialCode": "+39",
-    "code": "IT",
-    "nationalNumberLength": 10
+    name: 'Italy',
+    dialCode: '+39',
+    code: 'IT',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Jamaica",
-    "dialCode": "+1",
-    "code": "JM",
-    "nationalNumberLength": 10
+    name: 'Jamaica',
+    dialCode: '+1',
+    code: 'JM',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Japan",
-    "dialCode": "+81",
-    "code": "JP",
-    "nationalNumberLength": 11
+    name: 'Japan',
+    dialCode: '+81',
+    code: 'JP',
+    nationalNumberLength: 11,
   },
   {
-    "name": "Jordan",
-    "dialCode": "+962",
-    "code": "JO",
-    "nationalNumberLength": 9
+    name: 'Jordan',
+    dialCode: '+962',
+    code: 'JO',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Kazakhstan",
-    "dialCode": "+7",
-    "code": "KZ",
-    "nationalNumberLength": 10
+    name: 'Kazakhstan',
+    dialCode: '+7',
+    code: 'KZ',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Kenya",
-    "dialCode": "+254",
-    "code": "KE",
-    "nationalNumberLength": 9
+    name: 'Kenya',
+    dialCode: '+254',
+    code: 'KE',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Kiribati",
-    "dialCode": "+686",
-    "code": "KI",
-    "nationalNumberLength": 5
+    name: 'Kiribati',
+    dialCode: '+686',
+    code: 'KI',
+    nationalNumberLength: 5,
   },
   {
-    "name": "Korea",
-    "dialCode": "+82",
-    "code": "KR",
-    "nationalNumberLength": 10
+    name: 'Korea',
+    dialCode: '+82',
+    code: 'KR',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Kuwait",
-    "dialCode": "+965",
-    "code": "KW",
-    "nationalNumberLength": 8
+    name: 'Kuwait',
+    dialCode: '+965',
+    code: 'KW',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Kyrgyzstan",
-    "dialCode": "+996",
-    "code": "KG",
-    "nationalNumberLength": 9
+    name: 'Kyrgyzstan',
+    dialCode: '+996',
+    code: 'KG',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Laos",
-    "dialCode": "+856",
-    "code": "LA",
-    "nationalNumberLength": 8
+    name: 'Laos',
+    dialCode: '+856',
+    code: 'LA',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Latvia",
-    "dialCode": "+371",
-    "code": "LV",
-    "nationalNumberLength": 8
+    name: 'Latvia',
+    dialCode: '+371',
+    code: 'LV',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Lebanon",
-    "dialCode": "+961",
-    "code": "LB",
-    "nationalNumberLength": 8
+    name: 'Lebanon',
+    dialCode: '+961',
+    code: 'LB',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Lesotho",
-    "dialCode": "+266",
-    "code": "LS",
-    "nationalNumberLength": 8
+    name: 'Lesotho',
+    dialCode: '+266',
+    code: 'LS',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Liberia",
-    "dialCode": "+231",
-    "code": "LR",
-    "nationalNumberLength": 7
+    name: 'Liberia',
+    dialCode: '+231',
+    code: 'LR',
+    nationalNumberLength: 7,
   },
   {
-    "name": "Libya",
-    "dialCode": "+218",
-    "code": "LY",
-    "nationalNumberLength": 9
+    name: 'Libya',
+    dialCode: '+218',
+    code: 'LY',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Liechtenstein",
-    "dialCode": "+423",
-    "code": "LI",
-    "nationalNumberLength": 8
+    name: 'Liechtenstein',
+    dialCode: '+423',
+    code: 'LI',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Lithuania",
-    "dialCode": "+370",
-    "code": "LT",
-    "nationalNumberLength": 8
+    name: 'Lithuania',
+    dialCode: '+370',
+    code: 'LT',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Luxembourg",
-    "dialCode": "+352",
-    "code": "LU",
-    "nationalNumberLength": 9
+    name: 'Luxembourg',
+    dialCode: '+352',
+    code: 'LU',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Madagascar",
-    "dialCode": "+261",
-    "code": "MG",
-    "nationalNumberLength": 9
+    name: 'Madagascar',
+    dialCode: '+261',
+    code: 'MG',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Malawi",
-    "dialCode": "+265",
-    "code": "MW",
-    "nationalNumberLength": 9
+    name: 'Malawi',
+    dialCode: '+265',
+    code: 'MW',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Malaysia",
-    "dialCode": "+60",
-    "code": "MY",
-    "nationalNumberLength": 9
+    name: 'Malaysia',
+    dialCode: '+60',
+    code: 'MY',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Maldives",
-    "dialCode": "+960",
-    "code": "MV",
-    "nationalNumberLength": 7
+    name: 'Maldives',
+    dialCode: '+960',
+    code: 'MV',
+    nationalNumberLength: 7,
   },
   {
-    "name": "Mali",
-    "dialCode": "+223",
-    "code": "ML",
-    "nationalNumberLength": 8
+    name: 'Mali',
+    dialCode: '+223',
+    code: 'ML',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Malta",
-    "dialCode": "+356",
-    "code": "MT",
-    "nationalNumberLength": 8
+    name: 'Malta',
+    dialCode: '+356',
+    code: 'MT',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Marshall Islands",
-    "dialCode": "+692",
-    "code": "MH",
-    "nationalNumberLength": 7
+    name: 'Marshall Islands',
+    dialCode: '+692',
+    code: 'MH',
+    nationalNumberLength: 7,
   },
   {
-    "name": "Mauritania",
-    "dialCode": "+222",
-    "code": "MR",
-    "nationalNumberLength": 8
+    name: 'Mauritania',
+    dialCode: '+222',
+    code: 'MR',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Mauritius",
-    "dialCode": "+230",
-    "code": "MU",
-    "nationalNumberLength": 7
+    name: 'Mauritius',
+    dialCode: '+230',
+    code: 'MU',
+    nationalNumberLength: 7,
   },
   {
-    "name": "Mexico",
-    "dialCode": "+52",
-    "code": "MX",
-    "nationalNumberLength": 10
+    name: 'Mexico',
+    dialCode: '+52',
+    code: 'MX',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Micronesia",
-    "dialCode": "+691",
-    "code": "FM",
-    "nationalNumberLength": 7
+    name: 'Micronesia',
+    dialCode: '+691',
+    code: 'FM',
+    nationalNumberLength: 7,
   },
   {
-    "name": "Moldova",
-    "dialCode": "+373",
-    "code": "MD",
-    "nationalNumberLength": 8
+    name: 'Moldova',
+    dialCode: '+373',
+    code: 'MD',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Monaco",
-    "dialCode": "+377",
-    "code": "MC",
-    "nationalNumberLength": 9
+    name: 'Monaco',
+    dialCode: '+377',
+    code: 'MC',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Mongolia",
-    "dialCode": "+976",
-    "code": "MN",
-    "nationalNumberLength": 8
+    name: 'Mongolia',
+    dialCode: '+976',
+    code: 'MN',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Montenegro",
-    "dialCode": "+382",
-    "code": "ME",
-    "nationalNumberLength": 8
+    name: 'Montenegro',
+    dialCode: '+382',
+    code: 'ME',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Morocco",
-    "dialCode": "+212",
-    "code": "MA",
-    "nationalNumberLength": 9
+    name: 'Morocco',
+    dialCode: '+212',
+    code: 'MA',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Mozambique",
-    "dialCode": "+258",
-    "code": "MZ",
-    "nationalNumberLength": 9
+    name: 'Mozambique',
+    dialCode: '+258',
+    code: 'MZ',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Myanmar",
-    "dialCode": "+95",
-    "code": "MM",
-    "nationalNumberLength": 8
+    name: 'Myanmar',
+    dialCode: '+95',
+    code: 'MM',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Namibia",
-    "dialCode": "+264",
-    "code": "NA",
-    "nationalNumberLength": 9
+    name: 'Namibia',
+    dialCode: '+264',
+    code: 'NA',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Nauru",
-    "dialCode": "+674",
-    "code": "NR",
-    "nationalNumberLength": 7
+    name: 'Nauru',
+    dialCode: '+674',
+    code: 'NR',
+    nationalNumberLength: 7,
   },
   {
-    "name": "Nepal",
-    "dialCode": "+977",
-    "code": "NP",
-    "nationalNumberLength": 10
+    name: 'Nepal',
+    dialCode: '+977',
+    code: 'NP',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Netherlands",
-    "dialCode": "+31",
-    "code": "NL",
-    "nationalNumberLength": 10
+    name: 'Netherlands',
+    dialCode: '+31',
+    code: 'NL',
+    nationalNumberLength: 10,
   },
   {
-    "name": "New Zealand",
-    "dialCode": "+64",
-    "code": "NZ",
-    "nationalNumberLength": 9
+    name: 'New Zealand',
+    dialCode: '+64',
+    code: 'NZ',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Nicaragua",
-    "dialCode": "+505",
-    "code": "NI",
-    "nationalNumberLength": 8
+    name: 'Nicaragua',
+    dialCode: '+505',
+    code: 'NI',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Niger",
-    "dialCode": "+227",
-    "code": "NE",
-    "nationalNumberLength": 8
+    name: 'Niger',
+    dialCode: '+227',
+    code: 'NE',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Nigeria",
-    "dialCode": "+234",
-    "code": "NG",
-    "nationalNumberLength": 11
+    name: 'Nigeria',
+    dialCode: '+234',
+    code: 'NG',
+    nationalNumberLength: 11,
   },
   {
-    "name": "North Macedonia",
-    "dialCode": "+389",
-    "code": "MK",
-    "nationalNumberLength": 8
+    name: 'North Macedonia',
+    dialCode: '+389',
+    code: 'MK',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Norway",
-    "dialCode": "+47",
-    "code": "NO",
-    "nationalNumberLength": 8
+    name: 'Norway',
+    dialCode: '+47',
+    code: 'NO',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Oman",
-    "dialCode": "+968",
-    "code": "OM",
-    "nationalNumberLength": 8
+    name: 'Oman',
+    dialCode: '+968',
+    code: 'OM',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Pakistan",
-    "dialCode": "+92",
-    "code": "PK",
-    "nationalNumberLength": 10
+    name: 'Pakistan',
+    dialCode: '+92',
+    code: 'PK',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Palau",
-    "dialCode": "+680",
-    "code": "PW",
-    "nationalNumberLength": 7
+    name: 'Palau',
+    dialCode: '+680',
+    code: 'PW',
+    nationalNumberLength: 7,
   },
   {
-    "name": "Panama",
-    "dialCode": "+507",
-    "code": "PA",
-    "nationalNumberLength": 8
+    name: 'Panama',
+    dialCode: '+507',
+    code: 'PA',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Papua New Guinea",
-    "dialCode": "+675",
-    "code": "PG",
-    "nationalNumberLength": 8
+    name: 'Papua New Guinea',
+    dialCode: '+675',
+    code: 'PG',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Paraguay",
-    "dialCode": "+595",
-    "code": "PY",
-    "nationalNumberLength": 9
+    name: 'Paraguay',
+    dialCode: '+595',
+    code: 'PY',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Peru",
-    "dialCode": "+51",
-    "code": "PE",
-    "nationalNumberLength": 9
+    name: 'Peru',
+    dialCode: '+51',
+    code: 'PE',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Philippines",
-    "dialCode": "+63",
-    "code": "PH",
-    "nationalNumberLength": 10
+    name: 'Philippines',
+    dialCode: '+63',
+    code: 'PH',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Poland",
-    "dialCode": "+48",
-    "code": "PL",
-    "nationalNumberLength": 9
+    name: 'Poland',
+    dialCode: '+48',
+    code: 'PL',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Portugal",
-    "dialCode": "+351",
-    "code": "PT",
-    "nationalNumberLength": 9
+    name: 'Portugal',
+    dialCode: '+351',
+    code: 'PT',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Qatar",
-    "dialCode": "+974",
-    "code": "QA",
-    "nationalNumberLength": 8
+    name: 'Qatar',
+    dialCode: '+974',
+    code: 'QA',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Romania",
-    "dialCode": "+40",
-    "code": "RO",
-    "nationalNumberLength": 9
+    name: 'Romania',
+    dialCode: '+40',
+    code: 'RO',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Russia",
-    "dialCode": "+7",
-    "code": "RU",
-    "nationalNumberLength": 10
+    name: 'Russia',
+    dialCode: '+7',
+    code: 'RU',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Rwanda",
-    "dialCode": "+250",
-    "code": "RW",
-    "nationalNumberLength": 9
+    name: 'Rwanda',
+    dialCode: '+250',
+    code: 'RW',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Saint Kitts and Nevis",
-    "dialCode": "+1",
-    "code": "KN",
-    "nationalNumberLength": 10
+    name: 'Saint Kitts and Nevis',
+    dialCode: '+1',
+    code: 'KN',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Saint Lucia",
-    "dialCode": "+1",
-    "code": "LC",
-    "nationalNumberLength": 10
+    name: 'Saint Lucia',
+    dialCode: '+1',
+    code: 'LC',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Saint Vincent and the Grenadines",
-    "dialCode": "+1",
-    "code": "VC",
-    "nationalNumberLength": 10
+    name: 'Saint Vincent and the Grenadines',
+    dialCode: '+1',
+    code: 'VC',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Samoa",
-    "dialCode": "+685",
-    "code": "WS",
-    "nationalNumberLength": 7
+    name: 'Samoa',
+    dialCode: '+685',
+    code: 'WS',
+    nationalNumberLength: 7,
   },
   {
-    "name": "San Marino",
-    "dialCode": "+378",
-    "code": "SM",
-    "nationalNumberLength": 9
+    name: 'San Marino',
+    dialCode: '+378',
+    code: 'SM',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Sao Tome and Principe",
-    "dialCode": "+239",
-    "code": "ST",
-    "nationalNumberLength": 7
+    name: 'Sao Tome and Principe',
+    dialCode: '+239',
+    code: 'ST',
+    nationalNumberLength: 7,
   },
   {
-    "name": "Saudi Arabia",
-    "dialCode": "+966",
-    "code": "SA",
-    "nationalNumberLength": 9
+    name: 'Saudi Arabia',
+    dialCode: '+966',
+    code: 'SA',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Senegal",
-    "dialCode": "+221",
-    "code": "SN",
-    "nationalNumberLength": 9
+    name: 'Senegal',
+    dialCode: '+221',
+    code: 'SN',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Serbia",
-    "dialCode": "+381",
-    "code": "RS",
-    "nationalNumberLength": 8
+    name: 'Serbia',
+    dialCode: '+381',
+    code: 'RS',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Seychelles",
-    "dialCode": "+248",
-    "code": "SC",
-    "nationalNumberLength": 7
+    name: 'Seychelles',
+    dialCode: '+248',
+    code: 'SC',
+    nationalNumberLength: 7,
   },
   {
-    "name": "Sierra Leone",
-    "dialCode": "+232",
-    "code": "SL",
-    "nationalNumberLength": 8
+    name: 'Sierra Leone',
+    dialCode: '+232',
+    code: 'SL',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Singapore",
-    "dialCode": "+65",
-    "code": "SG",
-    "nationalNumberLength": 8
+    name: 'Singapore',
+    dialCode: '+65',
+    code: 'SG',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Slovakia",
-    "dialCode": "+421",
-    "code": "SK",
-    "nationalNumberLength": 9
+    name: 'Slovakia',
+    dialCode: '+421',
+    code: 'SK',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Slovenia",
-    "dialCode": "+386",
-    "code": "SI",
-    "nationalNumberLength": 8
+    name: 'Slovenia',
+    dialCode: '+386',
+    code: 'SI',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Solomon Islands",
-    "dialCode": "+677",
-    "code": "SB",
-    "nationalNumberLength": 7
+    name: 'Solomon Islands',
+    dialCode: '+677',
+    code: 'SB',
+    nationalNumberLength: 7,
   },
   {
-    "name": "Somalia",
-    "dialCode": "+252",
-    "code": "SO",
-    "nationalNumberLength": 8
+    name: 'Somalia',
+    dialCode: '+252',
+    code: 'SO',
+    nationalNumberLength: 8,
   },
   {
-    "name": "South Africa",
-    "dialCode": "+27",
-    "code": "ZA",
-    "nationalNumberLength": 9
+    name: 'South Africa',
+    dialCode: '+27',
+    code: 'ZA',
+    nationalNumberLength: 9,
   },
   {
-    "name": "South Sudan",
-    "dialCode": "+211",
-    "code": "SS",
-    "nationalNumberLength": 9
+    name: 'South Sudan',
+    dialCode: '+211',
+    code: 'SS',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Spain",
-    "dialCode": "+34",
-    "code": "ES",
-    "nationalNumberLength": 9
+    name: 'Spain',
+    dialCode: '+34',
+    code: 'ES',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Sri Lanka",
-    "dialCode": "+94",
-    "code": "LK",
-    "nationalNumberLength": 9
+    name: 'Sri Lanka',
+    dialCode: '+94',
+    code: 'LK',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Sudan",
-    "dialCode": "+249",
-    "code": "SD",
-    "nationalNumberLength": 9
+    name: 'Sudan',
+    dialCode: '+249',
+    code: 'SD',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Suriname",
-    "dialCode": "+597",
-    "code": "SR",
-    "nationalNumberLength": 7
+    name: 'Suriname',
+    dialCode: '+597',
+    code: 'SR',
+    nationalNumberLength: 7,
   },
   {
-    "name": "Sweden",
-    "dialCode": "+46",
-    "code": "SE",
-    "nationalNumberLength": 9
+    name: 'Sweden',
+    dialCode: '+46',
+    code: 'SE',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Switzerland",
-    "dialCode": "+41",
-    "code": "CH",
-    "nationalNumberLength": 9
+    name: 'Switzerland',
+    dialCode: '+41',
+    code: 'CH',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Syria",
-    "dialCode": "+963",
-    "code": "SY",
-    "nationalNumberLength": 9
+    name: 'Syria',
+    dialCode: '+963',
+    code: 'SY',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Taiwan",
-    "dialCode": "+886",
-    "code": "TW",
-    "nationalNumberLength": 9
+    name: 'Taiwan',
+    dialCode: '+886',
+    code: 'TW',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Tajikistan",
-    "dialCode": "+992",
-    "code": "TJ",
-    "nationalNumberLength": 9
+    name: 'Tajikistan',
+    dialCode: '+992',
+    code: 'TJ',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Tanzania",
-    "dialCode": "+255",
-    "code": "TZ",
-    "nationalNumberLength": 9
+    name: 'Tanzania',
+    dialCode: '+255',
+    code: 'TZ',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Thailand",
-    "dialCode": "+66",
-    "code": "TH",
-    "nationalNumberLength": 9
+    name: 'Thailand',
+    dialCode: '+66',
+    code: 'TH',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Togo",
-    "dialCode": "+228",
-    "code": "TG",
-    "nationalNumberLength": 8
+    name: 'Togo',
+    dialCode: '+228',
+    code: 'TG',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Tonga",
-    "dialCode": "+676",
-    "code": "TO",
-    "nationalNumberLength": 7
+    name: 'Tonga',
+    dialCode: '+676',
+    code: 'TO',
+    nationalNumberLength: 7,
   },
   {
-    "name": "Trinidad and Tobago",
-    "dialCode": "+1",
-    "code": "TT",
-    "nationalNumberLength": 10
+    name: 'Trinidad and Tobago',
+    dialCode: '+1',
+    code: 'TT',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Tunisia",
-    "dialCode": "+216",
-    "code": "TN",
-    "nationalNumberLength": 8
+    name: 'Tunisia',
+    dialCode: '+216',
+    code: 'TN',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Turkey",
-    "dialCode": "+90",
-    "code": "TR",
-    "nationalNumberLength": 10
+    name: 'Turkey',
+    dialCode: '+90',
+    code: 'TR',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Turkmenistan",
-    "dialCode": "+993",
-    "code": "TM",
-    "nationalNumberLength": 8
+    name: 'Turkmenistan',
+    dialCode: '+993',
+    code: 'TM',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Tuvalu",
-    "dialCode": "+688",
-    "code": "TV",
-    "nationalNumberLength": 5
+    name: 'Tuvalu',
+    dialCode: '+688',
+    code: 'TV',
+    nationalNumberLength: 5,
   },
   {
-    "name": "Uganda",
-    "dialCode": "+256",
-    "code": "UG",
-    "nationalNumberLength": 9
+    name: 'Uganda',
+    dialCode: '+256',
+    code: 'UG',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Ukraine",
-    "dialCode": "+380",
-    "code": "UA",
-    "nationalNumberLength": 9
+    name: 'Ukraine',
+    dialCode: '+380',
+    code: 'UA',
+    nationalNumberLength: 9,
   },
   {
-    "name": "United Arab Emirates",
-    "dialCode": "+971",
-    "code": "AE",
-    "nationalNumberLength": 9
+    name: 'United Arab Emirates',
+    dialCode: '+971',
+    code: 'AE',
+    nationalNumberLength: 9,
   },
   {
-    "name": "United Kingdom",
-    "dialCode": "+44",
-    "code": "GB",
-    "nationalNumberLength": 10
+    name: 'United Kingdom',
+    dialCode: '+44',
+    code: 'GB',
+    nationalNumberLength: 10,
   },
   {
-    "name": "United States",
-    "dialCode": "+1",
-    "code": "US",
-    "nationalNumberLength": 10
+    name: 'United States',
+    dialCode: '+1',
+    code: 'US',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Uruguay",
-    "dialCode": "+598",
-    "code": "UY",
-    "nationalNumberLength": 8
+    name: 'Uruguay',
+    dialCode: '+598',
+    code: 'UY',
+    nationalNumberLength: 8,
   },
   {
-    "name": "Uzbekistan",
-    "dialCode": "+998",
-    "code": "UZ",
-    "nationalNumberLength": 9
+    name: 'Uzbekistan',
+    dialCode: '+998',
+    code: 'UZ',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Vanuatu",
-    "dialCode": "+678",
-    "code": "VU",
-    "nationalNumberLength": 7
+    name: 'Vanuatu',
+    dialCode: '+678',
+    code: 'VU',
+    nationalNumberLength: 7,
   },
   {
-    "name": "Vatican City",
-    "dialCode": "+379",
-    "code": "VA",
-    "nationalNumberLength": 9
+    name: 'Vatican City',
+    dialCode: '+379',
+    code: 'VA',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Venezuela",
-    "dialCode": "+58",
-    "code": "VE",
-    "nationalNumberLength": 10
+    name: 'Venezuela',
+    dialCode: '+58',
+    code: 'VE',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Vietnam",
-    "dialCode": "+84",
-    "code": "VN",
-    "nationalNumberLength": 10
+    name: 'Vietnam',
+    dialCode: '+84',
+    code: 'VN',
+    nationalNumberLength: 10,
   },
   {
-    "name": "Yemen",
-    "dialCode": "+967",
-    "code": "YE",
-    "nationalNumberLength": 9
+    name: 'Yemen',
+    dialCode: '+967',
+    code: 'YE',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Zambia",
-    "dialCode": "+260",
-    "code": "ZM",
-    "nationalNumberLength": 9
+    name: 'Zambia',
+    dialCode: '+260',
+    code: 'ZM',
+    nationalNumberLength: 9,
   },
   {
-    "name": "Zimbabwe",
-    "dialCode": "+263",
-    "code": "ZW",
-    "nationalNumberLength": 9
-  }
+    name: 'Zimbabwe',
+    dialCode: '+263',
+    code: 'ZW',
+    nationalNumberLength: 9,
+  },
 ];
 
 export default COUNTRY_CODES;
-

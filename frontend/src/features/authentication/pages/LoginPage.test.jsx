@@ -47,7 +47,8 @@ test('the road truck crashes when a sign-in error appears', () => {
   const truck = container.querySelector('.login-lane .road-truck');
   expect(truck).not.toHaveClass('road-truck-crashed');
 
-  const signInButton = screen.getAllByRole('button', { name: 'Sign In' })
+  const signInButton = screen
+    .getAllByRole('button', { name: 'Sign In' })
     .find((button) => button.getAttribute('type') === 'submit');
   fireEvent.click(signInButton);
 
@@ -66,13 +67,20 @@ test('the road truck wrecks while the server is unreachable and recovers when it
   const truck = container.querySelector('.login-lane .road-truck');
   fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'driver.one' } });
   fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ExamplePassword123!' } });
-  fireEvent.click(screen.getAllByRole('button', { name: 'Sign In' })
-    .find((button) => button.getAttribute('type') === 'submit'));
+  fireEvent.click(
+    screen
+      .getAllByRole('button', { name: 'Sign In' })
+      .find((button) => button.getAttribute('type') === 'submit'),
+  );
 
-  expect(await screen.findByRole('alert')).toHaveTextContent("We can't reach the Good Driver server right now.");
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    "We can't reach the Good Driver server right now.",
+  );
   expect(truck).toHaveClass('road-truck-wrecked');
 
-  await act(async () => { jest.advanceTimersByTime(10000); });
+  await act(async () => {
+    jest.advanceTimersByTime(10000);
+  });
   expect(api.checkHealth).toHaveBeenCalled();
   expect(truck).not.toHaveClass('road-truck-wrecked');
   jest.useRealTimers();
@@ -88,7 +96,9 @@ test('driver registration sends separate name and email fields', async () => {
   fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'jamie@example.com' } });
   fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'jamie.rivera' } });
   fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ExamplePassword123!' } });
-  fireEvent.change(screen.getByLabelText('Confirm Password'), { target: { value: 'ExamplePassword123!' } });
+  fireEvent.change(screen.getByLabelText('Confirm Password'), {
+    target: { value: 'ExamplePassword123!' },
+  });
   fireEvent.click(screen.getByRole('checkbox', { name: /Terms of Service/i }));
   fireEvent.click(screen.getByRole('button', { name: 'Create Driver Account' }));
 
@@ -111,7 +121,10 @@ test('registration links to the terms and privacy notice without losing form sta
   fireEvent.click(screen.getByRole('button', { name: /Driver.*Earn points/i }));
 
   expect(screen.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute('href', '/terms');
-  expect(screen.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute('target', '_blank');
+  expect(screen.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute(
+    'target',
+    '_blank',
+  );
   expect(screen.getByRole('link', { name: 'Privacy Notice' })).toHaveAttribute('href', '/privacy');
   expect(screen.getByRole('link', { name: 'Privacy Notice' })).toHaveAttribute('target', '_blank');
 });
@@ -124,7 +137,9 @@ function fillDriverRegistration() {
   fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'jamie@example.com' } });
   fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'jamie.rivera' } });
   fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ExamplePassword123!' } });
-  fireEvent.change(screen.getByLabelText('Confirm Password'), { target: { value: 'ExamplePassword123!' } });
+  fireEvent.change(screen.getByLabelText('Confirm Password'), {
+    target: { value: 'ExamplePassword123!' },
+  });
   fireEvent.click(screen.getByRole('checkbox', { name: /Terms of Service/i }));
   fireEvent.click(screen.getByRole('button', { name: 'Create Driver Account' }));
 }
@@ -158,12 +173,14 @@ test('required email verification asks for the code before creating the account'
   fireEvent.click(screen.getByRole('button', { name: 'Verify and create account' }));
 
   expect(await screen.findByText(/Driver account created successfully/i)).toBeInTheDocument();
-  expect(api.registerDriver).toHaveBeenLastCalledWith(expect.objectContaining({
-    email: 'jamie@example.com',
-    username: 'jamie.rivera',
-    password: 'ExamplePassword123!',
-    code: '123456',
-  }));
+  expect(api.registerDriver).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      email: 'jamie@example.com',
+      username: 'jamie.rivera',
+      password: 'ExamplePassword123!',
+      code: '123456',
+    }),
+  );
 });
 
 test('a rejected verification code shows the error and keeps the code step open', async () => {
@@ -171,16 +188,18 @@ test('a rejected verification code shows the error and keeps the code step open'
     status: 400,
     data: { code: ['Invalid or expired verification code.'] },
   });
-  api.registerDriver
-    .mockResolvedValueOnce(VERIFICATION_REQUIRED)
-    .mockRejectedValueOnce(rejected);
+  api.registerDriver.mockResolvedValueOnce(VERIFICATION_REQUIRED).mockRejectedValueOnce(rejected);
   renderLoginPage();
   fillDriverRegistration();
 
-  fireEvent.change(await screen.findByLabelText('Verification code'), { target: { value: '000000' } });
+  fireEvent.change(await screen.findByLabelText('Verification code'), {
+    target: { value: '000000' },
+  });
   fireEvent.click(screen.getByRole('button', { name: 'Verify and create account' }));
 
-  expect(await screen.findByRole('alert')).toHaveTextContent('Invalid or expired verification code.');
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Invalid or expired verification code.',
+  );
   expect(screen.getByLabelText('Verification code')).toHaveValue('');
   expect(screen.queryByText(/account created successfully/i)).not.toBeInTheDocument();
 });
@@ -193,7 +212,9 @@ test('verification step requires a code before submitting', async () => {
   await screen.findByRole('heading', { name: 'Verify your email' });
   fireEvent.click(screen.getByRole('button', { name: 'Verify and create account' }));
 
-  expect(screen.getByRole('alert')).toHaveTextContent('Enter the verification code from your email.');
+  expect(screen.getByRole('alert')).toHaveTextContent(
+    'Enter the verification code from your email.',
+  );
   expect(api.registerDriver).toHaveBeenCalledTimes(1);
 });
 
@@ -208,7 +229,9 @@ test('resend is held during the cooldown, then requests a new code', async () =>
     expect(resend).toBeDisabled();
 
     for (let i = 0; i < 30; i += 1) {
-      act(() => { jest.advanceTimersByTime(1000); });
+      act(() => {
+        jest.advanceTimersByTime(1000);
+      });
     }
     const ready = screen.getByRole('button', { name: 'Resend code' });
     expect(ready).toBeEnabled();
@@ -216,7 +239,9 @@ test('resend is held during the cooldown, then requests a new code', async () =>
     fireEvent.click(ready);
     expect(await screen.findByText('A new code was sent.')).toBeInTheDocument();
     expect(api.registerDriver).toHaveBeenCalledTimes(2);
-    expect(api.registerDriver).toHaveBeenLastCalledWith(expect.not.objectContaining({ code: expect.anything() }));
+    expect(api.registerDriver).toHaveBeenLastCalledWith(
+      expect.not.objectContaining({ code: expect.anything() }),
+    );
   } finally {
     jest.useRealTimers();
   }
@@ -252,7 +277,8 @@ test('single-method MFA login stages, auto-requests the code, and shows the code
   renderLoginPage();
   fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'driver.one' } });
   fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ExamplePassword123!' } });
-  const signInButton = screen.getAllByRole('button', { name: 'Sign In' })
+  const signInButton = screen
+    .getAllByRole('button', { name: 'Sign In' })
     .find((button) => button.type === 'submit');
   fireEvent.click(signInButton);
 
@@ -281,7 +307,9 @@ test('combines the two MFA code groups into one six-digit code', async () => {
   renderLoginPage();
   fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'driver.one' } });
   fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ExamplePassword123!' } });
-  fireEvent.click(screen.getAllByRole('button', { name: 'Sign In' }).find((button) => button.type === 'submit'));
+  fireEvent.click(
+    screen.getAllByRole('button', { name: 'Sign In' }).find((button) => button.type === 'submit'),
+  );
 
   const codeInputs = await screen.findAllByLabelText(/Verification code digit/);
   ['1', '2', '3', '4', '5', '6'].forEach((digit, index) => {
@@ -309,7 +337,8 @@ test('offers a backup code option and completes login with one when available', 
   renderLoginPage();
   fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'admin.one' } });
   fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ExamplePassword123!' } });
-  const signInButton = screen.getAllByRole('button', { name: 'Sign In' })
+  const signInButton = screen
+    .getAllByRole('button', { name: 'Sign In' })
     .find((button) => button.type === 'submit');
   fireEvent.click(signInButton);
 
@@ -341,12 +370,15 @@ test('does not offer a backup code option when none remain', async () => {
   renderLoginPage();
   fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'driver.one' } });
   fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ExamplePassword123!' } });
-  const signInButton = screen.getAllByRole('button', { name: 'Sign In' })
+  const signInButton = screen
+    .getAllByRole('button', { name: 'Sign In' })
     .find((button) => button.type === 'submit');
   fireEvent.click(signInButton);
 
   expect(await screen.findByText('Two-step verification')).toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: 'Use a backup code instead' })).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole('button', { name: 'Use a backup code instead' }),
+  ).not.toBeInTheDocument();
 });
 
 test('shows and hides the sign-in password without changing its value', () => {
@@ -383,8 +415,9 @@ test('rejected credentials show the error and outline both fields in red', async
   const password = screen.getByLabelText('Password');
   fireEvent.change(username, { target: { value: 'driver.one' } });
   fireEvent.change(password, { target: { value: 'WrongPassword1!' } });
-  fireEvent.click(screen.getAllByRole('button', { name: 'Sign In' })
-    .find((button) => button.type === 'submit'));
+  fireEvent.click(
+    screen.getAllByRole('button', { name: 'Sign In' }).find((button) => button.type === 'submit'),
+  );
 
   expect(await screen.findByRole('alert')).toHaveTextContent('Invalid username or password.');
   expect(username).toHaveValue('driver.one');
@@ -403,7 +436,10 @@ test('rejected credentials show the error and outline both fields in red', async
 test('sign in form links to the forgot password page', () => {
   renderLoginPage();
 
-  expect(screen.getByRole('link', { name: 'Forgot password?' })).toHaveAttribute('href', '/forgot-password');
+  expect(screen.getByRole('link', { name: 'Forgot password?' })).toHaveAttribute(
+    'href',
+    '/forgot-password',
+  );
 });
 
 test('a signed-in user is redirected to the welcome page', async () => {
@@ -417,7 +453,10 @@ test('a signed-in user is redirected to the welcome page', async () => {
   });
 
   render(
-    <MemoryRouter initialEntries={['/login']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <MemoryRouter
+      initialEntries={['/login']}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<div>Welcome</div>} />

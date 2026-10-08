@@ -36,7 +36,9 @@ test('requests a reset link and shows the generic confirmation', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Send reset link' }));
 
   await waitFor(() => expect(api.requestPasswordReset).toHaveBeenCalledWith('jamie@example.com'));
-  expect(await screen.findByRole('status')).toHaveTextContent(/a password reset link has been sent/i);
+  expect(await screen.findByRole('status')).toHaveTextContent(
+    /a password reset link has been sent/i,
+  );
   expect(screen.getByRole('link', { name: 'Back to sign in' })).toHaveAttribute('href', '/login');
 });
 

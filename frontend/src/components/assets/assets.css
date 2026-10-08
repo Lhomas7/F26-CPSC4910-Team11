@@ -49,11 +49,11 @@
 
 .asset-art .asset-wheel {
   background: #111;
-  border: .0625em solid #555;
+  border: 0.0625em solid #555;
   border-radius: 50%;
   bottom: 0;
-  height: var(--wheel-size, .375em);
-  width: var(--wheel-size, .375em);
+  height: var(--wheel-size, 0.375em);
+  width: var(--wheel-size, 0.375em);
 }
 
 /* Spoke mark so a spinning wheel visibly turns; only shown while moving. */
@@ -61,28 +61,28 @@
   background: #8a8f8a;
   content: '';
   height: 40%;
-  left: calc(50% - .03em);
+  left: calc(50% - 0.03em);
   position: absolute;
   top: 0;
-  width: .06em;
+  width: 0.06em;
 }
 
 .asset-moving .asset-wheel {
-  animation: asset-wheel-spin .45s linear infinite;
+  animation: asset-wheel-spin 0.45s linear infinite;
 }
 
 /* A slight bounce while driving. `translate` stacks with the mirror transform. */
 .asset-moving .asset-art {
-  animation: asset-bob .3s ease-in-out infinite alternate;
+  animation: asset-bob 0.3s ease-in-out infinite alternate;
 }
 
 /* Emergency light bar: two colours that swap places. Vehicles set the colours. */
 .asset-art .asset-lightbar {
   --light-a: #ff3b30;
   --light-b: #2f7bff;
-  animation: asset-lights .5s steps(1) infinite;
+  animation: asset-lights 0.5s steps(1) infinite;
   background: linear-gradient(to right, var(--light-a) 0 50%, var(--light-b) 50%);
-  border-radius: .1em;
+  border-radius: 0.1em;
 }
 
 .asset-lights-off .asset-lightbar {
@@ -103,11 +103,11 @@
 }
 
 .asset-speed-lines span {
-  animation: asset-speed-line .4s linear infinite;
+  animation: asset-speed-line 0.4s linear infinite;
   background: linear-gradient(to left, rgb(232 235 231 / 85%), transparent);
-  border-radius: .05em;
-  height: .07em;
-  right: .15em;
+  border-radius: 0.05em;
+  height: 0.07em;
+  right: 0.15em;
   width: 1.1em;
 }
 
@@ -116,13 +116,13 @@
 }
 
 .asset-speed-lines span:nth-child(2) {
-  animation-delay: .13s;
+  animation-delay: 0.13s;
   top: 50%;
-  width: .8em;
+  width: 0.8em;
 }
 
 .asset-speed-lines span:nth-child(3) {
-  animation-delay: .26s;
+  animation-delay: 0.26s;
   top: 85%;
 }
 
@@ -130,7 +130,7 @@
    Mirrored for left-facing vehicles through --facing, so "nose" is always
    the front. */
 .asset-crash-tip .asset-pose {
-  animation: asset-crash-tip 1.8s cubic-bezier(.3, .7, .4, 1);
+  animation: asset-crash-tip 1.8s cubic-bezier(0.3, 0.7, 0.4, 1);
   transform-origin: right bottom;
 }
 
@@ -139,47 +139,92 @@
 }
 
 .asset-crash-flip .asset-pose {
-  animation: asset-crash-flip 1.1s cubic-bezier(.5, 0, .3, 1) forwards;
+  animation: asset-crash-flip 1.1s cubic-bezier(0.5, 0, 0.3, 1) forwards;
   transform-origin: center;
 }
 
 @keyframes asset-crash-tip {
-  0% { transform: none; }
-  12% { transform: translateX(calc(var(--facing) * .19em)) rotate(calc(var(--facing) * -10deg)); }
-  22% { transform: translateX(calc(var(--facing) * -.125em)) rotate(calc(var(--facing) * 7deg)); }
-  34% { transform: translateX(calc(var(--facing) * .125em)) rotate(calc(var(--facing) * 22deg)); }
-  80% { transform: translateX(calc(var(--facing) * .125em)) rotate(calc(var(--facing) * 22deg)); }
-  92% { transform: rotate(calc(var(--facing) * -3deg)); }
-  100% { transform: none; }
+  0% {
+    transform: none;
+  }
+  12% {
+    transform: translateX(calc(var(--facing) * 0.19em)) rotate(calc(var(--facing) * -10deg));
+  }
+  22% {
+    transform: translateX(calc(var(--facing) * -0.125em)) rotate(calc(var(--facing) * 7deg));
+  }
+  34% {
+    transform: translateX(calc(var(--facing) * 0.125em)) rotate(calc(var(--facing) * 22deg));
+  }
+  80% {
+    transform: translateX(calc(var(--facing) * 0.125em)) rotate(calc(var(--facing) * 22deg));
+  }
+  92% {
+    transform: rotate(calc(var(--facing) * -3deg));
+  }
+  100% {
+    transform: none;
+  }
 }
 
 @keyframes asset-crash-flip {
-  0% { transform: none; }
-  15% { transform: translateX(calc(var(--facing) * .25em)) rotate(calc(var(--facing) * -14deg)); }
-  30% { transform: translate(calc(var(--facing) * .375em), -.6em) rotate(calc(var(--facing) * -80deg)); }
-  55% { transform: translate(calc(var(--facing) * .5em), -.3em) rotate(calc(var(--facing) * -170deg)); }
-  70% { transform: translate(calc(var(--facing) * .5625em), .05em) rotate(calc(var(--facing) * -185deg)); }
-  85% { transform: translate(calc(var(--facing) * .5625em), 0) rotate(calc(var(--facing) * -177deg)); }
-  100% { transform: translate(calc(var(--facing) * .5625em), 0) rotate(calc(var(--facing) * -180deg)); }
+  0% {
+    transform: none;
+  }
+  15% {
+    transform: translateX(calc(var(--facing) * 0.25em)) rotate(calc(var(--facing) * -14deg));
+  }
+  30% {
+    transform: translate(calc(var(--facing) * 0.375em), -0.6em) rotate(calc(var(--facing) * -80deg));
+  }
+  55% {
+    transform: translate(calc(var(--facing) * 0.5em), -0.3em) rotate(calc(var(--facing) * -170deg));
+  }
+  70% {
+    transform: translate(calc(var(--facing) * 0.5625em), 0.05em)
+      rotate(calc(var(--facing) * -185deg));
+  }
+  85% {
+    transform: translate(calc(var(--facing) * 0.5625em), 0) rotate(calc(var(--facing) * -177deg));
+  }
+  100% {
+    transform: translate(calc(var(--facing) * 0.5625em), 0) rotate(calc(var(--facing) * -180deg));
+  }
 }
 
 @keyframes asset-wheel-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes asset-bob {
-  from { translate: 0 0; }
-  to { translate: 0 -.04em; }
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: 0 -0.04em;
+  }
 }
 
 @keyframes asset-lights {
-  50% { background: linear-gradient(to right, var(--light-b) 0 50%, var(--light-a) 50%); }
+  50% {
+    background: linear-gradient(to right, var(--light-b) 0 50%, var(--light-a) 50%);
+  }
 }
 
 @keyframes asset-speed-line {
-  from { opacity: 0; translate: .4em 0; }
-  40% { opacity: 1; }
-  to { opacity: 0; translate: -.6em 0; }
+  from {
+    opacity: 0;
+    translate: 0.4em 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    translate: -0.6em 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -201,37 +246,51 @@
 
   .asset-crash-flip .asset-pose {
     animation: none;
-    transform: translateX(calc(var(--facing) * .5625em)) rotate(180deg);
+    transform: translateX(calc(var(--facing) * 0.5625em)) rotate(180deg);
   }
 }
 
 /* Lone wheel (Wheel asset): always shows its spoke so it can be seen rolling. */
 .asset-spare-wheel {
-  --asset-h: var(--wheel-size, .375em);
-  --asset-w: var(--wheel-size, .375em);
+  --asset-h: var(--wheel-size, 0.375em);
+  --asset-w: var(--wheel-size, 0.375em);
 }
 
 .asset-spare-wheel .asset-wheel::after {
   background: #8a8f8a;
   content: '';
   height: 40%;
-  left: calc(50% - .03em);
+  left: calc(50% - 0.03em);
   position: absolute;
   top: 0;
-  width: .06em;
+  width: 0.06em;
 }
 
 /* Rolling away (Wheel `rolling`): a couple of bounces, then it rolls to a stop. */
 .asset-rolling .asset-pose {
-  animation: asset-roll-away 1.6s cubic-bezier(.2, .6, .35, 1) var(--roll-delay, 0s) forwards;
+  animation: asset-roll-away 1.6s cubic-bezier(0.2, 0.6, 0.35, 1) var(--roll-delay, 0s) forwards;
 }
 
 @keyframes asset-roll-away {
-  0% { transform: translate(0, 0) rotate(0); }
-  20% { transform: translate(calc(var(--roll) * var(--roll-distance, 3.75em) * .16), -.5em) rotate(calc(var(--roll) * 200deg)); }
-  40% { transform: translate(calc(var(--roll) * var(--roll-distance, 3.75em) * .37), 0) rotate(calc(var(--roll) * 420deg)); }
-  55% { transform: translate(calc(var(--roll) * var(--roll-distance, 3.75em) * .5), -.15em) rotate(calc(var(--roll) * 560deg)); }
-  100% { transform: translate(calc(var(--roll) * var(--roll-distance, 3.75em)), 0) rotate(calc(var(--roll) * 1080deg)); }
+  0% {
+    transform: translate(0, 0) rotate(0);
+  }
+  20% {
+    transform: translate(calc(var(--roll) * var(--roll-distance, 3.75em) * 0.16), -0.5em)
+      rotate(calc(var(--roll) * 200deg));
+  }
+  40% {
+    transform: translate(calc(var(--roll) * var(--roll-distance, 3.75em) * 0.37), 0)
+      rotate(calc(var(--roll) * 420deg));
+  }
+  55% {
+    transform: translate(calc(var(--roll) * var(--roll-distance, 3.75em) * 0.5), -0.15em)
+      rotate(calc(var(--roll) * 560deg));
+  }
+  100% {
+    transform: translate(calc(var(--roll) * var(--roll-distance, 3.75em)), 0)
+      rotate(calc(var(--roll) * 1080deg));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

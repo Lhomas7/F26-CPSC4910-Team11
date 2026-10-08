@@ -61,8 +61,8 @@ export default function PasswordRequirements() {
     };
     const closeOnOutsideClick = (event) => {
       if (
-        !wrapperRef.current?.contains(event.target)
-        && !popoverRef.current?.contains(event.target)
+        !wrapperRef.current?.contains(event.target) &&
+        !popoverRef.current?.contains(event.target)
       ) {
         setOpen(false);
       }
@@ -82,12 +82,15 @@ export default function PasswordRequirements() {
   useEffect(() => {
     if (!open || policy.status !== 'idle') return;
     setPolicy((current) => ({ ...current, status: 'loading' }));
-    api.passwordPolicy()
-      .then((data) => setPolicy({
-        status: 'ready',
-        requirements: data.requirements || [],
-        symbols: data.special_characters || '',
-      }))
+    api
+      .passwordPolicy()
+      .then((data) =>
+        setPolicy({
+          status: 'ready',
+          requirements: data.requirements || [],
+          symbols: data.special_characters || '',
+        }),
+      )
       .catch(() => setPolicy({ status: 'error', requirements: [], symbols: '' }));
   }, [open, policy.status]);
 
@@ -113,16 +116,21 @@ export default function PasswordRequirements() {
           style={position || undefined}
         >
           <p className="password-reqs-title">Your password needs</p>
-          {policy.status === 'loading' && <p className="password-reqs-note">Loading requirements…</p>}
+          {policy.status === 'loading' && (
+            <p className="password-reqs-note">Loading requirements…</p>
+          )}
           {policy.status === 'error' && (
             <p className="password-reqs-note">
-              The requirements couldn&apos;t be loaded. You&apos;ll see what&apos;s missing when you submit.
+              The requirements couldn&apos;t be loaded. You&apos;ll see what&apos;s missing when you
+              submit.
             </p>
           )}
           {policy.status === 'ready' && (
             <>
               <ul>
-                {policy.requirements.map((requirement) => <li key={requirement}>{requirement}</li>)}
+                {policy.requirements.map((requirement) => (
+                  <li key={requirement}>{requirement}</li>
+                ))}
               </ul>
               {policy.symbols && (
                 <p className="password-reqs-note">

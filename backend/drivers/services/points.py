@@ -6,7 +6,6 @@ from drivers.models import Driver, PointTransaction
 
 from .reasons import MAX_REASON_LENGTH, normalize_reason
 
-
 MAX_POINT_ADJUSTMENT = 1_000_000
 MAX_POINT_REASON_LENGTH = MAX_REASON_LENGTH
 
@@ -90,9 +89,7 @@ def adjust_driver_points(*, driver, changed_by_user, point_change, reason):
     driver_id = driver.pk if isinstance(driver, Driver) else driver
     try:
         locked_driver = (
-            Driver.objects.select_for_update()
-            .select_related('sponsor')
-            .get(pk=driver_id)
+            Driver.objects.select_for_update().select_related('sponsor').get(pk=driver_id)
         )
     except (Driver.DoesNotExist, TypeError, ValueError):
         raise PointAdjustmentError(

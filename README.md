@@ -9,20 +9,40 @@ This repository is maintained by **CPSC 4910 Team 11**.
 
 ## Contents
 
-- [Current capabilities](#current-capabilities)
-- [Architecture](#architecture)
-- [Repository structure](#repository-structure)
-- [Prerequisites](#prerequisites)
-- [Local setup on Windows](#local-setup-on-windows)
-- [Local setup on macOS or Linux](#local-setup-on-macos-or-linux)
-- [Launching the application](#launching-the-application)
-- [Testing and building](#testing-and-building)
-- [Database and migrations](#database-and-migrations)
-- [Environment variables](#environment-variables)
-- [Git and release workflow](#git-and-release-workflow)
-- [Documentation](#documentation)
-- [Security notes](#security-notes)
-- [Troubleshooting](#troubleshooting)
+- [Good Driver Incentive Program](#good-driver-incentive-program)
+  - [Contents](#contents)
+  - [Current capabilities](#current-capabilities)
+    - [Authentication and account security](#authentication-and-account-security)
+    - [Profiles](#profiles)
+    - [Administration](#administration)
+    - [Program information and driver management](#program-information-and-driver-management)
+    - [Delivery and operations](#delivery-and-operations)
+  - [Architecture](#architecture)
+  - [Repository structure](#repository-structure)
+  - [Prerequisites](#prerequisites)
+  - [Local setup on Windows](#local-setup-on-windows)
+    - [1. Clone and enter the repository](#1-clone-and-enter-the-repository)
+    - [2. Create the backend virtual environment](#2-create-the-backend-virtual-environment)
+    - [3. Create the backend environment file](#3-create-the-backend-environment-file)
+    - [4. Apply migrations](#4-apply-migrations)
+    - [5. Install the frontend](#5-install-the-frontend)
+  - [Local setup on macOS or Linux](#local-setup-on-macos-or-linux)
+  - [Launching the application](#launching-the-application)
+    - [Terminal 1: backend on Windows](#terminal-1-backend-on-windows)
+    - [Terminal 1: backend on macOS or Linux](#terminal-1-backend-on-macos-or-linux)
+    - [Terminal 2: frontend on Windows](#terminal-2-frontend-on-windows)
+    - [Terminal 2: frontend on macOS or Linux](#terminal-2-frontend-on-macos-or-linux)
+  - [Testing and building](#testing-and-building)
+    - [Backend](#backend)
+    - [Frontend](#frontend)
+  - [Database and migrations](#database-and-migrations)
+  - [Environment variables](#environment-variables)
+    - [Backend](#backend-1)
+    - [Frontend](#frontend-1)
+  - [Git and release workflow](#git-and-release-workflow)
+  - [Documentation](#documentation)
+  - [Security notes](#security-notes)
+  - [Troubleshooting](#troubleshooting)
 
 ## Current capabilities
 
@@ -90,13 +110,13 @@ flowchart LR
     D --> S[SMS service or console]
 ```
 
-| Layer | Technology | Default local address |
-| --- | --- | --- |
-| Frontend | React 19, React Router, React Scripts | `http://localhost:3000` |
-| Backend | Django 6.1, Django REST Framework | `http://localhost:8000` |
-| API | Session-authenticated JSON endpoints | `http://localhost:8000/api/` |
+| Layer    | Technology                                         | Default local address        |
+| -------- | -------------------------------------------------- | ---------------------------- |
+| Frontend | React 19, React Router, React Scripts              | `http://localhost:3000`      |
+| Backend  | Django 6.1, Django REST Framework                  | `http://localhost:8000`      |
+| API      | Session-authenticated JSON endpoints               | `http://localhost:8000/api/` |
 | Database | MySQL in shared environments; SQLite locally/tests | Configured in `backend/.env` |
-| MFA | PyOTP, encrypted TOTP seeds, email/SMS delivery | Configured in `backend/.env` |
+| MFA      | PyOTP, encrypted TOTP seeds, email/SMS delivery    | Configured in `backend/.env` |
 
 ## Repository structure
 
@@ -384,6 +404,8 @@ If port 3000 is occupied, React may offer another port such as 3001. Django curr
 
 ## Testing and building
 
+The complete first-time setup, everyday commands, safe auto-fix order, and project conventions are documented in [Linting and formatting](docs/LINTING.md).
+
 ### Backend
 
 From `backend/` on Windows PowerShell:
@@ -424,10 +446,10 @@ Generated build output is not source code and should not be committed.
 
 ## Database and migrations
 
-| `DB_ENGINE` | Use case |
-| --- | --- |
-| `sqlite` | Isolated local development and tests |
-| `mysql` | Shared Team 11 integration database and deployment |
+| `DB_ENGINE` | Use case                                           |
+| ----------- | -------------------------------------------------- |
+| `sqlite`    | Isolated local development and tests               |
+| `mysql`     | Shared Team 11 integration database and deployment |
 
 After pulling model or migration changes:
 
@@ -464,17 +486,17 @@ The files under `backend/sql/` are administrative/development helpers. Review pl
 
 Use [`backend/.env.example`](backend/.env.example) as the source of truth.
 
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `DB_ENGINE` | Yes | `sqlite` or `mysql` |
-| `DB_NAME` | For MySQL | Team application schema |
-| `DB_USER` | For MySQL | Restricted application database user |
-| `DB_PASSWORD` | For MySQL | Application database password |
-| `DB_HOST` | For MySQL | MySQL/RDS hostname |
-| `DB_PORT` | For MySQL | MySQL port; normally `3306` |
-| `TOTP_ENCRYPTION_KEY` | Yes | Encrypts stored authenticator-app seeds |
-| `EMAIL_*` | Optional locally | Email delivery; console backend is the local default |
-| `TWILIO_*` | Optional locally | SMS delivery; blank values use the console/log fallback |
+| Variable              | Required         | Purpose                                                 |
+| --------------------- | ---------------- | ------------------------------------------------------- |
+| `DB_ENGINE`           | Yes              | `sqlite` or `mysql`                                     |
+| `DB_NAME`             | For MySQL        | Team application schema                                 |
+| `DB_USER`             | For MySQL        | Restricted application database user                    |
+| `DB_PASSWORD`         | For MySQL        | Application database password                           |
+| `DB_HOST`             | For MySQL        | MySQL/RDS hostname                                      |
+| `DB_PORT`             | For MySQL        | MySQL port; normally `3306`                             |
+| `TOTP_ENCRYPTION_KEY` | Yes              | Encrypts stored authenticator-app seeds                 |
+| `EMAIL_*`             | Optional locally | Email delivery; console backend is the local default    |
+| `TWILIO_*`            | Optional locally | SMS delivery; blank values use the console/log fallback |
 
 The TOTP encryption key must remain stable within an environment. Changing it without migrating existing data can make stored MFA seeds unreadable.
 
@@ -521,6 +543,7 @@ See [`docs/PROJECT_TODO.md`](docs/PROJECT_TODO.md) for the detailed engineering,
 ## Documentation
 
 - [Engineering backlog and project TODO](docs/PROJECT_TODO.md)
+- [Linting, formatting, and local quality checks](docs/LINTING.md)
 - [Account input validation and normalization](docs/ACCOUNT_INPUT_VALIDATION.md)
 - [Session security: device check, timeouts, and sign-out](docs/SESSION_SECURITY.md)
 - [Current database ERD](docs/DATABASE_ERD.md)
@@ -606,4 +629,4 @@ Another process is using port 3000. Stop that process and restart React, or upda
 
 ---
 
-_Last updated: 2026-10-06_
+_Last updated: 2026-10-06._

@@ -29,13 +29,17 @@ test('turning the switch on saves the setting and confirms it', async () => {
   fireEvent.click(toggle);
 
   expect(await screen.findByRole('status')).toHaveTextContent(/must now verify their email/i);
-  expect(api.updateRegistrationSettings).toHaveBeenCalledWith({ email_verification_required: true });
+  expect(api.updateRegistrationSettings).toHaveBeenCalledWith({
+    email_verification_required: true,
+  });
   expect(toggle).toBeChecked();
 });
 
 test('a failed save reverts the switch and shows the error', async () => {
   api.getRegistrationSettings.mockResolvedValue({ email_verification_required: false });
-  api.updateRegistrationSettings.mockRejectedValue(new Error('You do not have permission to perform this action.'));
+  api.updateRegistrationSettings.mockRejectedValue(
+    new Error('You do not have permission to perform this action.'),
+  );
   render(<RegistrationSettingsPanel />);
   const toggle = screen.getByRole('checkbox', { name: toggleLabel });
   await waitFor(() => expect(toggle).toBeEnabled());

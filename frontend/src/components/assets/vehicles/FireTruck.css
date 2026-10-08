@@ -1,70 +1,70 @@
 .asset-fire-truck {
   --asset-h: 1.25em;
   --asset-w: 3.25em;
-  --wheel-size: .42em;
+  --wheel-size: 0.42em;
 }
 
 .asset-fire-body {
   background: #d63b2f;
-  border-radius: .125em;
-  height: .95em;
+  border-radius: 0.125em;
+  height: 0.95em;
   left: 0;
-  top: .1em;
+  top: 0.1em;
   width: 2.3em;
 }
 
 /* White band along the side, like the stripe on a real engine. */
 .asset-fire-body::after {
   background: #f4f5f2;
-  bottom: .2em;
+  bottom: 0.2em;
   content: '';
-  height: .12em;
-  left: .15em;
+  height: 0.12em;
+  left: 0.15em;
   position: absolute;
-  right: .15em;
+  right: 0.15em;
 }
 
 .asset-fire-ladder {
-  background: repeating-linear-gradient(to right, #e8ebe7 0 .1em, transparent .1em .3em);
-  border-bottom: .0625em solid #e8ebe7;
-  border-top: .0625em solid #e8ebe7;
-  height: .22em;
-  left: .2em;
-  top: -.08em;
+  background: repeating-linear-gradient(to right, #e8ebe7 0 0.1em, transparent 0.1em 0.3em);
+  border-bottom: 0.0625em solid #e8ebe7;
+  border-top: 0.0625em solid #e8ebe7;
+  height: 0.22em;
+  left: 0.2em;
+  top: -0.08em;
   width: 1.9em;
 }
 
 .asset-fire-cab {
   background: #d63b2f;
-  border-radius: .125em .35em .125em .125em;
-  height: .8em;
+  border-radius: 0.125em 0.35em 0.125em 0.125em;
+  height: 0.8em;
   left: 2.35em;
-  top: .25em;
-  width: .9em;
+  top: 0.25em;
+  width: 0.9em;
 }
 
 .asset-fire-window {
-  border-radius: 0 .2em 0 0;
-  height: .28em;
+  border-radius: 0 0.2em 0 0;
+  height: 0.28em;
   left: 2.8em;
-  top: .33em;
-  width: .36em;
+  top: 0.33em;
+  width: 0.36em;
 }
 
 .asset-fire-lightbar {
-  height: .18em;
+  height: 0.18em;
   left: 2.45em;
-  top: .07em;
-  width: .6em;
+  top: 0.07em;
+  width: 0.6em;
 }
 
 .asset-art .asset-fire-wheel-a,
 .asset-art .asset-fire-wheel-b {
-  bottom: -.05em;
+  bottom: -0.05em;
 }
 
 .asset-fire-wheel-a {
-  left: .3em;
+  left: 0.3em;
 }
 
 .asset-fire-wheel-b {
@@ -73,19 +73,25 @@
 
 /* Water arcing from the ladder nozzle. */
 .asset-fire-spray {
-  animation: asset-fire-spray .25s ease-in-out var(--spray-delay, 0s) infinite alternate;
+  animation: asset-fire-spray 0.25s ease-in-out var(--spray-delay, 0s) infinite alternate;
   border-radius: 100% 100% 0 0;
-  border-top: .1875em dotted #8fd3ff;
-  height: .9em;
+  border-top: 0.1875em dotted #8fd3ff;
+  height: 0.9em;
   left: 1.9em;
   opacity: 0;
-  top: -.7em;
+  top: -0.7em;
   width: var(--spray-length, 2.85em);
 }
 
 @keyframes asset-fire-spray {
-  from { opacity: .55; translate: 0 .0625em; }
-  to { opacity: 1; translate: 0 -.0625em; }
+  from {
+    opacity: 0.55;
+    translate: 0 0.0625em;
+  }
+  to {
+    opacity: 1;
+    translate: 0 -0.0625em;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

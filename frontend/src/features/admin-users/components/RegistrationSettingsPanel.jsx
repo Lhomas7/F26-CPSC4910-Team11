@@ -8,10 +8,13 @@ export default function RegistrationSettingsPanel() {
   const [toggleMessage, setMessage] = useState(null);
   const { data, setData, error } = useApiRequest(api.getRegistrationSettings);
   const required = data ? data.email_verification_required : null;
-  const setRequired = (value) => setData((current) => ({ ...current, email_verification_required: value }));
-  const message = toggleMessage || (error
-    ? { ok: false, text: error.message || 'Account creation settings could not be loaded.' }
-    : null);
+  const setRequired = (value) =>
+    setData((current) => ({ ...current, email_verification_required: value }));
+  const message =
+    toggleMessage ||
+    (error
+      ? { ok: false, text: error.message || 'Account creation settings could not be loaded.' }
+      : null);
 
   const toggle = async (event) => {
     const next = event.target.checked;
@@ -49,11 +52,14 @@ export default function RegistrationSettingsPanel() {
         Require email verification for new driver and sponsor accounts
       </label>
       <p className="users-settings-hint">
-        When this is on, people creating an account get a short code at the email address
-        they entered, and the account is created only after they enter it.
+        When this is on, people creating an account get a short code at the email address they
+        entered, and the account is created only after they enter it.
       </p>
       {message && (
-        <p className={message.ok ? 'users-settings-message' : 'users-settings-message error'} role={message.ok ? 'status' : 'alert'}>
+        <p
+          className={message.ok ? 'users-settings-message' : 'users-settings-message error'}
+          role={message.ok ? 'status' : 'alert'}
+        >
           {message.text}
         </p>
       )}

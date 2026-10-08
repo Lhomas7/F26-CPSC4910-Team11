@@ -50,7 +50,9 @@ export function mfaVerify(method, code) {
 }
 
 export function mfaRequestCode(purpose, method) {
-  return request('/mfa/request-code/', { method: 'POST', body: { purpose, method } }).then(readJson);
+  return request('/mfa/request-code/', { method: 'POST', body: { purpose, method } }).then(
+    readJson,
+  );
 }
 
 export function mfaReset(fallbackMethod, fallbackCode) {

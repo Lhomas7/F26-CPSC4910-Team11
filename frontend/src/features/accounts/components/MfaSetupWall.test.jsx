@@ -43,8 +43,9 @@ test('stays open to show backup codes after enrolling, and closes once acknowled
 
   render(<MfaSetupWall />);
 
-  expect(await screen.findByRole('heading', { name: 'Finish setting up your administrator account' }))
-    .toBeInTheDocument();
+  expect(
+    await screen.findByRole('heading', { name: 'Finish setting up your administrator account' }),
+  ).toBeInTheDocument();
 
   fireEvent.click(await screen.findByRole('button', { name: 'Set up 2FA' }));
   fireEvent.change(await screen.findByLabelText('Enter a code from your authenticator app'), {
@@ -55,13 +56,15 @@ test('stays open to show backup codes after enrolling, and closes once acknowled
   // Regression guard: this used to unmount the whole wall (and the reveal
   // with it) the instant MFA became enrolled, before the codes were shown.
   expect(await screen.findByLabelText('Backup codes')).toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: 'Finish setting up your administrator account' }))
-    .toBeInTheDocument();
+  expect(
+    screen.getByRole('heading', { name: 'Finish setting up your administrator account' }),
+  ).toBeInTheDocument();
 
-  fireEvent.click(screen.getByRole('button', { name: "Done — I saved these codes" }));
+  fireEvent.click(screen.getByRole('button', { name: 'Done — I saved these codes' }));
 
   await waitFor(() => {
-    expect(screen.queryByRole('heading', { name: 'Finish setting up your administrator account' }))
-      .not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Finish setting up your administrator account' }),
+    ).not.toBeInTheDocument();
   });
 });

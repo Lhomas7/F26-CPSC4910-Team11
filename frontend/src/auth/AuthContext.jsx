@@ -18,7 +18,8 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     let active = true;
-    api.ensureCsrf()
+    api
+      .ensureCsrf()
       .then(() => api.me())
       .then((data) => {
         if (!active) return;
@@ -126,17 +127,19 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{
-      ...state,
-      signIn,
-      completeMfaLogin,
-      requestMfaLoginCode,
-      signOut,
-      updateUser,
-      answerDeviceCheck,
-      startImpersonation,
-      stopImpersonation,
-    }}>
+    <AuthContext.Provider
+      value={{
+        ...state,
+        signIn,
+        completeMfaLogin,
+        requestMfaLoginCode,
+        signOut,
+        updateUser,
+        answerDeviceCheck,
+        startImpersonation,
+        stopImpersonation,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

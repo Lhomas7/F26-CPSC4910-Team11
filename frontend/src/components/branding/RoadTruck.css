@@ -6,7 +6,7 @@
    --truck-start sets where the truck parks on the left edge;
    --stripe-start insets the dashed centre line from the left edge. */
 .road-lane {
-  --stripe-start: .375rem;
+  --stripe-start: 0.375rem;
   /* Wreck easter egg timing: how long the fire burns and spreads before the
      fire truck shows up, and how long it takes to drive in. */
   --rescue-delay: 20s;
@@ -19,7 +19,11 @@
 }
 
 .road-lane::before {
-  background: repeating-linear-gradient(to right, var(--stripe) 0 2.375rem, transparent 2.375rem 4.375rem);
+  background: repeating-linear-gradient(
+    to right,
+    var(--stripe) 0 2.375rem,
+    transparent 2.375rem 4.375rem
+  );
   content: '';
   height: 4px;
   left: var(--stripe-start);
@@ -35,7 +39,7 @@
   height: 1.125rem;
   left: var(--truck-start);
   position: absolute;
-  top: calc(50% - .5625rem);
+  top: calc(50% - 0.5625rem);
   width: 2.875rem;
 }
 
@@ -44,7 +48,7 @@
 }
 
 .road-truck-arrive {
-  transition: left 3s cubic-bezier(.45, .05, .3, 1);
+  transition: left 3s cubic-bezier(0.45, 0.05, 0.3, 1);
 }
 
 .road-truck-arrived {
@@ -80,44 +84,44 @@
 
 .road-truck > .road-truck-impact {
   left: 2.375rem;
-  top: -.25rem;
+  top: -0.25rem;
 }
 
 .road-truck > .road-truck-impact-flip {
-  --impact-duration: .8s;
+  --impact-duration: 0.8s;
 }
 
 /* Crash: two puffs of smoke from the cab. */
 .road-truck > .road-truck-smoke {
-  --smoke-delay: .15s;
+  --smoke-delay: 0.15s;
   left: 2.5rem;
-  top: -.125rem;
+  top: -0.125rem;
 }
 
 .road-truck > .road-truck-smoke-b {
-  --smoke-delay: .35s;
+  --smoke-delay: 0.35s;
   left: 2.125rem;
 }
 
 /* Wreck: a wheel comes off the front (or back) and rolls away... */
 .road-truck > .road-truck-loose-wheel {
-  --roll-delay: .4s;
+  --roll-delay: 0.4s;
   bottom: 0;
   left: 2.3125rem;
 }
 
 .road-truck > .road-truck-loose-wheel-back {
-  left: .1875rem;
+  left: 0.1875rem;
 }
 
 /* ...and the fire spreads along the truck until the fire truck has been
    hosing it for a second. */
 .road-truck > .road-truck-fire {
-  --fire-delay: .9s;
+  --fire-delay: 0.9s;
   --fire-spread: var(--rescue-delay);
   --fire-doused-at: calc(var(--rescue-delay) + var(--rescue-drive) + 1s);
   left: 0;
-  top: -.5rem;
+  top: -0.5rem;
 }
 
 /* ---------- Rescue ----------
@@ -125,13 +129,13 @@
    the wreck (positions measured in RoadTruck.jsx), then hoses it down. */
 .road-rescue {
   --rescue-width: 3.25rem;
-  --rescue-gap: .5rem;
+  --rescue-gap: 0.5rem;
   /* Read by the FireTruck asset: start hosing once parked, and reach the wreck. */
   --spray-delay: calc(var(--rescue-delay) + var(--rescue-drive));
   --spray-length: calc(1.35rem + var(--rescue-gap) + 1rem);
   height: 1.25rem;
   position: absolute;
-  top: calc(50% - .625rem);
+  top: calc(50% - 0.625rem);
   width: var(--rescue-width);
 }
 
@@ -140,21 +144,31 @@
 }
 
 .road-rescue-from-left {
-  animation: road-rescue-from-left var(--rescue-drive) cubic-bezier(.25, .8, .35, 1) var(--rescue-delay) both;
+  animation: road-rescue-from-left var(--rescue-drive) cubic-bezier(0.25, 0.8, 0.35, 1)
+    var(--rescue-delay) both;
 }
 
 .road-rescue-from-right {
-  animation: road-rescue-from-right var(--rescue-drive) cubic-bezier(.25, .8, .35, 1) var(--rescue-delay) both;
+  animation: road-rescue-from-right var(--rescue-drive) cubic-bezier(0.25, 0.8, 0.35, 1)
+    var(--rescue-delay) both;
 }
 
 @keyframes road-rescue-from-left {
-  from { left: calc(-1 * var(--rescue-width)); }
-  to { left: calc(var(--wreck-left) - var(--rescue-width) - var(--rescue-gap)); }
+  from {
+    left: calc(-1 * var(--rescue-width));
+  }
+  to {
+    left: calc(var(--wreck-left) - var(--rescue-width) - var(--rescue-gap));
+  }
 }
 
 @keyframes road-rescue-from-right {
-  from { left: 100%; }
-  to { left: calc(var(--wreck-right) + var(--rescue-gap)); }
+  from {
+    left: 100%;
+  }
+  to {
+    left: calc(var(--wreck-right) + var(--rescue-gap));
+  }
 }
 
 /* Reduced motion: no driving, and the fire truck is already parked. The

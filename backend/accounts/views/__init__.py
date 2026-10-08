@@ -8,8 +8,8 @@ from .admin_users import (
     AdminUserListView,
 )
 from .authentication import (
-    CSRFView,
     ChangePasswordView,
+    CSRFView,
     LoginMFARequestCodeView,
     LoginMFAView,
     LoginView,
@@ -62,4 +62,3 @@ __all__ = [
     'SponsorMFASettingsView',
     'SponsorRegistrationView',
 ]
-

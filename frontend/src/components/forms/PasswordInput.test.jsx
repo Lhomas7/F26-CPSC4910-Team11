@@ -18,7 +18,10 @@ test('toggles its own visibility when uncontrolled', () => {
   expect(input).toHaveAttribute('type', 'password');
   fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
   expect(input).toHaveAttribute('type', 'text');
-  expect(screen.getByRole('button', { name: 'Hide password' })).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.getByRole('button', { name: 'Hide password' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
 });
 
 test('defers to the parent when visible is passed', () => {

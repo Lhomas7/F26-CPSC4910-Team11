@@ -6,10 +6,10 @@ This document describes how signed-in sessions are checked, limited, and ended. 
 
 After a successful sign-in (password step, or MFA step when MFA is enabled), Django decides whether to ask **"Is this your device?"**. It asks when either signal applies:
 
-| Signal | Rule | Setting |
-| --- | --- | --- |
+| Signal                 | Rule                                                                                                                                                                                                  | Setting                                                             |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
 | Recent failed attempts | At least 3 failed sign-ins (wrong password or wrong MFA code) for this account in the last 15 minutes, counted only since the account's previous successful sign-in. Asked even on a trusted browser. | `SUSPICIOUS_FAILURE_THRESHOLD`, `SUSPICIOUS_FAILURE_WINDOW_MINUTES` |
-| New browser | The browser does not carry a trust token for this account that is less than 90 days old. | `TRUSTED_DEVICE_DAYS` |
+| New browser            | The browser does not carry a trust token for this account that is less than 90 days old.                                                                                                              | `TRUSTED_DEVICE_DAYS`                                               |
 
 The question is stored in the session (`device_check`) and returned in the `session` block of the login, MFA, and `GET /api/me/` responses, so a page reload shows it again. React shows a modal that can only be closed by answering or signing out.
 
@@ -28,11 +28,11 @@ The check is deliberately minimal. It does not collect IP addresses, user-agent 
 
 `accounts.middleware.SessionTimeoutMiddleware` enforces these limits on every request. The values are in `SESSION_TIMEOUTS` in `backend/config/settings.py`, in seconds.
 
-| Session | Idle limit | Absolute limit |
-| --- | --- | --- |
-| Administrator | 15 minutes | 8 hours from sign-in, however active |
-| Shared device (answered **No**) | 15 minutes | Ends when the browser closes |
-| Driver or sponsor on a trusted device | None (Django's default 2-week session) | None |
+| Session                               | Idle limit                             | Absolute limit                       |
+| ------------------------------------- | -------------------------------------- | ------------------------------------ |
+| Administrator                         | 15 minutes                             | 8 hours from sign-in, however active |
+| Shared device (answered **No**)       | 15 minutes                             | Ends when the browser closes         |
+| Driver or sponsor on a trusted device | None (Django's default 2-week session) | None                                 |
 
 - If more than one row applies, such as an administrator on a shared device, the stricter limit wins.
 - The middleware runs before view-as handling, so an administrator viewing as a driver or sponsor keeps the administrator limits.

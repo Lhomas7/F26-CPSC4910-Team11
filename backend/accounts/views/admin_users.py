@@ -17,6 +17,7 @@ from ..middleware import (
 )
 from ..models import AdminImpersonationEvent, RegistrationSettings, SponsorCompany
 from ..permissions import MFAEnrolled
+from ..sensitive import hide_sensitive_data
 from ..serializers import (
     AdminAccountDetailSerializer,
     AdminDriverDetailSerializer,
@@ -27,7 +28,7 @@ from ..serializers import (
     SponsorCompanySerializer,
 )
 from ..services import get_account_type, get_public_user
-from ..sensitive import hide_sensitive_data
+
 
 class AdminImpersonationStartView(APIView):
     permission_classes = [IsAdminUser]
@@ -98,7 +99,6 @@ class AdminImpersonationStopView(APIView):
         return Response(get_public_user(admin))
 
 
-
 @hide_sensitive_data
 class AdminUserListView(APIView):
     permission_classes = [IsAdminUser, MFAEnrolled]
@@ -110,14 +110,19 @@ class AdminUserListView(APIView):
             raise DRFValidationError({'role': 'Choose driver, sponsor, or admin.'})
 
         # Exclude orphan Django users that have no application role.
-        users = get_user_model().objects.filter(
-            Q(is_staff=True)
-            | Q(driver_profile__isnull=False)
-            | Q(sponsor_account__isnull=False)
-        ).select_related(
-            'driver_profile__sponsor',
-            'sponsor_account__company',
-        ).distinct()
+        users = (
+            get_user_model()
+            .objects.filter(
+                Q(is_staff=True)
+                | Q(driver_profile__isnull=False)
+                | Q(sponsor_account__isnull=False)
+            )
+            .select_related(
+                'driver_profile__sponsor',
+                'sponsor_account__company',
+            )
+            .distinct()
+        )
 
         if role == 'admin':
             users = users.filter(is_staff=True)
