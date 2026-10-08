@@ -25,14 +25,19 @@ function useHomeData(load) {
 function Stats({ items }) {
   return (
     <section className="home-stats" aria-label="Summary">
-      {items.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}
+      {items.map(([label, value], index) => (
+        <div key={label} className={`stat${index === 0 ? ' stat-highlight' : ''}`}>
+          <span className="stat-label">{label}</span>
+          <strong className="stat-value">{value}</strong>
+        </div>
+      ))}
     </section>
   );
 }
 
 function Card({ title, action, children }) {
   return (
-    <section className="home-card" aria-label={title}>
+    <section className="card home-card" aria-label={title}>
       <div className="home-card-heading">
         <h3>{title}</h3>
         {action}

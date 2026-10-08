@@ -136,10 +136,10 @@ export default function AdminUsersPage() {
               </div>
               <div className="users-filters" role="group" aria-label="Filter by role">
                 {['all', 'driver', 'sponsor', 'admin'].map((option) => (
-                  <button key={option} type="button" aria-pressed={role === option} onClick={() => setRole(option)}>
-                    <span className="users-filter-content">
-                      <span className="users-filter-label">{option === 'all' ? 'All' : `${ROLE_LABELS[option]}s`}</span>
-                      <span className="users-filter-count">{counts[option]}</span>
+                  <button key={option} className="chip" type="button" aria-pressed={role === option} onClick={() => setRole(option)}>
+                    <span className="chip-content">
+                      <span>{option === 'all' ? 'All' : `${ROLE_LABELS[option]}s`}</span>
+                      <span className="chip-count">{counts[option]}</span>
                     </span>
                   </button>
                 ))}

@@ -227,9 +227,10 @@
   .add-user-two {
     grid-template-columns: 1fr;
   }
-.add-user-footer .button,
+
+  .add-user-footer .button,
   .add-user-actions .button {
-  flex: 1;
-  text-align: center;
-}
+    flex: 1;
+    text-align: center;
+  }
 }

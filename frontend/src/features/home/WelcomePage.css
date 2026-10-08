@@ -62,33 +62,6 @@
   grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
 }
 
-.home-stats > div,
-.home-card {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: .65rem;
-}
-
-.home-stats > div {
-  display: grid;
-  gap: .25rem;
-  padding: .9rem 1rem;
-}
-
-.home-stats span {
-  color: var(--ink-2);
-  font-size: .72rem;
-}
-
-.home-stats strong {
-  font-size: 1.2rem;
-  overflow-wrap: anywhere;
-}
-
-.home-stats > div:first-child strong {
-  color: var(--accent);
-}
-
 .home-columns {
   display: grid;
   gap: 1rem;

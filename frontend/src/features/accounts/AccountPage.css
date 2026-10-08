@@ -150,7 +150,7 @@
   font-size: .7rem;
 }
 
-@media (max-width: 36rem) {
+@media (max-width: 42rem) {
   .mfa-phone-input {
     grid-template-columns: 1fr;
   }
@@ -403,9 +403,10 @@
   .locked-fields {
     grid-template-columns: 1fr;
   }
-.account-card-footer .button {
-  flex: 1;
-}
+
+  .account-card-footer .button {
+    flex: 1;
+  }
 }
 
 .login-activity-content {

@@ -17,54 +17,6 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.drivers-summary > button,
-.drivers-summary > div {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: .65rem;
-  display: grid;
-  gap: .2rem;
-  padding: .7rem .85rem;
-  text-align: left;
-}
-
-.drivers-summary > button {
-  color: var(--ink);
-  cursor: pointer;
-  font: inherit;
-  transition: background 120ms ease, border-color 120ms ease;
-}
-
-.drivers-summary > button:hover {
-  background: var(--surface-2);
-  border-color: var(--ink-2);
-}
-
-.drivers-summary > button[aria-pressed='true'] {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  box-shadow: inset 0 0 0 1px var(--accent);
-}
-
-.drivers-summary > button.pending strong {
-  color: var(--warning-ink);
-}
-
-.drivers-summary span {
-  color: var(--ink-2);
-  font-size: .72rem;
-}
-
-.drivers-summary strong {
-  font-size: 1.5rem;
-  line-height: 1.1;
-}
-
-.drivers-summary small {
-  color: var(--ink-2);
-  font-size: .68rem;
-}
-
 .drivers-directory {
   min-width: 0;
 }
@@ -137,50 +89,6 @@
   display: flex;
   flex-shrink: 0;
   gap: .35rem;
-}
-
-.drivers-filters button {
-  align-items: center;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  color: var(--ink-2);
-  cursor: pointer;
-  display: inline-flex;
-  font-size: .78rem;
-  height: var(--drivers-control-height);
-  justify-content: center;
-  padding: 0 .7rem;
-  white-space: nowrap;
-}
-
-.drivers-filter-content {
-  align-items: baseline;
-  display: inline-flex;
-  gap: .25rem;
-  justify-content: center;
-  line-height: 1.2;
-}
-
-.drivers-filter-label {
-  line-height: inherit;
-}
-
-.drivers-filter-count {
-  color: var(--ink-2);
-  font-size: .7rem;
-  line-height: inherit;
-}
-
-.drivers-filters button[aria-pressed='true'] {
-  background: var(--road);
-  border-color: var(--road);
-  color: white;
-  font-weight: 700;
-}
-
-.drivers-filters button[aria-pressed='true'] .drivers-filter-count {
-  color: var(--stripe);
 }
 
 .drivers-count {
@@ -1134,15 +1042,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .drivers-summary > button,
-  .drivers-summary > div {
-    padding: .65rem .8rem;
-  }
-
-  .drivers-summary strong {
-    font-size: 1.1rem;
-  }
-
   .drivers-toolbar {
     align-items: stretch;
   }
@@ -1202,24 +1101,23 @@
     margin-top: .15rem;
     justify-self: start;
   }
-.driver-enrollment-actions .button,
+  .driver-enrollment-actions .button,
   .driver-danger-area .button {
-  flex: 1 1 100%;
-  width: 100%;
-}
+    flex: 1 1 100%;
+    width: 100%;
+  }
 
   .remove-driver-dialog .modal-actions {
     flex-direction: column-reverse;
   }
-.remove-driver-dialog .button {
-  justify-content: center;
-  width: 100%;
-}
-}
 
-/* The directory controls need deliberate rows before the cards become truly
-   phone-sized; otherwise the action can wrap into an awkward partial row. */
-@media (max-width: 40.5rem) {
+  .remove-driver-dialog .button {
+    justify-content: center;
+    width: 100%;
+  }
+
+  /* Give the directory controls their own rows so the action button never
+     wraps into an awkward partial row. */
   .drivers-search {
     flex-basis: 100%;
   }

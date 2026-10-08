@@ -144,7 +144,7 @@
   padding-top: 1.25rem;
 }
 
-@media (max-width: 34rem) {
+@media (max-width: 42rem) {
   .legal-header {
     padding: .7rem 1rem;
   }

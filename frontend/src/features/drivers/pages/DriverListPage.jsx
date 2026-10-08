@@ -106,19 +106,19 @@ export default function DriverListPage() {
               <button
                 key={value}
                 type="button"
-                className={value === 'pending' ? 'pending' : ''}
+                className={`stat${value === 'pending' ? ' stat-warning' : ''}`}
                 aria-pressed={statusFilter === value}
                 onClick={() => setStatusFilter(value)}
               >
-                <span>{label}</span>
-                <strong>{counts[value === 'all' ? 'total' : value]}</strong>
-                <small>{hint}</small>
+                <span className="stat-label">{label}</span>
+                <strong className="stat-value">{counts[value === 'all' ? 'total' : value]}</strong>
+                <small className="stat-note">{hint}</small>
               </button>
             ))}
-            <div>
-              <span>Total points</span>
-              <strong>{counts.points.toLocaleString()}</strong>
-              <small>Held by your drivers</small>
+            <div className="stat">
+              <span className="stat-label">Total points</span>
+              <strong className="stat-value">{counts.points.toLocaleString()}</strong>
+              <small className="stat-note">Held by your drivers</small>
             </div>
           </section>
         )}
@@ -152,10 +152,10 @@ export default function DriverListPage() {
                     ['approved', 'Approved', counts.approved],
                     ['pending', 'Pending', counts.pending],
                   ].map(([value, label, count]) => (
-                    <button key={value} type="button" aria-pressed={statusFilter === value} onClick={() => setStatusFilter(value)}>
-                      <span className="drivers-filter-content">
-                        <span className="drivers-filter-label">{label}</span>
-                        <span className="drivers-filter-count">{count}</span>
+                    <button key={value} className="chip" type="button" aria-pressed={statusFilter === value} onClick={() => setStatusFilter(value)}>
+                      <span className="chip-content">
+                        <span>{label}</span>
+                        <span className="chip-count">{count}</span>
                       </span>
                     </button>
                   ))}

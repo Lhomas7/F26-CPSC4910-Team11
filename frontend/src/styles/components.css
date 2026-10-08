@@ -182,3 +182,115 @@
   border: 1px solid var(--line);
   border-radius: .65rem;
 }
+
+/* ---------- Stat tiles ----------
+   <div className="stat"><span className="stat-label">…</span>
+   <strong className="stat-value">…</strong><small className="stat-note">…</small></div>
+   A <button className="stat" aria-pressed> works as a filter tile. */
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .65rem;
+  color: var(--ink);
+  display: grid;
+  font: inherit;
+  gap: .2rem;
+  padding: .7rem .85rem;
+  text-align: left;
+}
+
+.stat-label {
+  color: var(--ink-2);
+  font-size: .72rem;
+}
+
+.stat-value {
+  font-size: 1.4rem;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.stat-note {
+  color: var(--ink-2);
+  font-size: .68rem;
+}
+
+.stat-highlight .stat-value {
+  color: var(--accent);
+}
+
+.stat-warning .stat-value {
+  color: var(--warning-ink);
+}
+
+button.stat {
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+button.stat:hover {
+  background: var(--surface-2);
+  border-color: var(--ink-2);
+}
+
+button.stat[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+/* ---------- Filter chips ----------
+   <button className="chip" aria-pressed={…}><span className="chip-content">
+   Label <span className="chip-count">3</span></span></button> */
+.chip {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink-2);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: .78rem;
+  height: 2.25rem;
+  justify-content: center;
+  padding: 0 .7rem;
+  white-space: nowrap;
+}
+
+.chip:hover {
+  border-color: var(--ink-2);
+}
+
+.chip[aria-pressed='true'] {
+  background: var(--road);
+  border-color: var(--road);
+  color: var(--on-road);
+  font-weight: 700;
+}
+
+.chip-content {
+  align-items: baseline;
+  display: inline-flex;
+  gap: .25rem;
+  line-height: 1.2;
+}
+
+.chip-count {
+  color: var(--ink-2);
+  font-size: .7rem;
+}
+
+.chip[aria-pressed='true'] .chip-count {
+  color: var(--stripe);
+}
+
+@media (max-width: 42rem) {
+  .stat {
+    padding: .65rem .8rem;
+  }
+
+  .stat-value {
+    font-size: 1.1rem;
+  }
+}
