@@ -25,6 +25,7 @@ beforeEach(() => {
   api.getDrivers.mockResolvedValue([]);
   api.getPointHistory.mockResolvedValue([]);
   api.getAdminUsers.mockResolvedValue([]);
+  api.getAdminSponsorOrganizations.mockResolvedValue([]);
 });
 
 afterEach(() => jest.clearAllMocks());
@@ -59,17 +60,18 @@ test('greets a signed-in user by name', async () => {
     screen.getByRole('heading', { level: 2, name: 'Welcome back, Jamie Rivera' }),
   ).toBeInTheDocument();
   expect(await screen.findByText('Not linked yet')).toBeInTheDocument();
+  expect(screen.queryByText(/rewards truck drivers for driving well/i)).not.toBeInTheDocument();
 });
 
-test('a sponsor gets the Go to drivers shortcut plus My account', async () => {
+test('a sponsor gets role-specific driver and points actions', async () => {
   useAuth.mockReturnValue({
     user: { name: 'Ava Chen', username: 'ava.chen', account_type: 'sponsor' },
   });
   renderWelcomePage();
 
   expect(screen.getByRole('link', { name: 'Go to drivers' })).toHaveAttribute('href', '/drivers');
-  expect(screen.getByRole('link', { name: 'My account' })).toHaveAttribute('href', '/account');
-  expect(await screen.findByText('No applications waiting.')).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'View points' })).toHaveAttribute('href', '/points');
+  expect(await screen.findByText('No drivers are waiting.')).toBeInTheDocument();
 });
 
 test('a driver gets a points shortcut and their balance with recent activity', async () => {
@@ -89,9 +91,9 @@ test('a driver gets a points shortcut and their balance with recent activity', a
   renderWelcomePage();
 
   expect(screen.queryByRole('link', { name: 'Go to drivers' })).not.toBeInTheDocument();
-  expect(screen.getByRole('link', { name: 'View my points' })).toHaveAttribute('href', '/points');
+  expect(screen.getByRole('link', { name: 'View all points' })).toHaveAttribute('href', '/points');
   expect(screen.getByRole('link', { name: 'My account' })).toHaveAttribute('href', '/account');
-  expect(await screen.findByText('Palmetto Freight')).toBeInTheDocument();
+  expect((await screen.findAllByText('Palmetto Freight')).length).toBeGreaterThan(0);
   expect(screen.getByText('Clean inspection')).toBeInTheDocument();
   expect(api.getPointHistory).toHaveBeenCalledWith({ limit: 5 });
 });
@@ -120,15 +122,18 @@ test('an admin gets account counts and shortcuts', async () => {
     user: { name: 'Sam Admin', username: 'sam.admin', account_type: 'admin' },
   });
   api.getAdminUsers.mockResolvedValue([
-    { id: 1, role: 'driver', sponsor_org: null },
-    { id: 2, role: 'driver', sponsor_org: { id: 3 } },
-    { id: 3, role: 'sponsor' },
-    { id: 4, role: 'admin' },
+    { id: 1, role: 'driver', sponsor_org: null, is_active: false },
+    { id: 2, role: 'driver', sponsor_org: { id: 3 }, is_active: true },
+    { id: 3, role: 'sponsor', is_active: true },
+    { id: 4, role: 'admin', is_active: true },
   ]);
+  api.getAdminSponsorOrganizations.mockResolvedValue([{ id: 3, name: 'Palmetto Freight' }]);
   renderWelcomePage();
 
   expect(screen.getByRole('link', { name: 'Manage users' })).toHaveAttribute('href', '/users');
   expect(await screen.findByText('Drivers without a sponsor')).toBeInTheDocument();
-  expect(screen.getByRole('link', { name: 'Add a user' })).toHaveAttribute('href', '/users/new');
+  expect(screen.getByRole('link', { name: 'Add user' })).toHaveAttribute('href', '/users/new');
+  expect(screen.getByText('Inactive accounts')).toBeInTheDocument();
+  expect(screen.getByText('Sponsor organizations')).toBeInTheDocument();
   expect(api.getDrivers).not.toHaveBeenCalled();
 });
