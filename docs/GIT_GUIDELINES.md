@@ -1,14 +1,20 @@
 # Git and GitHub Guidelines
 
 How the team names branches, writes commits, merges pull requests, numbers
-versions, and tags releases. These rules come from the workflow section of
-[PROJECT_TODO.md](PROJECT_TODO.md) and from the conventions already used in the
-repository's history. Items still awaiting a team or professor decision are
-marked **Open**.
+versions, tags releases, and publishes GitHub Releases.
+
+This is the team's authoritative Git and GitHub process. `PROJECT_TODO.md` is a
+planning checklist, not a source of workflow rules. If a stale TODO item
+conflicts with this document, follow this document and update the TODO
+separately.
+
+These rules apply to every contributor and every change intended for `main`.
+Items still awaiting a team or professor decision are marked **Open**.
 
 ## Contents
 
 - [Quick reference](#quick-reference)
+- [Team responsibilities](#team-responsibilities)
 - [Branches](#branches)
 - [Commits](#commits)
 - [Pull requests](#pull-requests)
@@ -16,6 +22,8 @@ marked **Open**.
 - [Versions](#versions)
 - [Tags](#tags)
 - [GitHub Releases](#github-releases)
+- [Restoring an earlier release](#restoring-an-earlier-release)
+- [End-of-sprint release checklist](#end-of-sprint-release-checklist)
 - [Release flow](#release-flow)
 - [What never goes into Git](#what-never-goes-into-git)
 - [Fixing mistakes](#fixing-mistakes)
@@ -30,7 +38,20 @@ marked **Open**.
 | Merge commit      | `[Sprint N] merge: summary (#PR)`        | `[Sprint 4] merge: integrate points work (#28)`  |
 | Version           | `MAJOR.MINOR.PATCH`, `-dev.N` while open | `0.4.0-dev.84`, then `0.4.0`                     |
 | Version tag       | `vMAJOR.MINOR.PATCH`                     | `v0.3.0`                                         |
-| Course sprint tag | `sprint-NN`                              | `sprint-03`                                      |
+
+## Team responsibilities
+
+- The person preparing a release is the **release owner** for that sprint.
+- The release owner audits `main`, proposes the release commit, creates and
+  pushes the annotated tag, publishes the GitHub Release, and records any
+  deployment result.
+- At least one teammate verifies the proposed commit and the published Release.
+- Every contributor must identify the sprint and story/task associated with
+  their work and provide test evidence in the pull request.
+- A release represents the whole team's accepted `main` snapshot. It must not
+  be described as one contributor's branch or feature set.
+- Team agreement is required before moving, deleting, or replacing anything
+  already published as a release artifact.
 
 ## Branches
 
@@ -197,12 +218,35 @@ npm version 0.4.0-dev.120 --no-git-tag-version
 
 `--no-git-tag-version` stops npm from creating its own commit and tag.
 
-| Release        | Version        | Date   | Highlights                                             |
-| -------------- | -------------- | ------ | ------------------------------------------------------ |
-| Sprint 1       | `0.1.0`        | Sep 17 | Login, sponsor link-driver, database-backed About page |
-| Sprint 2       | `0.2.0`        | Sep 24 | Profile management, password reset, initial deployment |
-| Sprint 3       | `0.3.0`        | Sep 30 | Admin account management, view-as, hardened MFA        |
-| Sprint 4 (now) | `0.4.0-dev.84` | —      | Points, role-based navigation, dashboards, assets      |
+Before a future sprint is tagged, replace the development version with the
+stable release version and merge that change into `main`:
+
+```powershell
+git switch main
+git pull --ff-only origin main
+git switch -c chore/sprint5-release
+cd frontend
+npm version 0.5.0 --no-git-tag-version
+cd ..
+git add frontend/package.json frontend/package-lock.json
+git commit -m "[Sprint 5] chore: set release version to 0.5.0"
+git push -u origin chore/sprint5-release
+```
+
+Open a pull request for that branch. The stable-version commit must pass review
+and CI like every other change. Do not run `npm version` without
+`--no-git-tag-version`; the release owner creates the annotated Git tag
+separately after the accepted commit is on `main`.
+
+| Release  | Version | Demo date | Final commit | Highlights                                                         |
+| -------- | ------- | --------- | ------------ | ------------------------------------------------------------------ |
+| Sprint 1 | `0.1.0` | Sep 17    | `5aa49b0`    | Login, sponsor link-driver, database-backed About page             |
+| Sprint 2 | `0.2.0` | Sep 24    | `6b2fce7`    | Profiles, password reset, deployment, database ERD                 |
+| Sprint 3 | `0.3.0` | Oct 1     | `e7642b9`    | Admin account management, View-As, hardened MFA                    |
+| Sprint 4 | `0.4.0` | Oct 8     | `b9ae726`    | Points, security, dashboards, driver management, UI architecture   |
+
+Sprint 4 was demonstrated on October 8, 2026, and finalized on the morning of
+October 9, 2026.
 
 ## Tags
 
@@ -217,32 +261,56 @@ demonstrated. Always use annotated tags (`-a`) on the accepted commit on `main`.
 
 - One per release, matching the version: `v0.1.0`, `v0.2.0`, `v0.3.0`, …,
   `v1.0.0`.
-- `v0.1.0` to `v0.3.0` were added retroactively on the last `main` commit of
-  each sprint. **Open:** push them once the team agrees.
+- The version tag is the team's official sprint tag. Do not add a duplicate
+  `sprint-NN` alias unless the professor explicitly requires that exact naming
+  scheme.
+- A tag labels the complete repository snapshot at its target commit. The
+  target's individual commit message might describe only the last merge or
+  documentation change; it does not limit the contents of the release.
+- `v0.1.0` through `v0.4.0` are published on GitHub with Releases.
 
-### Course sprint tags
+### Selecting the release commit
 
-- One per sprint on the accepted `main` commit, zero-padded so they sort:
-  `sprint-01`, `sprint-02`, `sprint-03`. They normally sit on the same commit as
-  that sprint's version tag.
-- If the professor requires a tag for every story merge:
-  `sprint-03-story-26260`, then `sprint-03-final` on the accepted commit.
-- **Open:** confirm the exact per-commit/per-merge tagging rubric with the
-  professor and record it here.
+The release must represent the accepted **team-wide `main` snapshot**, not the
+tip of one person's feature branch.
+
+1. Fetch the latest remote history and update `main`.
+2. Find the last accepted `main` commit on or immediately after the demo date.
+3. Confirm the next commits belong to the following sprint.
+4. Check other branches for relevant work that never reached that snapshot.
+5. Agree on the commit with the team before publishing the tag.
+
+```powershell
+git fetch origin
+git switch main
+git pull --ff-only origin main
+git log main --first-parent --date=local --pretty=format:"%h %ad %s"
+git log --all --not <release-commit> --since="YYYY-MM-DD" --oneline
+```
+
+The last command can expose sprint-dated work that remains only on another
+branch. Investigate it before tagging. A stale branch whose changes were later
+reverted or replaced does not need to be included.
 
 ### Creating and pushing tags
 
 ```powershell
 git switch main
 git pull --ff-only origin main
-git tag -a v0.4.0 -m "Sprint 4 release: points, role-based navigation, dashboards"
-git tag -a sprint-04 -m "Sprint 4 accepted release"
-git push origin v0.4.0 sprint-04
+git status
+git tag -a v0.5.0 <release-commit> -m "Sprint 5 release: concise team-wide summary"
+git show v0.5.0 --no-patch
+git push origin v0.5.0
 ```
 
 - Tags are not pushed with ordinary commits. Push each tag by name, as above.
   GitHub Desktop does not reliably push tags it did not create.
-- List tags with their messages: `git tag -n1`.
+- Keep the annotated tag message concise. Demo dates, stories, tests, and known
+  limitations belong in the GitHub Release notes.
+- List tags with their messages: `git tag -n99`.
+- Review tag targets: `git log --oneline --decorate --tags
+  --simplify-by-decoration`.
+- Verify the remote received a tag: `git ls-remote --tags origin`.
 
 ### Correcting a tag before it is pushed
 
@@ -251,23 +319,142 @@ git tag -d v0.2.0                      # delete the local tag
 git tag -a v0.2.0 <commit> -m "..."    # recreate it on the right commit
 ```
 
-Never delete or move a tag that has already been pushed.
+Always check the remote first with `git ls-remote --tags origin`. Never delete
+or move a tag that has already been pushed without explicit team agreement; a
+published tag may already be referenced by a Release, deployment, or report.
 
 ## GitHub Releases
 
-- Create each GitHub Release from its version tag.
-- Release notes include:
-  - Sprint number and included stories
-  - Database migration level
-  - Required environment variables
-  - Known issues
-  - Demo accounts and data instructions
-  - Deployment URL and commit SHA
+- Create exactly one GitHub Release from each sprint's version tag.
+- Title it `Sprint N — v0.N.0`.
+- Do not mark a completed sprint as a prerelease.
+- GitHub records the date a Release is published. For a retroactive Release,
+  state the actual demo date near the top instead of attempting to falsify the
+  tag or publication date.
+- If code was finalized after the demo, record both dates and explain the
+  difference.
+- Release notes should include:
+  - Sprint number, demo date, finalization date when different, and commit SHA
+  - Team-wide highlights and included stories
+  - Database migrations and data requirements
+  - Required environment variables or configuration changes
+  - Test and deployment status
+  - Known issues and limitations
+  - Demo accounts, fixtures, or data instructions when applicable
+  - Deployment URL when applicable
+
+Publish from the GitHub website under **Releases → Draft a new release**, or
+with GitHub CLI:
+
+```powershell
+gh release create v0.5.0 `
+  --verify-tag `
+  --title "Sprint 5 — v0.5.0" `
+  --notes-file RELEASE_NOTES.md
+```
+
+`RELEASE_NOTES.md` may be a temporary local file and must not contain secrets.
+Delete it afterward unless the team intentionally keeps release notes in the
+repository.
+
+Verify the result:
+
+```powershell
+gh release list --limit 20
+gh release view v0.5.0 `
+  --json tagName,name,isDraft,isPrerelease,targetCommitish,url
+```
+
+The expected result is the intended version tag with `isDraft: false` and
+`isPrerelease: false`.
+
+### Published sprint Releases
+
+| Sprint | Tag | GitHub Release |
+| ------ | --- | -------------- |
+| 1 | `v0.1.0` | [Sprint 1 — v0.1.0](https://github.com/Lhomas7/F26-CPSC4910-Team11/releases/tag/v0.1.0) |
+| 2 | `v0.2.0` | [Sprint 2 — v0.2.0](https://github.com/Lhomas7/F26-CPSC4910-Team11/releases/tag/v0.2.0) |
+| 3 | `v0.3.0` | [Sprint 3 — v0.3.0](https://github.com/Lhomas7/F26-CPSC4910-Team11/releases/tag/v0.3.0) |
+| 4 | `v0.4.0` | [Sprint 4 — v0.4.0](https://github.com/Lhomas7/F26-CPSC4910-Team11/releases/tag/v0.4.0) |
 
 > [!WARNING]
 > Tags preserve code, not database state. Old code can fail against a database
 > with newer migrations. Demo an old release with a compatible database
 > snapshot, fixture, or separate sprint database.
+
+## Restoring an earlier release
+
+Tags make an earlier code snapshot reproducible, but they do not restore its
+dependencies, environment variables, uploaded files, secrets, or database.
+
+To inspect or demonstrate an earlier release without moving a tag:
+
+```powershell
+git status
+git fetch origin --tags
+git switch --detach v0.4.0
+```
+
+- Start only from a clean working tree. Commit or safely preserve current work
+  before switching.
+- Reinstall the dependencies recorded by that release instead of reusing a
+  newer environment blindly.
+- Use the environment-variable names documented for that release.
+- Use a compatible database snapshot, fixture, or isolated demo database.
+- Never run an old release's migrations against the shared production database
+  merely to make a historical demonstration work.
+- A detached checkout is for inspection or demonstration. To fix an old
+  release, create a new branch and publish a new patch version; never edit or
+  move the original tag.
+
+Return to current development with:
+
+```powershell
+git switch main
+git pull --ff-only origin main
+```
+
+## End-of-sprint release checklist
+
+### Before tagging
+
+- [ ] Every accepted story and fix is merged into `main` through a reviewed
+      pull request.
+- [ ] CI passes on the proposed release commit.
+- [ ] The stable version is committed in `frontend/package.json` and
+      `frontend/package-lock.json` for future releases.
+- [ ] Database migrations are committed, ordered correctly, and documented.
+- [ ] Required environment-variable names and deployment changes are
+      documented without exposing values.
+- [ ] The About page and other user-visible release information are current.
+- [ ] The release owner audits the `main` timeline around the demo date.
+- [ ] Relevant work on other branches is either merged, intentionally excluded,
+      reverted, or superseded.
+- [ ] A teammate agrees that the proposed commit is the complete team-wide
+      sprint snapshot.
+
+### Tagging and publishing
+
+- [ ] Create one annotated semantic version tag on the explicit release commit.
+- [ ] Inspect the tag with `git show <tag> --no-patch`.
+- [ ] Push that tag by name and confirm it with `git ls-remote --tags origin`.
+- [ ] Publish one GitHub Release using that version tag.
+- [ ] Record the actual demo date and any later finalization date in the notes.
+- [ ] Describe team-wide highlights, migrations, configuration, tests, known
+      limitations, and demo requirements.
+- [ ] Verify the Release is neither a draft nor a prerelease.
+- [ ] Have a second teammate review the published title, tag, commit, and notes.
+
+### After publishing
+
+- [ ] Deploy or record why deployment is deferred.
+- [ ] Run the agreed smoke tests against the deployed release.
+- [ ] Record the deployed tag and commit SHA.
+- [ ] Confirm the documented rollback or prior-release demonstration path.
+- [ ] Delete merged branches only after the release and required historical
+      evidence are verified.
+- [ ] Start the next sprint from the current `main` branch and next development
+      version.
 
 ## Release flow
 
@@ -278,9 +465,9 @@ flowchart LR
     C -- No --> A
     C -- Yes --> D[Peer review]
     D --> E[Merge into main]
-    E --> F[Course sprint tag]
-    F --> G[Version tag]
-    G --> H[GitHub Release]
+    E --> F[Audit team-wide main snapshot]
+    F --> G[Annotated version tag]
+    G --> H[Push tag and publish GitHub Release]
     H --> I[Deploy staging]
     I --> J{Smoke tests pass?}
     J -- No --> K[Rollback or fix]
@@ -306,4 +493,5 @@ flowchart LR
 | A pushed commit needs undoing             | `git revert <commit>`; never rewrite `main`'s history      |
 | A deployed migration needs changing       | Add a new migration; never edit one that has been deployed |
 | An unpushed tag is wrong                  | `git tag -d <tag>` and recreate it                         |
-| A pushed tag is wrong                     | Leave it; agree on a follow-up tag with the team           |
+| A pushed tag is wrong                     | Stop and agree on a corrective version with the team       |
+| A Release has incomplete notes            | Edit the Release notes without moving its tag              |
