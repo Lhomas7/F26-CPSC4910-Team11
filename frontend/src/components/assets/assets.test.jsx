@@ -196,9 +196,22 @@ test('the semi truck has its detail parts and keeps its exhaust on the cab', () 
   const truck = container.querySelector('.asset-semi-truck');
 
   [
-    'trailer', 'trailer-stripe', 'trailer-door', 'taillight', 'marker', 'landing-gear',
-    'fairing', 'cab', 'cab-door', 'window', 'grille', 'headlight', 'bumper',
-    'exhaust', 'exhaust-cap', 'fuel-tank',
+    'trailer',
+    'trailer-stripe',
+    'trailer-door',
+    'taillight',
+    'marker',
+    'landing-gear',
+    'fairing',
+    'cab',
+    'cab-door',
+    'window',
+    'grille',
+    'headlight',
+    'bumper',
+    'exhaust',
+    'exhaust-cap',
+    'fuel-tank',
   ].forEach((part) => expect(truck.querySelector(`.asset-semi-${part}`)).toBeInTheDocument());
   expect(truck.querySelectorAll('.asset-semi-wheel')).toHaveLength(4);
   expect(truck).toHaveClass('asset-facing-left', 'asset-moving');

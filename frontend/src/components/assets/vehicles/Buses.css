@@ -49,13 +49,16 @@
   width: 0.3em;
 }
 
+/* Entrance door: a framed bifold door just behind the front wheel, below the
+   windshield and clear of the side windows, rub rails and STOP arm hinge. */
 .asset-sbus-door {
   background:
     linear-gradient(#1d201d, #1d201d) center / 0.04em 100% no-repeat,
     #bfe3f2;
+  box-shadow: inset 0 0 0 0.04em #9a7400;
   height: 0.66em;
   left: 3.3em;
-  top: 0.6em;
+  top: 0.58em;
   width: 0.3em;
 }
 
@@ -106,7 +109,8 @@
     sans-serif;
   height: 3.6em;
   justify-content: center;
-  left: 21.5em;
+  /* Hinge (right edge) at 3.17em, just ahead of the door at 3.3em. */
+  left: 20.8em;
   top: 4.4em;
   transform: scaleX(0.12);
   transform-origin: 100% 50%;
@@ -217,10 +221,13 @@
   top: 0.045em;
 }
 
+/* Front entrance door: between the last side window and the windshield,
+   ahead of the front wheel. */
 .asset-cbus-door {
   background:
     linear-gradient(#4f5963, #4f5963) center / 0.04em 100% no-repeat,
     #bfe3f2;
+  box-shadow: inset 0 0 0 0.04em #4f5963;
   height: 1.1em;
   left: 3.9em;
   top: 0.34em;
@@ -304,21 +311,26 @@
   width: 2.55em;
 }
 
+/* Driver's cab window at the very front of the lower deck. */
 .asset-dd-front {
+  border-radius: 0 0.08em 0 0;
   height: 0.55em;
-  left: 3.36em;
+  left: 3.56em;
   top: 1.16em;
-  width: 0.42em;
+  width: 0.26em;
 }
 
+/* Entrance door: between the front wheel and the driver's cab, as on modern
+   London buses. It used to run down into the front wheel. */
 .asset-dd-door {
   background:
     linear-gradient(#8a2a20, #8a2a20) center / 0.04em 100% no-repeat,
     #bfe3f2;
+  box-shadow: inset 0 0 0 0.04em #8a1020;
   height: 1em;
-  left: 2.92em;
+  left: 3.1em;
   top: 1.18em;
-  width: 0.36em;
+  width: 0.38em;
 }
 
 .asset-dd-wheel-a {
@@ -326,7 +338,7 @@
 }
 
 .asset-dd-wheel-b {
-  left: 3.02em;
+  left: 2.5em;
 }
 
 @media (prefers-reduced-motion: reduce) {
