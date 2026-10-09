@@ -480,6 +480,25 @@ Suggested component location:
 `frontend/src/components/forms/VerificationCodeInput.jsx` with a colocated
 stylesheet and tests.
 
+## Home Page
+
+### UI-025: Home Layout Corrections
+
+- [ ] Administrator Home: at split-screen widths the four summary cards must
+      form an even two-by-two grid (two columns, two rows). They currently
+      wrap unevenly.
+- [ ] Check the same summary-card grid for Driver and Sponsor Home at full,
+      split, and narrow widths so no role ends up with an orphaned card.
+- [ ] Move the "Quick actions" card directly under the "Welcome back" card in
+      every role's Home where it appears, instead of at the bottom of the page.
+- [ ] Confirm the new order still reads sensibly with a keyboard and screen
+      reader (heading order and focus order follow the visual order).
+- [ ] Update the Home tests if they depend on section order.
+
+Likely implementation areas:
+
+- `frontend/src/features/home/`
+
 ## Navigation
 
 ### UI-007: Collapsible Sidebar
@@ -511,6 +530,31 @@ Likely implementation areas:
 - `frontend/src/app/AppLayout.css`
 - `frontend/src/app/navigation.js`
 - `frontend/src/components/primitives/Icons.jsx`
+
+### UI-026: Sidebar Order, Width, and Profile Menu
+
+- [ ] Consider moving About directly under Home in the sidebar order for every
+      role (`NAV_ITEMS` in `navigation.js`), and decide before Catalog, Cart,
+      and Orders are added so the order isn't reshuffled twice.
+- [ ] Fix the width of the profile menu dropdown so it fits its content and the
+      sidebar instead of stretching or clipping.
+- [ ] Explore replacing the profile menu's generic icon with the user's profile
+      picture, falling back to initials (the shared `Avatar`) when there is no
+      picture; check the view-as indicator still reads clearly next to it.
+- [ ] Decide whether the sidebar is too wide overall; mock a narrower width
+      before changing it.
+- [ ] Test long display names, usernames, and organization names in the sidebar
+      and profile menu to find the character limits that still fit, and define
+      truncation (ellipsis plus full name available on hover/focus).
+- [ ] Coordinate any width change with UI-007 so the expanded and collapsed
+      widths are designed together.
+
+Likely implementation areas:
+
+- `frontend/src/app/AppLayout.jsx`
+- `frontend/src/app/AppLayout.css`
+- `frontend/src/app/navigation.js`
+- `frontend/src/components/primitives/Avatar.jsx`
 
 ## Visual Assets and Motion
 
@@ -1205,6 +1249,12 @@ runtime dependency. For now, `backend/requirements.txt` and
 
 - UI-007 approved mockup, shell state, persistence decision, responsive behavior,
   and tests
+- UI-026 sidebar order, width, profile-menu dropdown, and profile picture,
+  designed alongside UI-007
+
+### Group E2: Home Layout
+
+- UI-025 Administrator summary-card grid and Quick actions placement
 
 ### Group F: Shared Road Foundation
 
@@ -1324,6 +1374,10 @@ runtime dependency. For now, `backend/requirements.txt` and
       application?
 - [ ] Should the sidebar collapsed state persist per browser or reset on every
       session?
+- [ ] Should About sit directly under Home in the sidebar, and where do Catalog,
+      Cart, and Orders go once they exist?
+- [ ] Should the profile menu show the user's profile picture instead of the
+      generic icon?
 - [ ] Should the custom checkbox support an indeterminate state now, or only when
       a real bulk-selection workflow needs it?
 - [ ] Should registration email verification adopt the six-box code input, or
