@@ -7,6 +7,7 @@ import PageHeader from '../../../app/PageHeader';
 import useApiRequest from '../../../hooks/useApiRequest';
 import Avatar from '../../../components/primitives/Avatar';
 import StatePanel from '../../../components/feedback/StatePanel';
+import ViewAsConfirmationDialog from '../components/ViewAsConfirmationDialog';
 import '../AdminUsers.css';
 
 function formFrom(account) {
@@ -29,6 +30,7 @@ export default function DriverAccountPage() {
   const [errors, setErrors] = useState({});
   const [notice, setNotice] = useState('');
   const [viewingAs, setViewingAs] = useState(false);
+  const [confirmingViewAs, setConfirmingViewAs] = useState(false);
 
   const viewAsDriver = async () => {
     setViewingAs(true);
@@ -38,6 +40,7 @@ export default function DriverAccountPage() {
       navigate('/');
     } catch (error) {
       setErrors({ detail: error.message });
+      setConfirmingViewAs(false);
       setViewingAs(false);
     }
   };
@@ -193,11 +196,17 @@ export default function DriverAccountPage() {
               <div className="sponsor-detail-header-actions">
                 <button
                   type="button"
-                  onClick={viewAsDriver}
+                  onClick={() => setConfirmingViewAs(true)}
                   disabled={viewingAs || !account.is_active}
+                  aria-describedby={!account.is_active ? 'driver-view-as-disabled' : undefined}
                 >
                   {viewingAs ? 'Opening…' : 'View as driver'}
                 </button>
+                {!account.is_active && (
+                  <p className="view-as-disabled-reason" id="driver-view-as-disabled">
+                    Inactive accounts cannot be viewed as.
+                  </p>
+                )}
                 <button
                   type="button"
                   onClick={() => {
@@ -333,6 +342,22 @@ export default function DriverAccountPage() {
           )}
         </section>
       </main>
+      {confirmingViewAs && (
+        <ViewAsConfirmationDialog
+          account={{
+            name: account.display_name,
+            username: account.username,
+            role: 'driver',
+            organization: account.sponsor_org?.name,
+            avatarSrc: account.profile_picture_url,
+            isActive: account.is_active,
+          }}
+          administratorName={user.name || user.username || 'your administrator account'}
+          busy={viewingAs}
+          onConfirm={viewAsDriver}
+          onCancel={() => setConfirmingViewAs(false)}
+        />
+      )}
     </div>
   );
 }

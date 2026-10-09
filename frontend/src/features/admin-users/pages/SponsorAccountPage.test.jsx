@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 import { useAuth } from '../../../auth/AuthContext';
@@ -38,7 +38,10 @@ function renderPage() {
 }
 
 beforeEach(() => {
-  useAuth.mockReturnValue({ user: { account_type: 'admin' }, startImpersonation });
+  useAuth.mockReturnValue({
+    user: { account_type: 'admin', name: 'Kylie Gilbert' },
+    startImpersonation,
+  });
   startImpersonation.mockResolvedValue({ account_type: 'sponsor' });
   api.getAdminSponsor.mockResolvedValue(account);
   api.getAdminSponsorOrganizations.mockResolvedValue(organizations);
@@ -76,10 +79,25 @@ test('edits and saves the sponsor account', async () => {
   expect(await screen.findByText('Sponsor account saved.')).toBeInTheDocument();
 });
 
-test('starts a view-as session for the sponsor', async () => {
+test('confirms before starting a view-as session for the sponsor', async () => {
   renderPage();
   fireEvent.click(await screen.findByRole('button', { name: 'View as sponsor' }));
+  expect(startImpersonation).not.toHaveBeenCalled();
+  const dialog = screen.getByRole('dialog', { name: 'View as Dana Whitfield?' });
+  expect(dialog).toHaveTextContent('@dana.sponsor');
+  expect(dialog).toHaveTextContent('Palmetto Freight');
+  expect(dialog).toHaveTextContent('stay signed in as Kylie Gilbert');
+  expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus();
+  fireEvent.click(within(dialog).getByRole('button', { name: 'View as sponsor' }));
   await waitFor(() => expect(startImpersonation).toHaveBeenCalledWith('8'));
+});
+
+test('explains why an inactive sponsor cannot be viewed as', async () => {
+  api.getAdminSponsor.mockResolvedValue({ ...account, is_active: false });
+  renderPage();
+  const button = await screen.findByRole('button', { name: 'View as sponsor' });
+  expect(button).toBeDisabled();
+  expect(button).toHaveAccessibleDescription('Inactive accounts cannot be viewed as.');
 });
 
 test('shows server validation errors and stays in edit mode', async () => {
