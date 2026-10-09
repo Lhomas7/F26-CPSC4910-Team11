@@ -178,6 +178,7 @@ F26-CPSC4910-Team11/
 │   ├── ACCOUNT_INPUT_VALIDATION.md
 │   ├── DATABASE_ERD.md
 │   ├── DEPLOYMENT.md
+│   ├── LOCAL_OFFLINE_DEVELOPMENT.md
 │   ├── PROJECT_TODO.md
 │   └── SESSION_SECURITY.md
 ├── .dockerignore
@@ -542,6 +543,7 @@ See [`docs/PROJECT_TODO.md`](docs/PROJECT_TODO.md) for the detailed engineering,
 
 ## Documentation
 
+- [Local offline development with SQLite and demonstration accounts](docs/LOCAL_OFFLINE_DEVELOPMENT.md)
 - [Engineering backlog and project TODO](docs/PROJECT_TODO.md)
 - [Linting, formatting, and local quality checks](docs/LINTING.md)
 - [Account input validation and normalization](docs/ACCOUNT_INPUT_VALIDATION.md)
