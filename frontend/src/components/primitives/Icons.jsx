@@ -93,3 +93,92 @@ export function ArrowRightIcon(props) {
     </SvgIcon>
   );
 }
+
+export function HomeIcon(props) {
+  return (
+    <SvgIcon {...props}>
+      <path
+        d="m3 10.5 9-7.5 9 7.5"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
+      <path d="M5.5 9.5V20h13V9.5" stroke="currentColor" strokeLinejoin="round" strokeWidth="2" />
+    </SvgIcon>
+  );
+}
+
+export function PointsIcon(props) {
+  return (
+    <SvgIcon {...props}>
+      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="2" />
+      <path
+        d="M12 7.5v9M9.5 10h4a1.8 1.8 0 0 1 0 3.6h-4"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
+    </SvgIcon>
+  );
+}
+
+export function DriversIcon(props) {
+  return (
+    <SvgIcon {...props}>
+      <circle cx="9" cy="8" r="3.2" stroke="currentColor" strokeWidth="2" />
+      <path
+        d="M3 19a6 6 0 0 1 12 0M16.5 5.6a3.2 3.2 0 0 1 0 5.9M18 19a6 6 0 0 0-2.3-4.7"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="2"
+      />
+    </SvgIcon>
+  );
+}
+
+export function UsersIcon(props) {
+  return (
+    <SvgIcon {...props}>
+      <circle cx="9" cy="8" r="3" stroke="currentColor" strokeWidth="2" />
+      <circle cx="17" cy="9" r="2.4" stroke="currentColor" strokeWidth="2" />
+      <path
+        d="M3.5 20a5.5 5.5 0 0 1 11 0M14.5 15.2A4.5 4.5 0 0 1 21 19"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="2"
+      />
+    </SvgIcon>
+  );
+}
+
+export function InfoIcon(props) {
+  return (
+    <SvgIcon {...props}>
+      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="2" />
+      <path d="M12 11v5.5" stroke="currentColor" strokeLinecap="round" strokeWidth="2" />
+      <circle cx="12" cy="7.8" fill="currentColor" r="1" />
+    </SvgIcon>
+  );
+}
+
+export function SignInIcon(props) {
+  return (
+    <SvgIcon {...props}>
+      <path
+        d="M14 5h5a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="2"
+      />
+      <path
+        d="m9 8 4 4-4 4M13 12H3"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
+    </SvgIcon>
+  );
+}

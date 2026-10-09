@@ -6,15 +6,29 @@ import BrandMark from '../components/branding/BrandMark';
 import ConfirmDialog from '../components/feedback/ConfirmDialog';
 import {
   AccountIcon,
+  DriversIcon,
   ChevronDownIcon,
+  HomeIcon,
+  InfoIcon,
+  PointsIcon,
+  SignInIcon,
   SignOutIcon,
   UserIcon,
+  UsersIcon,
 } from '../components/primitives/Icons';
 import { MfaSetupWall } from '../features/accounts';
 import { DeviceCheckDialog } from '../features/authentication';
 import './AppLayout.css';
 import { navItemsFor } from './navigation';
 import { PageHeaderTargetProvider } from './PageHeader';
+
+const NAV_ICONS = {
+  home: HomeIcon,
+  points: PointsIcon,
+  drivers: DriversIcon,
+  users: UsersIcon,
+  about: InfoIcon,
+};
 
 function AccountMenu({ user, onSignOut }) {
   const [open, setOpen] = useState(false);
@@ -136,6 +150,7 @@ function AccountMenu({ user, onSignOut }) {
 
   return (
     <Link className="topbar-signin" to="/login">
+      <SignInIcon size={16} />
       Sign in
     </Link>
   );
@@ -182,12 +197,15 @@ export function AppLayout() {
           <span className="brand-name">Good Driver</span>
         </Link>
         <nav className="site-nav" aria-label="Primary navigation">
-          {navItemsFor(user).map((item) => (
-            <NavLink key={item.to} to={item.to} end={item.to === '/'}>
-              <span className="nav-icon" aria-hidden="true" />
-              {item.label}
-            </NavLink>
-          ))}
+          {navItemsFor(user).map((item) => {
+            const Icon = NAV_ICONS[item.icon];
+            return (
+              <NavLink key={item.to} to={item.to} end={item.to === '/'}>
+                <Icon className="nav-icon" size={16} />
+                {item.label}
+              </NavLink>
+            );
+          })}
         </nav>
         <div className="sidebar-account">
           <AccountMenu user={user} onSignOut={signOut} />
