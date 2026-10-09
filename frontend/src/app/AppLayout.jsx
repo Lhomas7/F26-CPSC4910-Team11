@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../auth/AuthContext';
 import BrandMark from '../components/branding/BrandMark';
@@ -183,11 +183,15 @@ function AccountMenu({ user, onSignOut }) {
 }
 
 export function AppLayout() {
-  const { user, notice, signOut, stopImpersonation, answerDeviceCheck } = useAuth();
+  const { user, notice, signOut, stopImpersonation, answerDeviceCheck, clearNotice } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [endingViewAs, setEndingViewAs] = useState(false);
   const [viewAsError, setViewAsError] = useState('');
+  const [identityAnnouncement, setIdentityAnnouncement] = useState('');
   const [pageHeaderTarget, setPageHeaderTarget] = useState(null);
+  const viewAsReturnToRef = useRef('/users');
+  const previousViewAsRef = useRef(Boolean(user?.impersonation?.active));
   const mfaWallNeeded =
     user &&
     (user.account_type === 'sponsor' || user.account_type === 'admin') &&
@@ -200,11 +204,40 @@ export function AppLayout() {
     if (notice === 'expired' && !user) navigate('/login', { replace: true });
   }, [notice, user, navigate]);
 
+  useEffect(() => {
+    if (!user?.impersonation?.active) return;
+    const candidate = location.state?.viewAsReturnTo || location.pathname;
+    if (/^\/users\/(drivers|sponsors)\/\d+$/.test(candidate)) {
+      viewAsReturnToRef.current = candidate;
+    }
+  }, [location.pathname, location.state, user?.impersonation?.active]);
+
+  useEffect(() => {
+    const active = Boolean(user?.impersonation?.active);
+    if (active && !previousViewAsRef.current) {
+      setIdentityAnnouncement(
+        `Now viewing as ${user.name || user.username}, ${user.account_type}. You're still signed in as ${user.impersonation.admin.name}.`,
+      );
+    }
+    previousViewAsRef.current = active;
+  }, [user]);
+
+  useEffect(() => {
+    if (notice !== 'view-as-ended') return;
+    setIdentityAnnouncement(
+      "Your View-as session has ended. You've returned to your administrator account.",
+    );
+    navigate('/users', { replace: true });
+  }, [notice, navigate]);
+
   const stopViewingAs = async () => {
     setEndingViewAs(true);
     setViewAsError('');
     try {
       await stopImpersonation();
+      setIdentityAnnouncement("You're back in your administrator account.");
+      navigate(viewAsReturnToRef.current, { replace: true });
+      viewAsReturnToRef.current = '/users';
     } catch (error) {
       setViewAsError(error.message || 'Could not return to your admin account.');
     } finally {
@@ -214,6 +247,9 @@ export function AppLayout() {
 
   return (
     <div className="app-shell">
+      <p className="sr-only" aria-live="polite" aria-atomic="true">
+        {identityAnnouncement}
+      </p>
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
@@ -252,6 +288,18 @@ export function AppLayout() {
         <header className="app-topbar">
           <div className="app-topbar-page" ref={setPageHeaderTarget} />
         </header>
+        {(notice === 'view-as-returned' || notice === 'view-as-ended') && (
+          <div className="banner banner-warning view-as-ended-notice">
+            <span>
+              {notice === 'view-as-returned'
+                ? "You're back in your administrator account."
+                : 'Your View-as session has ended. You have returned to your administrator account.'}
+            </span>
+            <button className="button" type="button" onClick={clearNotice}>
+              Dismiss
+            </button>
+          </div>
+        )}
         <div className="app-content" id="main-content" tabIndex="-1">
           <PageHeaderTargetProvider target={pageHeaderTarget}>
             {mfaWallNeeded ? (

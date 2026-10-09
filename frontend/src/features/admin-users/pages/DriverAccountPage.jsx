@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { useAuth } from '../../../auth/AuthContext';
 import * as api from '../../../api';
@@ -23,6 +23,7 @@ function formFrom(account) {
 export default function DriverAccountPage() {
   const { user, startImpersonation } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { userId } = useParams();
   const [form, setForm] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -37,7 +38,7 @@ export default function DriverAccountPage() {
     setErrors({});
     try {
       await startImpersonation(userId);
-      navigate('/');
+      navigate('/', { state: { viewAsReturnTo: location.pathname } });
     } catch (error) {
       setErrors({ detail: error.message });
       setConfirmingViewAs(false);

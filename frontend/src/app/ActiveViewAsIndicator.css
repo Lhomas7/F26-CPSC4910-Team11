@@ -79,6 +79,10 @@
   overflow-wrap: anywhere;
 }
 
+.view-as-expiry-warning {
+  font-weight: 700;
+}
+
 .view-as-return {
   background: var(--warning-ink);
   border-color: var(--warning-ink);

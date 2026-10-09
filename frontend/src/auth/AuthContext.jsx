@@ -12,6 +12,10 @@ function keepSession(previous, next) {
   return { ...next, session: previous.session };
 }
 
+function viewAsEnded(previous, next) {
+  return Boolean(previous?.impersonation?.active && !next?.impersonation?.active);
+}
+
 export function AuthProvider({ children }) {
   // notice: 'expired' after the session timed out, so the sign-in page can say why.
   const [state, setState] = useState({ loading: true, user: null, notice: null });
@@ -102,7 +106,12 @@ export function AuthProvider({ children }) {
   }, []);
 
   const updateUser = useCallback((user) => {
-    setState((current) => ({ ...current, loading: false, user: keepSession(current.user, user) }));
+    setState((current) => ({
+      ...current,
+      loading: false,
+      user: keepSession(current.user, user),
+      notice: viewAsEnded(current.user, user) ? 'view-as-ended' : current.notice,
+    }));
   }, []);
 
   const answerDeviceCheck = useCallback(async (trusted) => {
@@ -116,14 +125,28 @@ export function AuthProvider({ children }) {
 
   const startImpersonation = useCallback(async (userId) => {
     const user = await api.startAdminImpersonation(userId);
-    setState((current) => ({ ...current, loading: false, user: keepSession(current.user, user) }));
+    setState((current) => ({
+      ...current,
+      loading: false,
+      user: keepSession(current.user, user),
+      notice: null,
+    }));
     return user;
   }, []);
 
   const stopImpersonation = useCallback(async () => {
     const user = await api.stopAdminImpersonation();
-    setState((current) => ({ ...current, loading: false, user: keepSession(current.user, user) }));
+    setState((current) => ({
+      ...current,
+      loading: false,
+      user: keepSession(current.user, user),
+      notice: 'view-as-returned',
+    }));
     return user;
+  }, []);
+
+  const clearNotice = useCallback(() => {
+    setState((current) => ({ ...current, notice: null }));
   }, []);
 
   return (
@@ -138,6 +161,7 @@ export function AuthProvider({ children }) {
         answerDeviceCheck,
         startImpersonation,
         stopImpersonation,
+        clearNotice,
       }}
     >
       {children}
