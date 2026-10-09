@@ -36,7 +36,7 @@ Items still awaiting a team or professor decision are marked **Open**.
 | Commit            | `[Label] type(scope): summary`           | `[Sprint 4] feat(points): add point history API` |
 | Pull request      | Same as a commit summary                 | `[Sprint 4] feat: add role-based navigation`     |
 | Merge commit      | `[Sprint N] merge: summary (#PR)`        | `[Sprint 4] merge: integrate points work (#28)`  |
-| Version           | `MAJOR.MINOR.PATCH`, `-dev.N` while open | `0.4.0-dev.84`, then `0.4.0`                     |
+| Version           | `MAJOR.MINOR.PATCH`, `-dev.N` while open | `0.5.0-dev.84`, then `0.5.0`                     |
 | Version tag       | `vMAJOR.MINOR.PATCH`                     | `v0.3.0`                                         |
 
 ## Team responsibilities
@@ -197,23 +197,78 @@ CI a required check are planned but not yet set up.
 ## Versions
 
 The project follows [Semantic Versioning](https://semver.org/):
-`MAJOR.MINOR.PATCH`.
+`MAJOR.MINOR.PATCH`, optionally followed by a prerelease identifier such as
+`-dev.N` or `-rc.N`.
+
+### What the numbers mean
+
+Given `0.4.2`:
+
+- `0` is the **major** version. Increase it for a stable milestone or a change
+  that intentionally breaks compatibility. The project stays on major version
+  `0` while its public contracts are still evolving; the final production
+  milestone may become `1.0.0`.
+- `4` is the **minor** version. Increase it for a sprint release or a set of
+  backward-compatible features. Under the course convention, Sprint 4 maps to
+  minor version 4 and Sprint 5 maps to minor version 5.
+- `2` is the **patch** version. Increase it for backward-compatible bug fixes,
+  security corrections, or maintenance released after `0.4.0` and before the
+  next minor release.
+
+This is not Ubuntu's date-based `YEAR.MONTH` scheme. It is Semantic Versioning.
+Other products, including games, may display similar numbers while assigning
+them different product-specific meanings.
+
+### Allowed version forms
+
+| Form | Meaning | May be tagged as a release? |
+| ---- | ------- | --------------------------- |
+| `0.4.0` | Final Sprint 4 minor release | Yes |
+| `0.4.1` | First released Sprint 4 patch | Yes |
+| `0.4.2` | Second released Sprint 4 patch | Yes |
+| `0.4.1-dev.1` | First development build toward patch `0.4.1` | Normally no |
+| `0.5.0-dev.84` | Development build toward the Sprint 5 minor release | Normally no |
+| `0.5.0-rc.1` | First release candidate for `0.5.0` | Only if intentionally publishing a prerelease |
+| `0.4.x` | A range meaning any `0.4` patch version | No; it is not a concrete version |
+
+`0.4.x` is useful in planning or dependency constraints, but an application
+build, Git tag, and GitHub Release must use an exact version such as `0.4.3`.
+
+The numeric suffix on `-dev.N` must increase for newer development builds. It
+may use a build counter or another team-agreed monotonically increasing number.
+For example, `0.5.0-dev.85` is newer than `0.5.0-dev.84` but still sorts before
+the final `0.5.0` release.
+
+### Choosing the next version
+
+- For fixes and maintenance to the Sprint 4 release, develop toward
+  `0.4.1-dev.N`, then publish `0.4.1` only if the team needs a formal patch
+  release.
+- Additional patch releases become `0.4.2`, `0.4.3`, and so on.
+- New backward-compatible product features belong to the next minor line,
+  `0.5.0-dev.N`, even if implementation begins before the formal Sprint 5
+  planning work.
+- Breaking changes should be discussed by the team before changing the major
+  version. While the product is pre-`1.0.0`, document breaking API or migration
+  changes explicitly even when only the minor version changes.
+- Internal commits do not each require a new published GitHub Release. Update
+  the package development version when useful, and create a tag and Release
+  only for a team-approved artifact.
 
 - **Major stays `0`** while the product is in initial development. `1.0.0` is
   the final production release.
 - **Each sprint release bumps the minor version**: Sprint 3 shipped as `0.3.0`,
   Sprint 4 ships as `0.4.0`.
 - **A fix-only release between sprints bumps the patch**: `0.4.1`.
-- **While a sprint is in progress**, the version is a pre-release of the next
-  minor version: `0.4.0-dev.N`. Increase `N` whenever you like (for example,
-  to the number of commits so far); it only has to go up. `0.4.0-dev.84` sorts
-  before `0.4.0`.
+- **While a sprint is in progress**, the version is a prerelease of the next
+  minor version: `0.5.0-dev.N`. Increase `N` monotonically. For example,
+  `0.5.0-dev.84` sorts before `0.5.0`.
 
 The version lives in `frontend/package.json` (and its lockfile). Change it from
 `frontend/` so both files stay in sync, and commit the result:
 
 ```powershell
-npm version 0.4.0-dev.120 --no-git-tag-version
+npm version 0.5.0-dev.120 --no-git-tag-version
 ```
 
 `--no-git-tag-version` stops npm from creating its own commit and tag.
