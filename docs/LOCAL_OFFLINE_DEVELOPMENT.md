@@ -4,8 +4,6 @@ Use this guide when the shared AWS RDS instance is unavailable or when you need 
 
 > [!IMPORTANT]
 > SQLite data is local to one checkout and is not synchronized with AWS RDS. Verify database-sensitive work against MySQL before release.
-
-> [!CAUTION]
 > Never commit `backend/.env`, SQLite files, passwords, secret keys, MFA encryption keys, or provider credentials. Check `git status` before every commit.
 
 ## One-time setup
