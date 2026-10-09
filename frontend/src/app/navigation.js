@@ -3,11 +3,16 @@
 // you. (The server still checks every request; hiding a link isn't security.)
 // 'guest' means signed out. Catalog, Cart, Orders and Reports join later.
 export const NAV_ITEMS = [
-  { to: '/', label: 'Home', roles: ['guest', 'driver', 'sponsor', 'admin'] },
-  { to: '/points', label: 'Points', roles: ['driver', 'sponsor'] },
-  { to: '/drivers', label: 'Drivers', roles: ['sponsor'] },
-  { to: '/users', label: 'Users', roles: ['admin'] },
-  { to: '/about', label: 'About', roles: ['guest', 'driver', 'sponsor', 'admin'] },
+  { to: '/', label: 'Home', icon: 'home', roles: ['guest', 'driver', 'sponsor', 'admin'] },
+  { to: '/points', label: 'Points', icon: 'points', roles: ['driver', 'sponsor'] },
+  { to: '/drivers', label: 'Drivers', icon: 'drivers', roles: ['sponsor'] },
+  { to: '/users', label: 'Users', icon: 'users', roles: ['admin'] },
+  {
+    to: '/about',
+    label: 'About',
+    icon: 'about',
+    roles: ['guest', 'driver', 'sponsor', 'admin'],
+  },
 ];
 
 // Role lists for the signed-in-only pages, shared with AppRoutes.

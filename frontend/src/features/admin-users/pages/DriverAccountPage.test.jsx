@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 import { useAuth } from '../../../auth/AuthContext';
@@ -38,7 +38,10 @@ function renderPage() {
 }
 
 beforeEach(() => {
-  useAuth.mockReturnValue({ user: { account_type: 'admin' }, startImpersonation });
+  useAuth.mockReturnValue({
+    user: { account_type: 'admin', name: 'Kylie Gilbert' },
+    startImpersonation,
+  });
   startImpersonation.mockResolvedValue({ account_type: 'driver' });
   api.getAdminDriver.mockResolvedValue(account);
   api.getAdminSponsorOrganizations.mockResolvedValue(organizations);
@@ -81,10 +84,25 @@ test('edits, unassigns, and deactivates a driver account', async () => {
   expect(await screen.findByText('Driver account saved.')).toBeInTheDocument();
 });
 
-test('starts a view-as session for the driver', async () => {
+test('confirms before starting a view-as session for the driver', async () => {
   renderPage();
   fireEvent.click(await screen.findByRole('button', { name: 'View as driver' }));
+  expect(startImpersonation).not.toHaveBeenCalled();
+  const dialog = screen.getByRole('dialog', { name: 'View as Tasha Greene?' });
+  expect(dialog).toHaveTextContent('@tasha.driver');
+  expect(dialog).toHaveTextContent('Palmetto Freight');
+  expect(dialog).toHaveTextContent('stay signed in as Kylie Gilbert');
+  expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus();
+  fireEvent.click(within(dialog).getByRole('button', { name: 'View as driver' }));
   await waitFor(() => expect(startImpersonation).toHaveBeenCalledWith('5'));
+});
+
+test('explains why an inactive driver cannot be viewed as', async () => {
+  api.getAdminDriver.mockResolvedValue({ ...account, is_active: false });
+  renderPage();
+  const button = await screen.findByRole('button', { name: 'View as driver' });
+  expect(button).toBeDisabled();
+  expect(button).toHaveAccessibleDescription('Inactive accounts cannot be viewed as.');
 });
 
 test('shows duplicate username errors while retaining edits', async () => {

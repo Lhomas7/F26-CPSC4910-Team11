@@ -190,3 +190,29 @@ test('vehicles take crash poses, wheels roll away, and fire takes its timing', (
   expect(fire.style.getPropertyValue('--fire-doused-at')).toBe('15s');
   expect(fire.querySelectorAll('.asset-flame')).toHaveLength(4);
 });
+
+test('the semi truck has its detail parts and keeps its exhaust on the cab', () => {
+  const { container } = render(<SemiTruck facing="left" moving />);
+  const truck = container.querySelector('.asset-semi-truck');
+
+  [
+    'trailer',
+    'trailer-stripe',
+    'trailer-door',
+    'taillight',
+    'marker',
+    'landing-gear',
+    'fairing',
+    'cab',
+    'cab-door',
+    'window',
+    'grille',
+    'headlight',
+    'bumper',
+    'exhaust',
+    'exhaust-cap',
+    'fuel-tank',
+  ].forEach((part) => expect(truck.querySelector(`.asset-semi-${part}`)).toBeInTheDocument());
+  expect(truck.querySelectorAll('.asset-semi-wheel')).toHaveLength(4);
+  expect(truck).toHaveClass('asset-facing-left', 'asset-moving');
+});

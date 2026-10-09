@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { useAuth } from '../../../auth/AuthContext';
 import * as api from '../../../api';
@@ -8,6 +8,7 @@ import useApiRequest from '../../../hooks/useApiRequest';
 import Avatar from '../../../components/primitives/Avatar';
 import StatePanel from '../../../components/feedback/StatePanel';
 import { fullName } from '../../../utils/names';
+import ViewAsConfirmationDialog from '../components/ViewAsConfirmationDialog';
 import '../AdminUsers.css';
 
 function formFrom(account) {
@@ -24,6 +25,7 @@ function formFrom(account) {
 export default function SponsorAccountPage() {
   const { user, startImpersonation } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { userId } = useParams();
   const [form, setForm] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -31,15 +33,17 @@ export default function SponsorAccountPage() {
   const [errors, setErrors] = useState({});
   const [notice, setNotice] = useState('');
   const [viewingAs, setViewingAs] = useState(false);
+  const [confirmingViewAs, setConfirmingViewAs] = useState(false);
 
   const viewAsSponsor = async () => {
     setViewingAs(true);
     setErrors({});
     try {
       await startImpersonation(userId);
-      navigate('/');
+      navigate('/', { state: { viewAsReturnTo: location.pathname } });
     } catch (error) {
       setErrors({ detail: error.message });
+      setConfirmingViewAs(false);
       setViewingAs(false);
     }
   };
@@ -195,11 +199,17 @@ export default function SponsorAccountPage() {
               <div className="sponsor-detail-header-actions">
                 <button
                   type="button"
-                  onClick={viewAsSponsor}
+                  onClick={() => setConfirmingViewAs(true)}
                   disabled={viewingAs || !account.is_active}
+                  aria-describedby={!account.is_active ? 'sponsor-view-as-disabled' : undefined}
                 >
                   {viewingAs ? 'Opening…' : 'View as sponsor'}
                 </button>
+                {!account.is_active && (
+                  <p className="view-as-disabled-reason" id="sponsor-view-as-disabled">
+                    Inactive accounts cannot be viewed as.
+                  </p>
+                )}
                 <button
                   type="button"
                   onClick={() => {
@@ -335,6 +345,21 @@ export default function SponsorAccountPage() {
           )}
         </section>
       </main>
+      {confirmingViewAs && (
+        <ViewAsConfirmationDialog
+          account={{
+            name,
+            username: account.username,
+            role: 'sponsor',
+            organization: account.sponsor_org?.name,
+            isActive: account.is_active,
+          }}
+          administratorName={user.name || user.username || 'your administrator account'}
+          busy={viewingAs}
+          onConfirm={viewAsSponsor}
+          onCancel={() => setConfirmingViewAs(false)}
+        />
+      )}
     </div>
   );
 }

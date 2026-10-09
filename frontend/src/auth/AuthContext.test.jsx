@@ -57,12 +57,14 @@ test('signing out clears the user even when the logout request fails', async () 
 });
 
 function SessionStatus() {
-  const { loading, user, updateUser, answerDeviceCheck } = useAuth();
+  const { loading, user, notice, updateUser, answerDeviceCheck, stopImpersonation, clearNotice } =
+    useAuth();
   if (loading) return <p>Loading</p>;
   return (
     <>
       <p>Device check: {user?.session?.device_check || 'none'}</p>
       <p>Name: {user?.name}</p>
+      <p>Notice: {notice || 'none'}</p>
       <button type="button" onClick={() => answerDeviceCheck(true)}>
         Trust
       </button>
@@ -71,6 +73,18 @@ function SessionStatus() {
         onClick={() => updateUser({ ...user, session: undefined, name: 'Renamed' })}
       >
         Rename
+      </button>
+      <button type="button" onClick={stopImpersonation}>
+        Stop viewing
+      </button>
+      <button type="button" onClick={clearNotice}>
+        Clear notice
+      </button>
+      <button
+        type="button"
+        onClick={() => updateUser({ username: 'admin.one', account_type: 'admin' })}
+      >
+        Refresh as administrator
       </button>
     </>
   );
@@ -115,6 +129,56 @@ test('profile updates without a session keep the current one', async () => {
 
   expect(await screen.findByText('Name: Renamed')).toBeInTheDocument();
   expect(screen.getByText('Device check: new_device')).toBeInTheDocument();
+});
+
+test('stopping View-as restores the administrator with a return notice', async () => {
+  api.ensureCsrf.mockResolvedValue();
+  api.me.mockResolvedValue({
+    authenticated: true,
+    user: {
+      username: 'driver.one',
+      account_type: 'driver',
+      impersonation: { active: true, admin: { username: 'admin.one' } },
+    },
+  });
+  api.stopAdminImpersonation.mockResolvedValue({
+    username: 'admin.one',
+    account_type: 'admin',
+  });
+  render(
+    <AuthProvider>
+      <SessionStatus />
+    </AuthProvider>,
+  );
+  expect(await screen.findByText('Name:')).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Stop viewing' }));
+
+  expect(await screen.findByText('Notice: view-as-returned')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Clear notice' }));
+  expect(screen.getByText('Notice: none')).toBeInTheDocument();
+});
+
+test('a refreshed identity reports when View-as ended outside the explicit return action', async () => {
+  api.ensureCsrf.mockResolvedValue();
+  api.me.mockResolvedValue({
+    authenticated: true,
+    user: {
+      username: 'driver.one',
+      account_type: 'driver',
+      impersonation: { active: true, admin: { username: 'admin.one' } },
+    },
+  });
+  render(
+    <AuthProvider>
+      <SessionStatus />
+    </AuthProvider>,
+  );
+  expect(await screen.findByText('Notice: none')).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Refresh as administrator' }));
+
+  expect(screen.getByText('Notice: view-as-ended')).toBeInTheDocument();
 });
 
 function NoticeStatus() {

@@ -19,8 +19,38 @@
 }
 
 .sponsor-detail-header-actions {
+  align-items: flex-start;
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
+  justify-content: flex-end;
+  max-width: 23rem;
+}
+
+.view-as-disabled-reason {
+  color: var(--ink-2);
+  flex: 1 1 100%;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  margin: 0;
+  max-width: 16rem;
+}
+
+.view-as-confirmation {
+  max-width: 30rem;
+}
+
+.view-as-confirmation .viewed-identity-summary {
+  margin-bottom: 1rem;
+}
+
+.view-as-confirmation-copy,
+.view-as-confirmation-audit {
+  color: var(--ink-2);
+}
+
+.view-as-confirmation-audit {
+  font-size: 0.8rem;
 }
 
 .sponsor-detail-card button,

@@ -3,7 +3,12 @@ import { useState } from 'react';
 import { linkDriver } from '../../../api';
 import Modal from '../../../components/feedback/Modal';
 
-export default function LinkDriverForm({ company, onLinked, triggerClassName = '' }) {
+export default function LinkDriverForm({
+  company,
+  onLinked,
+  triggerClassName = '',
+  primary = true,
+}) {
   const [open, setOpen] = useState(false);
   const [username, setUsername] = useState('');
   const [busy, setBusy] = useState(false);
@@ -41,7 +46,7 @@ export default function LinkDriverForm({ company, onLinked, triggerClassName = '
   return (
     <>
       <button
-        className={`button button-primary ${triggerClassName}`.trim()}
+        className={`button${primary ? ' button-primary' : ''} ${triggerClassName}`.trim()}
         type="button"
         onClick={() => setOpen(true)}
       >

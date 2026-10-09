@@ -20,24 +20,31 @@ export default function WelcomePage() {
   return (
     <div className="welcome-page">
       <PageHeader
-        title="Welcome"
-        subtitle="Good Driver Incentive Program — safe miles add up to real rewards"
+        title={signedIn ? 'Home' : 'Welcome'}
+        subtitle={
+          signedIn
+            ? {
+                driver: 'Your program standing at a glance',
+                sponsor: 'Your organization at a glance',
+                admin: 'Account oversight at a glance',
+              }[accountType]
+            : 'Good Driver Incentive Program — safe miles add up to real rewards'
+        }
       />
 
-      <main className="welcome-content">
-        <section className="welcome-hero" aria-labelledby="welcome-title">
-          {signedIn ? (
-            <h2 id="welcome-title">Welcome back, {user.name || user.username}</h2>
-          ) : (
+      {signedIn ? (
+        <main className="home-content">
+          <HomeDashboard accountType={accountType} user={user} />
+        </main>
+      ) : (
+        <main className="welcome-content">
+          <section className="welcome-hero" aria-labelledby="welcome-title">
             <h2 id="welcome-title">Safe miles add up to real rewards.</h2>
-          )}
-          <p>
-            Good Driver Incentive Program rewards truck drivers for driving well. Sponsors award
-            points for the behaviors they want to encourage, drivers track their balance, and points
-            are redeemed through each sponsor&apos;s reward catalog.
-          </p>
-
-          {!signedIn ? (
+            <p>
+              Good Driver Incentive Program rewards truck drivers for driving well. Sponsors award
+              points for the behaviors they want to encourage, drivers track their balance, and
+              points are redeemed through each sponsor&apos;s reward catalog.
+            </p>
             <div className="welcome-cta">
               <Link className="button button-large button-primary" to="/login">
                 Sign in
@@ -49,36 +56,11 @@ export default function WelcomePage() {
                 About this app
               </Link>
             </div>
-          ) : (
-            <div className="welcome-cta">
-              {accountType === 'driver' && (
-                <Link className="button button-large button-primary" to="/points">
-                  View my points
-                </Link>
-              )}
-              {accountType === 'sponsor' && (
-                <Link className="button button-large button-primary" to="/drivers">
-                  Go to drivers
-                </Link>
-              )}
-              {accountType === 'admin' && (
-                <Link className="button button-large button-primary" to="/users">
-                  Manage users
-                </Link>
-              )}
-              <Link className="button button-large" to="/account">
-                My account
-              </Link>
-            </div>
-          )}
-
-          <ProgramPerks />
-
-          <RoadTruck className="welcome-lane" />
-        </section>
-
-        {signedIn && <HomeDashboard accountType={accountType} />}
-      </main>
+            <ProgramPerks />
+            <RoadTruck className="welcome-lane" />
+          </section>
+        </main>
+      )}
     </div>
   );
 }
