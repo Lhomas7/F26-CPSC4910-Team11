@@ -256,6 +256,12 @@
   --asset-w: var(--wheel-size, 0.375em);
 }
 
+/* Silver hub, matching the semi truck's wheels it usually comes off. */
+.asset-art .asset-spare-wheel .asset-wheel,
+.asset-spare-wheel .asset-wheel {
+  background: radial-gradient(circle, #9aa29b 0 22%, #111 26%);
+}
+
 .asset-spare-wheel .asset-wheel::after {
   background: #8a8f8a;
   content: '';

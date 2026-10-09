@@ -1,19 +1,105 @@
+/* The overall box stays 2.875em x 1.125em; RoadTruck and its effects are laid
+   out against it. Only the exhaust stack rises slightly above the top edge.
+   Fine lines are kept at about 1px or more at scale 1 so they soften rather
+   than flicker at the smallest size, and the main silhouette (trailer, cab,
+   wheels) carries the drawing on its own. */
 .asset-semi-truck {
   --asset-h: 1.125em;
   --asset-w: 2.875em;
+  --semi-green: #3fae86;
+  --semi-green-dark: #2f8a6a;
+  --semi-chrome: #c9cec9;
+  --semi-steel: #4f5963;
 }
 
+/* ---------- Trailer ---------- */
+
+/* Panel seams every half em, plus a faint outline so the white trailer still
+   reads against light backgrounds (on the dark road it's simply invisible). */
 .asset-semi-trailer {
-  background: #e8ebe7;
+  background:
+    repeating-linear-gradient(to right, transparent 0 0.48em, rgb(0 0 0 / 7%) 0.48em 0.5em),
+    #e8ebe7;
   border-radius: 0.125em;
+  box-shadow: inset 0 0 0 0.04em rgb(0 0 0 / 12%);
   height: 0.875em;
   left: 0;
   top: 0;
   width: 2em;
 }
 
+/* Good Driver brand stripe along the trailer side. */
+.asset-semi-trailer-stripe {
+  background: var(--semi-green);
+  border-radius: 0.03em;
+  height: 0.08em;
+  left: 0.12em;
+  top: 0.56em;
+  width: 1.78em;
+}
+
+/* Seam of the rear swing doors. */
+.asset-semi-trailer-door {
+  background: rgb(0 0 0 / 14%);
+  height: 0.7em;
+  left: 0.14em;
+  top: 0.08em;
+  width: 0.04em;
+}
+
+.asset-semi-taillight {
+  background: #e5482f;
+  border-radius: 0.02em;
+  height: 0.14em;
+  left: 0;
+  top: 0.62em;
+  width: 0.06em;
+}
+
+/* Amber clearance light at the top front corner of the trailer. */
+.asset-semi-marker {
+  background: #ffb020;
+  border-radius: 50%;
+  height: 0.07em;
+  left: 1.88em;
+  top: 0.05em;
+  width: 0.07em;
+}
+
+/* Landing gear: the folded support leg just behind the tractor. */
+.asset-semi-landing-gear {
+  background: var(--semi-steel);
+  height: 0.16em;
+  left: 1.22em;
+  top: 0.875em;
+  width: 0.05em;
+}
+
+.asset-semi-landing-gear::after {
+  background: var(--semi-steel);
+  bottom: 0;
+  content: '';
+  height: 0.04em;
+  left: -0.03em;
+  position: absolute;
+  width: 0.11em;
+}
+
+/* ---------- Tractor ---------- */
+
+/* Roof fairing: slopes from the trailer's height down to the cab roof. */
+.asset-semi-fairing {
+  background: var(--semi-green-dark);
+  border-radius: 0.06em 0 0 0;
+  clip-path: polygon(0 0, 35% 0, 100% 100%, 0 100%);
+  height: 0.2em;
+  left: 2.0625em;
+  top: 0.02em;
+  width: 0.55em;
+}
+
 .asset-semi-cab {
-  background: #3fae86;
+  background: var(--semi-green);
   border-radius: 0.125em 0.25em 0.125em 0.125em;
   height: 0.6875em;
   left: 2.0625em;
@@ -21,14 +107,12 @@
   width: 0.8125em;
 }
 
-/* Exhaust stack poking up behind the cab. */
-.asset-semi-exhaust {
-  background: #9aa29b;
-  border-radius: 0.03em 0.03em 0 0;
+.asset-semi-cab-door {
+  background: rgb(0 0 0 / 16%);
   height: 0.42em;
-  left: 2em;
-  top: -0.06em;
-  width: 0.06em;
+  left: 2.38em;
+  top: 0.26em;
+  width: 0.04em;
 }
 
 .asset-semi-window {
@@ -39,39 +123,80 @@
   width: 0.32em;
 }
 
+/* Grille: a darker strip down the nose, above the bumper. */
+.asset-semi-grille {
+  background: repeating-linear-gradient(to bottom, var(--semi-green-dark) 0 0.04em, transparent 0.04em 0.07em);
+  height: 0.22em;
+  left: 2.81em;
+  top: 0.5em;
+  width: 0.06em;
+}
+
 .asset-semi-headlight {
   background: #ffe9a3;
   border-radius: 0.03em;
   height: 0.1em;
   left: 2.81em;
-  top: 0.6em;
+  top: 0.4em;
   width: 0.06em;
-}
-
-.asset-semi-taillight {
-  background: #e5482f;
-  border-radius: 0.02em;
-  height: 0.14em;
-  left: 0;
-  top: 0.56em;
-  width: 0.05em;
 }
 
 .asset-semi-bumper {
   background: #3a403c;
   border-radius: 0.02em 0.03em 0.03em 0.02em;
-  height: 0.07em;
-  left: 2.68em;
+  height: 0.08em;
+  left: 2.66em;
   top: 0.8em;
-  width: 0.2em;
+  width: 0.22em;
+}
+
+/* Exhaust stack: chrome pipe on the back of the cab, rising above the roof,
+   with a rain cap. (Previously it sat in the gap between trailer and cab.) */
+.asset-semi-exhaust {
+  background: linear-gradient(to right, var(--semi-chrome) 60%, #9aa29b 60%);
+  border-radius: 0.03em 0.03em 0 0;
+  height: 0.8em;
+  left: 2.1em;
+  top: -0.22em;
+  width: 0.07em;
+}
+
+.asset-semi-exhaust-cap {
+  background: #9aa29b;
+  border-radius: 0.03em;
+  height: 0.05em;
+  left: 2.08em;
+  top: -0.26em;
+  width: 0.12em;
+}
+
+.asset-semi-fuel-tank {
+  background: linear-gradient(var(--semi-chrome) 55%, #9aa29b 55%);
+  border-radius: 0.06em;
+  height: 0.14em;
+  left: 2.1em;
+  top: 0.68em;
+  width: 0.24em;
+}
+
+/* ---------- Wheels ---------- */
+
+/* Silver hub in the middle of each tyre. */
+.asset-art .asset-semi-wheel {
+  background: radial-gradient(circle, #9aa29b 0 22%, #111 26%);
 }
 
 .asset-semi-wheel-a {
   left: 0.1875em;
 }
 
+.asset-semi-wheel-a2 {
+  left: 0.6em;
+}
+
+/* Tractor drive axle, under the front of the trailer just behind the cab. */
 .asset-semi-wheel-b {
-  left: 1.25em;
+  left: 1.6em;
 }
 
 .asset-semi-wheel-c {
