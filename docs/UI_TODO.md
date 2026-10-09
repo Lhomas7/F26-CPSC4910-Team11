@@ -533,31 +533,147 @@ Existing areas to compare include About, Welcome/Home, and authentication, plus
 
 ### UI-009: Refine the Semi-Truck Asset
 
-- [ ] Increase the semi-truck's visual detail without making it illegible at its
+- [x] Increase the semi-truck's visual detail without making it illegible at its
       smallest supported size.
-- [ ] Fix the misaligned exhaust pipe.
-- [ ] Verify both facing directions, motion states, crash states, and rescue
+- [x] Fix the misaligned exhaust pipe.
+- [x] Verify both facing directions, motion states, crash states, and rescue
       animation placement after the drawing changes.
-- [ ] Check that detail does not disappear or become noisy in light and dark
+- [x] Check that detail does not disappear or become noisy in light and dark
       themes.
-- [ ] Update asset snapshots/component tests as appropriate.
+- [x] Update asset snapshots/component tests as appropriate.
 
 Primary area: `frontend/src/components/assets/vehicles/SemiTruck.jsx` and its
 colocated stylesheet.
 
+Verified in a production build at `1×` to `4×`, facing both directions, on
+light and dark backgrounds, and through the playground road-truck scene (drive,
+crash, wreck, fire spread, and fire-truck rescue from the far side) in both
+color schemes. The overall `2.875em × 1.125em` box is unchanged, so RoadTruck's
+lane, effect, and rescue geometry did not need adjusting.
+
 ### UI-010: Correct Bus Door Placement
 
-- [ ] Review School, City, and Double-Decker bus door placement at normal and
+- [x] Review School, City, and Double-Decker bus door placement at normal and
       enlarged playground scales.
-- [ ] Move doors to physically plausible positions without overlapping windows,
+- [x] Move doors to physically plausible positions without overlapping windows,
       wheels, trim, or destination signage.
-- [ ] Verify left- and right-facing rendering and all existing animation states.
-- [ ] Update asset tests if structure or class names change.
+- [x] Verify left- and right-facing rendering and all existing animation states.
+- [x] Update asset tests if structure or class names change.
 
 Primary area: `frontend/src/components/assets/vehicles/Buses.jsx` and its
 colocated stylesheet.
 
-### UI-011: Asset and Animation Placement Audit
+- School bus: the door stays just behind the front wheel and gains a frame; the
+  folded STOP-arm hinge moved forward so it no longer overlaps the door, and the
+  extended arm sits on the rub rails clear of the door.
+- City bus: the front door was already between the last window and the
+  windshield, ahead of the front wheel; it gains a frame.
+- Double-decker: the door ran down into the front wheel. The front axle moved
+  back and the door now sits between it and the driver's cab, as on modern
+  London buses.
+
+No class names or element structure changed, so the existing asset tests still
+apply. Open: the STOP arm is shown on the visible (curb) side for readability,
+although real arms are on the driver side; see Deferred Questions.
+
+NOTE: might come back to later for more tweaks
+
+### UI-011: Refine the Remaining Vehicle Assets
+
+Bring the other vehicles up to the semi truck's level of detail and fix
+inconsistencies, one vehicle per commit.
+
+- [ ] Give every vehicle the same wheel treatment (silver hub, spoke only while
+      moving) so the semi truck no longer differs from the rest.
+- [ ] Car, Taxi, and Police car: door seams, side mirror, bumper, wheel arches,
+      and a clearer roof sign (taxi) and light-bar mount (police).
+- [ ] Police car: decide whether to add `POLICE` lettering or a badge shape that
+      stays legible at `1×`; avoid text that becomes noise when small.
+- [ ] Ambulance: rear doors, side door, light-bar mount, and a reflective stripe
+      that stays visible on light backgrounds.
+- [ ] Fire truck: hose reel or compartment doors, rear step, and a pump panel;
+      confirm the water spray still lines up with the RoadTruck rescue.
+- [ ] Buses: wheel arches, mirrors, and rear details; decide whether the City
+      bus needs a rear exit door that interrupts the window row.
+- [ ] Check every vehicle at `1×`, `2×`, and `4×`, facing both directions, with
+      `moving`, `speeding`, lights on/off, and both `crash` poses.
+- [ ] Check light-colored bodies (police, ambulance, city bus, trailer) against
+      light backgrounds; add a faint outline where they disappear.
+- [ ] Keep each vehicle's overall box size unless every consumer (RoadTruck,
+      playground scenes) is re-verified.
+- [ ] Extend the asset tests to cover any new parts.
+
+Primary area: `frontend/src/components/assets/vehicles/`.
+
+### UI-012: Refine Scenery and Street Assets
+
+- [ ] Audit buildings, gas station, school, signs, street furniture, plants,
+      traffic light, road, and sky assets at `1×` through `4×`.
+- [ ] Sign lettering (`STOP`, `SPEED LIMIT`, `SCHOOL`) is only readable at about
+      `2×` and above; decide a minimum supported size or swap text for shapes
+      below it.
+- [ ] Align every asset to a common ground line so mixed street scenes do not
+      need per-asset offsets.
+- [ ] Give every lit-capable asset a consistent night treatment (`lit`) and
+      check it in dark theme.
+- [ ] Add missing detail where shapes read as placeholders (building trim,
+      doors, roof equipment, pump hoses, bench slats, hydrant caps).
+- [ ] Verify the school flag, cloud drift, sun rotation, and beacon blinking all
+      stop under `prefers-reduced-motion`.
+- [ ] Update the playground street and school-zone scenes after changes.
+
+Primary area: `frontend/src/components/assets/scenery/`.
+
+### UI-013: Refine People, Animal, and Effect Assets
+
+- [ ] Review Person proportions, arm and leg pivots, and walking cadence at
+      playground scales; fix any limbs that detach while walking.
+- [ ] Add a small set of variations (hair styles, a hat, a backpack for
+      children) without turning the component into a character builder.
+- [ ] Review the Dog at small sizes; consider one or two coat patterns.
+- [ ] Check skin-tone and clothing color defaults for contrast against light and
+      dark backgrounds.
+- [ ] Review Collision, Impact, Fire, Flame, and Smoke for consistent palette,
+      timing, and reduced-motion static states.
+- [ ] Confirm every effect stays decorative (`aria-hidden`) and never carries
+      information that is not also shown in text.
+
+Primary area: `frontend/src/components/assets/people/` and
+`frontend/src/components/assets/effects/`.
+
+### UI-014: Commerce and Shopping Assets
+
+New decorative assets for the upcoming Catalog, Cart, and Orders pages (see the
+Sprint 5 Catalog items above). Build them in the playground first; place them
+on pages only through the asset placement audit (UI-015).
+
+- [ ] Store fronts as `Building`-style variants or a `Store` asset with
+      variants: grocery, electronics, sporting/outdoor goods, gift or
+      department store, coffee/restaurant, and a truck stop/travel center that
+      fits the trucking theme.
+- [ ] Shopping cart: empty, partly full, and full states; a rolling animation
+      with spinning wheels; reduced-motion static state.
+- [ ] Shopping basket and shopping bags for small-order and checkout states.
+- [ ] Product packaging: a generic boxed product, a gift box, a gift card, and a
+      price tag that can show a point cost.
+- [ ] Order-status illustrations: packed box, box on a delivery truck, box at a
+      door (delivered), and a cancelled/returned treatment.
+- [ ] A delivery van or box truck that matches the existing vehicle family and
+      supports `moving`, `facing`, and `crash`.
+- [ ] A points token/coin that pairs with the existing point formatting, for
+      empty states and success moments.
+- [ ] Matching navigation icons for Catalog, Cart, and Orders in
+      `components/primitives/Icons.jsx`, consistent with the existing icon set.
+- [ ] Empty-cart, empty-catalog, order-placed, and no-orders playground
+      examples, so placements can be reviewed before page work starts.
+- [ ] Keep every commerce asset decorative: never imply a Buy, Redeem, or
+      checkout action that the page does not actually support.
+- [ ] Add asset tests and playground cards for every new asset.
+
+Primary area: new files under `frontend/src/components/assets/` (for example
+a `commerce/` folder) plus `features/playground/`.
+
+### UI-015: Asset and Animation Placement Audit
 
 - [ ] Inventory existing vehicles, scenery, weather, effects, and icons before
       designing anything new.
@@ -765,7 +881,7 @@ in `PROJECT_TODO.md`, not create a second competing fixture system.
 
 ## Offline and Administrative UI Follow-ups
 
-### UI-012: Unified Backend-Unavailable Experience
+### UI-016: Unified Backend-Unavailable Experience
 
 - [ ] Detect loss of API connectivity separately from an authenticated request
       returning a normal validation, permission, or not-found response.
@@ -788,7 +904,7 @@ in `PROJECT_TODO.md`, not create a second competing fixture system.
 This is an error-state improvement, not permission to ship a fake production
 backend or silently fall back from RDS to browser data.
 
-### UI-013: Sponsor Organization Administration
+### UI-017: Sponsor Organization Administration
 
 - [ ] Add the already-planned Administrator Sponsor Organization directory so
       local and shared setup no longer requires a Django shell command.
@@ -808,7 +924,7 @@ backend or silently fall back from RDS to browser data.
 - [ ] Back the UI with audited, role-protected APIs; do not expose direct model
       mutation merely for demo convenience.
 
-### UI-014: Demo-State and Role Smoke-Test Matrix
+### UI-018: Demo-State and Role Smoke-Test Matrix
 
 - [ ] Maintain a compact matrix of the data and UI states required for each
       role before a sprint demonstration.
@@ -828,7 +944,7 @@ backend or silently fall back from RDS to browser data.
 
 ## Frontend Architecture and Quality
 
-### UI-015: Not-Found, Error-Boundary, and Route-State Design
+### UI-019: Not-Found, Error-Boundary, and Route-State Design
 
 - [ ] Add an explicit catch-all route; unknown client-side URLs currently have
       no dedicated application 404 experience.
@@ -845,7 +961,7 @@ backend or silently fall back from RDS to browser data.
 - [ ] Mock the full feedback-state family before implementing page-specific
       one-offs.
 
-### UI-016: Decompose Oversized Pages and Feature Styles
+### UI-020: Decompose Oversized Pages and Feature Styles
 
 - [ ] Split `LoginPage.jsx` by authentication stage: sign-in, MFA method/code,
       registration role/details, and email verification.
@@ -869,7 +985,7 @@ Current size signals include `LoginPage.jsx`, `MfaPanel.jsx`, `AccountPage.jsx`,
 `AddUserPage.jsx`, `PointsPage.jsx`, and `Drivers.css`. Size alone is not a bug;
 split where responsibilities and tests have become difficult to reason about.
 
-### UI-017: Shared Design-System Contract
+### UI-021: Shared Design-System Contract
 
 - [ ] Inventory buttons, icon buttons, links, badges, cards, inputs, selects,
       menus, dialogs, page headers, stat tiles, skeletons, and state panels.
@@ -888,7 +1004,7 @@ split where responsibilities and tests have become difficult to reason about.
 - [ ] Consider Storybook only if the team will maintain it; the existing
       playground is sufficient if it becomes a deliberate component catalog.
 
-### UI-018: Accessibility Audit and Automated Baseline
+### UI-022: Accessibility Audit and Automated Baseline
 
 - [ ] Run keyboard-only journeys for authentication, Account, Users, Drivers,
       Driver Detail, Points, Home, About, and every dialog/menu.
@@ -907,7 +1023,7 @@ split where responsibilities and tests have become difficult to reason about.
       CI when the workflow is stable.
 - [ ] Document known exceptions with owners and target sprints.
 
-### UI-019: Date, Time, Number, and Copy Formatting
+### UI-023: Date, Time, Number, and Copy Formatting
 
 - [ ] Centralize ISO timestamp parsing and local display rather than repeating
       `toLocaleString` options in page components.
@@ -923,7 +1039,7 @@ split where responsibilities and tests have become difficult to reason about.
 - [ ] Add deterministic tests that do not depend on a developer machine's locale
       or time zone.
 
-### UI-020: Frontend Performance and Asset Budget
+### UI-024: Frontend Performance and Asset Budget
 
 - [ ] Measure the current production bundle before choosing optimizations.
 - [ ] Evaluate route-level lazy loading for Administrator, playground, legal,
@@ -1099,11 +1215,18 @@ runtime dependency. For now, `backend/requirements.txt` and
 
 - UI-009 semi-truck refinement
 - UI-010 bus door corrections
+- UI-011 remaining vehicle refinements, one vehicle per commit
 - Playground and asset-test updates
+
+### Group G2: Scenery, People, and Effect Refinement
+
+- UI-012 scenery and street assets
+- UI-013 people, animal, and effect assets
+- Playground scene updates after each refinement
 
 ### Group H: Asset Placement
 
-- UI-011 audit and approved placements, split by feature when practical
+- UI-015 audit and approved placements, split by feature when practical
 
 ### Group I: Migration Hygiene
 
@@ -1135,27 +1258,27 @@ runtime dependency. For now, `backend/requirements.txt` and
 
 ### Group N: Offline and Organization UX
 
-- UI-012 unified backend-unavailable experience
-- UI-013 Sponsor Organization administration, preferably split into API and UI
+- UI-016 unified backend-unavailable experience
+- UI-017 Sponsor Organization administration, preferably split into API and UI
   commits
-- UI-014 role/state smoke-test matrix and matching automated coverage
+- UI-018 role/state smoke-test matrix and matching automated coverage
 
 ### Group O: Feedback and Accessibility Foundation
 
-- UI-015 route-state and error-boundary family
-- UI-018 accessibility audit and initial automated assertions
+- UI-019 route-state and error-boundary family
+- UI-022 accessibility audit and initial automated assertions
 - Mockups for 403, 404, maintenance, outage, and unexpected-error states
 
 ### Group P: Frontend Decomposition
 
-- UI-016 split one high-value page/workflow at a time
-- UI-017 adopt shared design-system variants as extractions require them
+- UI-020 split one high-value page/workflow at a time
+- UI-021 adopt shared design-system variants as extractions require them
 - Preserve behavior with characterization tests before structural changes
 
 ### Group Q: Formatting and Performance Utilities
 
-- UI-019 shared date/time/number formatters and deterministic tests
-- UI-020 measured asset/bundle improvements in separate commits
+- UI-023 shared date/time/number formatters and deterministic tests
+- UI-024 measured asset/bundle improvements in separate commits
 
 ### Group R: Dependency and Project Metadata Decision
 
@@ -1181,6 +1304,12 @@ runtime dependency. For now, `backend/requirements.txt` and
 - S5-UI-003 shared Catalog card/playground contract
 - Store approved responsive references before implementation
 
+### Group U2: Sprint 5 Commerce Assets
+
+- UI-014 store, cart, packaging, order-status, delivery, and points-token assets
+- Catalog, Cart, and Orders navigation icons
+- Playground examples before any page placement (UI-015)
+
 ### Group V: Sprint 5 Account and Security Mockups
 
 - S5-UI-004 Driver Notification Preferences and point-change alerts
@@ -1203,6 +1332,13 @@ runtime dependency. For now, `backend/requirements.txt` and
       variants?
 - [ ] Which existing assets belong in functional states, and which should remain
       playground-only decoration?
+- [ ] Should the school bus STOP arm stay on the visible (curb) side for
+      readability, or move to the driver side and only appear when facing the
+      other way?
+- [ ] Which store types match the products sponsors will actually list, and
+      should the truck-stop store be the default Catalog illustration?
+- [ ] Should cart and order illustrations animate on state changes (item added,
+      order placed), or stay static to keep checkout calm?
 - [ ] Should the universal startup command manage both Django and React, or keep
       their long-running processes separate?
 - [ ] Which task runner or Python entry-point approach should own the
