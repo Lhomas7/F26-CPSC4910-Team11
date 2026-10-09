@@ -182,3 +182,25 @@ export function SignInIcon(props) {
     </SvgIcon>
   );
 }
+
+export function ViewingAsIcon(props) {
+  return (
+    <SvgIcon {...props}>
+      <circle cx="8" cy="7" r="2.5" stroke="currentColor" strokeWidth="1.8" />
+      <path
+        d="M3.5 14c.5-2.2 2-3.4 4.5-3.4 1.2 0 2.2.3 3 .8"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="1.8"
+      />
+      <circle cx="17" cy="16.5" r="2.5" stroke="currentColor" strokeWidth="1.8" />
+      <path
+        d="M12.5 23c.5-2.2 2-3.4 4.5-3.4s4 1.2 4.5 3.4M14 5h6m0 0-2-2m2 2-2 2M10 19H4m0 0 2 2m-2-2 2-2"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+    </SvgIcon>
+  );
+}

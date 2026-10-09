@@ -15,10 +15,14 @@ export default function ViewedIdentitySummary({
   organization,
   avatarSrc,
   status,
+  showAvatar = true,
+  className = '',
 }) {
   return (
-    <div className="viewed-identity-summary">
-      <Avatar className="viewed-identity-avatar" name={name || username} src={avatarSrc} />
+    <div className={`viewed-identity-summary ${className}`.trim()}>
+      {showAvatar && (
+        <Avatar className="viewed-identity-avatar" name={name || username} src={avatarSrc} />
+      )}
       <div className="viewed-identity-details">
         <div className="viewed-identity-heading">
           <strong>{name || username}</strong>

@@ -34,7 +34,7 @@ test('shows an impersonation warning and returns to the administrator account', 
     username: 'driver.target',
     name: 'Drew Driver',
     account_type: 'driver',
-    company: null,
+    company: 'Palmetto Freight',
     mfa: { required: false, enrolled: true, methods: [] },
     impersonation: {
       active: true,
@@ -63,12 +63,29 @@ test('shows an impersonation warning and returns to the administrator account', 
   });
   render(<App />);
 
-  expect(await screen.findByText(/Viewing as Drew Driver/)).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: 'Return to admin account' }));
+  const indicator = await screen.findByRole('region', { name: 'Viewing as another user' });
+  expect(indicator).toHaveTextContent('Viewing as');
+  expect(indicator).toHaveTextContent('Drew Driver');
+  expect(indicator).toHaveTextContent('@driver.target');
+  expect(indicator).toHaveTextContent('Driver');
+  expect(indicator).toHaveTextContent('Palmetto Freight');
+  expect(indicator).toHaveTextContent('Signed in as Avery Admin');
 
-  await waitFor(() => expect(screen.queryByText(/Viewing as Drew Driver/)).not.toBeInTheDocument());
+  fireEvent.click(screen.getByRole('button', { name: 'Profile menu for Drew Driver' }));
+  let profileMenu = screen.getByRole('menu');
+  expect(within(profileMenu).getByText('Viewing as')).toBeInTheDocument();
+  expect(within(profileMenu).getByText('Signed in as')).toBeInTheDocument();
+  expect(within(profileMenu).getByText('@admin.viewer')).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Return to administrator account' }));
+
+  await waitFor(() =>
+    expect(
+      screen.queryByRole('region', { name: 'Viewing as another user' }),
+    ).not.toBeInTheDocument(),
+  );
   fireEvent.click(screen.getByRole('button', { name: 'Profile menu for Avery Admin' }));
-  const profileMenu = screen.getByRole('menu');
+  profileMenu = screen.getByRole('menu');
   expect(within(profileMenu).getByText('Avery Admin')).toBeInTheDocument();
   expect(within(profileMenu).getByText('@admin.viewer')).toBeInTheDocument();
   expect(screen.getByRole('menuitem', { name: 'Account' })).toHaveAttribute('href', '/account');

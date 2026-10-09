@@ -15,10 +15,12 @@ import {
   SignOutIcon,
   UserIcon,
   UsersIcon,
+  ViewingAsIcon,
 } from '../components/primitives/Icons';
 import { MfaSetupWall } from '../features/accounts';
 import { DeviceCheckDialog } from '../features/authentication';
 import './AppLayout.css';
+import ActiveViewAsIndicator from './ActiveViewAsIndicator';
 import { navItemsFor } from './navigation';
 import { PageHeaderTargetProvider } from './PageHeader';
 
@@ -87,6 +89,11 @@ function AccountMenu({ user, onSignOut }) {
     };
   }, [open]);
 
+  useEffect(() => {
+    setOpen(false);
+    setConfirming(false);
+  }, [user?.username, user?.impersonation?.active]);
+
   const confirmSignOut = async () => {
     setSigningOut(true);
     try {
@@ -119,7 +126,26 @@ function AccountMenu({ user, onSignOut }) {
         </button>
         {open && (
           <div className="profile-menu" role="menu">
+            {user.impersonation?.active && (
+              <>
+                <div className="profile-menu-view-as">
+                  <ViewingAsIcon size={18} />
+                  <div>
+                    <span>Viewing as</span>
+                    <strong>{displayName}</strong>
+                    <span>@{user.username}</span>
+                  </div>
+                </div>
+                <div className="profile-menu-signed-in">
+                  <span>Signed in as</span>
+                  <strong>{user.impersonation.admin.name}</strong>
+                  <span>@{user.impersonation.admin.username}</span>
+                </div>
+                <div className="profile-menu-divider" />
+              </>
+            )}
             <div className="profile-menu-identity">
+              {user.impersonation?.active && <span>Current account</span>}
               <strong>{displayName}</strong>
               <span>@{user.username}</span>
             </div>
@@ -213,16 +239,12 @@ export function AppLayout() {
       </aside>
       <div className="app-main">
         {user?.impersonation?.active && (
-          <div className="impersonation-banner" role="status">
-            <span>
-              <strong>Viewing as {user.name || user.username}</strong> ({user.account_type}). You
-              are still signed in as {user.impersonation.admin.name}.
-            </span>
-            {viewAsError && <span className="impersonation-error">{viewAsError}</span>}
-            <button type="button" onClick={stopViewingAs} disabled={endingViewAs}>
-              {endingViewAs ? 'Returning…' : 'Return to admin account'}
-            </button>
-          </div>
+          <ActiveViewAsIndicator
+            user={user}
+            busy={endingViewAs}
+            error={viewAsError}
+            onReturn={stopViewingAs}
+          />
         )}
         {user?.session?.device_check && (
           <DeviceCheckDialog onAnswer={answerDeviceCheck} onSignOut={signOut} />

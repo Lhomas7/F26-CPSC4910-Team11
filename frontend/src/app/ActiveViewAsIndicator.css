@@ -1,0 +1,138 @@
+.view-as-indicator {
+  align-items: center;
+  background: var(--warning-soft);
+  border-bottom: 1px solid var(--warning-line);
+  color: var(--warning-ink);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 0.85rem;
+  padding: 0.65rem 1.5rem 0.65rem 1.75rem;
+  position: relative;
+}
+
+.view-as-indicator::before {
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--stripe) 0 0.55rem,
+    transparent 0.55rem 1rem
+  );
+  bottom: 0;
+  content: '';
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 4px;
+}
+
+.view-as-indicator-icon {
+  flex: 0 0 auto;
+}
+
+.view-as-indicator-copy {
+  align-items: baseline;
+  display: flex;
+  flex: 1 1 26rem;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.55rem;
+  min-width: 0;
+}
+
+.view-as-indicator-prefix {
+  font-size: 0.78rem;
+}
+
+.view-as-indicator-identity.viewed-identity-summary {
+  align-items: baseline;
+  background: transparent;
+  border: 0;
+  display: contents;
+  padding: 0;
+}
+
+.view-as-indicator-identity .viewed-identity-details {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.55rem;
+}
+
+.view-as-indicator-identity .viewed-identity-heading {
+  display: contents;
+}
+
+.view-as-indicator-identity .viewed-identity-heading strong,
+.view-as-indicator-identity .viewed-identity-username,
+.view-as-indicator-identity .viewed-identity-organization {
+  color: var(--warning-ink);
+}
+
+.view-as-indicator-identity .badge {
+  background: var(--surface);
+  border-color: var(--warning-line);
+  color: var(--warning-ink);
+}
+
+.view-as-indicator-copy p {
+  flex: 1 1 100%;
+  font-size: 0.72rem;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.view-as-return {
+  background: var(--warning-ink);
+  border-color: var(--warning-ink);
+  color: var(--warning-soft);
+  flex: 0 0 auto;
+}
+
+.view-as-return:hover:not(:disabled) {
+  background: var(--warning-ink);
+  border-color: var(--warning-ink);
+  filter: brightness(1.15);
+}
+
+.view-as-exit-error {
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-line);
+  border-radius: 0.45rem;
+  color: var(--danger-ink);
+  display: grid;
+  flex: 1 1 100%;
+  font-size: 0.78rem;
+  gap: 0.15rem;
+  line-height: 1.4;
+  padding: 0.55rem 0.7rem;
+}
+
+@media (max-width: 53.75rem) {
+  .view-as-indicator {
+    align-items: flex-start;
+    padding-left: 1.25rem;
+    padding-right: 1rem;
+  }
+
+  .view-as-return {
+    margin-left: 1.75rem;
+  }
+}
+
+@media (max-width: 42rem) {
+  .view-as-indicator {
+    gap: 0.55rem;
+    padding: 0.75rem 1rem 0.75rem 1.25rem;
+  }
+
+  .view-as-indicator-copy {
+    flex-basis: calc(100% - 2rem);
+  }
+
+  .view-as-indicator-identity .viewed-identity-details {
+    gap: 0.2rem 0.45rem;
+  }
+
+  .view-as-return {
+    margin-left: 0;
+    width: 100%;
+  }
+}

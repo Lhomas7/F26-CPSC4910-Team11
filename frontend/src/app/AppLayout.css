@@ -26,6 +26,7 @@
   display: flex;
   flex: 0 0 13.125rem;
   flex-direction: column;
+  min-width: 0;
 }
 
 .brand {
@@ -170,12 +171,15 @@
 }
 
 .profile-menu-shell {
+  min-width: 0;
   position: relative;
+  width: 100%;
 }
 
 .sidebar-account {
   border-top: 1px solid var(--line);
   margin-top: 0;
+  min-width: 0;
   padding: 0.85rem 1rem;
 }
 
@@ -267,6 +271,51 @@
   color: var(--ink-2);
   font-size: 0.75rem;
   margin-top: 0.12rem;
+}
+
+.profile-menu-view-as {
+  align-items: flex-start;
+  background: var(--warning-soft);
+  border: 1px solid var(--warning-line);
+  border-radius: 0.45rem;
+  color: var(--warning-ink);
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+  padding: 0.5rem 0.55rem;
+}
+
+.profile-menu-view-as > div,
+.profile-menu-signed-in {
+  display: grid;
+  min-width: 0;
+}
+
+.profile-menu-view-as strong,
+.profile-menu-view-as span,
+.profile-menu-signed-in strong,
+.profile-menu-signed-in span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-menu-view-as strong,
+.profile-menu-signed-in strong {
+  font-size: 0.8rem;
+}
+
+.profile-menu-view-as span,
+.profile-menu-signed-in span {
+  font-size: 0.7rem;
+}
+
+.profile-menu-signed-in {
+  padding: 0.35rem 0.65rem 0.45rem;
+}
+
+.profile-menu-signed-in span {
+  color: var(--ink-2);
 }
 
 .profile-menu-divider {
@@ -424,40 +473,6 @@
     min-width: 12.5rem;
   }
 }
-/* A view-as session must remain unmistakable and easy to exit on every page. */
-.impersonation-banner {
-  align-items: center;
-  background: #fff3cd;
-  border-bottom: 1px solid #d4a72c;
-  color: #4f3b00;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  justify-content: space-between;
-  padding: 0.7rem 1rem;
-}
-
-.impersonation-banner button {
-  background: #4f3b00;
-  border: 0;
-  border-radius: 0.4rem;
-  color: white;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 700;
-  padding: 0.45rem 0.75rem;
-}
-
-.impersonation-banner button:disabled {
-  cursor: wait;
-  opacity: 0.65;
-}
-
-.impersonation-error {
-  color: var(--danger-ink);
-  font-weight: 700;
-}
-
 /* Shown by RequireAuth when a signed-in user opens a page their role can't use. */
 .forbidden-page {
   max-width: 40rem;
