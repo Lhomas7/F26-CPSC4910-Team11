@@ -8,6 +8,14 @@
   max-width: 56rem;
   padding: 1.5rem 1.75rem 2.5rem;
 }
+
+.account-view-as-notice {
+  margin: 0;
+}
+
+.account-view-as-notice strong {
+  display: inline;
+}
 .account-card {
   overflow: hidden;
 }

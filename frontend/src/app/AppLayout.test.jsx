@@ -42,6 +42,24 @@ test('Sign out asks for confirmation before signing out', () => {
   expect(auth.signOut).not.toHaveBeenCalled();
 });
 
+test('Sign out explains that it also ends an active View-as session', () => {
+  renderLayout({
+    user: {
+      ...USER,
+      impersonation: {
+        active: true,
+        admin: { name: 'Kylie Gilbert', username: 'kylie.admin' },
+      },
+    },
+  });
+
+  userEvent.click(getSignOutButton());
+
+  expect(screen.getByRole('dialog', { name: 'Sign out?' })).toHaveTextContent(
+    'This will end your View-as session and sign you out completely.',
+  );
+});
+
 test('Cancel keeps the user signed in and dismisses the confirmation', () => {
   const { auth } = renderLayout();
   const signOutButton = getSignOutButton();

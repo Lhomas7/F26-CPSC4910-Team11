@@ -163,7 +163,11 @@ function AccountMenu({ user, onSignOut }) {
         {confirming && (
           <ConfirmDialog
             title="Sign out?"
-            message="Are you sure you want to sign out? You'll need to sign in again to keep using your account."
+            message={
+              user.impersonation?.active
+                ? "This will end your View-as session and sign you out completely. You'll need to sign in again to keep using your account."
+                : "Are you sure you want to sign out? You'll need to sign in again to keep using your account."
+            }
             confirmLabel={signingOut ? 'Signing out…' : 'Sign out'}
             busy={signingOut}
             onConfirm={confirmSignOut}

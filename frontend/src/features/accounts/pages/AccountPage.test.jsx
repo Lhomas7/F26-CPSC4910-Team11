@@ -274,3 +274,39 @@ test('does not show sign-in activity to drivers', async () => {
   ).not.toBeInTheDocument();
   expect(api.getLoginAttempts).not.toHaveBeenCalled();
 });
+
+test('shows a read-only account and hides security controls during View-as', async () => {
+  const sponsorProfile = {
+    ...profile,
+    account_type: 'sponsor',
+    mfa: { required: false, enrolled: true, methods: ['totp'] },
+  };
+  api.getProfile.mockResolvedValue(sponsorProfile);
+  useAuth.mockReturnValue({
+    user: {
+      ...sponsorProfile,
+      impersonation: {
+        active: true,
+        admin: { name: 'Kylie Gilbert', username: 'kylie.admin' },
+      },
+    },
+    updateUser: jest.fn(),
+  });
+
+  render(<AccountPage />);
+
+  expect(await screen.findByRole('heading', { name: 'Account' })).toBeInTheDocument();
+  await screen.findByText('@driver.one');
+  expect(screen.getByRole('main')).toHaveTextContent(
+    'Account changes are unavailable while viewing as another user.',
+  );
+  expect(screen.getByText('Read-only account information during View-as.')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Edit profile' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: /password/i })).not.toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: /two-factor/i })).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole('heading', { name: 'Recent sign-in activity' }),
+  ).not.toBeInTheDocument();
+  expect(api.getLoginAttempts).not.toHaveBeenCalled();
+  expect(api.updateProfile).not.toHaveBeenCalled();
+});

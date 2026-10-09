@@ -39,7 +39,8 @@ function ProfileSkeleton() {
 }
 
 export default function AccountPage() {
-  const { updateUser } = useAuth();
+  const { user, updateUser } = useAuth();
+  const viewingAs = Boolean(user?.impersonation?.active);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ name: '', username: '', email: '', phone_number: '' });
@@ -103,6 +104,7 @@ export default function AccountPage() {
   }, [pendingPicture]);
 
   const beginEditing = () => {
+    if (viewingAs) return;
     setForm({
       name: profile.name,
       username: profile.username,
@@ -220,7 +222,10 @@ export default function AccountPage() {
 
   return (
     <div className="account-page">
-      <PageHeader title="My account" subtitle="Your profile and sign-in details" />
+      <PageHeader
+        title={viewingAs ? 'Account' : 'My account'}
+        subtitle="Your profile and sign-in details"
+      />
       <main className="account-content" aria-busy={status === 'loading' || status === 'saving'}>
         <p className="sr-only" role="status" aria-live="polite">
           {status === 'loading' ? 'Loading your profile' : ''}
@@ -243,17 +248,26 @@ export default function AccountPage() {
         )}
         {profile && status !== 'loading' && status !== 'error' && (
           <>
+            {viewingAs && (
+              <p className="banner banner-warning account-view-as-notice">
+                <strong>Account changes are unavailable while viewing as another user.</strong>{' '}
+                Return to your administrator account to change anything here. Password, two-factor
+                authentication, and sign-in activity are hidden for the same reason.
+              </p>
+            )}
             <section className="card account-card" aria-labelledby="profile-heading">
               <div className="account-card-header">
                 <div>
                   <h2 id="profile-heading">Profile</h2>
                   <p>
-                    {editing
-                      ? 'Editing. Changes are not saved until you select Save changes.'
-                      : 'Your account information'}
+                    {viewingAs
+                      ? 'Read-only account information during View-as.'
+                      : editing
+                        ? 'Editing. Changes are not saved until you select Save changes.'
+                        : 'Your account information'}
                   </p>
                 </div>
-                {!editing && (
+                {!editing && !viewingAs && (
                   <button className="button" type="button" onClick={beginEditing}>
                     Edit profile
                   </button>
@@ -473,12 +487,16 @@ export default function AccountPage() {
                 </form>
               )}
             </section>
-            <PasswordPanel />
-            <MfaPanel
-              mfa={profile.mfa || { required: false, enrolled: false, methods: [] }}
-              onRefreshed={refreshMfa}
-            />
-            {LOGIN_ACTIVITY_ROLES.includes(profile.account_type) && <LoginActivityPanel />}
+            {!viewingAs && (
+              <>
+                <PasswordPanel />
+                <MfaPanel
+                  mfa={profile.mfa || { required: false, enrolled: false, methods: [] }}
+                  onRefreshed={refreshMfa}
+                />
+                {LOGIN_ACTIVITY_ROLES.includes(profile.account_type) && <LoginActivityPanel />}
+              </>
+            )}
           </>
         )}
       </main>
