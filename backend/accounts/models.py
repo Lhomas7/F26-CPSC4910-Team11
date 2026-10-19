@@ -1,5 +1,34 @@
+from pathlib import Path
+from uuid import uuid4
+
 from django.conf import settings
+from django.core.validators import FileExtensionValidator
 from django.db import models
+
+
+def account_profile_picture_upload_to(instance, filename):
+    """Store non-driver avatars without exposing user-provided filenames."""
+    extension = Path(filename).suffix.lower()
+    return f'account_profiles/{instance.user_id}/{uuid4().hex}{extension}'
+
+
+class AccountProfile(models.Model):
+    """Profile data shared by application users without a Driver record."""
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='account_profile',
+    )
+    profile_picture = models.ImageField(
+        upload_to=account_profile_picture_upload_to,
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(['jpg', 'jpeg', 'png', 'webp'])],
+    )
+
+    def __str__(self):
+        return self.user.get_username()
 
 
 class SponsorCompany(models.Model):
@@ -9,6 +38,7 @@ class SponsorCompany(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class LoginAttempt(models.Model):
     # Linked by FK (not just username) so history follows the account through
@@ -31,6 +61,7 @@ class LoginAttempt(models.Model):
     def __str__(self):
         result = 'Success' if self.successful else 'Failure'
         return f'{self.username} - {result} - {self.timestamp}'
+
 
 class SponsorAccount(models.Model):
     user = models.OneToOneField(
@@ -74,7 +105,9 @@ class MFASettings(models.Model):
 class MFACode(models.Model):
     PURPOSE_CHOICES = [('enroll', 'Enroll'), ('login', 'Login'), ('reset', 'Reset')]
     METHOD_CHOICES = [('email', 'Email'), ('sms', 'SMS')]
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='mfa_codes')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='mfa_codes'
+    )
     purpose = models.CharField(max_length=10, choices=PURPOSE_CHOICES)
     method = models.CharField(max_length=10, choices=METHOD_CHOICES)
     code_hash = models.CharField(max_length=128)
@@ -140,7 +173,9 @@ class RegistrationEmailCode(models.Model):
 
 
 class DriverNotification(models.Model):
-    driver = models.ForeignKey('drivers.Driver', on_delete=models.CASCADE, related_name='notifications')
+    driver = models.ForeignKey(
+        'drivers.Driver', on_delete=models.CASCADE, related_name='notifications'
+    )
     message = models.CharField(max_length=500)
     read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

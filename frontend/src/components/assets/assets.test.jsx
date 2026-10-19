@@ -14,6 +14,7 @@ import {
   Collision,
   Dog,
   DoubleDeckerBus,
+  Fire,
   FireHydrant,
   FireTruck,
   Flame,
@@ -89,14 +90,26 @@ test('vehicles mirror, drive, speed and switch lights off', () => {
   const { container } = render(<PoliceCar facing="left" speeding lights={false} />);
   const car = container.querySelector('.asset-police-car');
 
-  expect(car).toHaveClass('asset-facing-left', 'asset-moving', 'asset-speeding', 'asset-lights-off');
+  expect(car).toHaveClass(
+    'asset-facing-left',
+    'asset-moving',
+    'asset-speeding',
+    'asset-lights-off',
+  );
   expect(car.querySelector('.asset-speed-lines')).toBeInTheDocument();
 });
 
 test('Car takes a colour and FireTruck can spray', () => {
-  const { container } = render(<><Car color="#ff0000" /><FireTruck spraying /></>);
+  const { container } = render(
+    <>
+      <Car color="#ff0000" />
+      <FireTruck spraying />
+    </>,
+  );
 
-  expect(container.querySelector('.asset-sedan').style.getPropertyValue('--car-color')).toBe('#ff0000');
+  expect(container.querySelector('.asset-sedan').style.getPropertyValue('--car-color')).toBe(
+    '#ff0000',
+  );
   expect(container.querySelector('.asset-fire-spray')).toBeInTheDocument();
 });
 
@@ -110,10 +123,18 @@ test('Building variants, traffic light states and collision delay set their clas
     </>,
   );
 
-  expect(container.querySelector('.asset-building')).toHaveClass('asset-building-warehouse', 'asset-building-lit');
+  expect(container.querySelector('.asset-building')).toHaveClass(
+    'asset-building-warehouse',
+    'asset-building-lit',
+  );
   expect(container.querySelector('.asset-traffic-light')).toHaveClass('asset-signal-state-red');
-  expect(container.querySelector('.asset-collision').style.getPropertyValue('--collision-delay')).toBe('1.5s');
-  expect(container.querySelector('.asset-road')).not.toHaveClass('asset-road-dashed', 'asset-road-shoulders');
+  expect(
+    container.querySelector('.asset-collision').style.getPropertyValue('--collision-delay'),
+  ).toBe('1.5s');
+  expect(container.querySelector('.asset-road')).not.toHaveClass(
+    'asset-road-dashed',
+    'asset-road-shoulders',
+  );
 });
 
 test('new asset options set their classes and content', () => {
@@ -139,4 +160,59 @@ test('new asset options set their classes and content', () => {
   expect(container.querySelector('.asset-school-zone-sign')).toHaveClass('asset-zone-active');
   expect(container.querySelector('.asset-street-lamp')).toHaveClass('asset-lamp-lit');
   expect(container.querySelector('.asset-smoke')).toHaveClass('asset-smoke-loop');
+});
+
+test('vehicles take crash poses, wheels roll away, and fire takes its timing', () => {
+  const { container } = render(
+    <>
+      <Car crash="tip" moving />
+      <SchoolBus crash="flip" facing="left" />
+      <Wheel rolling="left" />
+      <Fire delay={1} spread={10} dousedAt={15} />
+    </>,
+  );
+
+  const car = container.querySelector('.asset-sedan');
+  expect(car).toHaveClass('asset-crash-tip');
+  expect(car).not.toHaveClass('asset-moving');
+  expect(container.querySelector('.asset-school-bus')).toHaveClass(
+    'asset-crash-flip',
+    'asset-facing-left',
+  );
+
+  const wheel = container.querySelector('.asset-spare-wheel');
+  expect(wheel).toHaveClass('asset-rolling');
+  expect(wheel.style.getPropertyValue('--roll')).toBe('-1');
+
+  const fire = container.querySelector('.asset-fire');
+  expect(fire.style.getPropertyValue('--fire-delay')).toBe('1s');
+  expect(fire.style.getPropertyValue('--fire-spread')).toBe('10s');
+  expect(fire.style.getPropertyValue('--fire-doused-at')).toBe('15s');
+  expect(fire.querySelectorAll('.asset-flame')).toHaveLength(4);
+});
+
+test('the semi truck has its detail parts and keeps its exhaust on the cab', () => {
+  const { container } = render(<SemiTruck facing="left" moving />);
+  const truck = container.querySelector('.asset-semi-truck');
+
+  [
+    'trailer',
+    'trailer-stripe',
+    'trailer-door',
+    'taillight',
+    'marker',
+    'landing-gear',
+    'fairing',
+    'cab',
+    'cab-door',
+    'window',
+    'grille',
+    'headlight',
+    'bumper',
+    'exhaust',
+    'exhaust-cap',
+    'fuel-tank',
+  ].forEach((part) => expect(truck.querySelector(`.asset-semi-${part}`)).toBeInTheDocument());
+  expect(truck.querySelectorAll('.asset-semi-wheel')).toHaveLength(4);
+  expect(truck).toHaveClass('asset-facing-left', 'asset-moving');
 });

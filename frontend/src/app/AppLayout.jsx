@@ -1,14 +1,36 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../auth/AuthContext';
 import BrandMark from '../components/branding/BrandMark';
 import ConfirmDialog from '../components/feedback/ConfirmDialog';
-import { AccountIcon, ChevronDownIcon, SignOutIcon, UserIcon } from '../components/primitives/Icons';
-import MfaSetupWall from '../features/accounts/MfaSetupWall';
-import DeviceCheckDialog from '../features/authentication/DeviceCheckDialog';
+import {
+  AccountIcon,
+  DriversIcon,
+  ChevronDownIcon,
+  HomeIcon,
+  InfoIcon,
+  PointsIcon,
+  SignInIcon,
+  SignOutIcon,
+  UserIcon,
+  UsersIcon,
+  ViewingAsIcon,
+} from '../components/primitives/Icons';
+import { MfaSetupWall } from '../features/accounts';
+import { DeviceCheckDialog } from '../features/authentication';
 import './AppLayout.css';
+import ActiveViewAsIndicator from './ActiveViewAsIndicator';
+import { navItemsFor } from './navigation';
 import { PageHeaderTargetProvider } from './PageHeader';
+
+const NAV_ICONS = {
+  home: HomeIcon,
+  points: PointsIcon,
+  drivers: DriversIcon,
+  users: UsersIcon,
+  about: InfoIcon,
+};
 
 function AccountMenu({ user, onSignOut }) {
   const [open, setOpen] = useState(false);
@@ -67,6 +89,11 @@ function AccountMenu({ user, onSignOut }) {
     };
   }, [open]);
 
+  useEffect(() => {
+    setOpen(false);
+    setConfirming(false);
+  }, [user?.username, user?.impersonation?.active]);
+
   const confirmSignOut = async () => {
     setSigningOut(true);
     try {
@@ -99,7 +126,26 @@ function AccountMenu({ user, onSignOut }) {
         </button>
         {open && (
           <div className="profile-menu" role="menu">
+            {user.impersonation?.active && (
+              <>
+                <div className="profile-menu-view-as">
+                  <ViewingAsIcon size={18} />
+                  <div>
+                    <span>Viewing as</span>
+                    <strong>{displayName}</strong>
+                    <span>@{user.username}</span>
+                  </div>
+                </div>
+                <div className="profile-menu-signed-in">
+                  <span>Signed in as</span>
+                  <strong>{user.impersonation.admin.name}</strong>
+                  <span>@{user.impersonation.admin.username}</span>
+                </div>
+                <div className="profile-menu-divider" />
+              </>
+            )}
             <div className="profile-menu-identity">
+              {user.impersonation?.active && <span>Current account</span>}
               <strong>{displayName}</strong>
               <span>@{user.username}</span>
             </div>
@@ -117,7 +163,11 @@ function AccountMenu({ user, onSignOut }) {
         {confirming && (
           <ConfirmDialog
             title="Sign out?"
-            message="Are you sure you want to sign out? You'll need to sign in again to keep using your account."
+            message={
+              user.impersonation?.active
+                ? "This will end your View-as session and sign you out completely. You'll need to sign in again to keep using your account."
+                : "Are you sure you want to sign out? You'll need to sign in again to keep using your account."
+            }
             confirmLabel={signingOut ? 'Signing out…' : 'Sign out'}
             busy={signingOut}
             onConfirm={confirmSignOut}
@@ -130,33 +180,68 @@ function AccountMenu({ user, onSignOut }) {
 
   return (
     <Link className="topbar-signin" to="/login">
+      <SignInIcon size={16} />
       Sign in
     </Link>
   );
 }
 
 export function AppLayout() {
-  const { user, notice, signOut, stopImpersonation, answerDeviceCheck } = useAuth();
+  const { user, notice, signOut, stopImpersonation, answerDeviceCheck, clearNotice } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [endingViewAs, setEndingViewAs] = useState(false);
   const [viewAsError, setViewAsError] = useState('');
+  const [identityAnnouncement, setIdentityAnnouncement] = useState('');
   const [pageHeaderTarget, setPageHeaderTarget] = useState(null);
-  const mfaWallNeeded = user
-    && (user.account_type === 'sponsor' || user.account_type === 'admin')
-    && user.mfa
-    && user.mfa.required
-    && !user.mfa.enrolled;
+  const viewAsReturnToRef = useRef('/users');
+  const previousViewAsRef = useRef(Boolean(user?.impersonation?.active));
+  const mfaWallNeeded =
+    user &&
+    (user.account_type === 'sponsor' || user.account_type === 'admin') &&
+    user.mfa &&
+    user.mfa.required &&
+    !user.mfa.enrolled;
 
   // A timed-out session goes straight to sign-in, even from public pages.
   useEffect(() => {
     if (notice === 'expired' && !user) navigate('/login', { replace: true });
   }, [notice, user, navigate]);
 
+  useEffect(() => {
+    if (!user?.impersonation?.active) return;
+    const candidate = location.state?.viewAsReturnTo || location.pathname;
+    if (/^\/users\/(drivers|sponsors)\/\d+$/.test(candidate)) {
+      viewAsReturnToRef.current = candidate;
+    }
+  }, [location.pathname, location.state, user?.impersonation?.active]);
+
+  useEffect(() => {
+    const active = Boolean(user?.impersonation?.active);
+    if (active && !previousViewAsRef.current) {
+      setIdentityAnnouncement(
+        `Now viewing as ${user.name || user.username}, ${user.account_type}. You're still signed in as ${user.impersonation.admin.name}.`,
+      );
+    }
+    previousViewAsRef.current = active;
+  }, [user]);
+
+  useEffect(() => {
+    if (notice !== 'view-as-ended') return;
+    setIdentityAnnouncement(
+      "Your View-as session has ended. You've returned to your administrator account.",
+    );
+    navigate('/users', { replace: true });
+  }, [notice, navigate]);
+
   const stopViewingAs = async () => {
     setEndingViewAs(true);
     setViewAsError('');
     try {
       await stopImpersonation();
+      setIdentityAnnouncement("You're back in your administrator account.");
+      navigate(viewAsReturnToRef.current, { replace: true });
+      viewAsReturnToRef.current = '/users';
     } catch (error) {
       setViewAsError(error.message || 'Could not return to your admin account.');
     } finally {
@@ -166,27 +251,27 @@ export function AppLayout() {
 
   return (
     <div className="app-shell">
-      <a className="skip-link" href="#main-content">Skip to content</a>
+      <p className="sr-only" aria-live="polite" aria-atomic="true">
+        {identityAnnouncement}
+      </p>
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
       <aside className="site-sidebar">
         <Link className="brand" to="/" aria-label="Good Driver home">
           <BrandMark />
           <span className="brand-name">Good Driver</span>
         </Link>
         <nav className="site-nav" aria-label="Primary navigation">
-          <NavLink to="/drivers">
-            <span className="nav-icon" aria-hidden="true" />
-            Drivers
-          </NavLink>
-          <NavLink to="/about">
-            <span className="nav-icon" aria-hidden="true" />
-            About
-          </NavLink>
-          {user?.account_type === 'admin' && (
-            <NavLink to="/users">
-              <span className="nav-icon" aria-hidden="true" />
-              Users
-            </NavLink>
-          )}
+          {navItemsFor(user).map((item) => {
+            const Icon = NAV_ICONS[item.icon];
+            return (
+              <NavLink key={item.to} to={item.to} end={item.to === '/'}>
+                <Icon className="nav-icon" size={16} />
+                {item.label}
+              </NavLink>
+            );
+          })}
         </nav>
         <div className="sidebar-account">
           <AccountMenu user={user} onSignOut={signOut} />
@@ -194,26 +279,31 @@ export function AppLayout() {
       </aside>
       <div className="app-main">
         {user?.impersonation?.active && (
-          <div className="impersonation-banner" role="status">
-            <span>
-              <strong>Viewing as {user.name || user.username}</strong>
-              {' '}({user.account_type}). You are still signed in as {user.impersonation.admin.name}.
-            </span>
-            {viewAsError && <span className="impersonation-error">{viewAsError}</span>}
-            <button type="button" onClick={stopViewingAs} disabled={endingViewAs}>
-              {endingViewAs ? 'Returning…' : 'Return to admin account'}
-            </button>
-          </div>
+          <ActiveViewAsIndicator
+            user={user}
+            busy={endingViewAs}
+            error={viewAsError}
+            onReturn={stopViewingAs}
+          />
         )}
         {user?.session?.device_check && (
-          <DeviceCheckDialog
-            onAnswer={answerDeviceCheck}
-            onSignOut={signOut}
-          />
+          <DeviceCheckDialog onAnswer={answerDeviceCheck} onSignOut={signOut} />
         )}
         <header className="app-topbar">
           <div className="app-topbar-page" ref={setPageHeaderTarget} />
         </header>
+        {(notice === 'view-as-returned' || notice === 'view-as-ended') && (
+          <div className="banner banner-warning view-as-ended-notice">
+            <span>
+              {notice === 'view-as-returned'
+                ? "You're back in your administrator account."
+                : 'Your View-as session has ended. You have returned to your administrator account.'}
+            </span>
+            <button className="button" type="button" onClick={clearNotice}>
+              Dismiss
+            </button>
+          </div>
+        )}
         <div className="app-content" id="main-content" tabIndex="-1">
           <PageHeaderTargetProvider target={pageHeaderTarget}>
             {mfaWallNeeded ? (
@@ -222,9 +312,8 @@ export function AppLayout() {
               <>
                 {user && user.mfa && user.mfa.required && !user.mfa.enrolled && (
                   <div className="mfa-required-banner">
-                    Your sponsor requires two-factor authentication. Set it up to keep
-                    signing in without interruption.{' '}
-                    <Link to="/account">Set up now</Link>
+                    Your sponsor requires two-factor authentication. Set it up to keep signing in
+                    without interruption. <Link to="/account">Set up now</Link>
                   </div>
                 )}
                 <Outlet />

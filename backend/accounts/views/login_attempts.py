@@ -26,11 +26,11 @@ class LoginAttemptsView(APIView):
         # Self-scoped: accepts no user ID, only ever reads request.user's rows.
         attempts = request.user.login_attempts.order_by('-timestamp')
         since = timezone.now() - HISTORY_WINDOW
-        return Response({
-            'recent': LoginAttemptSerializer(
-                attempts[:RECENT_ATTEMPT_COUNT], many=True
-            ).data,
-            'last_24_hours': LoginAttemptSerializer(
-                attempts.filter(timestamp__gte=since)[:HISTORY_LIMIT], many=True
-            ).data,
-        })
+        return Response(
+            {
+                'recent': LoginAttemptSerializer(attempts[:RECENT_ATTEMPT_COUNT], many=True).data,
+                'last_24_hours': LoginAttemptSerializer(
+                    attempts.filter(timestamp__gte=since)[:HISTORY_LIMIT], many=True
+                ).data,
+            }
+        )

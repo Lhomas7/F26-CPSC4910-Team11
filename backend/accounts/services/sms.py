@@ -15,6 +15,7 @@ def send_sms(phone_number: str, message: str) -> None:
     from_number = os.environ.get('TWILIO_FROM_NUMBER')
     if sid and token and from_number:
         from twilio.rest import Client
+
         Client(sid, token).messages.create(body=message, from_=from_number, to=phone_number)
     else:
         logger.info('SMS (console fallback) to %s: %s', phone_number, message)

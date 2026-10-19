@@ -19,7 +19,7 @@ BACKUP_CODE_ALPHABET = ''.join(
 
 
 def generate_code(length=6):
-    return str(secrets.randbelow(10 ** length)).zfill(length)
+    return str(secrets.randbelow(10**length)).zfill(length)
 
 
 def _normalize_backup_code(raw_code):
@@ -37,9 +37,9 @@ def generate_backup_codes(user, count=BACKUP_CODE_COUNT):
         ''.join(secrets.choice(BACKUP_CODE_ALPHABET) for _ in range(BACKUP_CODE_LENGTH))
         for _ in range(count)
     ]
-    MFABackupCode.objects.bulk_create([
-        MFABackupCode(user=user, code_hash=make_password(code)) for code in raw_codes
-    ])
+    MFABackupCode.objects.bulk_create(
+        [MFABackupCode(user=user, code_hash=make_password(code)) for code in raw_codes]
+    )
     return raw_codes
 
 
@@ -77,7 +77,10 @@ def create_mfa_code(user, purpose, method, ttl_seconds=CODE_TTL_SECONDS):
     immediately invalidates the old one instead of leaving both usable.
     """
     MFACode.objects.filter(
-        user=user, purpose=purpose, method=method, used=False,
+        user=user,
+        purpose=purpose,
+        method=method,
+        used=False,
     ).update(used=True)
 
     raw_code = generate_code()

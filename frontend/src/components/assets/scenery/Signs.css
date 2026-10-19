@@ -1,15 +1,15 @@
 /* Shared post; each sign sets its own size and plate. */
 .asset-sign {
   --asset-h: 2.2em;
-  --asset-w: .95em;
+  --asset-w: 0.95em;
 }
 
 .asset-sign-pole {
   background: #9aa29b;
   bottom: 0;
   height: 1.4em;
-  left: calc(50% - .05em);
-  width: .1em;
+  left: calc(50% - 0.05em);
+  width: 0.1em;
 }
 
 /* Text on signs: centred, bold, sized in the plate's own em. */
@@ -29,10 +29,10 @@
 
 .asset-stop-plate {
   background: #c8102e;
-  box-shadow: inset 0 0 0 .05em #f4f5f2;
+  box-shadow: inset 0 0 0 0.05em #f4f5f2;
   clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%);
   color: #f4f5f2;
-  font-size: .25em;
+  font-size: 0.25em;
   height: 3.8em;
   left: 0;
   top: 0;
@@ -44,43 +44,43 @@
 .asset-yield-plate {
   background: #c8102e;
   clip-path: polygon(0 0, 100% 0, 50% 100%);
-  height: .85em;
+  height: 0.85em;
   left: 0;
   top: 0;
-  width: .95em;
+  width: 0.95em;
 }
 
 .asset-yield-plate::after {
   background: #f4f5f2;
   clip-path: polygon(0 0, 100% 0, 50% 100%);
   content: '';
-  height: .48em;
-  left: .2em;
+  height: 0.48em;
+  left: 0.2em;
   position: absolute;
-  top: .1em;
-  width: .55em;
+  top: 0.1em;
+  width: 0.55em;
 }
 
 /* ---------- Speed limit ---------- */
 
 .asset-speed-limit-sign {
-  --asset-w: .8em;
+  --asset-w: 0.8em;
 }
 
 .asset-limit-plate {
   background: #f4f5f2;
-  border: .04em solid #1d201d;
-  border-radius: .06em;
+  border: 0.04em solid #1d201d;
+  border-radius: 0.06em;
   color: #1d201d;
   height: 1em;
   left: 0;
   top: 0;
-  width: .8em;
+  width: 0.8em;
 }
 
 .asset-art .asset-limit-words {
   display: block;
-  font-size: .12em;
+  font-size: 0.12em;
   position: static;
   text-align: center;
   width: 4em;
@@ -88,8 +88,8 @@
 
 .asset-art .asset-limit-number {
   display: block;
-  font-size: .4em;
-  margin-top: .1em;
+  font-size: 0.4em;
+  margin-top: 0.1em;
   position: static;
 }
 
@@ -105,50 +105,57 @@
   color: #1d201d;
   height: 1em;
   left: 0;
-  top: .3em;
-  width: .95em;
+  top: 0.3em;
+  width: 0.95em;
 }
 
 /* Two walking-children silhouettes: heads and bodies. */
 .asset-art .asset-zone-kids {
   background:
-    radial-gradient(circle at 35% 18%, #1d201d 0 .06em, transparent .065em),
-    radial-gradient(circle at 65% 26%, #1d201d 0 .05em, transparent .055em),
-    linear-gradient(#1d201d, #1d201d) 27% 60% / .12em .3em no-repeat,
-    linear-gradient(#1d201d, #1d201d) 63% 66% / .1em .25em no-repeat;
-  height: .55em;
-  margin-top: .12em;
+    radial-gradient(circle at 35% 18%, #1d201d 0 0.06em, transparent 0.065em),
+    radial-gradient(circle at 65% 26%, #1d201d 0 0.05em, transparent 0.055em),
+    linear-gradient(#1d201d, #1d201d) 27% 60% / 0.12em 0.3em no-repeat,
+    linear-gradient(#1d201d, #1d201d) 63% 66% / 0.1em 0.25em no-repeat;
+  height: 0.55em;
+  margin-top: 0.12em;
   position: static;
-  width: .6em;
+  width: 0.6em;
 }
 
 .asset-art .asset-zone-words {
   display: block;
-  font-size: .12em;
+  font-size: 0.12em;
   position: static;
 }
 
 .asset-zone-beacon {
   background: #6b5418;
   border-radius: 50%;
-  height: .2em;
+  height: 0.2em;
   top: 0;
-  width: .2em;
+  width: 0.2em;
 }
 
-.asset-zone-beacon-a { left: .15em; }
-.asset-zone-beacon-b { right: .15em; }
+.asset-zone-beacon-a {
+  left: 0.15em;
+}
+.asset-zone-beacon-b {
+  right: 0.15em;
+}
 
 .asset-zone-active .asset-zone-beacon {
-  animation: asset-beacon .8s steps(1) infinite;
+  animation: asset-beacon 0.8s steps(1) infinite;
 }
 
 .asset-zone-active .asset-zone-beacon-b {
-  animation-delay: .4s;
+  animation-delay: 0.4s;
 }
 
 @keyframes asset-beacon {
-  50% { background: #ffc531; box-shadow: 0 0 .25em #ffc531; }
+  50% {
+    background: #ffc531;
+    box-shadow: 0 0 0.25em #ffc531;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

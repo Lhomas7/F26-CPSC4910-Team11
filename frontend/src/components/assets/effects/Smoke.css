@@ -1,6 +1,6 @@
 .asset-smoke {
-  --asset-h: .5em;
-  --asset-w: .5em;
+  --asset-h: 0.5em;
+  --asset-w: 0.5em;
 }
 
 .asset-smoke-puff {
@@ -16,8 +16,15 @@
 }
 
 @keyframes asset-smoke-rise {
-  0% { opacity: .9; transform: translate(0, 0) scale(.55); }
-  100% { opacity: 0; transform: translate(var(--smoke-drift-x, -.75em), var(--smoke-drift-y, -1em)) scale(var(--smoke-spread, 2.2)); }
+  0% {
+    opacity: 0.9;
+    transform: translate(0, 0) scale(0.55);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--smoke-drift-x, -0.75em), var(--smoke-drift-y, -1em))
+      scale(var(--smoke-spread, 2.2));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

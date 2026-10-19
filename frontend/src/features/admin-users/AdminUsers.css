@@ -1,0 +1,255 @@
+.sponsor-detail-page {
+  min-height: 100%;
+}
+
+.sponsor-detail-content {
+  max-width: 54rem;
+  padding: 1.5rem 1.75rem 4rem;
+}
+.sponsor-detail-card {
+  overflow: hidden;
+}
+
+.sponsor-detail-card-head {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+}
+
+.sponsor-detail-header-actions {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  max-width: 23rem;
+}
+
+.view-as-disabled-reason {
+  color: var(--ink-2);
+  flex: 1 1 100%;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  margin: 0;
+  max-width: 16rem;
+}
+
+.view-as-confirmation {
+  max-width: 30rem;
+}
+
+.view-as-confirmation .viewed-identity-summary {
+  margin-bottom: 1rem;
+}
+
+.view-as-confirmation-copy,
+.view-as-confirmation-audit {
+  color: var(--ink-2);
+}
+
+.view-as-confirmation-audit {
+  font-size: 0.8rem;
+}
+
+.sponsor-detail-card button,
+.sponsor-detail-state button,
+.sponsor-detail-state a {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-block;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.45rem 0.8rem;
+  text-decoration: none;
+}
+
+.sponsor-detail-person {
+  align-items: center;
+  display: flex;
+  gap: 0.8rem;
+}
+
+.sponsor-detail-person h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.sponsor-detail-person p {
+  color: var(--ink-2);
+  font-size: 0.75rem;
+  margin: 0.15rem 0 0;
+}
+
+.sponsor-detail-person p span {
+  background: var(--warning-soft);
+  border-radius: 999px;
+  color: var(--warning-ink);
+  font-weight: 700;
+  margin-left: 0.35rem;
+  padding: 0.12rem 0.5rem;
+}
+
+.sponsor-detail-avatar {
+  background: var(--warning-soft);
+  color: var(--warning-ink);
+  font-size: 0.9rem;
+  height: 3.25rem;
+  width: 3.25rem;
+}
+
+.sponsor-detail-view {
+  padding: 0.75rem 1.25rem;
+}
+
+.sponsor-detail-view > div {
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 11rem 1fr;
+  padding: 0.7rem 0;
+}
+
+.sponsor-detail-view > div:last-child {
+  border: 0;
+}
+
+.sponsor-detail-view dt {
+  color: var(--ink-2);
+}
+
+.sponsor-detail-view dd {
+  font-weight: 600;
+  margin: 0;
+}
+
+.sponsor-detail-view small {
+  color: var(--ink-2);
+  font-weight: 400;
+  margin-left: 0.5rem;
+}
+
+.sponsor-detail-form {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr 1fr;
+  padding: 1.25rem;
+}
+
+.sponsor-detail-form label,
+.sponsor-detail-locked {
+  color: var(--ink-2);
+  display: grid;
+  font-size: 0.75rem;
+  font-weight: 700;
+  gap: 0.3rem;
+}
+
+.sponsor-detail-form input,
+.sponsor-detail-form select {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  color: var(--ink);
+  font: inherit;
+  padding: 0.55rem 0.65rem;
+}
+
+.sponsor-detail-form input:focus,
+.sponsor-detail-form select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: 0;
+}
+
+.sponsor-detail-form small {
+  color: var(--ink-2);
+  font-weight: 400;
+}
+
+.sponsor-detail-form label small {
+  color: var(--danger);
+}
+
+.sponsor-detail-locked {
+  background: var(--surface-2);
+  border: 1px dashed var(--line);
+  border-radius: 0.45rem;
+  padding: 0.55rem 0.65rem;
+}
+
+.sponsor-detail-locked strong {
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+.sponsor-detail-actions {
+  background: var(--surface-2);
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  padding: 0.8rem 1.25rem;
+}
+
+.sponsor-detail-actions button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.sponsor-detail-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.sponsor-detail-banner {
+  margin: 1rem 1.25rem 0;
+}
+
+.sponsor-detail-state {
+  margin: 1.5rem 1.75rem;
+}
+
+.sponsor-detail-skeleton {
+  animation: sponsor-pulse 1.2s ease-in-out infinite;
+  height: 18rem;
+  margin-top: 1rem;
+}
+
+@keyframes sponsor-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sponsor-detail-skeleton {
+    animation: none;
+  }
+}
+
+@media (max-width: 42rem) {
+  .sponsor-detail-content {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .sponsor-detail-card-head {
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .sponsor-detail-view > div,
+  .sponsor-detail-form {
+    grid-template-columns: 1fr;
+  }
+
+  .sponsor-detail-actions button {
+    flex: 1;
+  }
+}

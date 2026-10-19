@@ -11,9 +11,7 @@ class MFASetupSerializer(serializers.Serializer):
         max_length=16,
         required=False,
         allow_blank=True,
-        error_messages={
-            'invalid': 'Enter a valid international phone number.'
-        },
+        error_messages={'invalid': 'Enter a valid international phone number.'},
     )
     E164_RE = re.compile(r'^\+[1-9]\d{7,14}$')
 
@@ -82,7 +80,12 @@ def validate_code_for_method(method, code, field_name='code'):
 
 
 class LoginMFASerializer(serializers.Serializer):
-    METHOD_CHOICES = [('totp', 'TOTP'), ('email', 'Email'), ('sms', 'SMS'), ('backup', 'Backup code')]
+    METHOD_CHOICES = [
+        ('totp', 'TOTP'),
+        ('email', 'Email'),
+        ('sms', 'SMS'),
+        ('backup', 'Backup code'),
+    ]
     method = serializers.ChoiceField(choices=METHOD_CHOICES)
     code = serializers.CharField(max_length=20, trim_whitespace=True)
 

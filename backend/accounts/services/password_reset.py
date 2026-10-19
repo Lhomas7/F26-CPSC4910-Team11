@@ -24,8 +24,11 @@ def find_resettable_users(email):
     through the Django admin, or via `manage.py changepassword` on the server."""
     users = get_user_model().objects.filter(email__iexact=email, is_active=True)
     return [
-        user for user in users
-        if user.has_usable_password() and (get_account_type(user) is not None) and not (user.is_staff or user.is_superuser)
+        user
+        for user in users
+        if user.has_usable_password()
+        and (get_account_type(user) is not None)
+        and not (user.is_staff or user.is_superuser)
     ]
 
 

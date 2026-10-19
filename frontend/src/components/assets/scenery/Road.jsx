@@ -9,7 +9,9 @@ export default function Road({ lanes = 2, shoulders = true, className = '', styl
     lanes > 1 ? 'asset-road-dashed' : '',
     shoulders ? 'asset-road-shoulders' : '',
     className,
-  ].filter(Boolean).join(' ');
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <div className={classes} style={style} aria-hidden="true">

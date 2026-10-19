@@ -1,6 +1,6 @@
 .asset-traffic-light {
   --asset-h: 2.8em;
-  --asset-w: .7em;
+  --asset-w: 0.7em;
   --cycle-length: 8s;
 }
 
@@ -8,38 +8,38 @@
   background: #4f5963;
   bottom: 0;
   height: 1.3em;
-  left: calc(50% - .07em);
-  width: .14em;
+  left: calc(50% - 0.07em);
+  width: 0.14em;
 }
 
 .asset-signal-housing {
   background: #1d201d;
-  border-radius: .15em;
+  border-radius: 0.15em;
   height: 1.55em;
   left: 0;
   top: 0;
-  width: .7em;
+  width: 0.7em;
 }
 
 .asset-signal-lamp {
   border-radius: 50%;
-  height: .4em;
-  left: .15em;
-  width: .4em;
+  height: 0.4em;
+  left: 0.15em;
+  width: 0.4em;
 }
 
 .asset-signal-red {
   --lamp-off: #5a1f1a;
   --lamp-on: #ff3b30;
   background: var(--lamp-off);
-  top: .1em;
+  top: 0.1em;
 }
 
 .asset-signal-yellow {
   --lamp-off: #5a4a14;
   --lamp-on: #ffc531;
   background: var(--lamp-off);
-  top: .57em;
+  top: 0.57em;
 }
 
 .asset-signal-green {
@@ -54,7 +54,7 @@
 .asset-signal-state-yellow .asset-signal-yellow,
 .asset-signal-state-green .asset-signal-green {
   background: var(--lamp-on);
-  box-shadow: 0 0 .3em var(--lamp-on);
+  box-shadow: 0 0 0.3em var(--lamp-on);
 }
 
 /* Cycle: green 45%, yellow 13%, red 42% of the loop. */
@@ -71,17 +71,45 @@
 }
 
 @keyframes asset-lamp-green {
-  0%, 44.9% { background: var(--lamp-on); box-shadow: 0 0 .3em var(--lamp-on); }
-  45%, 100% { background: var(--lamp-off); box-shadow: none; }
+  0%,
+  44.9% {
+    background: var(--lamp-on);
+    box-shadow: 0 0 0.3em var(--lamp-on);
+  }
+  45%,
+  100% {
+    background: var(--lamp-off);
+    box-shadow: none;
+  }
 }
 
 @keyframes asset-lamp-yellow {
-  0%, 44.9% { background: var(--lamp-off); box-shadow: none; }
-  45%, 57.9% { background: var(--lamp-on); box-shadow: 0 0 .3em var(--lamp-on); }
-  58%, 100% { background: var(--lamp-off); box-shadow: none; }
+  0%,
+  44.9% {
+    background: var(--lamp-off);
+    box-shadow: none;
+  }
+  45%,
+  57.9% {
+    background: var(--lamp-on);
+    box-shadow: 0 0 0.3em var(--lamp-on);
+  }
+  58%,
+  100% {
+    background: var(--lamp-off);
+    box-shadow: none;
+  }
 }
 
 @keyframes asset-lamp-red {
-  0%, 57.9% { background: var(--lamp-off); box-shadow: none; }
-  58%, 100% { background: var(--lamp-on); box-shadow: 0 0 .3em var(--lamp-on); }
+  0%,
+  57.9% {
+    background: var(--lamp-off);
+    box-shadow: none;
+  }
+  58%,
+  100% {
+    background: var(--lamp-on);
+    box-shadow: 0 0 0.3em var(--lamp-on);
+  }
 }

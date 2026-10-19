@@ -4,7 +4,7 @@ Local development keeps using an ignored ``.env`` file. In staging/production se
 ``AWS_SECRETS_MANAGER_SECRET_ID`` (a secret name or ARN) and store the secrets as
 one JSON object of ``KEY: value`` strings, for example::
 
-    {"DJANGO_SECRET_KEY": "...", "DB_PASSWORD": "...", "TOTP_ENCRYPTION_KEY": "..."}
+    {'DJANGO_SECRET_KEY': '...', 'DB_PASSWORD': '...', 'TOTP_ENCRYPTION_KEY': '...'}
 
 Rules:
 
@@ -27,21 +27,23 @@ logger = logging.getLogger(__name__)
 
 SECRET_ID_VARIABLE = 'AWS_SECRETS_MANAGER_SECRET_ID'
 
-ALLOWED_SECRET_KEYS = frozenset({
-    'DJANGO_SECRET_KEY',
-    'DB_NAME',
-    'DB_USER',
-    'DB_PASSWORD',
-    'DB_HOST',
-    'DB_PORT',
-    'TOTP_ENCRYPTION_KEY',
-    'EMAIL_HOST',
-    'EMAIL_HOST_USER',
-    'EMAIL_HOST_PASSWORD',
-    'TWILIO_ACCOUNT_SID',
-    'TWILIO_AUTH_TOKEN',
-    'TWILIO_FROM_NUMBER',
-})
+ALLOWED_SECRET_KEYS = frozenset(
+    {
+        'DJANGO_SECRET_KEY',
+        'DB_NAME',
+        'DB_USER',
+        'DB_PASSWORD',
+        'DB_HOST',
+        'DB_PORT',
+        'TOTP_ENCRYPTION_KEY',
+        'EMAIL_HOST',
+        'EMAIL_HOST_USER',
+        'EMAIL_HOST_PASSWORD',
+        'TWILIO_ACCOUNT_SID',
+        'TWILIO_AUTH_TOKEN',
+        'TWILIO_FROM_NUMBER',
+    }
+)
 
 
 def _default_client_factory(region_name):
@@ -85,8 +87,7 @@ def load_aws_secrets(environ=None, client_factory=None):
         values = json.loads(raw)
     except ValueError:
         raise ImproperlyConfigured(
-            f'AWS secret {secret_id!r} is not valid JSON; store a JSON object of '
-            'KEY/value pairs.'
+            f'AWS secret {secret_id!r} is not valid JSON; store a JSON object of KEY/value pairs.'
         ) from None
     if not isinstance(values, dict):
         raise ImproperlyConfigured(
@@ -111,7 +112,8 @@ def load_aws_secrets(environ=None, client_factory=None):
     if ignored:
         logger.warning(
             'Ignored keys in AWS secret %r that are not recognised settings: %s',
-            secret_id, ', '.join(sorted(ignored)),
+            secret_id,
+            ', '.join(sorted(ignored)),
         )
     logger.info('Loaded %d value(s) from AWS Secrets Manager.', len(loaded))
     return loaded

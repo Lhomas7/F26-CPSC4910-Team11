@@ -1,43 +1,31 @@
 import logging
-import re
-from contextlib import contextmanager
 from datetime import timedelta
-from io import BytesIO, StringIO
-from pathlib import Path
-from tempfile import TemporaryDirectory
+from io import StringIO
 from unittest.mock import patch
 
 import pyotp
-
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from django.core import mail
 from django.core.cache import cache
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
-from PIL import Image
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from drivers.models import Driver
 
 from ..models import (
-    AdminImpersonationEvent,
     DriverNotification,
-    LoginAttempt,
-    MFABackupCode,
     MFACode,
     MFASettings,
     SponsorAccount,
     SponsorCompany,
 )
-from ..middleware import IMPERSONATION_STARTED_KEY
 from ..services.crypto import decrypt_secret, encrypt_secret
-from ..services.mfa import backup_codes_remaining, create_mfa_code
-
+from ..services.mfa import backup_codes_remaining
 from .common import MailAssertMixin, enroll_totp
+
 
 class MFAPhoneNumberValidationTests(APITestCase):
     @classmethod
@@ -76,7 +64,6 @@ class MFAPhoneNumberValidationTests(APITestCase):
 
 
 class MFAEnrollmentTests(APITestCase):
-
     @classmethod
     def setUpTestData(cls):
         cls.sponsor = SponsorCompany.objects.create(name='Acme Co')
@@ -252,7 +239,6 @@ class RoleMFAPolicyTests(APITestCase):
 
 
 class BackupCodeTests(APITestCase):
-
     @classmethod
     def setUpTestData(cls):
         cls.company = SponsorCompany.objects.create(name='Acme Co')
@@ -407,9 +393,7 @@ class BackupCodeTests(APITestCase):
             username='locked.admin', password='ExamplePassword123!'
         )
         self.client.force_authenticate(admin)
-        setup = self.client.post(
-            reverse('accounts:mfa-setup'), {'method': 'totp'}, format='json'
-        )
+        setup = self.client.post(reverse('accounts:mfa-setup'), {'method': 'totp'}, format='json')
         secret = setup.data['manual_key']
         verify = self.client.post(
             reverse('accounts:mfa-verify'),
@@ -524,14 +508,16 @@ class MFALoginTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
             response.data,
-            {'mfa': {
-                'required': False,
-                'enrolled': True,
-                'methods': ['email'],
-                'default_method': 'email',
-                'allowed_methods': ['email', 'sms', 'totp'],
-                'backup_codes_remaining': 0,
-            }},
+            {
+                'mfa': {
+                    'required': False,
+                    'enrolled': True,
+                    'methods': ['email'],
+                    'default_method': 'email',
+                    'allowed_methods': ['email', 'sms', 'totp'],
+                    'backup_codes_remaining': 0,
+                }
+            },
         )
 
         me = self.client.get(reverse('accounts:me'))
@@ -732,7 +718,10 @@ class MFACodeInvalidationTests(APITestCase):
             email='driver@example.com',
         )
         cls.driver = Driver.objects.create(
-            user=cls.user, name='Driver One', sponsor=cls.sponsor, status='approved',
+            user=cls.user,
+            name='Driver One',
+            sponsor=cls.sponsor,
+            status='approved',
         )
 
     def setUp(self):
@@ -786,24 +775,32 @@ class MFACodeInvalidationTests(APITestCase):
             format='json',
         )
         self.client.post(
-            reverse('accounts:login-mfa-request-code'), {'method': 'email'}, format='json',
+            reverse('accounts:login-mfa-request-code'),
+            {'method': 'email'},
+            format='json',
         )
         old_code = mock_send_email.call_args[0][1]
 
         cache.clear()
         self.client.post(
-            reverse('accounts:login-mfa-request-code'), {'method': 'email'}, format='json',
+            reverse('accounts:login-mfa-request-code'),
+            {'method': 'email'},
+            format='json',
         )
         new_code = mock_send_email.call_args[0][1]
         self.assertNotEqual(old_code, new_code)
 
         stale = self.client.post(
-            reverse('accounts:login-mfa'), {'method': 'email', 'code': old_code}, format='json',
+            reverse('accounts:login-mfa'),
+            {'method': 'email', 'code': old_code},
+            format='json',
         )
         self.assertEqual(stale.status_code, status.HTTP_400_BAD_REQUEST)
 
         fresh = self.client.post(
-            reverse('accounts:login-mfa'), {'method': 'email', 'code': new_code}, format='json',
+            reverse('accounts:login-mfa'),
+            {'method': 'email', 'code': new_code},
+            format='json',
         )
         self.assertEqual(fresh.status_code, status.HTTP_200_OK)
 
@@ -820,18 +817,21 @@ class MFACodeInvalidationTests(APITestCase):
         code = mock_send_email.call_args[0][1]
 
         first = self.client.post(
-            reverse('accounts:mfa-verify'), {'method': 'email', 'code': code}, format='json',
+            reverse('accounts:mfa-verify'),
+            {'method': 'email', 'code': code},
+            format='json',
         )
         self.assertEqual(first.status_code, status.HTTP_200_OK)
 
         second = self.client.post(
-            reverse('accounts:mfa-verify'), {'method': 'email', 'code': code}, format='json',
+            reverse('accounts:mfa-verify'),
+            {'method': 'email', 'code': code},
+            format='json',
         )
         self.assertEqual(second.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class MFAResetTests(APITestCase):
-
     def setUp(self):
         self.user = get_user_model().objects.create_user(
             username='driver.one',
@@ -886,7 +886,6 @@ class MFAResetTests(APITestCase):
 
 
 class MFADisableTests(APITestCase):
-
     def setUp(self):
         self.user = get_user_model().objects.create_user(
             username='driver.one',
@@ -971,12 +970,8 @@ class SponsorMFATests(MailAssertMixin, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, {'driver_mfa_required': True})
 
-        self.assertTrue(
-            DriverNotification.objects.filter(driver=self.driver).exists()
-        )
-        self.assertFalse(
-            DriverNotification.objects.filter(driver=self.other_driver).exists()
-        )
+        self.assertTrue(DriverNotification.objects.filter(driver=self.driver).exists())
+        self.assertFalse(DriverNotification.objects.filter(driver=self.other_driver).exists())
 
     def test_toggle_off_also_notifies_drivers(self):
         self.sponsor.driver_mfa_required = True
@@ -985,12 +980,8 @@ class SponsorMFATests(MailAssertMixin, APITestCase):
         with self.assertSendsMail(1):
             response = self.client.post(self.url, {'driver_mfa_required': False}, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue(
-            DriverNotification.objects.filter(driver=self.driver).exists()
-        )
-        self.assertFalse(
-            DriverNotification.objects.filter(driver=self.other_driver).exists()
-        )
+        self.assertTrue(DriverNotification.objects.filter(driver=self.driver).exists())
+        self.assertFalse(DriverNotification.objects.filter(driver=self.other_driver).exists())
 
     def test_get_returns_current_setting_for_sponsor(self):
         self.sponsor.driver_mfa_required = True
@@ -1013,7 +1004,6 @@ class SponsorMFATests(MailAssertMixin, APITestCase):
 
 
 class MFANotificationTests(MailAssertMixin, APITestCase):
-
     def setUp(self):
         self.sponsor = SponsorCompany.objects.create(name='Acme Co')
         self.driver_user = get_user_model().objects.create_user(
@@ -1050,9 +1040,7 @@ class MFANotificationTests(MailAssertMixin, APITestCase):
         with self.assertSendsMail(1):
             self.enable_email()
 
-        self.assertTrue(
-            DriverNotification.objects.filter(driver=self.driver).exists()
-        )
+        self.assertTrue(DriverNotification.objects.filter(driver=self.driver).exists())
         self.assertEqual(mail.outbox[0].to, ['driver@example.com'])
 
     def test_driver_disabling_method_creates_notification_and_email(self):
@@ -1096,13 +1084,10 @@ class MFANotificationTests(MailAssertMixin, APITestCase):
                 format='json',
             )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertFalse(
-            DriverNotification.objects.filter(driver=self.driver).exists()
-        )
+        self.assertFalse(DriverNotification.objects.filter(driver=self.driver).exists())
 
 
 class MFARequestCodeThrottleTests(APITestCase):
-
     @classmethod
     def setUpTestData(cls):
         cls.user = get_user_model().objects.create_user(
@@ -1136,7 +1121,6 @@ class MFARequestCodeThrottleTests(APITestCase):
 
 
 class SMSConsoleFallbackTests(APITestCase):
-
     def test_sms_logs_instead_of_raising_without_twilio(self):
         from ..services.delivery import send_sms_code
 
@@ -1153,4 +1137,3 @@ class SMSConsoleFallbackTests(APITestCase):
         output = buffer.getvalue()
         self.assertIn('console fallback', output)
         self.assertIn('+18645551234', output)
-

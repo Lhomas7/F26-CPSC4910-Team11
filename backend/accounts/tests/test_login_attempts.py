@@ -25,9 +25,7 @@ class LoginAttemptsViewTests(APITestCase):
         cls.admin = User.objects.create_superuser(
             username='admin.one', password='ExamplePassword123!'
         )
-        cls.driver = User.objects.create_user(
-            username='driver.one', password='ExamplePassword123!'
-        )
+        cls.driver = User.objects.create_user(username='driver.one', password='ExamplePassword123!')
         Driver.objects.create(user=cls.driver, name='Driver One', status='approved')
         for user in (cls.sponsor, cls.admin, cls.driver):
             MFASettings.objects.create(user=user, totp_enabled=True)
@@ -60,9 +58,7 @@ class LoginAttemptsViewTests(APITestCase):
             self.ids(response.data['last_24_hours']),
             [newest.pk, second.pk, third.pk, oldest.pk],
         )
-        self.assertEqual(
-            set(response.data['recent'][0]), {'id', 'timestamp', 'successful'}
-        )
+        self.assertEqual(set(response.data['recent'][0]), {'id', 'timestamp', 'successful'})
         self.assertFalse(response.data['recent'][0]['successful'])
 
     def test_last_24_hours_excludes_older_attempts(self):

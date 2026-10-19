@@ -17,6 +17,8 @@ export function updateProfile(data) {
     const body = new FormData();
     body.append('name', data.name);
     body.append('username', data.username);
+    body.append('email', data.email);
+    if (data.phone_number !== undefined) body.append('phone_number', data.phone_number);
     if (data.profile_picture) body.append('profile_picture', data.profile_picture);
     if (data.remove_profile_picture) body.append('remove_profile_picture', 'true');
     return request('/profile/', { method: 'PATCH', body }).then(readJson);
@@ -48,7 +50,9 @@ export function mfaVerify(method, code) {
 }
 
 export function mfaRequestCode(purpose, method) {
-  return request('/mfa/request-code/', { method: 'POST', body: { purpose, method } }).then(readJson);
+  return request('/mfa/request-code/', { method: 'POST', body: { purpose, method } }).then(
+    readJson,
+  );
 }
 
 export function mfaReset(fallbackMethod, fallbackCode) {

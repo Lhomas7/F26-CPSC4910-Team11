@@ -1,47 +1,3 @@
-:root {
-  --bg: #f4f2eb;
-  --surface: #fffdf8;
-  --surface-2: #f8f6f0;
-  --line: #e1ddd2;
-  --ink: #1d201d;
-  --ink-2: #5c625d;
-  --accent: #1e6b52;
-  --accent-soft: #e2efe7;
-  --road: #2b302d;
-  --stripe: #f2c230;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #141715;
-    --surface: #1c201d;
-    --surface-2: #222723;
-    --line: #323833;
-    --ink: #e8ebe7;
-    --ink-2: #aab1ab;
-    --accent: #4fb48d;
-    --accent-soft: #1d3a2f;
-    --road: #0e100f;
-    --stripe: #e2b52c;
-  }
-}
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-body {
-  background: var(--bg);
-  color: var(--ink);
-}
-
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
 .app-shell {
   display: flex;
   min-height: 100vh;
@@ -49,11 +5,11 @@ body {
 
 .skip-link {
   background: var(--accent);
-  border-radius: .4rem;
+  border-radius: 0.4rem;
   color: white;
   font-weight: 700;
-  left: .75rem;
-  padding: .45rem .8rem;
+  left: 0.75rem;
+  padding: 0.45rem 0.8rem;
   position: fixed;
   text-decoration: none;
   top: -4rem;
@@ -61,7 +17,7 @@ body {
 }
 
 .skip-link:focus {
-  top: .75rem;
+  top: 0.75rem;
 }
 
 .site-sidebar {
@@ -70,6 +26,7 @@ body {
   display: flex;
   flex: 0 0 13.125rem;
   flex-direction: column;
+  min-width: 0;
 }
 
 .brand {
@@ -77,21 +34,23 @@ body {
   border-bottom: 1px solid var(--line);
   color: var(--ink);
   display: flex;
-  gap: .65rem;
-  min-height: 4rem;
-  padding: .875rem 1.125rem;
+  flex: 0 0 var(--app-bar-height);
+  gap: 0.65rem;
+  height: var(--app-bar-height);
+  min-height: var(--app-bar-height);
+  padding: 0.875rem 1.125rem;
   text-decoration: none;
 }
 
 .brand-name {
-  font-size: .875rem;
+  font-size: 0.875rem;
   font-weight: 700;
 }
 
 .site-nav {
   display: flex;
   flex-direction: column;
-  padding: .625rem 0;
+  padding: 0.625rem 0;
 }
 
 .site-nav a {
@@ -99,9 +58,9 @@ body {
   border-left: 2px solid transparent;
   color: var(--ink-2);
   display: flex;
-  font-size: .825rem;
-  gap: .625rem;
-  padding: .55rem 1.125rem;
+  font-size: 0.825rem;
+  gap: 0.625rem;
+  padding: 0.55rem 1.125rem;
   text-decoration: none;
 }
 
@@ -117,10 +76,10 @@ body {
 }
 
 .nav-icon {
-  background: currentColor;
-  border-radius: .25rem;
+  color: currentColor;
+  flex: 0 0 auto;
   height: 1rem;
-  opacity: .35;
+  opacity: 0.75;
   width: 1rem;
 }
 
@@ -136,12 +95,24 @@ body {
   min-width: 0;
 }
 
+.view-as-ended-notice {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  margin: 1.25rem 1.75rem 0;
+}
+
+.view-as-ended-notice .button {
+  flex: 0 0 auto;
+}
+
 .mfa-required-banner {
-  background: #fbeae8;
+  background: var(--danger-soft);
   border-bottom: 1px solid var(--line);
-  color: #9e2f29;
-  font-size: .8rem;
-  padding: .6rem 1.75rem;
+  color: var(--danger-ink);
+  font-size: 0.8rem;
+  padding: 0.6rem 1.75rem;
 }
 
 .mfa-required-banner a {
@@ -149,33 +120,9 @@ body {
   font-weight: 700;
 }
 
-.mfa-required-toggle {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: .7rem;
-  margin-bottom: 1rem;
-  padding: .8rem 1.1rem;
-}
-
-.mfa-required-toggle label {
-  align-items: center;
-  display: inline-flex;
-  font-size: .875rem;
-  font-weight: 700;
-  gap: .5rem;
-}
-
-.mfa-required-hint {
-  color: var(--ink-2);
-  font-size: .75rem;
-  margin: .35rem 0 0 1.6rem;
-}
-
 @media (prefers-color-scheme: dark) {
   .mfa-required-banner {
-    background: #3b2220;
-    border-color: #7c3c37;
-    color: #e5766e;
+    border-color: var(--danger-line);
   }
 }
 
@@ -184,10 +131,12 @@ body {
   background: var(--surface);
   border-bottom: 1px solid var(--line);
   display: flex;
+  flex: 0 0 var(--app-bar-height);
   gap: 1.25rem;
   justify-content: space-between;
-  min-height: 4rem;
-  padding: .65rem 1.5rem;
+  height: var(--app-bar-height);
+  min-height: var(--app-bar-height);
+  padding: 0.35rem 1.5rem;
 }
 
 .app-topbar-page {
@@ -216,13 +165,13 @@ body {
 .page-header p,
 .page-header-breadcrumb {
   color: var(--ink-2);
-  font-size: .72rem;
+  font-size: 0.72rem;
   line-height: 1.35;
-  margin: .15rem 0 0;
+  margin: 0.15rem 0 0;
 }
 
 .page-header-breadcrumb {
-  margin: 0 0 .12rem;
+  margin: 0 0 0.12rem;
 }
 
 .page-header-breadcrumb a {
@@ -234,13 +183,16 @@ body {
 }
 
 .profile-menu-shell {
+  min-width: 0;
   position: relative;
+  width: 100%;
 }
 
 .sidebar-account {
   border-top: 1px solid var(--line);
   margin-top: 0;
-  padding: .85rem 1rem;
+  min-width: 0;
+  padding: 0.85rem 1rem;
 }
 
 .profile-menu-trigger {
@@ -252,20 +204,20 @@ body {
   cursor: pointer;
   display: inline-flex;
   height: 2.5rem;
-  gap: .55rem;
+  gap: 0.55rem;
   justify-content: flex-start;
-  padding: 0 .7rem;
+  padding: 0 0.7rem;
   width: 100%;
 }
 
 .profile-trigger-name {
-  font-size: .825rem;
+  font-size: 0.825rem;
   font-weight: 700;
   line-height: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  transform: translateY(.06em);
+  transform: translateY(0.06em);
   white-space: nowrap;
 }
 
@@ -288,32 +240,32 @@ body {
 .profile-menu {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: .65rem;
-  box-shadow: 0 .75rem 2rem rgb(0 0 0 / 18%);
+  border-radius: 0.65rem;
+  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 18%);
   bottom: auto;
   left: 0;
   min-width: 14rem;
   overflow: visible;
-  padding: .45rem;
+  padding: 0.45rem;
   position: absolute;
-  top: calc(100% + .45rem);
+  top: calc(100% + 0.45rem);
   z-index: 30;
 }
 
 .profile-menu::before {
   content: '';
-  height: .5rem;
+  height: 0.5rem;
   left: 0;
   position: absolute;
   right: 0;
-  top: -.5rem;
+  top: -0.5rem;
 }
 
 .profile-menu-identity {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: .55rem .65rem;
+  padding: 0.55rem 0.65rem;
 }
 
 .profile-menu-identity strong,
@@ -324,18 +276,63 @@ body {
 }
 
 .profile-menu-identity strong {
-  font-size: .85rem;
+  font-size: 0.85rem;
 }
 
 .profile-menu-identity span {
   color: var(--ink-2);
-  font-size: .75rem;
-  margin-top: .12rem;
+  font-size: 0.75rem;
+  margin-top: 0.12rem;
+}
+
+.profile-menu-view-as {
+  align-items: flex-start;
+  background: var(--warning-soft);
+  border: 1px solid var(--warning-line);
+  border-radius: 0.45rem;
+  color: var(--warning-ink);
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+  padding: 0.5rem 0.55rem;
+}
+
+.profile-menu-view-as > div,
+.profile-menu-signed-in {
+  display: grid;
+  min-width: 0;
+}
+
+.profile-menu-view-as strong,
+.profile-menu-view-as span,
+.profile-menu-signed-in strong,
+.profile-menu-signed-in span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-menu-view-as strong,
+.profile-menu-signed-in strong {
+  font-size: 0.8rem;
+}
+
+.profile-menu-view-as span,
+.profile-menu-signed-in span {
+  font-size: 0.7rem;
+}
+
+.profile-menu-signed-in {
+  padding: 0.35rem 0.65rem 0.45rem;
+}
+
+.profile-menu-signed-in span {
+  color: var(--ink-2);
 }
 
 .profile-menu-divider {
   border-top: 1px solid var(--line);
-  margin: .25rem 0;
+  margin: 0.25rem 0;
 }
 
 .profile-menu a,
@@ -343,14 +340,14 @@ body {
   align-items: center;
   background: transparent;
   border: 0;
-  border-radius: .4rem;
+  border-radius: 0.4rem;
   color: var(--ink);
   cursor: pointer;
   display: flex;
   font: inherit;
-  font-size: .8rem;
-  gap: .55rem;
-  padding: .55rem .65rem;
+  font-size: 0.8rem;
+  gap: 0.55rem;
+  padding: 0.55rem 0.65rem;
   text-align: left;
   text-decoration: none;
   width: 100%;
@@ -366,12 +363,13 @@ body {
 .topbar-signin {
   align-items: center;
   border: 1px solid var(--accent);
-  border-radius: .5rem;
+  border-radius: 0.5rem;
   color: var(--accent);
   display: inline-flex;
-  font-size: .825rem;
+  font-size: 0.825rem;
   font-weight: 600;
-  padding: .375rem .875rem;
+  gap: 0.35rem;
+  padding: 0.375rem 0.875rem;
   text-decoration: none;
 }
 
@@ -395,8 +393,10 @@ body {
 
   .brand {
     border-bottom: 0;
+    flex: 0 0 auto;
+    height: auto;
     min-height: auto;
-    padding: .625rem 1rem;
+    padding: 0.625rem 1rem;
   }
 
   .brand-name {
@@ -412,7 +412,7 @@ body {
   .site-nav a {
     border-bottom: 2px solid transparent;
     border-left: 0;
-    padding: 1rem .75rem .875rem;
+    padding: 1rem 0.75rem 0.875rem;
   }
 
   .site-nav a.active {
@@ -432,13 +432,13 @@ body {
     display: flex;
     margin-left: 0;
     margin-top: 0;
-    padding: .45rem .75rem;
+    padding: 0.45rem 0.75rem;
   }
 
   .sidebar-account .profile-menu-trigger {
-    gap: .15rem;
+    gap: 0.15rem;
     justify-content: center;
-    padding: 0 .55rem 0 .7rem;
+    padding: 0 0.55rem 0 0.7rem;
     width: auto;
   }
 
@@ -447,19 +447,19 @@ body {
   }
 
   .sidebar-account .profile-menu-chevron {
-    margin-left: .15rem;
+    margin-left: 0.15rem;
   }
 
   .sidebar-account .profile-menu {
     bottom: auto;
     left: auto;
     right: 0;
-    top: calc(100% + .45rem);
+    top: calc(100% + 0.45rem);
   }
 
   .app-topbar {
     align-items: center;
-    padding: .65rem 1rem;
+    padding: 0.35rem 1rem;
   }
 
   .page-header {
@@ -469,13 +469,18 @@ body {
   .page-header p {
     white-space: normal;
   }
-
 }
 
-@media (max-width: 38rem) {
+@media (max-width: 42rem) {
+  .view-as-ended-notice {
+    align-items: stretch;
+    flex-direction: column;
+    margin: 1rem 1rem 0;
+  }
+
   .app-topbar {
-    gap: .75rem;
-    padding: .65rem .85rem;
+    gap: 0.75rem;
+    padding: 0.35rem 0.85rem;
   }
 
   .app-topbar-page {
@@ -486,36 +491,8 @@ body {
     min-width: 12.5rem;
   }
 }
-/* A view-as session must remain unmistakable and easy to exit on every page. */
-.impersonation-banner {
-  align-items: center;
-  background: #fff3cd;
-  border-bottom: 1px solid #d4a72c;
-  color: #4f3b00;
-  display: flex;
-  flex-wrap: wrap;
-  gap: .75rem;
-  justify-content: space-between;
-  padding: .7rem 1rem;
-}
-
-.impersonation-banner button {
-  background: #4f3b00;
-  border: 0;
-  border-radius: .4rem;
-  color: white;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 700;
-  padding: .45rem .75rem;
-}
-
-.impersonation-banner button:disabled {
-  cursor: wait;
-  opacity: .65;
-}
-
-.impersonation-error {
-  color: #9f241d;
-  font-weight: 700;
+/* Shown by RequireAuth when a signed-in user opens a page their role can't use. */
+.forbidden-page {
+  max-width: 40rem;
+  padding: 1.5rem 1.75rem;
 }

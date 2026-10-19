@@ -3,7 +3,6 @@ import logging
 from datetime import timedelta
 
 import pyotp
-
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.core.cache import cache
@@ -20,6 +19,7 @@ from rest_framework.views import APIView
 from ..input_cleaning import PASSWORD_SPECIAL_CHARACTERS, password_requirements
 from ..middleware import client_ip, impersonation_details
 from ..models import AdminImpersonationEvent
+from ..sensitive import hide_sensitive_data
 from ..serializers import (
     ChangePasswordSerializer,
     DeviceCheckSerializer,
@@ -48,9 +48,9 @@ from ..services.password_reset import (
     user_from_uid,
 )
 from ..services.session_state import session_info, stamp_sign_in
-from ..sensitive import hide_sensitive_data
 
 logger = logging.getLogger(__name__)
+
 
 class AnonymousAPIView(APIView):
     authentication_classes = ()
@@ -72,6 +72,7 @@ def complete_login(request, user):
     else:
         request.session[DEVICE_MODE_KEY] = 'trusted'
     return Response({**get_public_user(user), 'session': session_info(request)})
+
 
 @hide_sensitive_data
 class LoginView(AnonymousAPIView):
@@ -269,6 +270,7 @@ class DeviceCheckView(APIView):
     No: treat the session as shared (it ends when the browser closes) and email
     the account owner, in case the sign-in was not theirs.
     """
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -299,7 +301,6 @@ class DeviceCheckView(APIView):
         return Response({'session': session_info(request)})
 
 
-
 @method_decorator(never_cache, name='dispatch')
 class LogoutView(APIView):
     """End the session: delete it server-side and expire the session cookie.
@@ -308,6 +309,7 @@ class LogoutView(APIView):
     clean 204 and the browser drops its stale cookie. Logged-in callers still go
     through SessionAuthentication's CSRF check.
     """
+
     permission_classes = ()
 
     def post(self, request):
@@ -403,15 +405,16 @@ class PasswordResetConfirmView(AnonymousAPIView):
         return Response({'detail': 'Your password has been reset. You can now sign in.'})
 
 
-
 class PasswordPolicyView(AnonymousAPIView):
     """Publish the password requirements so forms never hard-code them."""
 
     def get(self, request):
-        return Response({
-            'requirements': password_requirements(),
-            'special_characters': ''.join(sorted(PASSWORD_SPECIAL_CHARACTERS)),
-        })
+        return Response(
+            {
+                'requirements': password_requirements(),
+                'special_characters': ''.join(sorted(PASSWORD_SPECIAL_CHARACTERS)),
+            }
+        )
 
 
 @method_decorator(ensure_csrf_cookie, name='dispatch')

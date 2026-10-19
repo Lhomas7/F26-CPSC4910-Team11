@@ -55,11 +55,15 @@ class LoadAwsSecretsTests(SimpleTestCase):
 
     def test_loads_allowed_keys_into_the_environment(self):
         environ = {SECRET_ID_VARIABLE: 'gooddriver/prod', 'AWS_REGION': 'us-east-1'}
-        client = FakeSecretsClient(response=secret_response({
-            'DJANGO_SECRET_KEY': 'signing-key',
-            'DB_PASSWORD': 'db-pass',
-            'DB_PORT': 3306,
-        }))
+        client = FakeSecretsClient(
+            response=secret_response(
+                {
+                    'DJANGO_SECRET_KEY': 'signing-key',
+                    'DB_PASSWORD': 'db-pass',
+                    'DB_PORT': 3306,
+                }
+            )
+        )
 
         loaded, regions = self.load(environ, client)
 
@@ -80,11 +84,15 @@ class LoadAwsSecretsTests(SimpleTestCase):
 
     def test_unrecognised_keys_are_not_imported(self):
         environ = {SECRET_ID_VARIABLE: 'gooddriver/prod'}
-        client = FakeSecretsClient(response=secret_response({
-            'PATH': '/tmp/evil',
-            'AWS_SECRET_ACCESS_KEY': 'nope',
-            'DB_USER': 'app',
-        }))
+        client = FakeSecretsClient(
+            response=secret_response(
+                {
+                    'PATH': '/tmp/evil',
+                    'AWS_SECRET_ACCESS_KEY': 'nope',
+                    'DB_USER': 'app',
+                }
+            )
+        )
 
         with self.assertLogs('config.aws_secrets', level='WARNING') as logs:
             self.load(environ, client)

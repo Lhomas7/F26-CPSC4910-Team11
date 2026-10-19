@@ -16,7 +16,13 @@ export function Person({
   waving = false,
   ...frame
 }) {
-  const style = { '--skin': skin, '--hair': hair, '--shirt': shirt, '--pants': pants, ...frame.style };
+  const style = {
+    '--skin': skin,
+    '--hair': hair,
+    '--shirt': shirt,
+    '--pants': pants,
+    ...frame.style,
+  };
   return (
     <AssetFrame
       name="person"

@@ -1,44 +1,22 @@
-import logging
-import re
-from contextlib import contextmanager
 from datetime import timedelta
-from io import BytesIO, StringIO
-from pathlib import Path
-from tempfile import TemporaryDirectory
-from unittest.mock import patch
-
-import pyotp
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.hashers import make_password
-from django.core import mail
-from django.core.cache import cache
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
-from PIL import Image
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from drivers.models import Driver
 
+from ..middleware import IMPERSONATION_STARTED_KEY
 from ..models import (
     AdminImpersonationEvent,
-    DriverNotification,
-    LoginAttempt,
-    MFABackupCode,
-    MFACode,
-    MFASettings,
     RegistrationSettings,
     SponsorAccount,
     SponsorCompany,
 )
-from ..middleware import IMPERSONATION_STARTED_KEY
-from ..services.crypto import decrypt_secret, encrypt_secret
-from ..services.mfa import backup_codes_remaining, create_mfa_code
-
 from .common import enroll_totp
+
 
 class AdminUserListTests(APITestCase):
     url = reverse('accounts:admin-user-list')
@@ -86,9 +64,10 @@ class AdminUserListTests(APITestCase):
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual([user['display_name'] for user in response.data], [
-            'Dana Whitfield', 'Directory Admin', 'Marcus Alvarez'
-        ])
+        self.assertEqual(
+            [user['display_name'] for user in response.data],
+            ['Dana Whitfield', 'Directory Admin', 'Marcus Alvarez'],
+        )
         driver = next(user for user in response.data if user['role'] == 'driver')
         self.assertEqual(driver['display_name'], 'Marcus Alvarez')
         self.assertEqual(driver['sponsor_org']['name'], 'Palmetto Freight')
@@ -100,12 +79,8 @@ class AdminUserListTests(APITestCase):
         role_response = self.client.get(self.url, {'role': 'sponsor'})
         search_response = self.client.get(self.url, {'search': 'marcus'})
 
-        self.assertEqual([user['username'] for user in role_response.data], [
-            'dana.sponsor'
-        ])
-        self.assertEqual([user['username'] for user in search_response.data], [
-            'marcus.driver'
-        ])
+        self.assertEqual([user['username'] for user in role_response.data], ['dana.sponsor'])
+        self.assertEqual([user['username'] for user in search_response.data], ['marcus.driver'])
 
     def test_rejects_an_unknown_role_filter(self):
         self.client.force_authenticate(self.admin)
@@ -168,9 +143,10 @@ class AdminUserCreationTests(APITestCase):
         response = self.client.get(self.company_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual([company['name'] for company in response.data], [
-            'Blue Ridge Logistics', 'Palmetto Freight'
-        ])
+        self.assertEqual(
+            [company['name'] for company in response.data],
+            ['Blue Ridge Logistics', 'Palmetto Freight'],
+        )
 
     def test_creates_driver_with_optional_sponsor(self):
         self.client.force_authenticate(self.admin)
@@ -261,6 +237,7 @@ class AdminAccountDetailTests(APITestCase):
             password='ExamplePassword123!',
             email='manager@example.com',
         )
+        enroll_totp(cls.admin)
         cls.other_admin = get_user_model().objects.create_superuser(
             username='other.admin',
             password='ExamplePassword123!',
@@ -292,13 +269,17 @@ class AdminAccountDetailTests(APITestCase):
     def test_admin_can_update_another_admin_identity_and_status(self):
         self.client.force_authenticate(self.admin)
 
-        response = self.client.patch(self.detail_url(), {
-            'first_name': 'Updated',
-            'last_name': 'Administrator',
-            'username': 'updated.admin',
-            'email': 'updated@example.com',
-            'is_active': False,
-        }, format='json')
+        response = self.client.patch(
+            self.detail_url(),
+            {
+                'first_name': 'Updated',
+                'last_name': 'Administrator',
+                'username': 'updated.admin',
+                'email': 'updated@example.com',
+                'is_active': False,
+            },
+            format='json',
+        )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.other_admin.refresh_from_db()
@@ -321,6 +302,18 @@ class AdminAccountDetailTests(APITestCase):
         self.admin.refresh_from_db()
         self.assertTrue(self.admin.is_active)
 
+    def test_admin_must_enroll_mfa_before_reviewing_another_admin(self):
+        unenrolled_admin = get_user_model().objects.create_superuser(
+            username='unenrolled.admin',
+            password='ExamplePassword123!',
+            email='unenrolled@example.com',
+        )
+        self.client.force_authenticate(unenrolled_admin)
+
+        response = self.client.get(self.detail_url())
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_non_admin_cannot_review_or_update_admin(self):
         self.client.force_authenticate(self.driver_user)
 
@@ -341,12 +334,34 @@ class AdminAccountDetailTests(APITestCase):
         )
         self.client.force_authenticate(self.admin)
 
-        response = self.client.patch(self.detail_url(), {
-            'username': 'EXISTING.USER',
-            'email': 'EXISTING@EXAMPLE.COM',
-        }, format='json')
+        response = self.client.patch(
+            self.detail_url(),
+            {
+                'username': 'EXISTING.USER',
+                'email': 'EXISTING@EXAMPLE.COM',
+            },
+            format='json',
+        )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('username', response.data)
+        self.assertIn('email', response.data)
+
+    def test_rejects_invalid_admin_identity_fields(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.patch(
+            self.detail_url(),
+            {
+                'first_name': '1234',
+                'username': 'root',
+                'email': 'not-an-email',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('first_name', response.data)
         self.assertIn('username', response.data)
         self.assertIn('email', response.data)
 
@@ -410,14 +425,18 @@ class AdminSponsorDetailTests(APITestCase):
     def test_admin_can_update_sponsor_identity_company_and_status(self):
         self.client.force_authenticate(self.admin)
 
-        response = self.client.patch(self.detail_url(), {
-            'first_name': 'Danielle',
-            'last_name': 'Whitfield',
-            'username': 'danielle.sponsor',
-            'email': 'danielle@example.com',
-            'sponsor_org_id': self.other_company.id,
-            'is_active': False,
-        }, format='json')
+        response = self.client.patch(
+            self.detail_url(),
+            {
+                'first_name': 'Danielle',
+                'last_name': 'Whitfield',
+                'username': 'danielle.sponsor',
+                'email': 'danielle@example.com',
+                'sponsor_org_id': self.other_company.id,
+                'is_active': False,
+            },
+            format='json',
+        )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.sponsor_user.refresh_from_db()
@@ -427,15 +446,17 @@ class AdminSponsorDetailTests(APITestCase):
         self.assertFalse(self.sponsor_user.is_active)
 
     def test_rejects_duplicate_username_and_email(self):
-        get_user_model().objects.create_user(
-            username='existing.user', email='existing@example.com'
-        )
+        get_user_model().objects.create_user(username='existing.user', email='existing@example.com')
         self.client.force_authenticate(self.admin)
 
-        response = self.client.patch(self.detail_url(), {
-            'username': 'EXISTING.USER',
-            'email': 'EXISTING@EXAMPLE.COM',
-        }, format='json')
+        response = self.client.patch(
+            self.detail_url(),
+            {
+                'username': 'EXISTING.USER',
+                'email': 'EXISTING@EXAMPLE.COM',
+            },
+            format='json',
+        )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('username', response.data)
@@ -505,13 +526,17 @@ class AdminDriverDetailTests(APITestCase):
     def test_admin_can_update_driver_and_remove_sponsor(self):
         self.client.force_authenticate(self.admin)
 
-        response = self.client.patch(self.detail_url(), {
-            'display_name': 'Tasha Green',
-            'username': 'tasha.green',
-            'email': 'tasha.green@example.com',
-            'sponsor_org_id': None,
-            'is_active': False,
-        }, format='json')
+        response = self.client.patch(
+            self.detail_url(),
+            {
+                'display_name': 'Tasha Green',
+                'username': 'tasha.green',
+                'email': 'tasha.green@example.com',
+                'sponsor_org_id': None,
+                'is_active': False,
+            },
+            format='json',
+        )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.driver_user.refresh_from_db()
@@ -533,16 +558,18 @@ class AdminDriverDetailTests(APITestCase):
         self.assertEqual(response.data['sponsor_org']['name'], 'Blue Ridge Logistics')
 
     def test_rejects_invalid_or_duplicate_identity_fields(self):
-        get_user_model().objects.create_user(
-            username='existing.user', email='existing@example.com'
-        )
+        get_user_model().objects.create_user(username='existing.user', email='existing@example.com')
         self.client.force_authenticate(self.admin)
 
-        response = self.client.patch(self.detail_url(), {
-            'display_name': '   ',
-            'username': 'EXISTING.USER',
-            'email': 'EXISTING@EXAMPLE.COM',
-        }, format='json')
+        response = self.client.patch(
+            self.detail_url(),
+            {
+                'display_name': '   ',
+                'username': 'EXISTING.USER',
+                'email': 'EXISTING@EXAMPLE.COM',
+            },
+            format='json',
+        )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('display_name', response.data)
@@ -589,14 +616,20 @@ class AdminImpersonationTests(APITestCase):
         self.assertEqual(started.status_code, status.HTTP_200_OK)
         self.assertEqual(started.data['account_type'], 'driver')
         self.assertTrue(started.data['impersonation']['active'])
-        self.assertEqual(self.client.get(reverse('accounts:me')).data['user']['id'], self.driver_user.id)
+        self.assertEqual(
+            self.client.get(reverse('accounts:me')).data['user']['id'], self.driver_user.id
+        )
 
         stopped = self.client.post(reverse('accounts:admin-impersonation-stop'))
         self.assertEqual(stopped.status_code, status.HTTP_200_OK)
         self.assertEqual(stopped.data['id'], self.admin.id)
         self.assertEqual(stopped.data['account_type'], 'admin')
         self.assertEqual(
-            list(AdminImpersonationEvent.objects.values_list('action', flat=True).order_by('created_at')),
+            list(
+                AdminImpersonationEvent.objects.values_list('action', flat=True).order_by(
+                    'created_at'
+                )
+            ),
             ['start', 'stop'],
         )
 
@@ -645,9 +678,10 @@ class AdminImpersonationTests(APITestCase):
 
         self.assertEqual(response.data['user']['id'], self.admin.id)
         self.assertTrue(
-            AdminImpersonationEvent.objects.filter(action='expire', target=self.driver_user).exists()
+            AdminImpersonationEvent.objects.filter(
+                action='expire', target=self.driver_user
+            ).exists()
         )
-
 
 
 class AdminRegistrationSettingsTests(APITestCase):
@@ -694,26 +728,36 @@ class AdminRegistrationSettingsTests(APITestCase):
         self.assertEqual(response.data['email_verification_required'], True)
         self.assertTrue(RegistrationSettings.load().email_verification_required)
 
-        response = self.client.patch(self.url, {'email_verification_required': False}, format='json')
+        response = self.client.patch(
+            self.url, {'email_verification_required': False}, format='json'
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(RegistrationSettings.load().email_verification_required)
 
     def test_invalid_value_is_rejected(self):
         self.client.force_authenticate(self.admin)
 
-        response = self.client.patch(self.url, {'email_verification_required': 'sometimes'}, format='json')
+        response = self.client.patch(
+            self.url, {'email_verification_required': 'sometimes'}, format='json'
+        )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(RegistrationSettings.load().email_verification_required)
 
     def test_non_admins_cannot_read_or_change_setting(self):
-        anonymous = self.client.patch(self.url, {'email_verification_required': True}, format='json')
-        self.assertIn(anonymous.status_code, (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN))
+        anonymous = self.client.patch(
+            self.url, {'email_verification_required': True}, format='json'
+        )
+        self.assertIn(
+            anonymous.status_code, (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN)
+        )
 
         for user in (self.sponsor_user, self.driver_user):
             self.client.force_authenticate(user)
             self.assertEqual(self.client.get(self.url).status_code, status.HTTP_403_FORBIDDEN)
-            response = self.client.patch(self.url, {'email_verification_required': True}, format='json')
+            response = self.client.patch(
+                self.url, {'email_verification_required': True}, format='json'
+            )
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         self.assertFalse(RegistrationSettings.load().email_verification_required)

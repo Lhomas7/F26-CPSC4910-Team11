@@ -1,4 +1,4 @@
-export { API_URL, ApiError, checkHealth, isOutageError } from './client';
+export { API_URL, ApiError, NetworkError, checkHealth, isOutageError } from './client';
 export * from './about';
 export * from './authentication';
 export * from './accounts';

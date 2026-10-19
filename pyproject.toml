@@ -1,0 +1,39 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = [
+    "backend/venv",
+    "backend/.venv",
+    "backend/**/migrations",
+    "frontend",
+    "node_modules",
+    "build",
+    "coverage",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "W",
+    "I",
+    "B",
+    "UP",
+]
+ignore = [
+    "E501",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "accounts",
+    "about_page",
+    "drivers",
+    "good_driver",
+]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+line-ending = "lf"
+docstring-code-format = true

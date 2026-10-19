@@ -79,7 +79,12 @@ class AdminAccountDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
         fields = (
-            'id', 'first_name', 'last_name', 'username', 'email', 'role',
+            'id',
+            'first_name',
+            'last_name',
+            'username',
+            'email',
+            'role',
             'is_active',
         )
         read_only_fields = ('id', 'role')
@@ -100,9 +105,7 @@ class AdminAccountDetailSerializer(serializers.ModelSerializer):
         if self.instance:
             users = users.exclude(pk=self.instance.pk)
         if users.exists():
-            raise serializers.ValidationError(
-                'An account already uses that email address.'
-            )
+            raise serializers.ValidationError('An account already uses that email address.')
         return value
 
 
@@ -122,8 +125,15 @@ class AdminSponsorDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
         fields = (
-            'id', 'first_name', 'last_name', 'username', 'email', 'role',
-            'sponsor_org', 'sponsor_org_id', 'is_active',
+            'id',
+            'first_name',
+            'last_name',
+            'username',
+            'email',
+            'role',
+            'sponsor_org',
+            'sponsor_org_id',
+            'is_active',
         )
         read_only_fields = ('id', 'role', 'sponsor_org')
 
@@ -165,9 +175,7 @@ class AdminSponsorDetailSerializer(serializers.ModelSerializer):
         if self.instance:
             users = users.exclude(pk=self.instance.pk)
         if users.exists():
-            raise serializers.ValidationError(
-                'An account already uses that email address.'
-            )
+            raise serializers.ValidationError('An account already uses that email address.')
         return value
 
     @transaction.atomic
@@ -200,8 +208,15 @@ class AdminDriverDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
         fields = (
-            'id', 'display_name', 'username', 'email', 'role', 'sponsor_org',
-            'sponsor_org_id', 'is_active', 'profile_picture_url',
+            'id',
+            'display_name',
+            'username',
+            'email',
+            'role',
+            'sponsor_org',
+            'sponsor_org_id',
+            'is_active',
+            'profile_picture_url',
         )
         read_only_fields = ('id', 'role', 'sponsor_org', 'profile_picture_url')
 
@@ -244,9 +259,7 @@ class AdminDriverDetailSerializer(serializers.ModelSerializer):
         if self.instance:
             users = users.exclude(pk=self.instance.pk)
         if users.exists():
-            raise serializers.ValidationError(
-                'An account already uses that email address.'
-            )
+            raise serializers.ValidationError('An account already uses that email address.')
         return value
 
     @transaction.atomic
@@ -300,9 +313,7 @@ class AdminUserCreateSerializer(serializers.Serializer):
     def validate_email(self, value):
         value = value.strip().lower()
         if get_user_model().objects.filter(email__iexact=value).exists():
-            raise serializers.ValidationError(
-                'An account already uses that email address.'
-            )
+            raise serializers.ValidationError('An account already uses that email address.')
         return value
 
     def validate_password(self, value):
@@ -319,13 +330,13 @@ class AdminUserCreateSerializer(serializers.Serializer):
         role = attrs['role']
         sponsor_org = attrs.get('sponsor_org')
         if role == 'sponsor' and sponsor_org is None:
-            raise serializers.ValidationError({
-                'sponsor_org_id': 'Choose the organization this sponsor manages.'
-            })
+            raise serializers.ValidationError(
+                {'sponsor_org_id': 'Choose the organization this sponsor manages.'}
+            )
         if role == 'admin' and sponsor_org is not None:
-            raise serializers.ValidationError({
-                'sponsor_org_id': 'Administrator accounts cannot have a sponsor organization.'
-            })
+            raise serializers.ValidationError(
+                {'sponsor_org_id': 'Administrator accounts cannot have a sponsor organization.'}
+            )
 
         proposed_user = get_user_model()(
             username=attrs['username'],
@@ -336,7 +347,7 @@ class AdminUserCreateSerializer(serializers.Serializer):
         try:
             django_validate_password(attrs['password'], proposed_user)
         except DjangoValidationError as exc:
-            raise serializers.ValidationError({'password': list(exc.messages)})
+            raise serializers.ValidationError({'password': list(exc.messages)}) from exc
         return attrs
 
     @transaction.atomic

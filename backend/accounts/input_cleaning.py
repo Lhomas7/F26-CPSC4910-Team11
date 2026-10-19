@@ -9,7 +9,6 @@ import unicodedata
 from django.core.validators import RegexValidator
 from rest_framework import serializers
 
-
 # Usernames already use periods throughout the application, so the accepted
 # character set retains them even though the initial draft omitted them.
 USERNAME_PATTERN = r'^[A-Za-z0-9._-]+$'
@@ -57,21 +56,31 @@ def normalize_email(value):
 # tuple drives validation and GET /api/password-policy/, so the requirements
 # the UI displays cannot drift from what the server enforces.
 PASSWORD_RULES = (
-    ('At least 12 characters',
-     lambda value: len(value) >= 12,
-     'Password must be at least 12 characters long.'),
-    ('At least 3 lowercase letters',
-     lambda value: sum(character.islower() for character in value) >= 3,
-     'Password must contain at least three lowercase letters.'),
-    ('At least 2 uppercase letters',
-     lambda value: sum(character.isupper() for character in value) >= 2,
-     'Password must contain at least two uppercase letters.'),
-    ('At least 2 numbers',
-     lambda value: sum(character.isdigit() for character in value) >= 2,
-     'Password must contain at least two numbers.'),
-    ('At least 1 approved symbol',
-     lambda value: any(character in PASSWORD_SPECIAL_CHARACTERS for character in value),
-     'Password must contain at least one approved symbol.'),
+    (
+        'At least 12 characters',
+        lambda value: len(value) >= 12,
+        'Password must be at least 12 characters long.',
+    ),
+    (
+        'At least 3 lowercase letters',
+        lambda value: sum(character.islower() for character in value) >= 3,
+        'Password must contain at least three lowercase letters.',
+    ),
+    (
+        'At least 2 uppercase letters',
+        lambda value: sum(character.isupper() for character in value) >= 2,
+        'Password must contain at least two uppercase letters.',
+    ),
+    (
+        'At least 2 numbers',
+        lambda value: sum(character.isdigit() for character in value) >= 2,
+        'Password must contain at least two numbers.',
+    ),
+    (
+        'At least 1 approved symbol',
+        lambda value: any(character in PASSWORD_SPECIAL_CHARACTERS for character in value),
+        'Password must contain at least one approved symbol.',
+    ),
 )
 PASSWORD_IDENTITY_REQUIREMENT = 'Must not contain your username or email address'
 

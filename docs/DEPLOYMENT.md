@@ -21,22 +21,22 @@ debug mode, and only local `.env` files should ever set it.
 
 ### Environment variables
 
-| Variable | Deployed value | Notes |
-| --- | --- | --- |
-| `DJANGO_DEBUG` | unset / `false` | Never `true` on a server |
-| `DJANGO_SECRET_KEY` | secret | Required when not in debug mode; startup fails without it |
-| `DJANGO_ALLOWED_HOSTS` | `api.example.com` | Comma-separated host names |
-| `DJANGO_CORS_ALLOWED_ORIGINS` | `https://app.example.com` | Origins of the React app |
-| `DJANGO_CSRF_TRUSTED_ORIGINS` | `https://app.example.com` | Same origins, with scheme |
-| `FRONTEND_URL` | `https://app.example.com` | Base of password-reset links |
-| `DJANGO_BEHIND_PROXY` | `true` behind a load balancer | Trusts `X-Forwarded-Proto` so HTTPS redirect does not loop |
-| `DJANGO_SECURE_SSL_REDIRECT` | default `true` | Set `false` only if TLS is fully handled upstream |
-| `DJANGO_SECURE_HSTS_SECONDS` | default `3600` | Raise (e.g. `31536000`) once HTTPS is proven; browsers cache it |
-| `DJANGO_COOKIE_DOMAIN` | `.example.com` | Only if app and API are on different subdomains |
-| `DJANGO_SESSION_COOKIE_SAMESITE` | default `Lax` | `None` is needed only for genuinely cross-site deployments |
-| `DB_*`, `TOTP_ENCRYPTION_KEY`, `EMAIL_*`, `TWILIO_*` | secrets | See below |
-| `AWS_SECRETS_MANAGER_SECRET_ID` | secret name or ARN | Turns on Secrets Manager loading |
-| `AWS_REGION` | e.g. `us-east-1` | Region of the secret |
+| Variable                                             | Deployed value                | Notes                                                           |
+| ---------------------------------------------------- | ----------------------------- | --------------------------------------------------------------- |
+| `DJANGO_DEBUG`                                       | unset / `false`               | Never `true` on a server                                        |
+| `DJANGO_SECRET_KEY`                                  | secret                        | Required when not in debug mode; startup fails without it       |
+| `DJANGO_ALLOWED_HOSTS`                               | `api.example.com`             | Comma-separated host names                                      |
+| `DJANGO_CORS_ALLOWED_ORIGINS`                        | `https://app.example.com`     | Origins of the React app                                        |
+| `DJANGO_CSRF_TRUSTED_ORIGINS`                        | `https://app.example.com`     | Same origins, with scheme                                       |
+| `FRONTEND_URL`                                       | `https://app.example.com`     | Base of password-reset links                                    |
+| `DJANGO_BEHIND_PROXY`                                | `true` behind a load balancer | Trusts `X-Forwarded-Proto` so HTTPS redirect does not loop      |
+| `DJANGO_SECURE_SSL_REDIRECT`                         | default `true`                | Set `false` only if TLS is fully handled upstream               |
+| `DJANGO_SECURE_HSTS_SECONDS`                         | default `3600`                | Raise (e.g. `31536000`) once HTTPS is proven; browsers cache it |
+| `DJANGO_COOKIE_DOMAIN`                               | `.example.com`                | Only if app and API are on different subdomains                 |
+| `DJANGO_SESSION_COOKIE_SAMESITE`                     | default `Lax`                 | `None` is needed only for genuinely cross-site deployments      |
+| `DB_*`, `TOTP_ENCRYPTION_KEY`, `EMAIL_*`, `TWILIO_*` | secrets                       | See below                                                       |
+| `AWS_SECRETS_MANAGER_SECRET_ID`                      | secret name or ARN            | Turns on Secrets Manager loading                                |
+| `AWS_REGION`                                         | e.g. `us-east-1`              | Region of the secret                                            |
 
 Outside debug mode Django also sets secure session/CSRF cookies, the HTTPS
 redirect, HSTS, and `nosniff`. `/api/health/` is exempt from the redirect so load
@@ -98,11 +98,13 @@ The runtime identity (EC2 instance profile, ECS task role, etc.) needs only:
 ```json
 {
   "Version": "2012-10-17",
-  "Statement": [{
-    "Effect": "Allow",
-    "Action": "secretsmanager:GetSecretValue",
-    "Resource": "arn:aws:secretsmanager:REGION:ACCOUNT:secret:gooddriver/production-*"
-  }]
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "secretsmanager:GetSecretValue",
+      "Resource": "arn:aws:secretsmanager:REGION:ACCOUNT:secret:gooddriver/production-*"
+    }
+  ]
 }
 ```
 

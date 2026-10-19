@@ -218,7 +218,12 @@ class DeviceCheckTests(MailAssertMixin, APITestCase):
 
         response = self.client.post(
             reverse('accounts:password-reset-confirm'),
-            {'uid': uid, 'token': token, 'password': new_password, 'password_confirm': new_password},
+            {
+                'uid': uid,
+                'token': token,
+                'password': new_password,
+                'password_confirm': new_password,
+            },
             format='json',
         )
 

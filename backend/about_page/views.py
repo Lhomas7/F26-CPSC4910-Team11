@@ -1,16 +1,22 @@
 from rest_framework.exceptions import NotFound
-from rest_framework.generics import RetrieveAPIView
+from rest_framework.generics import RetrieveUpdateAPIView
+from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
+
+from accounts.permissions import AdminAccount, MFAEnrolled
 
 from .models import AboutPageRelease
 from .serializers import AboutPageReleaseSerializer
 
 
-class CurrentAboutPageReleaseView(RetrieveAPIView):
-    """Return the release with the newest release date."""
+class CurrentAboutPageReleaseView(RetrieveUpdateAPIView):
+    """Return the release with the newest release date; admins can edit it."""
 
-    authentication_classes = ()
-    permission_classes = ()
     serializer_class = AboutPageReleaseSerializer
+
+    def get_permissions(self):
+        if self.request.method in SAFE_METHODS:
+            return []
+        return [IsAuthenticated(), AdminAccount(), MFAEnrolled()]
 
     def get_object(self):
         release = AboutPageRelease.objects.first()

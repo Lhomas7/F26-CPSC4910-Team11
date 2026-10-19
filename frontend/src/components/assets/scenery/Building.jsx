@@ -47,9 +47,18 @@ const PARTS = {
  * `lit` switches the windows to warm night-time light.
  */
 export default function Building({ variant = 'office', color, floors = 5, lit = false, ...frame }) {
-  const style = { ...(color ? { '--building-color': color } : {}), '--floors': floors, ...frame.style };
+  const style = {
+    ...(color ? { '--building-color': color } : {}),
+    '--floors': floors,
+    ...frame.style,
+  };
   return (
-    <AssetFrame name="building" modifiers={[`building-${variant}`, lit && 'building-lit']} {...frame} style={style}>
+    <AssetFrame
+      name="building"
+      modifiers={[`building-${variant}`, lit && 'building-lit']}
+      {...frame}
+      style={style}
+    >
       {PARTS[variant] || PARTS.office}
     </AssetFrame>
   );

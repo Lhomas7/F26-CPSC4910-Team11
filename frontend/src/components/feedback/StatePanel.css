@@ -1,7 +1,7 @@
 .state-panel {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: .65rem;
+  border-radius: 0.65rem;
   padding: 1.5rem;
 }
 
@@ -13,31 +13,19 @@
 
 .state-panel p {
   color: var(--ink-2);
-  margin: .25rem 0 1rem;
+  margin: 0.25rem 0 1rem;
 }
 
 .state-panel-error {
-  background: #fbeae8;
-  border-color: #dfaaa6;
+  background: var(--danger-soft);
+  border-color: var(--danger-line);
 }
 
 .state-panel-error h1,
 .state-panel-error h2 {
-  color: #9e2f29;
+  color: var(--danger-ink);
 }
 
 .state-panel-success {
   border-color: var(--accent);
-}
-
-@media (prefers-color-scheme: dark) {
-  .state-panel-error {
-    background: #3b2220;
-    border-color: #7c3c37;
-  }
-
-  .state-panel-error h1,
-  .state-panel-error h2 {
-    color: #e5766e;
-  }
 }

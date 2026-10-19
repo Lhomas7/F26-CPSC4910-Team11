@@ -1,6 +1,6 @@
 .brand-mark {
   background: var(--road);
-  border-radius: .45rem;
+  border-radius: 0.45rem;
   flex-shrink: 0;
   height: 1.875rem;
   overflow: hidden;
@@ -9,18 +9,22 @@
 }
 
 .brand-mark::after {
-  background: repeating-linear-gradient(to bottom, var(--stripe) 0 .3rem, transparent .3rem .55rem);
-  bottom: .2rem;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--stripe) 0 0.3rem,
+    transparent 0.3rem 0.55rem
+  );
+  bottom: 0.2rem;
   content: '';
-  left: calc(50% - .1rem);
+  left: calc(50% - 0.1rem);
   position: absolute;
-  top: .2rem;
-  width: .2rem;
+  top: 0.2rem;
+  width: 0.2rem;
 }
 
 /* On dark panels the road-coloured tile would blend in, so lift the fill
    and outline it. The inset ring doesn't change the tile's size. */
 .brand-mark-on-dark {
-  background: #3a403c;
+  background: var(--road-raised);
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 20%);
 }

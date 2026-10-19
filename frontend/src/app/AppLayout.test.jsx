@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
@@ -23,7 +23,7 @@ function renderLayout(overrides = {}) {
       <AppLayout />
     </MemoryRouter>,
   );
-  return auth;
+  return { auth };
 }
 
 function getSignOutButton() {
@@ -32,7 +32,7 @@ function getSignOutButton() {
 }
 
 test('Sign out asks for confirmation before signing out', () => {
-  const auth = renderLayout();
+  const { auth } = renderLayout();
 
   userEvent.click(getSignOutButton());
 
@@ -42,8 +42,26 @@ test('Sign out asks for confirmation before signing out', () => {
   expect(auth.signOut).not.toHaveBeenCalled();
 });
 
+test('Sign out explains that it also ends an active View-as session', () => {
+  renderLayout({
+    user: {
+      ...USER,
+      impersonation: {
+        active: true,
+        admin: { name: 'Kylie Gilbert', username: 'kylie.admin' },
+      },
+    },
+  });
+
+  userEvent.click(getSignOutButton());
+
+  expect(screen.getByRole('dialog', { name: 'Sign out?' })).toHaveTextContent(
+    'This will end your View-as session and sign you out completely.',
+  );
+});
+
 test('Cancel keeps the user signed in and dismisses the confirmation', () => {
-  const auth = renderLayout();
+  const { auth } = renderLayout();
   const signOutButton = getSignOutButton();
 
   userEvent.click(signOutButton);
@@ -55,29 +73,29 @@ test('Cancel keeps the user signed in and dismisses the confirmation', () => {
 });
 
 test('Escape and a backdrop click also cancel', () => {
-  const auth = renderLayout();
+  const { auth } = renderLayout();
 
   userEvent.click(getSignOutButton());
   userEvent.keyboard('{Escape}');
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
   userEvent.click(getSignOutButton());
-  userEvent.click(document.querySelector('.modal-backdrop'));
+  // The backdrop is deliberately presentation-only, so it has no accessible query.
+  // eslint-disable-next-line testing-library/no-node-access
+  fireEvent.mouseDown(screen.getByRole('dialog').parentElement);
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   expect(auth.signOut).not.toHaveBeenCalled();
 });
 
 test('confirming signs the user out', async () => {
-  const auth = renderLayout();
+  const { auth } = renderLayout();
 
   userEvent.click(getSignOutButton());
   const dialog = screen.getByRole('dialog', { name: 'Sign out?' });
-  await act(async () => {
-    userEvent.click(dialog.querySelector('.modal-button.primary'));
-  });
+  userEvent.click(within(dialog).getByRole('button', { name: 'Sign out' }));
 
-  expect(auth.signOut).toHaveBeenCalledTimes(1);
-  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  await waitFor(() => expect(auth.signOut).toHaveBeenCalledTimes(1));
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 });
 
 test('Tab stays inside the dialog', () => {
@@ -85,7 +103,8 @@ test('Tab stays inside the dialog', () => {
 
   userEvent.click(getSignOutButton());
   const dialog = screen.getByRole('dialog', { name: 'Sign out?' });
-  const [cancel, confirm] = dialog.querySelectorAll('button');
+  const cancel = within(dialog).getByRole('button', { name: 'Cancel' });
+  const confirm = within(dialog).getByRole('button', { name: 'Sign out' });
 
   userEvent.tab();
   expect(confirm).toHaveFocus();
@@ -102,13 +121,11 @@ test('no device question when none is pending', () => {
 });
 
 test('a pending device question opens the dialog over the page', async () => {
-  const auth = renderLayout({ user: { ...USER, session: { device_check: 'new_device' } } });
+  const { auth } = renderLayout({ user: { ...USER, session: { device_check: 'new_device' } } });
 
   expect(screen.getByRole('dialog', { name: 'Is this your device?' })).toBeInTheDocument();
-  await act(async () => {
-    userEvent.click(screen.getByRole('button', { name: 'No, this is a shared or public device' }));
-  });
-  expect(auth.answerDeviceCheck).toHaveBeenCalledWith(false);
+  userEvent.click(screen.getByRole('button', { name: 'No, this is a shared or public device' }));
+  await waitFor(() => expect(auth.answerDeviceCheck).toHaveBeenCalledWith(false));
 });
 
 test('an expired session is sent to the sign-in page', () => {
@@ -121,7 +138,10 @@ test('an expired session is sent to the sign-in page', () => {
   });
 
   render(
-    <MemoryRouter initialEntries={['/about']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <MemoryRouter
+      initialEntries={['/about']}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
       <Routes>
         <Route element={<AppLayout />}>
           <Route path="/about" element={<p>About page</p>} />

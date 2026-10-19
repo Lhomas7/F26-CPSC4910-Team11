@@ -1,0 +1,46 @@
+.viewed-identity-summary {
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  display: flex;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.75rem;
+}
+
+.viewed-identity-avatar {
+  flex: 0 0 auto;
+  height: 2.75rem;
+  width: 2.75rem;
+}
+
+.viewed-identity-details {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.viewed-identity-heading {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.viewed-identity-heading strong,
+.viewed-identity-username,
+.viewed-identity-organization {
+  overflow-wrap: anywhere;
+}
+
+.viewed-identity-heading strong {
+  color: var(--ink);
+}
+
+.viewed-identity-username,
+.viewed-identity-organization {
+  color: var(--ink-2);
+  font-size: 0.78rem;
+}

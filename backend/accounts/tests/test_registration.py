@@ -1,43 +1,21 @@
-import logging
 import re
-from contextlib import contextmanager
 from datetime import timedelta
-from io import BytesIO, StringIO
-from pathlib import Path
-from tempfile import TemporaryDirectory
-from unittest.mock import patch
-
-import pyotp
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.hashers import make_password
 from django.core import mail
 from django.core.cache import cache
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
-from PIL import Image
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from drivers.models import Driver
-
 from ..models import (
-    AdminImpersonationEvent,
-    DriverNotification,
-    LoginAttempt,
-    MFABackupCode,
-    MFACode,
-    MFASettings,
     RegistrationEmailCode,
     RegistrationSettings,
     SponsorAccount,
-    SponsorCompany,
 )
-from ..middleware import IMPERSONATION_STARTED_KEY
-from ..services.crypto import decrypt_secret, encrypt_secret
-from ..services.mfa import MAX_ATTEMPTS, backup_codes_remaining, create_mfa_code
+from ..services.mfa import MAX_ATTEMPTS
+
 
 class RegistrationTests(APITestCase):
     driver_url = reverse('accounts:driver-register')
@@ -252,7 +230,6 @@ class RegistrationTests(APITestCase):
         )
 
 
-
 class RegistrationEmailVerificationTests(APITestCase):
     driver_url = reverse('accounts:driver-register')
     sponsor_url = reverse('accounts:sponsor-register')
@@ -282,7 +259,9 @@ class RegistrationEmailVerificationTests(APITestCase):
         return re.search(r'\b(\d{6})\b', mail.outbox[-1].body).group(1)
 
     def request_code(self, url=None, **overrides):
-        response = self.client.post(url or self.driver_url, self.registration_data(**overrides), format='json')
+        response = self.client.post(
+            url or self.driver_url, self.registration_data(**overrides), format='json'
+        )
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
         return self.sent_code()
 
@@ -317,7 +296,9 @@ class RegistrationEmailVerificationTests(APITestCase):
     def test_correct_code_creates_driver_account(self):
         code = self.request_code()
 
-        response = self.client.post(self.driver_url, self.registration_data(code=code), format='json')
+        response = self.client.post(
+            self.driver_url, self.registration_data(code=code), format='json'
+        )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         user = get_user_model().objects.get(username='jamie.rivera')
@@ -341,7 +322,9 @@ class RegistrationEmailVerificationTests(APITestCase):
         code = self.request_code()
         wrong = '000000' if code != '000000' else '111111'
 
-        response = self.client.post(self.driver_url, self.registration_data(code=wrong), format='json')
+        response = self.client.post(
+            self.driver_url, self.registration_data(code=wrong), format='json'
+        )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('code', response.data)
@@ -353,7 +336,9 @@ class RegistrationEmailVerificationTests(APITestCase):
         for _ in range(MAX_ATTEMPTS):
             self.client.post(self.driver_url, self.registration_data(code=wrong), format='json')
 
-        response = self.client.post(self.driver_url, self.registration_data(code=code), format='json')
+        response = self.client.post(
+            self.driver_url, self.registration_data(code=code), format='json'
+        )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(get_user_model().objects.exists())
@@ -362,7 +347,9 @@ class RegistrationEmailVerificationTests(APITestCase):
         code = self.request_code()
         RegistrationEmailCode.objects.update(expires_at=timezone.now() - timedelta(seconds=1))
 
-        response = self.client.post(self.driver_url, self.registration_data(code=code), format='json')
+        response = self.client.post(
+            self.driver_url, self.registration_data(code=code), format='json'
+        )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -393,16 +380,26 @@ class RegistrationEmailVerificationTests(APITestCase):
         second = self.request_code()
 
         if first != second:
-            response = self.client.post(self.driver_url, self.registration_data(code=first), format='json')
+            response = self.client.post(
+                self.driver_url, self.registration_data(code=first), format='json'
+            )
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        response = self.client.post(self.driver_url, self.registration_data(code=second), format='json')
+        response = self.client.post(
+            self.driver_url, self.registration_data(code=second), format='json'
+        )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_verified_sponsor_is_created_and_signed_in(self):
-        sponsor = {'username': 'sponsor.user', 'email': 'sponsor@example.com', 'company_name': 'Palmetto Freight'}
+        sponsor = {
+            'username': 'sponsor.user',
+            'email': 'sponsor@example.com',
+            'company_name': 'Palmetto Freight',
+        }
         code = self.request_code(self.sponsor_url, **sponsor)
 
-        response = self.client.post(self.sponsor_url, self.registration_data(code=code, **sponsor), format='json')
+        response = self.client.post(
+            self.sponsor_url, self.registration_data(code=code, **sponsor), format='json'
+        )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(SponsorAccount.objects.filter(user__username='sponsor.user').exists())
