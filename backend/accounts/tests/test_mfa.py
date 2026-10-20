@@ -1002,6 +1002,29 @@ class SponsorMFATests(MailAssertMixin, APITestCase):
         response = self.client.post(self.url, {'driver_mfa_required': True}, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_admins_and_anonymous_callers_cannot_change_the_setting(self):
+        admin = get_user_model().objects.create_user(
+            username='admin.one', password='ExamplePassword123!', is_staff=True
+        )
+        enroll_totp(admin)
+        # A staff user who also has a sponsor relation is still an admin.
+        staff_sponsor = get_user_model().objects.create_user(
+            username='staff.sponsor', password='ExamplePassword123!', is_staff=True
+        )
+        SponsorAccount.objects.create(user=staff_sponsor, company=self.sponsor)
+        enroll_totp(staff_sponsor)
+
+        for name, user in (('admin', admin), ('staff sponsor', staff_sponsor), ('anon', None)):
+            self.client.force_authenticate(user)
+            with self.subTest(caller=name):
+                self.assertEqual(self.client.get(self.url).status_code, status.HTTP_403_FORBIDDEN)
+                response = self.client.post(self.url, {'driver_mfa_required': True}, format='json')
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        self.sponsor.refresh_from_db()
+        self.assertFalse(self.sponsor.driver_mfa_required)
+        self.assertFalse(DriverNotification.objects.exists())
+
 
 class MFANotificationTests(MailAssertMixin, APITestCase):
     def setUp(self):

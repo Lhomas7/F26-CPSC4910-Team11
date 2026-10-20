@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 
 from drivers.models import Driver
 
-from ..permissions import MFAEnrolled
+from ..permissions import MFAEnrolled, SponsorAccount
 from ..sensitive import hide_sensitive_data
 from ..serializers import (
     BackupCodesRegenerateSerializer,
@@ -335,31 +335,18 @@ class MFABackupCodesRegenerateView(APIView):
 
 
 class SponsorMFASettingsView(APIView):
-    permission_classes = [IsAuthenticated, MFAEnrolled]
+    permission_classes = [IsAuthenticated, SponsorAccount, MFAEnrolled]
 
     def get(self, request):
-        user = request.user
-        if not hasattr(user, 'sponsor_account') or user.sponsor_account is None:
-            return Response(
-                {'detail': 'Only a sponsor can manage this setting.'},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        company = user.sponsor_account.company
+        company = request.user.sponsor_account.company
         return Response({'driver_mfa_required': company.driver_mfa_required})
 
     def post(self, request):
         serializer = SponsorMFASerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         driver_mfa_required = serializer.validated_data['driver_mfa_required']
-        user = request.user
 
-        if not hasattr(user, 'sponsor_account') or user.sponsor_account is None:
-            return Response(
-                {'detail': 'Only a sponsor can manage this setting.'},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        company = user.sponsor_account.company
+        company = request.user.sponsor_account.company
         company.driver_mfa_required = driver_mfa_required
         company.save(update_fields=['driver_mfa_required'])
 
