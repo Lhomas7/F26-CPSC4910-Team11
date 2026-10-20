@@ -880,19 +880,19 @@ in `PROJECT_TODO.md`, not create a second competing fixture system.
 
 ### DX-007: Environment Doctor and Explicit Database Selection
 
-- [ ] Add a non-destructive command such as `manage.py doctor` that reports the
+- [x] Add a non-destructive command such as `manage.py doctor` that reports the
       selected database engine, database target without its password, Debug
       state, frontend origin, email/SMS delivery mode, migration state, and API
       health prerequisites.
 - [ ] Clearly label SQLite as isolated/local and MySQL as shared before commands
       that can mutate data.
-- [ ] Detect and explain shell variables that override `backend/.env`, since a
+- [x] Detect and explain shell variables that override `backend/.env`, since a
       fresh PowerShell terminal and an existing server process can otherwise
       select different databases.
 - [ ] Fail with a concise actionable message when `TOTP_ENCRYPTION_KEY` or
       another required value is missing.
-- [ ] Warn when console email/SMS delivery is not active during local MFA tests.
-- [ ] Add a safe connectivity check that does not run migrations or write data.
+- [x] Warn when console email/SMS delivery is not active during local MFA tests.
+- [x] Add a safe connectivity check that does not run migrations or write data.
 - [ ] Integrate the diagnostic into the future universal setup/start commands
       rather than maintaining unrelated scripts.
 - [ ] Test output with secrets redacted on Windows, macOS, SQLite, and MySQL.

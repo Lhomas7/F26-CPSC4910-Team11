@@ -571,6 +571,20 @@ See [`docs/PROJECT_TODO.md`](docs/PROJECT_TODO.md) for the detailed engineering,
 
 ## Troubleshooting
 
+From `backend`, with the virtual environment active, run the same diagnostic
+command on Windows and macOS:
+
+```text
+python manage.py doctor
+python manage.py doctor --check-database
+```
+
+The first reports configuration without connecting to the database. The second
+performs read-only connectivity and migration-history checks against the selected
+database. Neither applies migrations nor creates a missing SQLite file.
+See [the offline diagnostic guide](docs/LOCAL_OFFLINE_DEVELOPMENT.md#diagnose-the-environment)
+for output, environment overrides, and command limitations.
+
 <details>
 <summary><strong>PowerShell cannot activate the virtual environment</strong></summary>
 

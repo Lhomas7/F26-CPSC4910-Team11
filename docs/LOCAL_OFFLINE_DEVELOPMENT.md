@@ -268,6 +268,47 @@ Keep the backend terminal visible while testing authentication. Do not commit or
 
 ## Troubleshooting
 
+### Diagnose the environment
+
+From `backend`, with the virtual environment active:
+
+```text
+python manage.py doctor
+```
+
+This command reports SQLite versus potentially shared MySQL, the database
+target, Debug status, frontend origin/CORS/CSRF alignment, email/SMS delivery
+modes, and encryption-key format. Secret values, database passwords, and provider
+credentials are hidden. A valid key format does not prove it can decrypt data
+that was encrypted previously.
+
+If effective environment values differ from `backend/.env`, the report names
+the variables without printing either value. Inherited process variables and
+runtime secrets can override the file. Review those names and retry from a
+fresh terminal if an old shell override is selecting the wrong database.
+
+Connectivity is opt-in:
+
+```text
+python manage.py doctor --check-database
+```
+
+The database check uses `SELECT 1` and reads migration metadata. It does not
+apply migrations, seed records, or create a missing SQLite database. It lists
+unapplied migrations and checks for inconsistent history or conflicting leaves.
+Pending migrations are advisory and do not fail the command; failed
+connectivity, invalid keys, conflicts, and inconsistent history do. Inspect
+`python manage.py migrate --plan` before applying migrations separately.
+
+Django settings must load before any management command can run. If a required
+startup value such as `TOTP_ENCRYPTION_KEY` or a MySQL connection variable is
+missing, correct the startup error first. The future setup/bootstrap command
+will handle diagnostics before Django loads.
+
+Diagnostics do not test the HTTP server, prove external email/SMS delivery,
+or guarantee parity between SQLite and MySQL. Windows tests cover the command;
+macOS and live MySQL checks remain separate verification work.
+
 ### Django tries to contact RDS
 
 An error containing `MySQLdb.OperationalError` and the RDS hostname means the process selected MySQL. Confirm `DB_ENGINE=sqlite` in `backend/.env`. Shell variables such as `$env:DB_ENGINE` or `export DB_ENGINE` affect only that terminal and override `.env`.
