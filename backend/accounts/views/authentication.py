@@ -385,14 +385,16 @@ class PasswordResetConfirmView(AnonymousAPIView):
 
         serializer = ChangePasswordSerializer(data=request.data, context={'user': user})
         serializer.is_valid(raise_exception=True)
+        # The new password hash signs out every existing session: each one stores
+        # a hash derived from the old password, and AuthenticationMiddleware
+        # deletes any session whose hash no longer matches on its next request.
+        # It also invalidates this reset link, since the token covers the hash.
         user.set_password(serializer.validated_data['password'])
         user.save()
         # Whoever reset the password may not be the person who trusted those
         # browsers, so every device has to answer the question again.
         revoke_devices(user)
 
-        # Changing the password invalidates the token (and every existing session,
-        # because the session hash is derived from the password hash).
         try:
             notify_password_reset(user)
         except Exception:

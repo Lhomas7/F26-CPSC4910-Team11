@@ -530,6 +530,104 @@ class PasswordResetTests(APITestCase):
 
         self.assertFalse(self.client.get(reverse('accounts:me')).data['authenticated'])
 
+    def sign_in_browser(self, username='driver.one', password='ExamplePassword123!'):
+        """Sign in through the real login endpoint in a separate browser."""
+        browser = self.client_class()
+        response = browser.post(
+            reverse('accounts:login'),
+            {'username': username, 'password': password},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(browser.get(reverse('accounts:me')).data['authenticated'])
+        return browser
+
+    def assert_signed_out(self, browser):
+        session_key = browser.cookies[settings.SESSION_COOKIE_NAME].value
+        self.assertFalse(browser.get(reverse('accounts:me')).data['authenticated'])
+        # The stale session is deleted server-side, not just ignored.
+        self.assertFalse(Session.objects.filter(session_key=session_key).exists())
+        response = browser.get(reverse('accounts:self-profile'))
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_every_browser_is_signed_out_after_reset(self):
+        # e.g. the owner's phone and an attacker's laptop.
+        first = self.sign_in_browser()
+        second = self.sign_in_browser()
+        uid, token = self.issue_link()
+
+        self.confirm(uid, token)
+
+        self.assert_signed_out(first)
+        self.assert_signed_out(second)
+
+    def test_sessions_that_completed_mfa_are_signed_out_after_reset(self):
+        MFASettings.objects.create(user=self.user, email_enabled=True)
+        browser = self.client_class()
+        browser.post(
+            reverse('accounts:login'),
+            {'username': 'driver.one', 'password': 'ExamplePassword123!'},
+            format='json',
+        )
+        raw_code = create_mfa_code(self.user, purpose='login', method='email')
+        browser.post(
+            reverse('accounts:login-mfa'), {'method': 'email', 'code': raw_code}, format='json'
+        )
+        self.assertTrue(browser.get(reverse('accounts:me')).data['authenticated'])
+        uid, token = self.issue_link()
+
+        self.confirm(uid, token)
+
+        self.assert_signed_out(browser)
+
+    def test_sponsor_sessions_are_signed_out_after_reset(self):
+        sponsor = get_user_model().objects.create_user(
+            username='sponsor.one',
+            email='sponsor@example.com',
+            password='ExamplePassword123!',
+        )
+        SponsorAccount.objects.create(
+            user=sponsor, company=SponsorCompany.objects.create(name='Palmetto Freight')
+        )
+        browser = self.sign_in_browser(username='sponsor.one')
+        self.request_reset(email='sponsor@example.com')
+        uid, token = re.search(
+            r'/reset-password/([^/\s]+)/([^/\s]+)', mail.outbox[0].body
+        ).groups()
+
+        self.confirm(uid, token)
+
+        self.assert_signed_out(browser)
+
+    def test_other_accounts_stay_signed_in_after_reset(self):
+        other = get_user_model().objects.create_user(
+            username='driver.two',
+            email='two@example.com',
+            password='ExamplePassword123!',
+        )
+        Driver.objects.create(user=other, name='Driver Two', status='approved')
+        browser = self.sign_in_browser(username='driver.two')
+        uid, token = self.issue_link()
+
+        self.confirm(uid, token)
+
+        self.assertTrue(browser.get(reverse('accounts:me')).data['authenticated'])
+
+    def test_only_the_new_password_signs_in_after_reset(self):
+        old_browser = self.sign_in_browser()
+        uid, token = self.issue_link()
+
+        self.confirm(uid, token)
+
+        self.assert_signed_out(old_browser)
+        response = self.client.post(
+            reverse('accounts:login'),
+            {'username': 'driver.one', 'password': 'ExamplePassword123!'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.sign_in_browser(password=self.new_password)
+
     def test_confirm_rejects_reusing_the_current_password(self):
         uid, token = self.issue_link()
 
