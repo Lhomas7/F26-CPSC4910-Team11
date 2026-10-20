@@ -731,11 +731,54 @@ class AdminImpersonationTests(APITestCase):
         response = self.client.get(reverse('accounts:me'))
 
         self.assertEqual(response.data['user']['id'], self.admin.id)
+        self.assertEqual(response.data['user']['impersonation']['code'], 'view_as_expired')
         self.assertTrue(
             AdminImpersonationEvent.objects.filter(
                 action='expire', target=self.driver_user
             ).exists()
         )
+
+    def test_invalidated_session_blocks_requests_until_return_is_acknowledged(self):
+        self.start(self.driver_user)
+        self.driver_user.is_active = False
+        self.driver_user.save(update_fields=['is_active'])
+
+        for _ in range(2):
+            response = self.client.patch(
+                reverse('accounts:admin-driver-detail', args=[self.driver_user.id]),
+                {'is_active': True}, format='json',
+            )
+            self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+            self.assertEqual(response.json()['code'], 'view_as_inactive_target')
+        self.driver_user.refresh_from_db()
+        self.assertFalse(self.driver_user.is_active)
+        me = self.client.get(reverse('accounts:me'))
+        self.assertEqual(me.data['user']['id'], self.admin.id)
+        stopped = self.client.post(reverse('accounts:admin-impersonation-stop'))
+        self.assertEqual(stopped.status_code, status.HTTP_200_OK)
+        self.assertEqual(stopped.data['id'], self.admin.id)
+
+    def test_target_losing_required_mfa_ends_active_session(self):
+        self.start(self.sponsor_user)
+        self.sponsor_user.mfa_settings.delete()
+
+        response = self.client.get(reverse('accounts:me'))
+
+        self.assertEqual(response.data['user']['id'], self.admin.id)
+        self.assertEqual(
+            response.data['user']['impersonation']['code'], 'view_as_target_mfa_required'
+        )
+
+    def test_malformed_start_timestamp_ends_session_without_server_error(self):
+        self.start(self.driver_user)
+        session = self.client.session
+        session[IMPERSONATION_STARTED_KEY] = 'invalid timestamp'
+        session.save()
+
+        response = self.client.post(reverse('accounts:admin-impersonation-stop'))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], self.admin.id)
 
 
 class AdminRegistrationSettingsTests(APITestCase):

@@ -50,8 +50,18 @@ and include a stable `code`:
 - `view_as_target_mfa_required`: the target has required MFA without enrollment.
 - `view_as_already_active`: a View-As session is already active.
 
-These checks apply to the start request. Session invalidation after a target's
-policy or status changes is a separate lifecycle concern.
+Active sessions recheck target eligibility on every request. Expiration,
+deletion, deactivation, loss of an eligible role, or loss of required MFA ends
+View-As. Invalid or timezone-naive start timestamps are treated as expired.
+
+An ended session is reported as inactive impersonation metadata on `/api/me/`,
+including a `code` such as `view_as_expired` or `view_as_target_deleted`.
+Other API requests return `409` until the client acknowledges the return using
+the existing stop endpoint. This prevents a request intended for the viewed
+user from silently executing as the administrator. Stop also succeeds when it
+races automatic expiration. The shared API client handles this response by
+restoring the administrator identity and showing the existing session-ended
+notice. Detection occurs on the next API request; idle polling is not added.
 
 ## Administrator password reset
 

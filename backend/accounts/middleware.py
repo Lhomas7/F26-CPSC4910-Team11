@@ -7,6 +7,7 @@ from django.utils.dateparse import parse_datetime
 
 from .models import AdminImpersonationEvent
 from .services import get_account_type
+from .services.impersonation import view_as_eligibility
 from .services.session_state import (
     AUTH_AT_KEY,
     LAST_ACTIVITY_KEY,
@@ -16,6 +17,7 @@ from .services.session_state import (
 
 IMPERSONATION_TARGET_KEY = 'admin_impersonation_target_id'
 IMPERSONATION_STARTED_KEY = 'admin_impersonation_started_at'
+IMPERSONATION_ENDED_KEY = 'admin_impersonation_ended'
 IMPERSONATION_DURATION = timedelta(minutes=30)
 SESSION_EXPIRED_MESSAGE = 'Your session expired. Sign in again to continue.'
 # Refresh the activity stamp at most this often, so ordinary browsing doesn't
@@ -111,12 +113,20 @@ class AdminImpersonationMiddleware:
         request.real_user = request.user
         target_id = request.session.get(IMPERSONATION_TARGET_KEY)
         if target_id and request.real_user.is_authenticated and request.real_user.is_staff:
-            started = parse_datetime(request.session.get(IMPERSONATION_STARTED_KEY, ''))
+            try:
+                started = parse_datetime(request.session.get(IMPERSONATION_STARTED_KEY, ''))
+            except (TypeError, ValueError):
+                started = None
+            if started and timezone.is_naive(started):
+                started = None
             expired = not started or timezone.now() >= started + IMPERSONATION_DURATION
             target = get_user_model().objects.filter(pk=target_id).first()
             role = get_account_type(target) if target else None
+            ineligible = view_as_eligibility(target) if target else {
+                'code': 'view_as_target_deleted',
+            }
 
-            if expired or not target or not target.is_active or role not in ('driver', 'sponsor'):
+            if expired or ineligible:
                 if expired and target:
                     AdminImpersonationEvent.objects.create(
                         admin=request.real_user,
@@ -126,6 +136,11 @@ class AdminImpersonationMiddleware:
                         ip_address=client_ip(request),
                     )
                 clear_impersonation(request.session)
+                request.session[IMPERSONATION_ENDED_KEY] = {
+                    'active': False,
+                    'code': 'view_as_expired' if expired else ineligible['code'],
+                    'detail': 'The View-As session ended. Return to your administrator account.',
+                }
             else:
                 request.user = target
                 request.impersonation_active = True
@@ -141,4 +156,12 @@ class AdminImpersonationMiddleware:
                         status=403,
                     )
 
+        # Do not execute a stale target request with the administrator's identity.
+        # Keep this guard until the client acknowledges the administrator return;
+        # concurrent requests must not silently regain administrator privileges.
+        ended = request.session.get(IMPERSONATION_ENDED_KEY)
+        if ended and request.path.startswith('/api/') and request.path not in (
+            '/api/me/', self.stop_path, '/api/logout/', '/api/csrf/',
+        ):
+            return JsonResponse(ended, status=409)
         return self.get_response(request)

@@ -1,4 +1,4 @@
-import { API_ACTIVITY_EVENT, SESSION_EXPIRED_EVENT } from '../auth/sessionEvents';
+import { API_ACTIVITY_EVENT, SESSION_EXPIRED_EVENT, VIEW_AS_ENDED_EVENT } from '../auth/sessionEvents';
 import { ApiError, NetworkError, checkHealth, isOutageError, readJson, request } from './client';
 
 function jsonResponse(status, data) {
@@ -36,6 +36,21 @@ test('isOutageError flags unreachable servers and 5xx responses only', () => {
 test('request identifies a fetch failure as a network outage', async () => {
   global.fetch = jest.fn().mockRejectedValue(new TypeError('Failed to fetch'));
   await expect(request('/me/')).rejects.toBeInstanceOf(NetworkError);
+});
+
+test('a terminated View-As response announces the identity change', async () => {
+  const ended = jest.fn();
+  window.addEventListener(VIEW_AS_ENDED_EVENT, ended);
+  try {
+    global.fetch = jest.fn().mockResolvedValue(jsonResponse(409, {
+      active: false, code: 'view_as_expired', detail: 'View-As ended.',
+    }));
+    const response = await request('/points/');
+    expect(response.status).toBe(409);
+    expect(ended).toHaveBeenCalledTimes(1);
+  } finally {
+    window.removeEventListener(VIEW_AS_ENDED_EVENT, ended);
+  }
 });
 
 test('checkHealth reports the health endpoint status without throwing', async () => {

@@ -17,7 +17,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..input_cleaning import PASSWORD_SPECIAL_CHARACTERS, password_requirements
-from ..middleware import client_ip, impersonation_details
+from ..middleware import IMPERSONATION_ENDED_KEY, client_ip, impersonation_details
 from ..models import AdminImpersonationEvent
 from ..sensitive import hide_sensitive_data
 from ..serializers import (
@@ -274,6 +274,8 @@ class MeView(APIView):
             return Response({'authenticated': False})
         if getattr(request, 'impersonation_active', False):
             public_user['impersonation'] = impersonation_details(request, user)
+        elif request.session.get(IMPERSONATION_ENDED_KEY):
+            public_user['impersonation'] = request.session[IMPERSONATION_ENDED_KEY]
         public_user['session'] = session_info(request)
         return Response({'authenticated': True, 'user': public_user})
 
