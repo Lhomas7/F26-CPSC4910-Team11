@@ -12,6 +12,7 @@ from rest_framework.views import APIView
 
 from ..middleware import (
     IMPERSONATION_ENDED_KEY,
+    IMPERSONATION_ROLE_KEY,
     IMPERSONATION_STARTED_KEY,
     IMPERSONATION_TARGET_KEY,
     clear_impersonation,
@@ -55,6 +56,7 @@ class AdminImpersonationStartView(APIView):
 
         started_at = timezone.now()
         request.session[IMPERSONATION_TARGET_KEY] = target.id
+        request.session[IMPERSONATION_ROLE_KEY] = target_role
         request.session[IMPERSONATION_STARTED_KEY] = started_at.isoformat()
         AdminImpersonationEvent.objects.create(
             admin=request.user,
@@ -99,6 +101,7 @@ class AdminImpersonationStopView(APIView):
                 target=target,
                 target_role=target_role,
                 action='stop',
+                reason='view_as_stopped',
                 ip_address=client_ip(request),
             )
         return Response(get_public_user(admin))

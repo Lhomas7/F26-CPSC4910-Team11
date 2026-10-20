@@ -1,12 +1,12 @@
 from datetime import timedelta
 
-from django.contrib.auth import get_user_model, logout
+from django.contrib.auth import SESSION_KEY, get_user_model, logout
 from django.http import JsonResponse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
 from .models import AdminImpersonationEvent
-from .services import get_account_type
+from .services import get_account_type, get_mfa_status
 from .services.impersonation import view_as_eligibility
 from .services.session_state import (
     AUTH_AT_KEY,
@@ -18,6 +18,7 @@ from .services.session_state import (
 IMPERSONATION_TARGET_KEY = 'admin_impersonation_target_id'
 IMPERSONATION_STARTED_KEY = 'admin_impersonation_started_at'
 IMPERSONATION_ENDED_KEY = 'admin_impersonation_ended'
+IMPERSONATION_ROLE_KEY = 'admin_impersonation_target_role'
 IMPERSONATION_DURATION = timedelta(minutes=30)
 SESSION_EXPIRED_MESSAGE = 'Your session expired. Sign in again to continue.'
 # Refresh the activity stamp at most this often, so ordinary browsing doesn't
@@ -33,6 +34,41 @@ def client_ip(request):
 def clear_impersonation(session):
     session.pop(IMPERSONATION_TARGET_KEY, None)
     session.pop(IMPERSONATION_STARTED_KEY, None)
+    session.pop(IMPERSONATION_ROLE_KEY, None)
+
+
+def end_impersonation(request, reason, action='invalidate', target=None):
+    """Record automatic termination before discarding the effective identity."""
+    target_id = request.session.get(IMPERSONATION_TARGET_KEY)
+    if not target_id:
+        return
+    if target is None:
+        target = get_user_model().objects.filter(pk=target_id).first()
+    admin = getattr(request, 'real_user', request.user)
+    if not admin.is_authenticated:
+        admin = get_user_model().objects.filter(pk=request.session.get(SESSION_KEY)).first()
+    # Preserve the role even after a target is deleted or becomes an admin.
+    role = request.session.get(IMPERSONATION_ROLE_KEY)
+    if role not in ('driver', 'sponsor'):
+        start = AdminImpersonationEvent.objects.filter(
+            admin=admin,
+            target_id=target_id, action='start',
+        ).first()
+        role = start.target_role if start else get_account_type(target) if target else ''
+    AdminImpersonationEvent.objects.create(
+        admin=admin,
+        target=target,
+        target_role=role,
+        action=action,
+        reason=reason,
+        ip_address=client_ip(request),
+    )
+    clear_impersonation(request.session)
+    request.session[IMPERSONATION_ENDED_KEY] = {
+        'active': False,
+        'code': reason,
+        'detail': 'The View-As session ended. Return to your administrator account.',
+    }
 
 
 def impersonation_details(request, target, admin=None):
@@ -81,6 +117,7 @@ class SessionTimeoutMiddleware:
                 policy['absolute'] and now - session[AUTH_AT_KEY] >= policy['absolute']
             )
             if idle_expired or absolute_expired:
+                end_impersonation(request, 'session_expired', action='expire')
                 logout(request)
                 # Let logout itself finish normally so the client gets its 204.
                 if request.path != self.logout_path:
@@ -112,6 +149,23 @@ class AdminImpersonationMiddleware:
     def __call__(self, request):
         request.real_user = request.user
         target_id = request.session.get(IMPERSONATION_TARGET_KEY)
+        if target_id and not request.real_user.is_authenticated:
+            end_impersonation(request, 'view_as_admin_session_ended')
+            logout(request)
+            return JsonResponse(
+                {'code': 'session_expired', 'detail': SESSION_EXPIRED_MESSAGE}, status=401,
+            )
+        if target_id and request.real_user.is_authenticated:
+            admin_mfa = get_mfa_status(request.real_user)
+            if not request.real_user.is_staff or not request.real_user.is_active:
+                end_impersonation(request, 'view_as_admin_ineligible')
+                logout(request)
+                return JsonResponse(
+                    {'code': 'session_expired', 'detail': SESSION_EXPIRED_MESSAGE}, status=401,
+                )
+            if admin_mfa['required'] and not admin_mfa['enrolled']:
+                end_impersonation(request, 'view_as_admin_mfa_required')
+                target_id = None
         if target_id and request.real_user.is_authenticated and request.real_user.is_staff:
             try:
                 started = parse_datetime(request.session.get(IMPERSONATION_STARTED_KEY, ''))
@@ -121,26 +175,17 @@ class AdminImpersonationMiddleware:
                 started = None
             expired = not started or timezone.now() >= started + IMPERSONATION_DURATION
             target = get_user_model().objects.filter(pk=target_id).first()
-            role = get_account_type(target) if target else None
             ineligible = view_as_eligibility(target) if target else {
                 'code': 'view_as_target_deleted',
             }
 
             if expired or ineligible:
-                if expired and target:
-                    AdminImpersonationEvent.objects.create(
-                        admin=request.real_user,
-                        target=target,
-                        target_role=role or 'driver',
-                        action='expire',
-                        ip_address=client_ip(request),
-                    )
-                clear_impersonation(request.session)
-                request.session[IMPERSONATION_ENDED_KEY] = {
-                    'active': False,
-                    'code': 'view_as_expired' if expired else ineligible['code'],
-                    'detail': 'The View-As session ended. Return to your administrator account.',
-                }
+                end_impersonation(
+                    request,
+                    'view_as_expired' if expired else ineligible['code'],
+                    action='expire' if expired else 'invalidate',
+                    target=target,
+                )
             else:
                 request.user = target
                 request.impersonation_active = True

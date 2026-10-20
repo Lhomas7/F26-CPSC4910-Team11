@@ -227,6 +227,7 @@ class AdminImpersonationEvent(models.Model):
         ('start', 'Started'),
         ('stop', 'Stopped'),
         ('expire', 'Expired'),
+        ('invalidate', 'Invalidated'),
     ]
     ROLE_CHOICES = [('driver', 'Driver'), ('sponsor', 'Sponsor')]
 
@@ -244,6 +245,7 @@ class AdminImpersonationEvent(models.Model):
     )
     target_role = models.CharField(max_length=10, choices=ROLE_CHOICES)
     action = models.CharField(max_length=10, choices=ACTION_CHOICES)
+    reason = models.CharField(max_length=64, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

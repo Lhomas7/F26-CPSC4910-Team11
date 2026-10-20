@@ -63,6 +63,27 @@ races automatic expiration. The shared API client handles this response by
 restoring the administrator identity and showing the existing session-ended
 notice. Detection occurs on the next API request; idle polling is not added.
 
+### View-As audit trail
+
+`AdminImpersonationEvent` records `start`, `stop`, `expire`, and `invalidate`.
+Automatic termination stores a stable `reason` code. Manual return uses
+`view_as_stopped`; signing out uses `signed_out`. An administrator session
+timeout records `session_expired` before clearing authentication.
+
+Loss of administrator privileges ends authentication. Loss of required
+administrator MFA ends View-As and returns to the MFA enrollment gate.
+Target deletion, an ineligible target role, deactivation, and required-MFA loss
+are recorded as invalidations. The original viewed role is retained in session
+metadata; deleted account foreign keys remain nullable. Existing audit rows
+retain an empty reason because their historical reason cannot be reconstructed.
+
+Migration `accounts.0013_impersonation_termination_reason` adds this metadata.
+Apply it before running the updated backend. Events remain read-only in Django
+administration, where action and reason can be filtered. Acknowledging an
+automatically ended session does not add a second terminal event. These are
+request-based records, not a guarantee of deduplication between simultaneous
+requests; a database-backed session identity would be needed for that guarantee.
+
 ## Administrator password reset
 
 Admins are excluded from the public "Forgot password" email flow. Instead:

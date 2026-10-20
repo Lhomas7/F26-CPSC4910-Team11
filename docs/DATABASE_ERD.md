@@ -125,6 +125,7 @@ erDiagram
         bigint id PK
         varchar target_role
         varchar action
+        varchar reason "blank for historical events"
         varchar ip_address "nullable"
         datetime created_at
         int admin_id FK "nullable"

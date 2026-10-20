@@ -339,6 +339,7 @@ class LogoutView(APIView):
                 target=request.user,
                 target_role=get_account_type(request.user),
                 action='stop',
+                reason='signed_out',
                 ip_address=client_ip(request),
             )
         logout(request)
