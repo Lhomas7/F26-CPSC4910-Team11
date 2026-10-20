@@ -43,7 +43,7 @@ from ..services.mfa import create_mfa_code, verify_backup_code, verify_code
 from ..services.notify import notify_password_reset, notify_unrecognized_sign_in
 from ..services.password_reset import (
     find_resettable_users,
-    send_password_reset_email,
+    send_password_reset_emails_in_background,
     token_is_valid,
     user_from_uid,
 )
@@ -362,13 +362,9 @@ class PasswordResetRequestView(AnonymousAPIView):
         # to spam a mailbox. Throttled and unknown addresses get the same reply.
         digest = hashlib.sha256(email.casefold().encode()).hexdigest()
         if cache.add(f'password_reset:{digest}', '1', settings.PASSWORD_RESET_REQUEST_COOLDOWN):
-            for user in find_resettable_users(email):
-                try:
-                    send_password_reset_email(user)
-                except Exception:
-                    # Delivery problems must not change the response, or they
-                    # would reveal which addresses have accounts.
-                    logger.exception('Could not send password reset email.')
+            # Delivery happens off the request path, so neither its duration nor
+            # its failures change the response for known addresses.
+            send_password_reset_emails_in_background(find_resettable_users(email))
 
         return Response({'detail': PASSWORD_RESET_REQUEST_MESSAGE})
 

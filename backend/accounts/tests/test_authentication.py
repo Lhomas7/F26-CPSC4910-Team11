@@ -1,4 +1,5 @@
 import re
+import threading
 from unittest.mock import patch
 
 from django.conf import settings
@@ -24,7 +25,8 @@ from ..models import (
 )
 from ..services.mfa import create_mfa_code
 from ..views import LoginView
-from .common import enroll_totp
+from ..views.authentication import PASSWORD_RESET_REQUEST_MESSAGE
+from .common import enroll_totp, send_reset_emails_inline
 
 
 class ChangePasswordTests(APITestCase):
@@ -342,6 +344,7 @@ class PasswordResetTests(APITestCase):
     def setUp(self):
         cache.clear()
         mail.outbox = []
+        send_reset_emails_inline(self)
         self.user = get_user_model().objects.create_user(
             username='driver.one',
             email='driver@example.com',
@@ -422,14 +425,25 @@ class PasswordResetTests(APITestCase):
         self.assertEqual(len(mail.outbox), 0)
 
     @patch(
-        'accounts.views.authentication.send_password_reset_email',
+        'accounts.services.password_reset.send_password_reset_email',
         side_effect=RuntimeError('smtp down'),
     )
     def test_delivery_failure_does_not_change_the_response(self, _send):
-        with self.assertLogs('accounts.views.authentication', level='ERROR'):
+        with self.assertLogs('accounts.services.password_reset', level='ERROR'):
             response = self.request_reset()
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {'detail': PASSWORD_RESET_REQUEST_MESSAGE})
+
+    @patch('accounts.views.authentication.send_password_reset_emails_in_background')
+    def test_known_and_unknown_addresses_take_the_same_delivery_path(self, send_in_background):
+        self.request_reset()
+        self.request_reset(email='nobody@example.com')
+
+        self.assertEqual(
+            [call.args[0] for call in send_in_background.call_args_list],
+            [[self.user], []],
+        )
 
     def test_confirm_sets_the_new_password(self):
         uid, token = self.issue_link()
@@ -527,12 +541,52 @@ class PasswordResetTests(APITestCase):
         self.assertTrue(self.user.check_password('ExamplePassword123!'))
 
 
+class PasswordResetDeliveryTimingTests(APITestCase):
+    """Uses a real thread: the response must not wait for the email to send."""
+
+    def setUp(self):
+        cache.clear()
+        user = get_user_model().objects.create_user(
+            username='driver.one',
+            email='driver@example.com',
+            password='ExamplePassword123!',
+        )
+        Driver.objects.create(user=user, name='Driver One', status='approved')
+
+    def test_response_does_not_wait_for_email_delivery(self):
+        started = threading.Event()
+        release = threading.Event()
+
+        def slow_send(_user):
+            started.set()
+            release.wait(5)
+
+        with patch(
+            'accounts.services.password_reset.send_password_reset_email',
+            side_effect=slow_send,
+        ):
+            try:
+                response = self.client.post(
+                    reverse('accounts:password-reset'),
+                    {'email': 'driver@example.com'},
+                    format='json',
+                )
+
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                self.assertTrue(started.wait(5))
+                # The email is still "sending" even though the response is back.
+                self.assertFalse(release.is_set())
+            finally:
+                release.set()
+
+
 class PasswordResetExcludesAdminsTests(APITestCase):
     request_url = reverse('accounts:password-reset')
 
     def setUp(self):
         cache.clear()
         mail.outbox = []
+        send_reset_emails_inline(self)
 
     def test_staff_account_email_sends_no_reset_link(self):
         get_user_model().objects.create_user(
