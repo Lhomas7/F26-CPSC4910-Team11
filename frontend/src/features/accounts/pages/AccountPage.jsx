@@ -10,6 +10,7 @@ import useApiRequest from '../../../hooks/useApiRequest';
 import { validateEmail, validatePhoneNumber } from '../../../utils/accountValidation';
 import LoginActivityPanel from '../components/LoginActivityPanel';
 import MfaPanel from '../components/MfaPanel';
+import NotificationsPanel from '../components/NotificationsPanel';
 import PasswordPanel from '../components/PasswordPanel';
 import '../Accounts.css';
 
@@ -494,6 +495,9 @@ export default function AccountPage() {
                   mfa={profile.mfa || { required: false, enrolled: false, methods: [] }}
                   onRefreshed={refreshMfa}
                 />
+                {profile.account_type === 'driver' && (
+                  <NotificationsPanel phoneNumber={profile.phone_number} />
+                )}
                 {LOGIN_ACTIVITY_ROLES.includes(profile.account_type) && <LoginActivityPanel />}
               </>
             )}
