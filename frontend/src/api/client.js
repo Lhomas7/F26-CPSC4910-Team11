@@ -18,7 +18,8 @@ function extractError(data) {
   if (typeof data.detail === 'string') return data.detail;
   for (const key of Object.keys(data)) {
     const value = data[key];
-    if (Array.isArray(value) && value.length) return String(value[0]);
+    // A field can fail several rules at once (e.g. a password); show them all.
+    if (Array.isArray(value) && value.length) return value.map(String).join(' ');
     if (typeof value === 'string') return value;
   }
   return 'Something went wrong.';

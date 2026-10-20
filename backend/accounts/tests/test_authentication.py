@@ -58,6 +58,23 @@ class ChangePasswordTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('password_confirm', response.data)
 
+    def test_reports_every_unmet_requirement_and_no_met_ones(self):
+        response = self.client.post(
+            self.url,
+            {'password': 'abcdefghijklmn', 'password_confirm': 'abcdefghijklmn'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data['password'],
+            [
+                'Password must contain at least two uppercase letters.',
+                'Password must contain at least two numbers.',
+                'Password must contain at least one approved symbol.',
+            ],
+        )
+
     def test_changes_password_after_server_side_validation(self):
         password = 'ValidSecurePassword22!'
         response = self.client.post(

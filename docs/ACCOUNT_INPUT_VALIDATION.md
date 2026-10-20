@@ -41,6 +41,10 @@ The password rules are defined once, in `PASSWORD_RULES` in `backend/accounts/in
 
 Signup, password reset, password change, and the administrator's add-user form show a **Show password requirements** link under the password field. It opens a popover with the server's list, so the UI never hard-codes the rules. React's `validatePassword` still runs for instant feedback.
 
+### Password error messages
+
+When a password is rejected, the error lists **every** requirement it fails, in the same order as the requirements list, and leaves out the ones it already meets. For example, `abcdefghijklmn` gets only the uppercase, number, and symbol messages, so the user can fix everything in one pass. The server returns the messages as a list under `password` (`unmet_password_requirements` in `input_cleaning.py`). React's `unmetPasswordRequirements` in `frontend/src/utils/accountValidation.js` mirrors it, and the API client joins a field's messages into one line.
+
 ### Username compatibility decision
 
 The initial draft proposed `^[A-Za-z][A-Za-z0-9_-]{2,29}$`. The application already uses usernames such as `driver.one`, `jamie.rivera`, and `team11.admin`, so periods remain supported and existing usernames are not invalidated. Whether usernames must begin with a letter remains a future product decision.

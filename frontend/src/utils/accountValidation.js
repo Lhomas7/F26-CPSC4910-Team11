@@ -43,25 +43,41 @@ export function validateUsername(value) {
   return null;
 }
 
-export function validatePassword(password, { username = '', email = '' } = {}) {
-  // Count each character group separately so feedback identifies the unmet rule.
-  if (!password) return 'Enter a password.';
-  if (password.length < 12) return 'Password must be at least 12 characters long.';
-  if ((password.match(/[a-z]/g) || []).length < 3)
-    return 'Password must contain at least three lowercase letters.';
-  if ((password.match(/[A-Z]/g) || []).length < 2)
-    return 'Password must contain at least two uppercase letters.';
-  if ((password.match(/[0-9]/g) || []).length < 2)
-    return 'Password must contain at least two numbers.';
-  if (!APPROVED_SYMBOLS.test(password))
-    return 'Password must contain at least one approved symbol.';
+const countMatches = (value, pattern) => (value.match(pattern) || []).length;
+
+// Same order and wording as PASSWORD_RULES in backend/accounts/input_cleaning.py.
+const PASSWORD_RULES = [
+  [(value) => value.length >= 12, 'Password must be at least 12 characters long.'],
+  [
+    (value) => countMatches(value, /[a-z]/g) >= 3,
+    'Password must contain at least three lowercase letters.',
+  ],
+  [
+    (value) => countMatches(value, /[A-Z]/g) >= 2,
+    'Password must contain at least two uppercase letters.',
+  ],
+  [(value) => countMatches(value, /[0-9]/g) >= 2, 'Password must contain at least two numbers.'],
+  [(value) => APPROVED_SYMBOLS.test(value), 'Password must contain at least one approved symbol.'],
+];
+
+/** Every requirement this password does not meet, in display order; met ones are left out. */
+export function unmetPasswordRequirements(password, { username = '', email = '' } = {}) {
+  const problems = PASSWORD_RULES.filter(([check]) => !check(password)).map(
+    ([, message]) => message,
+  );
   const foldedPassword = password.toLowerCase();
   if (
     [username, email].some(
       (identity) => identity.trim() && foldedPassword.includes(identity.trim().toLowerCase()),
     )
   ) {
-    return 'Password must not contain your username or email address.';
+    problems.push('Password must not contain your username or email address.');
   }
-  return null;
+  return problems;
+}
+
+export function validatePassword(password, identity) {
+  if (!password) return 'Enter a password.';
+  const problems = unmetPasswordRequirements(password, identity);
+  return problems.length ? problems.join(' ') : null;
 }

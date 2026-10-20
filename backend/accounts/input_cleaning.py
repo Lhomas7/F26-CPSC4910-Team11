@@ -104,19 +104,28 @@ def password_requirements():
     return requirements
 
 
-def validate_password_policy(value, *, username='', email=''):
-    """Apply the account password policy without returning the secret in errors."""
-    for _requirement, check, message in PASSWORD_RULES:
-        if not check(value):
-            raise serializers.ValidationError(message)
+def unmet_password_requirements(value, *, username='', email=''):
+    """Messages for every policy rule this password fails, in display order.
+
+    Rules the password already meets are left out, so users see exactly what
+    to fix in one pass instead of one rule per submission.
+    """
+    problems = [message for _requirement, check, message in PASSWORD_RULES if not check(value)]
 
     folded_password = value.casefold()
-    for identity_value in (username, email):
-        normalized_identity = identity_value.strip().casefold()
-        if normalized_identity and normalized_identity in folded_password:
-            raise serializers.ValidationError(
-                'Password must not contain your username or email address.'
-            )
+    if any(
+        identity.strip() and identity.strip().casefold() in folded_password
+        for identity in (username, email)
+    ):
+        problems.append('Password must not contain your username or email address.')
+    return problems
+
+
+def validate_password_policy(value, *, username='', email=''):
+    """Apply the account password policy without returning the secret in errors."""
+    problems = unmet_password_requirements(value, username=username, email=email)
+    if problems:
+        raise serializers.ValidationError(problems)
     return value
 
 

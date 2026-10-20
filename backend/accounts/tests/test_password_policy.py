@@ -15,13 +15,13 @@ from ..input_cleaning import (
 
 
 class PasswordPolicyRulesTests(APITestCase):
-    def assert_rejected_with(self, password, message, **identity):
+    def assert_rejected_with(self, password, *messages, **identity):
         with self.assertRaises(ValidationError) as caught:
             validate_password_policy(password, **identity)
-        self.assertEqual(caught.exception.detail, [message])
+        self.assertEqual(caught.exception.detail, list(messages))
 
     def test_each_rule_keeps_its_specific_error(self):
-        self.assert_rejected_with('Ab1!', 'Password must be at least 12 characters long.')
+        self.assert_rejected_with('abcdefAB12!', 'Password must be at least 12 characters long.')
         self.assert_rejected_with(
             'ABCDEFGHab12!', 'Password must contain at least three lowercase letters.'
         )
@@ -33,11 +33,43 @@ class PasswordPolicyRulesTests(APITestCase):
             'abcdefghAB12x', 'Password must contain at least one approved symbol.'
         )
 
+    def test_every_unmet_rule_is_reported_and_met_rules_are_not(self):
+        # Meets the lowercase rule only.
+        self.assert_rejected_with(
+            'abc',
+            'Password must be at least 12 characters long.',
+            'Password must contain at least two uppercase letters.',
+            'Password must contain at least two numbers.',
+            'Password must contain at least one approved symbol.',
+        )
+
+    def test_unmet_rules_keep_the_order_users_read_them_in(self):
+        with self.assertRaises(ValidationError) as caught:
+            validate_password_policy('Ab1!', username='ab1')
+
+        rule_messages = [message for _text, _check, message in PASSWORD_RULES]
+        reported = [str(message) for message in caught.exception.detail]
+        self.assertEqual(reported[:-1], [m for m in rule_messages if m in reported])
+        self.assertEqual(
+            reported[-1], 'Password must not contain your username or email address.'
+        )
+
     def test_identity_rule_still_applies(self):
         self.assert_rejected_with(
             'xxjordan.leeAB12!',
             'Password must not contain your username or email address.',
             username='Jordan.Lee',
+        )
+
+    def test_identity_rule_is_reported_with_the_other_unmet_rules(self):
+        self.assert_rejected_with(
+            'jordanlee',
+            'Password must be at least 12 characters long.',
+            'Password must contain at least two uppercase letters.',
+            'Password must contain at least two numbers.',
+            'Password must contain at least one approved symbol.',
+            'Password must not contain your username or email address.',
+            username='JordanLee',
         )
 
     def test_valid_password_passes(self):

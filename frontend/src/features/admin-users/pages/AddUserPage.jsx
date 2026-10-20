@@ -128,7 +128,8 @@ export default function AddUserPage() {
     setPhase(null);
   };
 
-  const fieldError = (name) => (Array.isArray(errors[name]) ? errors[name][0] : errors[name]);
+  const fieldError = (name) =>
+    Array.isArray(errors[name]) ? errors[name].join(' ') : errors[name];
   const selectedOrganization = organizations.find(
     (org) => String(org.id) === String(form.sponsor_org_id),
   );
