@@ -148,7 +148,7 @@ jobs:
           umask 177
           cat > web/.env <<EOF
           DJANGO_DEBUG=false
-          DJANGO_ALLOWED_HOSTS=${{ vars.EC2_HOST }},127.0.0.1
+          DJANGO_ALLOWED_HOSTS=${{ vars.EC2_HOST }},${{ vars.APP_DOMAIN }},127.0.0.1
           # 127.0.0.1 is required: the Docker HEALTHCHECK hits the app from
           # inside the container at http://127.0.0.1:8000, which Django
           # rejects as a disallowed host without this.
