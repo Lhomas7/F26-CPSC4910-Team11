@@ -739,11 +739,15 @@ commits from the visual work above.
 
 ### DX-001: Audit and Stabilize the Django Migration Graph
 
+Sprint 5 audit and recovery guidance: [MIGRATIONS.md](MIGRATIONS.md). Forward
+upgrades from both Sprint 5 branches are covered on isolated SQLite databases;
+shared MySQL verification remains outstanding.
+
 - [ ] Capture the current migration graph with `showmigrations` and `migrate
       --plan` against a fresh local database and the shared development schema.
-- [ ] Confirm `makemigrations --check --dry-run` produces no uncommitted model
+- [x] Confirm `makemigrations --check --dry-run` produces no uncommitted model
       changes.
-- [ ] Document why `accounts` contains two `0004` branch migrations and the
+- [x] Document why `accounts` contains two `0004` branch migrations and the
       subsequent `0005` merge migration.
 - [ ] Check for duplicate operations, obsolete temporary models, unsafe data
       migrations, and dependencies that produce different fresh-install and
@@ -752,9 +756,9 @@ commits from the visual work above.
       database merely to make filenames sequential.
 - [ ] If cleanup requires squashing, write and test a coordinated migration plan
       for existing databases and fresh installs before changing history.
-- [ ] Add a CI check that rejects missing migrations and verifies the migration
+- [x] Add a CI check that rejects missing migrations and verifies the migration
       plan on a clean test database.
-- [ ] Record a repeatable recovery procedure for local databases whose migration
+- [x] Record a repeatable recovery procedure for local databases whose migration
       history is inconsistent.
 
 Known graph detail: `accounts/0004_adminimpersonationevent.py` and

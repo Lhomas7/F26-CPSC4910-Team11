@@ -447,6 +447,9 @@ Generated build output is not source code and should not be committed.
 
 ## Database and migrations
 
+See [Migration workflow and audit](docs/MIGRATIONS.md) for the current graph,
+upgrade verification, and recovery procedures.
+
 | `DB_ENGINE` | Use case                                           |
 | ----------- | -------------------------------------------------- |
 | `sqlite`    | Isolated local development and tests               |

@@ -48,6 +48,13 @@ jobs:
         run: python manage.py makemigrations --check --dry-run
         env: { DJANGO_SECRET_KEY: ci-not-a-real-key }
 
+      - name: Fresh SQLite migration and applied-state check
+        working-directory: backend
+        run: |
+          python manage.py migrate --noinput
+          python manage.py migrate --check
+        env: { DJANGO_SECRET_KEY: ci-not-a-real-key }
+
       - name: Test suite
         working-directory: backend
         run: python manage.py test
