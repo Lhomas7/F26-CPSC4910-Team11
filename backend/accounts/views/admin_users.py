@@ -30,30 +30,27 @@ from ..serializers import (
     SponsorCompanySerializer,
 )
 from ..services import get_account_type, get_public_user
+from ..services.impersonation import view_as_eligibility
 
 
 class AdminImpersonationStartView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser, MFAEnrolled]
 
     def post(self, request, user_id):
         if request.session.get(IMPERSONATION_TARGET_KEY):
             return Response(
-                {'detail': 'Stop the current view-as session before starting another.'},
+                {
+                    'code': 'view_as_already_active',
+                    'detail': 'Stop the current view-as session before starting another.',
+                },
                 status=status.HTTP_409_CONFLICT,
             )
 
         target = get_object_or_404(get_user_model(), pk=user_id)
         target_role = get_account_type(target)
-        if target_role not in ('driver', 'sponsor'):
-            return Response(
-                {'detail': 'Administrators can only view as a driver or sponsor.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if not target.is_active:
-            return Response(
-                {'detail': 'An inactive account cannot be viewed as.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        ineligible = view_as_eligibility(target)
+        if ineligible:
+            return Response(ineligible, status=status.HTTP_400_BAD_REQUEST)
 
         started_at = timezone.now()
         request.session[IMPERSONATION_TARGET_KEY] = target.id

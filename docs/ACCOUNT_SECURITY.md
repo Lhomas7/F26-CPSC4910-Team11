@@ -33,6 +33,26 @@ cannot keep a lock alive by hammering it.
 - Not encrypted in the app: email addresses (used for lookup). Turn on RDS storage
   encryption for the database as the base layer.
 
+## Administrator View-As eligibility
+
+Starting View-As requires an authenticated staff administrator whose required
+MFA is enrolled. The target must be an active Driver or Sponsor. When the
+target's role or Sponsor Organization requires MFA, the target must complete
+enrollment before an administrator can enter View-As. Viewing an account does
+not grant permission to enroll or change its security methods on its behalf.
+
+The start endpoint checks eligibility before storing a session or creating a
+successful `start` audit event. Rejections retain the existing `detail` message
+and include a stable `code`:
+
+- `view_as_invalid_role`: the target is not a Driver or Sponsor.
+- `view_as_inactive_target`: the target account is inactive.
+- `view_as_target_mfa_required`: the target has required MFA without enrollment.
+- `view_as_already_active`: a View-As session is already active.
+
+These checks apply to the start request. Session invalidation after a target's
+policy or status changes is a separate lifecycle concern.
+
 ## Administrator password reset
 
 Admins are excluded from the public "Forgot password" email flow. Instead:

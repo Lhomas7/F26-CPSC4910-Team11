@@ -631,6 +631,8 @@ class AdminImpersonationTests(APITestCase):
             last_name='Sponsor',
         )
         SponsorAccount.objects.create(user=self.sponsor_user, company=self.company)
+        enroll_totp(self.admin)
+        enroll_totp(self.sponsor_user)
         self.client.login(username='admin.viewer', password='ExamplePassword123!')
 
     def start(self, user):
@@ -669,6 +671,28 @@ class AdminImpersonationTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['account_type'], 'sponsor')
         self.assertEqual(response.data['company'], self.company.name)
+
+    def test_admin_without_mfa_cannot_start_view_as(self):
+        self.admin.mfa_settings.delete()
+
+        response = self.start(self.driver_user)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(AdminImpersonationEvent.objects.exists())
+
+    def test_required_target_mfa_must_be_enrolled(self):
+        self.sponsor_user.mfa_settings.delete()
+        self.company.driver_mfa_required = True
+        self.company.save(update_fields=['driver_mfa_required'])
+        Driver.objects.filter(user=self.driver_user).update(sponsor=self.company)
+
+        for target in (self.sponsor_user, self.driver_user):
+            with self.subTest(role=target.username):
+                response = self.start(target)
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertEqual(response.data['code'], 'view_as_target_mfa_required')
+                self.assertNotIn('admin_impersonation_target_id', self.client.session)
+        self.assertFalse(AdminImpersonationEvent.objects.exists())
 
     def test_non_admin_and_invalid_targets_are_rejected(self):
         other_admin = get_user_model().objects.create_user(
