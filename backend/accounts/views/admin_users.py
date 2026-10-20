@@ -2,6 +2,8 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
 from rest_framework import status
 from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.permissions import IsAdminUser
@@ -99,6 +101,7 @@ class AdminImpersonationStopView(APIView):
         return Response(get_public_user(admin))
 
 
+@method_decorator(never_cache, name='dispatch')
 @hide_sensitive_data
 class AdminUserListView(APIView):
     permission_classes = [IsAdminUser, MFAEnrolled]
@@ -179,6 +182,7 @@ class AdminRegistrationSettingsView(APIView):
         return Response(serializer.data)
 
 
+@method_decorator(never_cache, name='dispatch')
 class AdminAccountDetailView(APIView):
     permission_classes = [IsAdminUser, MFAEnrolled]
 
@@ -205,6 +209,7 @@ class AdminAccountDetailView(APIView):
         return Response(serializer.data)
 
 
+@method_decorator(never_cache, name='dispatch')
 class AdminSponsorDetailView(APIView):
     permission_classes = [IsAdminUser, MFAEnrolled]
 
@@ -231,6 +236,7 @@ class AdminSponsorDetailView(APIView):
         return Response(serializer.data)
 
 
+@method_decorator(never_cache, name='dispatch')
 class AdminDriverDetailView(APIView):
     permission_classes = [IsAdminUser, MFAEnrolled]
 

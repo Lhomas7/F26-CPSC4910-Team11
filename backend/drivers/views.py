@@ -1,5 +1,7 @@
 from django.db.models import IntegerField, Sum, Value
 from django.db.models.functions import Coalesce
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
 from rest_framework import generics, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
@@ -29,6 +31,7 @@ from .services import (
 MAX_POINT_HISTORY_LIMIT = 200
 
 
+@method_decorator(never_cache, name='dispatch')
 class DriverViewSet(viewsets.ReadOnlyModelViewSet):
     """Read driver records and expose narrowly scoped sponsor actions.
 
@@ -153,6 +156,7 @@ class DriverViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(self.get_serializer(driver).data)
 
 
+@method_decorator(never_cache, name='dispatch')
 class PointHistoryView(generics.ListAPIView):
     """Point changes, newest first, scoped to who is asking.
 

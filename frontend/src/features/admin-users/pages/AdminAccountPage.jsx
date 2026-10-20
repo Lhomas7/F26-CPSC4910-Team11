@@ -7,6 +7,7 @@ import PageHeader from '../../../app/PageHeader';
 import useApiRequest from '../../../hooks/useApiRequest';
 import Avatar from '../../../components/primitives/Avatar';
 import StatePanel from '../../../components/feedback/StatePanel';
+import PasswordInput from '../../../components/forms/PasswordInput';
 import { validateEmail, validateName, validateUsername } from '../../../utils/accountValidation';
 import { fullName } from '../../../utils/names';
 import '../AdminUsers.css';
@@ -19,6 +20,101 @@ function formFrom(account) {
     email: account.email,
     is_active: account.is_active,
   };
+}
+
+/**
+ * Starts the administrator password reset: the server emails the other admin a
+ * one-time link (finishing it needs their authenticator code). The signed-in admin
+ * re-enters their own password first, and never sees the link.
+ */
+function ResetLinkPanel({ userId, name }) {
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [sent, setSent] = useState(false);
+
+  const close = () => {
+    setOpen(false);
+    setPassword('');
+    setError('');
+  };
+
+  const send = async (event) => {
+    event.preventDefault();
+    if (!password) {
+      setError('Enter your own password to continue.');
+      return;
+    }
+    setBusy(true);
+    setError('');
+    try {
+      await api.requestAdminPasswordReset(userId, password);
+      setSent(true);
+      close();
+    } catch (requestError) {
+      const data = requestError.data || {};
+      setError(
+        (Array.isArray(data.current_password) && data.current_password[0]) ||
+          requestError.message ||
+          'The reset link could not be sent.',
+      );
+    } finally {
+      setBusy(false);
+      setPassword('');
+    }
+  };
+
+  return (
+    <section className="card sponsor-detail-card" aria-labelledby="admin-reset-heading">
+      <h2 id="admin-reset-heading">Password reset</h2>
+      <p>
+        Email {name} a one-time link to choose a new password. The link expires quickly, and they
+        will also need a code from their authenticator app (or a backup code) to finish.
+      </p>
+      {sent && (
+        <p className="banner banner-success" role="status">
+          A reset link was emailed to {name}.
+        </p>
+      )}
+      {!open ? (
+        <button
+          type="button"
+          onClick={() => {
+            setSent(false);
+            setOpen(true);
+          }}
+        >
+          Send reset link
+        </button>
+      ) : (
+        <form onSubmit={send} noValidate>
+          {error && (
+            <p className="banner banner-error" role="alert">
+              {error}
+            </p>
+          )}
+          <label htmlFor="admin-reset-own-password">Your password</label>
+          <PasswordInput
+            id="admin-reset-own-password"
+            label="Your password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            autoComplete="current-password"
+            disabled={busy}
+          />
+          <div className="sponsor-detail-actions">
+            <button type="button" onClick={close} disabled={busy}>
+              Cancel
+            </button>
+            <button className="primary" type="submit" disabled={busy}>
+              {busy ? 'Sending…' : 'Send link'}
+            </button>
+          </div>
+        </form>
+      )}
+    </section>
+  );
 }
 
 export default function AdminAccountPage() {
@@ -294,6 +390,7 @@ export default function AdminAccountPage() {
             </form>
           )}
         </section>
+        {!editing && <ResetLinkPanel userId={userId} name={name} />}
       </main>
     </div>
   );

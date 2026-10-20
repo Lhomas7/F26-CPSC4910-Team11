@@ -6,6 +6,7 @@ from django.views.decorators.debug import sensitive_post_parameters, sensitive_v
 SENSITIVE_POST_FIELDS = (
     'password',
     'password_confirm',
+    'current_password',
     'code',
     'fallback_code',
     'token',

@@ -1,5 +1,6 @@
 from django.urls import path
 
+from ..views.admin_password_reset import AdminPasswordResetConfirmView
 from ..views.authentication import (
     ChangePasswordView,
     CSRFView,
@@ -33,5 +34,10 @@ urlpatterns = [
         'password-reset/confirm/',
         PasswordResetConfirmView.as_view(),
         name='password-reset-confirm',
+    ),
+    path(
+        'admin-password-reset/confirm/',
+        AdminPasswordResetConfirmView.as_view(),
+        name='admin-password-reset-confirm',
     ),
 ]

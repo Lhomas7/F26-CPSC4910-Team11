@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from .models import (
     AdminImpersonationEvent,
+    AdminPasswordResetEvent,
     LoginAttempt,
     RegistrationEmailCode,
     RegistrationSettings,
@@ -95,4 +96,21 @@ class TrustedDeviceAdmin(admin.ModelAdmin):
         return False
 
     def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(AdminPasswordResetEvent)
+class AdminPasswordResetEventAdmin(admin.ModelAdmin):
+    list_display = ('target', 'requested_by', 'action', 'ip_address', 'created_at')
+    list_filter = ('action',)
+    date_hierarchy = 'created_at'
+
+    # Audit rows are append-only; nobody should edit or forge them in the admin.
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
         return False

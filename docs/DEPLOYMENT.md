@@ -161,6 +161,11 @@ Notes:
 - If the secret cannot be read, startup fails with a clear message; the app never
   runs half-configured.
 - Changing `TOTP_ENCRYPTION_KEY` makes stored MFA seeds unreadable (see README).
+- Driver and MFA phone numbers are encrypted with `FIELD_ENCRYPTION_KEY` (falls back to
+  `TOTP_ENCRYPTION_KEY` when unset). Treat it the same way: back it up, never rotate it
+  in place, and set it in Secrets Manager before running `migrate` so the data migration
+  can encrypt existing numbers. Emails stay readable because sign-in and reset look
+  accounts up by them; protect them with RDS storage encryption (KMS) as well.
 - The application database user must be the restricted app user, not the RDS admin.
 
 ## Running in production

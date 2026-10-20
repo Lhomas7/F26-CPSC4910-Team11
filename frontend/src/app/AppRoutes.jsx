@@ -11,7 +11,12 @@ import {
   DriverAccountPage,
   SponsorAccountPage,
 } from '../features/admin-users';
-import { ForgotPasswordPage, LoginPage, ResetPasswordPage } from '../features/authentication';
+import {
+  AdminResetPasswordPage,
+  ForgotPasswordPage,
+  LoginPage,
+  ResetPasswordPage,
+} from '../features/authentication';
 import { DriverDetailPage, DriverListPage } from '../features/drivers';
 import { WelcomePage } from '../features/home';
 import { PrivacyPage, TermsPage } from '../features/legal';
@@ -46,6 +51,7 @@ export function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password/:uid/:token" element={<ResetPasswordPage />} />
+      <Route path="/admin-reset-password/:uid/:token" element={<AdminResetPasswordPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
       {/* Unlinked sandbox for the drawn assets in components/assets. */}

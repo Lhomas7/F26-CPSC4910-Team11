@@ -15,6 +15,12 @@ class DriverMembershipError(ValueError):
         self.code = code
 
 
+UNAVAILABLE_DRIVER_MESSAGE = (
+    'No driver can be linked with that username. Check the spelling, or ask the '
+    'driver to confirm they have an unassigned driver account.'
+)
+
+
 @transaction.atomic
 def link_driver_to_sponsor(*, username, changed_by_user):
     """Link one unassigned driver to the sponsor as a pending application.
@@ -47,20 +53,19 @@ def link_driver_to_sponsor(*, username, changed_by_user):
         )
     except Driver.DoesNotExist:
         raise DriverMembershipError(
-            'detail',
-            f'No driver found with username "{username}".',
-            code='driver_not_found',
+            'detail', UNAVAILABLE_DRIVER_MESSAGE, code='driver_not_found'
         ) from None
 
     if driver.sponsor_id is not None:
-        message = (
-            'That driver is already linked to your organization.'
-            if driver.sponsor_id == sponsor_account.company_id
-            else 'That driver is already assigned to another sponsor.'
-        )
+        if driver.sponsor_id != sponsor_account.company_id:
+            # Same answer, and same status, as an unknown username: a sponsor
+            # must not be able to learn which accounts exist or who sponsors them.
+            raise DriverMembershipError(
+                'detail', UNAVAILABLE_DRIVER_MESSAGE, code='driver_not_found'
+            )
         raise DriverMembershipError(
             'detail',
-            message,
+            'That driver is already linked to your organization.',
             code='already_linked',
         )
 

@@ -5,6 +5,8 @@ from django.conf import settings
 from django.core.validators import FileExtensionValidator
 from django.db import models
 
+from .fields import EncryptedCharField
+
 
 def account_profile_picture_upload_to(instance, filename):
     """Store non-driver avatars without exposing user-provided filenames."""
@@ -56,7 +58,14 @@ class LoginAttempt(models.Model):
 
     class Meta:
         ordering = ['-timestamp']
-        indexes = [models.Index(fields=['user', '-timestamp'])]
+        indexes = [
+            models.Index(fields=['user', '-timestamp']),
+            # Serves the sign-in lockout count (services/login_throttle.py).
+            models.Index(
+                fields=['username', 'successful', 'timestamp'],
+                name='loginattempt_throttle_idx',
+            ),
+        ]
 
     def __str__(self):
         result = 'Success' if self.successful else 'Failure'
@@ -91,10 +100,10 @@ class MFASettings(models.Model):
     email_enabled = models.BooleanField(default=False)
     sms_enabled = models.BooleanField(default=False)
     # Verified number that sign-in and reset codes are sent to.
-    phone_number = models.CharField(max_length=20, null=True, blank=True)
+    phone_number = EncryptedCharField(null=True, blank=True)
     # Number entered during SMS setup, held here until its enroll code is
     # verified so an unconfirmed number never receives sign-in codes.
-    pending_phone_number = models.CharField(max_length=20, null=True, blank=True)
+    pending_phone_number = EncryptedCharField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -235,6 +244,36 @@ class AdminImpersonationEvent(models.Model):
     )
     target_role = models.CharField(max_length=10, choices=ROLE_CHOICES)
     action = models.CharField(max_length=10, choices=ACTION_CHOICES)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('-created_at',)
+
+
+class AdminPasswordResetEvent(models.Model):
+    """Append-only audit record for resetting an administrator's password."""
+
+    ACTION_CHOICES = [
+        ('requested', 'Requested'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed second factor'),
+    ]
+
+    target = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='admin_password_reset_events',
+    )
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='admin_password_resets_requested',
+    )
+    action = models.CharField(max_length=12, choices=ACTION_CHOICES)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -1,3 +1,5 @@
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -5,6 +7,8 @@ from rest_framework.views import APIView
 from ..serializers import SelfProfileSerializer
 
 
+# Personal data must never be stored by a browser or shared cache.
+@method_decorator(never_cache, name='dispatch')
 class SelfProfileView(APIView):
     permission_classes = [IsAuthenticated]
 

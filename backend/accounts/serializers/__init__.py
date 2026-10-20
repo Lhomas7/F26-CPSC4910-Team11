@@ -7,6 +7,10 @@ from .admin_users import (
     RegistrationSettingsSerializer,
     SponsorCompanySerializer,
 )
+from .admin_password_reset import (
+    AdminPasswordResetConfirmSerializer,
+    AdminPasswordResetRequestSerializer,
+)
 from .authentication import DeviceCheckSerializer, LoginSerializer
 from .login_attempts import LoginAttemptSerializer
 from .mfa import (
@@ -34,6 +38,8 @@ from .registration import (
 )
 
 __all__ = [
+    'AdminPasswordResetConfirmSerializer',
+    'AdminPasswordResetRequestSerializer',
     'AdminAccountDetailSerializer',
     'AdminDriverDetailSerializer',
     'AdminSponsorDetailSerializer',

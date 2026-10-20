@@ -341,9 +341,15 @@ class ErrorReportRedactionTests(SimpleTestCase):
             {'username': 'driver.one', 'password': secret},
         )
 
-        with patch(
-            'accounts.views.authentication.authenticate',
-            side_effect=RuntimeError('database unavailable'),
+        with (
+            patch(
+                'accounts.views.authentication.lockout_seconds_remaining',
+                return_value=0,
+            ),
+            patch(
+                'accounts.views.authentication.authenticate',
+                side_effect=RuntimeError('database unavailable'),
+            ),
         ):
             with self.assertRaises(RuntimeError) as raised:
                 LoginView.as_view()(request)

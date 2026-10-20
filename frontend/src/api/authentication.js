@@ -46,6 +46,20 @@ export function confirmPasswordReset({ uid, token, password, passwordConfirm }) 
   }).then(readJson);
 }
 
+export function confirmAdminPasswordReset({
+  uid,
+  token,
+  method,
+  code,
+  password,
+  passwordConfirm,
+}) {
+  return request('/admin-password-reset/confirm/', {
+    method: 'POST',
+    body: { uid, token, method, code, password, password_confirm: passwordConfirm },
+  }).then(readJson);
+}
+
 export function loginMfa(method, code) {
   return request('/login/mfa/', { method: 'POST', body: { method, code } }).then(readJson);
 }
