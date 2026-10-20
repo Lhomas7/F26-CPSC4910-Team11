@@ -6,7 +6,8 @@ from ..input_cleaning import (
     NameField,
     NormalizedEmailField,
     UsernameField,
-    validate_password_policy,
+    unsaved_user_from,
+    validate_new_password,
 )
 
 
@@ -38,7 +39,9 @@ class RegistrationSerializer(serializers.Serializer):
         return value
 
     def validate_password(self, value):
-        return validate_password_policy(value)
+        # Compared against the submitted username, email, and names, so every
+        # password problem is reported together with the other field errors.
+        return validate_new_password(value, unsaved_user_from(self.initial_data))
 
     def validate_accepted_terms(self, value):
         if not value:
@@ -48,11 +51,6 @@ class RegistrationSerializer(serializers.Serializer):
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
             raise serializers.ValidationError({'password_confirm': 'Passwords do not match.'})
-        validate_password_policy(
-            attrs['password'],
-            username=attrs['username'],
-            email=attrs['email'],
-        )
         return attrs
 
     def validate_first_name(self, value):

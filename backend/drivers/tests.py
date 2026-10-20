@@ -648,6 +648,101 @@ class DriverRemovalTests(RoleScopedDriverTestData):
         self.assertEqual(self.pending.sponsor, self.company)
 
 
+class SponsorOnlyActionTests(RoleScopedDriverTestData):
+    """Every sponsor action refuses every caller that is not a sponsor account."""
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        # A staff user who also has a sponsor relation is still an admin.
+        cls.staff_sponsor_user = get_user_model().objects.create_user(
+            username='staff.sponsor',
+            password='ExamplePassword123!',
+            is_staff=True,
+        )
+        SponsorAccount.objects.create(user=cls.staff_sponsor_user, company=cls.company)
+        enroll_totp(cls.staff_sponsor_user)
+        unassigned = get_user_model().objects.create_user(
+            username='scope.unassigned',
+            password='ExamplePassword123!',
+        )
+        Driver.objects.create(user=unassigned, name='Dana Unassigned', status='approved')
+
+    def sponsor_requests(self):
+        return {
+            'points': (
+                reverse('driver-points', kwargs={'pk': self.approved.pk}),
+                {'point_change': 10, 'reason': 'Not authorized'},
+            ),
+            'approve': (reverse('driver-approve', kwargs={'pk': self.pending.pk}), {}),
+            'remove': (
+                reverse('driver-remove', kwargs={'pk': self.pending.pk}),
+                {'reason': 'Not authorized'},
+            ),
+            'link': (reverse('driver-link'), {'username': 'scope.unassigned'}),
+        }
+
+    def snapshot(self):
+        return (
+            PointTransaction.objects.count(),
+            DriverStatusChange.objects.count(),
+            list(Driver.objects.order_by('pk').values_list('sponsor_id', 'status')),
+        )
+
+    def test_non_sponsor_callers_are_refused_every_sponsor_action(self):
+        callers = {
+            'driver': self.approved.user,
+            'pending driver': self.pending.user,
+            'admin': self.admin_user,
+            'staff with sponsor relation': self.staff_sponsor_user,
+            'anonymous': None,
+        }
+        before = self.snapshot()
+
+        for caller_name, user in callers.items():
+            self.client.force_authenticate(user)
+            for action_name, (url, data) in self.sponsor_requests().items():
+                with self.subTest(caller=caller_name, action=action_name):
+                    response = self.client.post(url, data, format='json')
+                    self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        self.assertEqual(self.snapshot(), before)
+
+    def test_signed_in_non_sponsors_get_the_sponsor_only_message(self):
+        self.client.force_authenticate(self.approved.user)
+
+        for action_name, (url, data) in self.sponsor_requests().items():
+            with self.subTest(action=action_name):
+                response = self.client.post(url, data, format='json')
+                self.assertEqual(response.data['detail'], 'Only sponsor accounts can do this.')
+
+    def test_sponsor_can_use_every_sponsor_action(self):
+        self.client.force_authenticate(self.sponsor_user)
+        expected = {
+            'points': status.HTTP_201_CREATED,
+            'approve': status.HTTP_200_OK,
+            'link': status.HTTP_200_OK,
+        }
+
+        for action_name, (url, data) in self.sponsor_requests().items():
+            if action_name == 'remove':
+                continue  # Runs last below, since approve changes the same driver.
+            with self.subTest(action=action_name):
+                response = self.client.post(url, data, format='json')
+                self.assertEqual(response.status_code, expected[action_name])
+
+        url, data = self.sponsor_requests()['remove']
+        self.assertEqual(self.client.post(url, data, format='json').status_code, status.HTTP_200_OK)
+
+    def test_drivers_can_still_read_their_own_record(self):
+        self.client.force_authenticate(self.approved.user)
+
+        response = self.client.get(reverse('driver-list'))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual([row['name'] for row in response.data], ['Avery Approved'])
+
+
 class PointHistoryApiTests(RoleScopedDriverTestData):
     def history(self, user, **params):
         self.client.force_authenticate(user)

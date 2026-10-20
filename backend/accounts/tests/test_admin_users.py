@@ -159,6 +159,36 @@ class AdminUserCreationTests(APITestCase):
         self.assertEqual(user.driver_profile.sponsor, self.company)
         self.assertEqual(response.data['role'], 'driver')
 
+    def test_rejects_weak_passwords_with_every_problem_under_the_password_field(self):
+        self.client.force_authenticate(self.admin)
+
+        for password, expected in (
+            (
+                'jamie.rivera',
+                [
+                    'Password must contain at least two uppercase letters.',
+                    'Password must contain at least two numbers.',
+                    'Password must not contain your username or email address.',
+                    'The password is too similar to the username.',
+                ],
+            ),
+            ('Maximilian12!R', ['The password is too similar to the first name.']),
+        ):
+            with self.subTest(password=password):
+                response = self.client.post(
+                    self.user_url,
+                    self.payload(
+                        first_name='Maximilian',
+                        password=password,
+                        password_confirm=password,
+                    ),
+                    format='json',
+                )
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertEqual(response.data['password'], expected)
+
+        self.assertFalse(get_user_model().objects.filter(username='jamie.rivera').exists())
+
     def test_creates_sponsor_with_required_organization(self):
         self.client.force_authenticate(self.admin)
         data = self.payload(

@@ -41,3 +41,18 @@ class SponsorOrAdmin(BasePermission):
         if not user or not user.is_authenticated:
             return False
         return get_account_type(user) in ('sponsor', 'admin')
+
+
+class SponsorAccount(BasePermission):
+    """Limits an endpoint to sponsor accounts.
+
+    Uses the resolved account type rather than the mere presence of a
+    sponsor_account relation, so a staff user who also has one is still
+    treated as an admin and refused.
+    """
+
+    message = 'Only sponsor accounts can do this.'
+
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(user and user.is_authenticated and get_account_type(user) == 'sponsor')
