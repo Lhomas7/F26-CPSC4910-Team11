@@ -16,6 +16,7 @@ from ..input_cleaning import (
 )
 from ..models import RegistrationSettings, SponsorAccount, SponsorCompany
 from ..services import get_account_type
+from ..services.impersonation import view_as_eligibility
 
 
 class AdminUserListSerializer(serializers.ModelSerializer):
@@ -108,12 +109,23 @@ class AdminAccountDetailSerializer(serializers.ModelSerializer):
         return value
 
 
-class AdminSponsorDetailSerializer(serializers.ModelSerializer):
+class ViewAsEligibilityMixin:
+    def get_view_as(self, user):
+        blocked = view_as_eligibility(user)
+        return {
+            'eligible': blocked is None,
+            'code': blocked['code'] if blocked else None,
+            'detail': blocked['detail'] if blocked else None,
+        }
+
+
+class AdminSponsorDetailSerializer(ViewAsEligibilityMixin, serializers.ModelSerializer):
     first_name = NameField()
     last_name = NameField()
     username = UsernameField()
     email = NormalizedEmailField(max_length=254)
     role = serializers.SerializerMethodField()
+    view_as = serializers.SerializerMethodField()
     sponsor_org = serializers.SerializerMethodField()
     sponsor_org_id = serializers.PrimaryKeyRelatedField(
         queryset=SponsorCompany.objects.all(),
@@ -130,6 +142,7 @@ class AdminSponsorDetailSerializer(serializers.ModelSerializer):
             'username',
             'email',
             'role',
+            'view_as',
             'sponsor_org',
             'sponsor_org_id',
             'is_active',
@@ -189,11 +202,12 @@ class AdminSponsorDetailSerializer(serializers.ModelSerializer):
         return instance
 
 
-class AdminDriverDetailSerializer(serializers.ModelSerializer):
+class AdminDriverDetailSerializer(ViewAsEligibilityMixin, serializers.ModelSerializer):
     display_name = HumanTextField(source='driver_profile.name', max_length=200)
     username = UsernameField()
     email = NormalizedEmailField(max_length=254)
     role = serializers.SerializerMethodField()
+    view_as = serializers.SerializerMethodField()
     sponsor_org = serializers.SerializerMethodField()
     sponsor_org_id = serializers.PrimaryKeyRelatedField(
         queryset=SponsorCompany.objects.all(),
@@ -212,6 +226,7 @@ class AdminDriverDetailSerializer(serializers.ModelSerializer):
             'username',
             'email',
             'role',
+            'view_as',
             'sponsor_org',
             'sponsor_org_id',
             'is_active',

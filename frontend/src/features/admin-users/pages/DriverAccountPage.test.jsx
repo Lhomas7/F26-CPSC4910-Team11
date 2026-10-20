@@ -105,6 +105,25 @@ test('explains why an inactive driver cannot be viewed as', async () => {
   expect(button).toHaveAccessibleDescription('Inactive accounts cannot be viewed as.');
 });
 
+test('explains the server MFA restriction before opening View-As', async () => {
+  api.getAdminDriver.mockResolvedValue({
+    ...account,
+    view_as: {
+      eligible: false,
+      code: 'view_as_target_mfa_required',
+      detail: 'This account must finish setting up multi-factor authentication.',
+    },
+  });
+  renderPage();
+  const button = await screen.findByRole('button', { name: 'View as driver' });
+  expect(button).toBeDisabled();
+  expect(button).toHaveAccessibleDescription(
+    'This account must finish setting up multi-factor authentication.',
+  );
+  expect(startImpersonation).not.toHaveBeenCalled();
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});
+
 test('shows duplicate username errors while retaining edits', async () => {
   api.updateAdminDriver.mockRejectedValue({
     data: { username: ['That username is already taken.'] },

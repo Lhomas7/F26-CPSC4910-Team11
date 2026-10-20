@@ -198,14 +198,20 @@ export default function DriverAccountPage() {
                 <button
                   type="button"
                   onClick={() => setConfirmingViewAs(true)}
-                  disabled={viewingAs || !account.is_active}
-                  aria-describedby={!account.is_active ? 'driver-view-as-disabled' : undefined}
+                  disabled={viewingAs || !account.is_active || account.view_as?.eligible === false}
+                  aria-describedby={
+                    !account.is_active || account.view_as?.eligible === false
+                      ? 'driver-view-as-disabled'
+                      : undefined
+                  }
                 >
                   {viewingAs ? 'Opening…' : 'View as driver'}
                 </button>
-                {!account.is_active && (
+                {(!account.is_active || account.view_as?.eligible === false) && (
                   <p className="view-as-disabled-reason" id="driver-view-as-disabled">
-                    Inactive accounts cannot be viewed as.
+                    {!account.is_active
+                      ? 'Inactive accounts cannot be viewed as.'
+                      : account.view_as.detail}
                   </p>
                 )}
                 <button

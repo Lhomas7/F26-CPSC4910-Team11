@@ -50,6 +50,12 @@ and include a stable `code`:
 - `view_as_target_mfa_required`: the target has required MFA without enrollment.
 - `view_as_already_active`: a View-As session is already active.
 
+Administrator Driver and Sponsor detail responses include a read-only
+`view_as` object with `eligible`, `code`, and `detail`. Their account pages use
+this metadata to disable the View-As action and explain the restriction before
+opening the confirmation dialog. The start endpoint still checks eligibility
+again because the target's policy or account state can change after loading.
+
 Active sessions recheck target eligibility on every request. Expiration,
 deletion, deactivation, loss of an eligible role, or loss of required MFA ends
 View-As. Invalid or timezone-naive start timestamps are treated as expired.
