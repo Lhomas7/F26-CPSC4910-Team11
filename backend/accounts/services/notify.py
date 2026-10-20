@@ -1,7 +1,13 @@
+import logging
+
 from django.conf import settings
 from django.core.mail import EmailMessage
 
-from accounts.models import DriverNotification
+from accounts.models import DriverNotification, DriverNotificationPreferences
+
+from .sms import send_sms
+
+logger = logging.getLogger(__name__)
 
 
 def notify_driver_mfa_change(
@@ -61,3 +67,46 @@ def notify_unrecognized_sign_in(user):
             from_email=settings.DEFAULT_FROM_EMAIL,
             to=[user.email],
         ).send()
+
+
+def _points_phrase(amount):
+    return f'{amount:,} point' if amount == 1 else f'{amount:,} points'
+
+
+def notify_point_change(driver, point_change, reason, balance, sponsor_name):
+    """Alert a driver that a sponsor added or removed points, if they want to know.
+
+    The alert carries the reason and the resulting balance. It is recorded in-app
+    and sent over each delivery channel the driver has turned on. A failure on one
+    channel is logged and never stops the others.
+    """
+    preferences = DriverNotificationPreferences.for_driver(driver)
+    added = point_change > 0
+    if not (preferences.points_added_enabled if added else preferences.points_removed_enabled):
+        return
+
+    verb = 'added' if added else 'removed'
+    preposition = 'to' if added else 'from'
+    message = (
+        f'{sponsor_name} {verb} {_points_phrase(abs(point_change))} {preposition} your '
+        f'Good Driver account. Reason: {reason}. '
+        f'Your balance is now {_points_phrase(balance)}.'
+    )
+    DriverNotification.objects.create(driver=driver, message=message)
+
+    if preferences.email_enabled and driver.user.email:
+        try:
+            EmailMessage(
+                subject=f'Points {verb} {preposition} your Good Driver account',
+                body=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[driver.user.email],
+            ).send()
+        except Exception:
+            logger.exception('Could not email point change notification.')
+
+    if preferences.sms_enabled and driver.phone_number:
+        try:
+            send_sms(driver.phone_number, message)
+        except Exception:
+            logger.exception('Could not text point change notification.')

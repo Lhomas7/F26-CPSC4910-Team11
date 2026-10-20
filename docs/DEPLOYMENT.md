@@ -62,7 +62,7 @@ also deploy.
 
 1. Test Django with Python 3.12 and SQLite, including system, migration, and
    deployment checks.
-2. Test and build React with Node 20 and `REACT_APP_API_URL=/api`.
+2. Test and build React with Node 22 and `REACT_APP_API_URL=/api`.
 3. Scan the repository with Gitleaks.
 4. Read deployment configuration from the GitHub `production` environment.
 5. Copy the repository and generated environment files to `/opt/gooddriver/src`

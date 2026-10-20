@@ -458,3 +458,61 @@
 .login-activity-list time {
   color: var(--ink-2);
 }
+
+.notification-settings {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem 1.25rem;
+}
+
+.notification-settings fieldset {
+  border: 0;
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.notification-settings legend {
+  color: var(--ink-2);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.5rem;
+  padding: 0;
+  text-transform: uppercase;
+}
+
+.notification-toggle {
+  align-items: center;
+  color: var(--ink);
+  display: flex;
+  font-weight: 600;
+  gap: 0.6rem;
+}
+
+.notification-toggle input {
+  accent-color: var(--accent);
+  height: 1.05rem;
+  width: 1.05rem;
+}
+
+.notification-toggle:has(input:disabled) {
+  color: var(--ink-2);
+}
+
+.notification-hint,
+.notification-message {
+  color: var(--ink-2);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.notification-message {
+  color: var(--accent);
+}
+
+.notification-message.error {
+  color: var(--danger-ink);
+}

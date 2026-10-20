@@ -29,6 +29,7 @@ from .mfa import (
     MFAVerifyView,
     SponsorMFASettingsView,
 )
+from .notifications import NotificationPreferencesView
 from .profiles import SelfProfileView
 from .registration import DriverRegistrationView, SponsorRegistrationView
 
@@ -56,6 +57,7 @@ __all__ = [
     'MFAStatusView',
     'MFAVerifyView',
     'MeView',
+    'NotificationPreferencesView',
     'PasswordResetConfirmView',
     'PasswordResetRequestView',
     'SelfProfileView',

@@ -1,12 +1,20 @@
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
+from django.core import mail
 from django.db import IntegrityError, transaction
 from django.db.models.deletion import ProtectedError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from accounts.models import SponsorAccount, SponsorCompany
+from accounts.models import (
+    DriverNotification,
+    DriverNotificationPreferences,
+    SponsorAccount,
+    SponsorCompany,
+)
 from accounts.tests.common import enroll_totp
 
 from .models import Driver, DriverStatusChange, PointTransaction
@@ -217,6 +225,127 @@ class PointAdjustmentServiceTests(TestCase):
 
         self.assertEqual(error.field, 'driver')
         self.assertFalse(PointTransaction.objects.exists())
+
+
+@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+@patch('accounts.services.notify.send_sms')
+class PointChangeNotificationTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.company = SponsorCompany.objects.create(name='Palmetto Freight')
+        cls.sponsor_user = get_user_model().objects.create_user(
+            username='notify.sponsor',
+            password='ExamplePassword123!',
+        )
+        SponsorAccount.objects.create(user=cls.sponsor_user, company=cls.company)
+        cls.driver_user = get_user_model().objects.create_user(
+            username='notify.driver',
+            email='notify.driver@example.com',
+            password='ExamplePassword123!',
+        )
+        cls.driver = Driver.objects.create(
+            user=cls.driver_user,
+            name='Notify Driver',
+            sponsor=cls.company,
+            status='approved',
+            phone_number='+18645550100',
+        )
+
+    def adjust(self, amount, reason='Consistent safe driving'):
+        mail.outbox = []
+        with self.captureOnCommitCallbacks(execute=True):
+            return adjust_driver_points(
+                driver=self.driver,
+                changed_by_user=self.sponsor_user,
+                point_change=amount,
+                reason=reason,
+            )
+
+    def set_preferences(self, **values):
+        DriverNotificationPreferences.objects.update_or_create(driver=self.driver, defaults=values)
+
+    def test_award_notifies_in_app_and_by_email_by_default(self, send_sms):
+        self.adjust(150, 'Excellent quarterly performance')
+
+        notification = DriverNotification.objects.get(driver=self.driver)
+        self.assertIn('added 150 points', notification.message)
+        self.assertIn('Reason: Excellent quarterly performance.', notification.message)
+        self.assertIn('Your balance is now 150 points.', notification.message)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ['notify.driver@example.com'])
+        self.assertEqual(mail.outbox[0].subject, 'Points added to your Good Driver account')
+        self.assertEqual(mail.outbox[0].body, notification.message)
+        send_sms.assert_not_called()
+
+    def test_deduction_notifies_with_remaining_balance_by_default(self, send_sms):
+        self.adjust(100)
+
+        self.adjust(-1, 'Late delivery')
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, 'Points removed from your Good Driver account')
+        self.assertIn('removed 1 point from', mail.outbox[0].body)
+        self.assertIn('Reason: Late delivery.', mail.outbox[0].body)
+        self.assertIn('Your balance is now 99 points.', mail.outbox[0].body)
+
+    def test_disabled_added_alerts_still_send_removed_alerts(self, send_sms):
+        self.set_preferences(points_added_enabled=False)
+
+        self.adjust(100)
+        self.assertFalse(DriverNotification.objects.exists())
+        self.assertEqual(len(mail.outbox), 0)
+
+        self.adjust(-10)
+        self.assertEqual(DriverNotification.objects.count(), 1)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_disabled_removed_alerts_still_send_added_alerts(self, send_sms):
+        self.set_preferences(points_removed_enabled=False)
+
+        self.adjust(100)
+        self.assertEqual(len(mail.outbox), 1)
+
+        self.adjust(-10)
+        self.assertEqual(DriverNotification.objects.count(), 1)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_text_only_delivery(self, send_sms):
+        self.set_preferences(email_enabled=False, sms_enabled=True)
+
+        self.adjust(25)
+
+        self.assertEqual(len(mail.outbox), 0)
+        send_sms.assert_called_once()
+        phone_number, message = send_sms.call_args.args
+        self.assertEqual(phone_number, '+18645550100')
+        self.assertIn('Your balance is now 25 points.', message)
+
+    def test_text_needs_a_phone_number(self, send_sms):
+        self.set_preferences(sms_enabled=True)
+        Driver.objects.filter(pk=self.driver.pk).update(phone_number='')
+
+        self.adjust(25)
+
+        send_sms.assert_not_called()
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_failed_email_still_sends_text_and_keeps_adjustment(self, send_sms):
+        self.set_preferences(sms_enabled=True)
+
+        with patch('accounts.services.notify.EmailMessage.send', side_effect=OSError):
+            result = self.adjust(25)
+
+        self.assertEqual(result.balance, 25)
+        self.assertEqual(self.driver.point_balance, 25)
+        send_sms.assert_called_once()
+
+    def test_rejected_adjustment_sends_nothing(self, send_sms):
+        with self.assertRaises(PointAdjustmentError):
+            self.adjust(-5)
+
+        self.assertFalse(DriverNotification.objects.exists())
+        self.assertEqual(len(mail.outbox), 0)
+        send_sms.assert_not_called()
 
 
 class PointAdjustmentAPITests(APITestCase):

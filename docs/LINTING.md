@@ -45,6 +45,14 @@ npm install --save-dev prettier stylelint stylelint-config-standard markdownlint
 
 Run that form only when intentionally adding or upgrading the tools and committing the resulting `package.json` and `package-lock.json` changes. For ordinary setup, use `npm install` or `npm ci`.
 
+CI installs with the npm 10 that ships with Node 22. npm 11 writes lockfiles that npm 10 rejects, because it leaves out optional peer entries that npm 10 expects (for example `tailwindcss/node_modules/yaml`). If your local npm is 11 or newer, check the lockfile with npm 10 before committing it:
+
+```powershell
+npx npm@10 ci --dry-run --ignore-scripts
+```
+
+If that reports `Missing: ... from lock file`, regenerate the lockfile with `npx npm@10 install` and commit the result.
+
 Do not install Expo tooling in this repository. This frontend is a Create React App web application, not an Expo or React Native application.
 
 ### Backend tools on Windows
