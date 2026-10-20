@@ -57,9 +57,7 @@ class PasswordPolicyRulesTests(APITestCase):
         rule_messages = [message for _text, _check, message in PASSWORD_RULES]
         reported = caught.exception.messages
         self.assertEqual(reported[:-1], [m for m in rule_messages if m in reported])
-        self.assertEqual(
-            reported[-1], 'Password must not contain your username or email address.'
-        )
+        self.assertEqual(reported[-1], 'Password must not contain your username or email address.')
 
     def test_identity_rule_still_applies(self):
         self.assert_rejected_with(
@@ -155,7 +153,8 @@ class DjangoAdminPasswordFormTests(APITestCase):
 
     def test_admin_password_change_form_accepts_a_compliant_password(self):
         form = AdminPasswordChangeForm(
-            self.user, {'password1': 'ValidSecurePassword22!', 'password2': 'ValidSecurePassword22!'}
+            self.user,
+            {'password1': 'ValidSecurePassword22!', 'password2': 'ValidSecurePassword22!'},
         )
 
         self.assertTrue(form.is_valid(), form.errors)

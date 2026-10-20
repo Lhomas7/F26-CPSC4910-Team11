@@ -673,9 +673,7 @@ class PasswordResetTests(APITestCase):
         )
         browser = self.sign_in_browser(username='sponsor.one')
         self.request_reset(email='sponsor@example.com')
-        uid, token = re.search(
-            r'/reset-password/([^/\s]+)/([^/\s]+)', mail.outbox[0].body
-        ).groups()
+        uid, token = re.search(r'/reset-password/([^/\s]+)/([^/\s]+)', mail.outbox[0].body).groups()
 
         self.confirm(uid, token)
 

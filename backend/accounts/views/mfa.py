@@ -201,9 +201,7 @@ class MFARequestCodeView(APIView):
             if mfa is not None:
                 # Setup codes confirm the number awaiting verification; every
                 # other code goes only to the verified number.
-                phone_number = (
-                    mfa.pending_phone_number if purpose == 'enroll' else mfa.phone_number
-                )
+                phone_number = mfa.pending_phone_number if purpose == 'enroll' else mfa.phone_number
             if not phone_number:
                 return Response(
                     {'detail': 'No phone number on file.'},

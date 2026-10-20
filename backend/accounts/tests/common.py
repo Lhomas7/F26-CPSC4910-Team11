@@ -32,7 +32,7 @@ class InlineThread:
 
 def send_reset_emails_inline(test_case):
     """Make background password reset emails land in mail.outbox before returning."""
-    patcher = patch('accounts.services.password_reset.threading.Thread', InlineThread)
+    patcher = patch('accounts.services.password_reset.Thread', InlineThread)
     patcher.start()
     test_case.addCleanup(patcher.stop)
 

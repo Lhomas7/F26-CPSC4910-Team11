@@ -1,5 +1,5 @@
 import logging
-import threading
+from threading import Thread
 from urllib.parse import quote
 
 from django.conf import settings
@@ -82,7 +82,7 @@ def send_password_reset_emails_in_background(users):
     before responding. Everything the email needs is already on the user
     objects, so the thread never touches the database.
     """
-    threading.Thread(target=_send_reset_emails, args=(list(users),), daemon=True).start()
+    Thread(target=_send_reset_emails, args=(list(users),), daemon=True).start()
 
 
 def user_from_uid(uidb64):

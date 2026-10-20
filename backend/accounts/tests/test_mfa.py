@@ -124,9 +124,7 @@ class MFASMSVerificationTests(APITestCase):
         self.assertNotIn('sms', status_data['methods'])
 
     def test_setup_requires_a_phone_number(self, mock_send_sms):
-        response = self.client.post(
-            reverse('accounts:mfa-setup'), {'method': 'sms'}, format='json'
-        )
+        response = self.client.post(reverse('accounts:mfa-setup'), {'method': 'sms'}, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('phone_number', response.data)
