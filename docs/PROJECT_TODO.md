@@ -253,7 +253,7 @@ Proposed secrets and variables:
 - [x] Run Django with Gunicorn behind Caddy.
 - [x] Add a database-aware health-check endpoint at `/api/health/`.
 - [x] Persist uploaded profile pictures in the current host's Docker named volume.
-- [ ] Configure HTTPS and secure cookies.
+- [x] Configure HTTPS and secure cookies.
 - [ ] Configure application and deployment logs.
 - [ ] Confirm RDS backups can actually be restored.
 - [ ] Document server startup/shutdown behavior and quiet-hour handling.

@@ -45,13 +45,18 @@ React reads `idle_timeout_seconds` from the `session` block and runs a matching 
 
 The top-bar **Sign out** button asks for confirmation first. Signing out deletes the session on the server and expires the session cookie. Automatic sign-outs from a timeout skip the confirmation.
 
+## Password reset ends every session
+
+Resetting a password through an emailed link (`POST /api/password-reset/confirm/`) signs the account out of every browser, including sessions that completed MFA. This is how a person who was signed in to someone else's account loses access once the owner resets the password. Each session stores a hash derived from the password hash at sign-in. After the reset, Django's `AuthenticationMiddleware` finds that hash no longer matches on the session's next request and deletes the session row, so a copied session cookie cannot be reused. Other accounts' sessions are unaffected. The reset also deletes the account's trusted browsers (see above), so the next sign-in asks "Is this your device?" again.
+
 ## Source locations
 
 - Device trust and failure signals: `backend/accounts/services/device_trust.py`
 - Timeout policy and session info: `backend/accounts/services/session_state.py`
 - Timeout middleware: `backend/accounts/middleware.py`
 - Sign-in and device-check views: `backend/accounts/views/authentication.py`
-- Tests: `backend/accounts/tests/test_device_trust.py`, `backend/accounts/tests/test_session_timeout.py`
+- Password reset: `backend/accounts/views/authentication.py` (`PasswordResetConfirmView`)
+- Tests: `backend/accounts/tests/test_device_trust.py`, `backend/accounts/tests/test_session_timeout.py`, `backend/accounts/tests/test_authentication.py` (`PasswordResetTests`)
 - Device question dialog: `frontend/src/features/authentication/DeviceCheckDialog.jsx`
 - Expiry handling and idle timer: `frontend/src/auth/AuthContext.jsx`, `frontend/src/api/client.js`
 - Sign-out confirmation: `frontend/src/app/AppLayout.jsx`, `frontend/src/components/ConfirmDialog.jsx`

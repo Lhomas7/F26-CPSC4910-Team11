@@ -1,4 +1,5 @@
 import logging
+from threading import Thread
 from urllib.parse import quote
 
 from django.conf import settings
@@ -61,6 +62,27 @@ def send_password_reset_email(user):
         from_email=settings.DEFAULT_FROM_EMAIL,
         to=[user.email],
     ).send(fail_silently=False)
+
+
+def _send_reset_emails(users):
+    for user in users:
+        try:
+            send_password_reset_email(user)
+        except Exception:
+            # Delivery problems must not surface anywhere the requester can see.
+            logger.exception('Could not send password reset email.')
+
+
+def send_password_reset_emails_in_background(users):
+    """Deliver reset emails without making the request wait on the mail server.
+
+    Sending inline would make requests for real accounts measurably slower than
+    requests for unknown addresses, revealing which addresses have accounts. A
+    thread is started even when `users` is empty so both cases do the same work
+    before responding. Everything the email needs is already on the user
+    objects, so the thread never touches the database.
+    """
+    Thread(target=_send_reset_emails, args=(list(users),), daemon=True).start()
 
 
 def user_from_uid(uidb64):

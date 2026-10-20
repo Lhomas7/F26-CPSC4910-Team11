@@ -1,7 +1,9 @@
 -- Create a Team 11 Django administrator directly in MySQL.
 --
--- Generate @password_hash with Django before running this script:
---   python manage.py shell -c "from getpass import getpass; from django.contrib.auth.hashers import make_password; print(make_password(getpass('Password: ')))"
+-- Generate @password_hash with Django before running this script. Inserting a
+-- hash skips Django's password checks, so the command validates the password
+-- against AUTH_PASSWORD_VALIDATORS first and stops if it fails:
+--   python manage.py shell -c "from getpass import getpass; from django.contrib.auth.hashers import make_password; from django.contrib.auth.password_validation import validate_password; p = getpass('Password: '); validate_password(p); print(make_password(p))"
 --
 -- Never put the plaintext password or the completed hash in Git.
 

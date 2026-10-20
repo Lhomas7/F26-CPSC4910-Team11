@@ -61,14 +61,14 @@ jobs:
           DJANGO_ALLOWED_HOSTS: test.invalid
 
   frontend:
-    name: Frontend (React 19 / Node 20)
+    name: Frontend (React 19 / Node 22)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -136,6 +136,10 @@ jobs:
       # a status-code-only smoke test. A root-level .env (next to
       # docker-compose.yml) is what docker compose auto-loads for variable
       # substitution, so writing it here is what actually fixes this.
+      # vars.SITE_DOMAIN must be a bare hostname (no http:// prefix): that is
+      # what turns on Caddy's automatic Let's Encrypt cert + HTTP->HTTPS
+      # redirect. Requires inbound TCP 80 and 443 open on the EC2 security
+      # group; certs persist in the caddy_data volume across deploys.
       - name: Write compose-level env (.env for docker compose variable substitution)
         run: |
           echo "SITE_DOMAIN=${{ vars.SITE_DOMAIN }}" > .env
@@ -148,24 +152,19 @@ jobs:
           umask 177
           cat > web/.env <<EOF
           DJANGO_DEBUG=false
-          DJANGO_ALLOWED_HOSTS=${{ vars.EC2_HOST }},127.0.0.1
+          DJANGO_ALLOWED_HOSTS=${{ vars.EC2_HOST }},${{ vars.APP_DOMAIN }},127.0.0.1
           # 127.0.0.1 is required: the Docker HEALTHCHECK hits the app from
           # inside the container at http://127.0.0.1:8000, which Django
           # rejects as a disallowed host without this.
           DJANGO_BEHIND_PROXY=true
-          # false until a real domain + TLS cert exist (Phase 1 in the plan's
-          # Domain + TLS section). true redirects every HTTP request to an
-          # HTTPS endpoint that doesn't exist yet on a bare IP. Flip to true
-          # once Phase 2 (real domain, Caddy auto-TLS) is set up.
-          DJANGO_SECURE_SSL_REDIRECT=false
-          # Same Phase-1/Phase-2 story as SECURE_SSL_REDIRECT above, but for
-          # cookies: settings.py defaults SESSION_COOKIE_SECURE (and, via it,
-          # CSRF_COOKIE_SECURE — not independently configurable, it mirrors
-          # this value) to true once DEBUG=false. Over plain HTTP the browser
-          # then silently refuses to store/send the sessionid cookie, so
-          # login succeeds but the very next request comes back 403 as if
-          # anonymous. Flip to true once Phase 2 (real domain + TLS) lands.
-          DJANGO_SESSION_COOKIE_SECURE=false
+          # Caddy terminates TLS for vars.SITE_DOMAIN (auto Let's Encrypt cert)
+          # and forwards X-Forwarded-Proto, which DJANGO_BEHIND_PROXY trusts.
+          # Secure cookies also make the CSRF cookie Secure (settings.py
+          # mirrors it). /api/health/ stays exempt from the redirect so the
+          # container HEALTHCHECK can still probe over plain HTTP.
+          DJANGO_SECURE_SSL_REDIRECT=true
+          DJANGO_SESSION_COOKIE_SECURE=true
+          DJANGO_CSRF_TRUSTED_ORIGINS=https://${{ vars.APP_DOMAIN }}
           DB_ENGINE=mysql
           DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
           DB_NAME=${{ secrets.DB_NAME }}

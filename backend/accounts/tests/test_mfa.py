@@ -49,7 +49,7 @@ class MFAPhoneNumberValidationTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.user.mfa_settings.refresh_from_db()
-        self.assertEqual(self.user.mfa_settings.phone_number, '+18645551234')
+        self.assertEqual(self.user.mfa_settings.pending_phone_number, '+18645551234')
         mock_send_sms.assert_called_once()
 
     def test_rejects_unformatted_or_incomplete_phone_number(self):
@@ -61,6 +61,223 @@ class MFAPhoneNumberValidationTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('phone_number', response.data)
+
+
+@patch('accounts.views.mfa.send_sms_code')
+class MFASMSVerificationTests(APITestCase):
+    """A phone number only receives sign-in codes after the user proves they control it."""
+
+    PHONE = '+18645551234'
+    NEW_PHONE = '+18645559876'
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = get_user_model().objects.create_user(
+            username='sms.driver',
+            password='ExamplePassword123!',
+            email='sms.driver@example.com',
+        )
+        Driver.objects.create(user=cls.user, name='SMS Driver', status='approved')
+
+    def setUp(self):
+        cache.clear()
+        # A real session reloads the user (and its MFA settings) on every
+        # request, as production does; force_authenticate would reuse one
+        # cached user object across requests.
+        self.client.force_login(self.user)
+
+    def start_setup(self, mock_send_sms, phone_number):
+        response = self.client.post(
+            reverse('accounts:mfa-setup'),
+            {'method': 'sms', 'phone_number': phone_number},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        sent_to, raw_code = mock_send_sms.call_args[0]
+        self.assertEqual(sent_to, phone_number)
+        return raw_code
+
+    def verify(self, code):
+        return self.client.post(
+            reverse('accounts:mfa-verify'), {'method': 'sms', 'code': code}, format='json'
+        )
+
+    def enroll(self, mock_send_sms, phone_number=PHONE):
+        response = self.verify(self.start_setup(mock_send_sms, phone_number))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        return response
+
+    def wrong(self, code):
+        return str((int(code) + 1) % 1_000_000).zfill(6)
+
+    def mfa(self):
+        return MFASettings.objects.get(user=self.user)
+
+    def test_setup_texts_a_code_and_waits_for_it(self, mock_send_sms):
+        self.start_setup(mock_send_sms, self.PHONE)
+
+        mfa = self.mfa()
+        self.assertFalse(mfa.sms_enabled)
+        self.assertIsNone(mfa.phone_number)
+        self.assertEqual(mfa.pending_phone_number, self.PHONE)
+        status_data = self.client.get(reverse('accounts:mfa-status')).data['mfa']
+        self.assertNotIn('sms', status_data['methods'])
+
+    def test_setup_requires_a_phone_number(self, mock_send_sms):
+        response = self.client.post(reverse('accounts:mfa-setup'), {'method': 'sms'}, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('phone_number', response.data)
+        mock_send_sms.assert_not_called()
+
+    def test_correct_code_turns_on_sms_and_confirms_the_number(self, mock_send_sms):
+        response = self.enroll(mock_send_sms)
+
+        self.assertEqual(len(response.data['backup_codes']), 10)
+        mfa = self.mfa()
+        self.assertTrue(mfa.sms_enabled)
+        self.assertEqual(mfa.phone_number, self.PHONE)
+        self.assertIsNone(mfa.pending_phone_number)
+
+    def test_wrong_code_leaves_sms_off(self, mock_send_sms):
+        raw_code = self.start_setup(mock_send_sms, self.PHONE)
+
+        response = self.verify(self.wrong(raw_code))
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        mfa = self.mfa()
+        self.assertFalse(mfa.sms_enabled)
+        self.assertIsNone(mfa.phone_number)
+
+    def test_code_stops_working_after_too_many_wrong_guesses(self, mock_send_sms):
+        raw_code = self.start_setup(mock_send_sms, self.PHONE)
+        for _ in range(5):
+            self.verify(self.wrong(raw_code))
+
+        response = self.verify(raw_code)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(self.mfa().sms_enabled)
+
+    def test_expired_code_is_rejected(self, mock_send_sms):
+        raw_code = self.start_setup(mock_send_sms, self.PHONE)
+        MFACode.objects.filter(user=self.user, purpose='enroll', method='sms').update(
+            expires_at=timezone.now() - timedelta(seconds=1)
+        )
+
+        response = self.verify(raw_code)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(self.mfa().sms_enabled)
+
+    def test_code_works_only_once(self, mock_send_sms):
+        raw_code = self.start_setup(mock_send_sms, self.PHONE)
+        self.assertEqual(self.verify(raw_code).status_code, status.HTTP_200_OK)
+
+        self.assertEqual(self.verify(raw_code).status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_code_sent_to_a_replaced_number_no_longer_works(self, mock_send_sms):
+        first_code = self.start_setup(mock_send_sms, self.PHONE)
+        second_code = self.start_setup(mock_send_sms, self.NEW_PHONE)
+
+        self.assertEqual(self.verify(first_code).status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(self.verify(second_code).status_code, status.HTTP_200_OK)
+        self.assertEqual(self.mfa().phone_number, self.NEW_PHONE)
+
+    def test_unverified_new_number_never_gets_sign_in_or_reset_codes(self, mock_send_sms):
+        self.enroll(mock_send_sms)
+        self.start_setup(mock_send_sms, self.NEW_PHONE)
+
+        mfa = self.mfa()
+        self.assertTrue(mfa.sms_enabled)
+        self.assertEqual(mfa.phone_number, self.PHONE)
+        self.assertEqual(mfa.pending_phone_number, self.NEW_PHONE)
+
+        browser = self.client_class()
+        browser.post(
+            reverse('accounts:login'),
+            {'username': 'sms.driver', 'password': 'ExamplePassword123!'},
+            format='json',
+        )
+        cache.clear()
+        with patch('accounts.views.authentication.send_sms_code') as login_sms:
+            browser.post(
+                reverse('accounts:login-mfa-request-code'), {'method': 'sms'}, format='json'
+            )
+        self.assertEqual(login_sms.call_args[0][0], self.PHONE)
+
+        cache.clear()
+        self.client.post(
+            reverse('accounts:mfa-request-code'),
+            {'purpose': 'reset', 'method': 'sms'},
+            format='json',
+        )
+        self.assertEqual(mock_send_sms.call_args[0][0], self.PHONE)
+
+    def test_verifying_the_new_number_replaces_the_old_one(self, mock_send_sms):
+        self.enroll(mock_send_sms)
+
+        response = self.enroll(mock_send_sms, self.NEW_PHONE)
+
+        self.assertNotIn('backup_codes', response.data)
+        mfa = self.mfa()
+        self.assertEqual(mfa.phone_number, self.NEW_PHONE)
+        self.assertIsNone(mfa.pending_phone_number)
+
+    def test_resent_setup_code_goes_to_the_number_being_verified(self, mock_send_sms):
+        self.enroll(mock_send_sms)
+        self.start_setup(mock_send_sms, self.NEW_PHONE)
+        cache.clear()
+
+        response = self.client.post(
+            reverse('accounts:mfa-request-code'),
+            {'purpose': 'enroll', 'method': 'sms'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        sent_to, raw_code = mock_send_sms.call_args[0]
+        self.assertEqual(sent_to, self.NEW_PHONE)
+        self.assertEqual(self.verify(raw_code).status_code, status.HTTP_200_OK)
+        self.assertEqual(self.mfa().phone_number, self.NEW_PHONE)
+
+    def test_setup_code_resend_needs_a_number_awaiting_verification(self, mock_send_sms):
+        self.enroll(mock_send_sms)
+        mock_send_sms.reset_mock()
+        cache.clear()
+
+        response = self.client.post(
+            reverse('accounts:mfa-request-code'),
+            {'purpose': 'enroll', 'method': 'sms'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        mock_send_sms.assert_not_called()
+
+    def test_sign_in_with_a_text_message_code(self, mock_send_sms):
+        self.enroll(mock_send_sms)
+        browser = self.client_class()
+        challenge = browser.post(
+            reverse('accounts:login'),
+            {'username': 'sms.driver', 'password': 'ExamplePassword123!'},
+            format='json',
+        )
+        self.assertEqual(challenge.data['mfa']['methods'], ['sms'])
+        cache.clear()
+
+        with patch('accounts.views.authentication.send_sms_code') as login_sms:
+            browser.post(
+                reverse('accounts:login-mfa-request-code'), {'method': 'sms'}, format='json'
+            )
+        sent_to, raw_code = login_sms.call_args[0]
+        response = browser.post(
+            reverse('accounts:login-mfa'), {'method': 'sms', 'code': raw_code}, format='json'
+        )
+
+        self.assertEqual(sent_to, self.PHONE)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(browser.get(reverse('accounts:me')).data['authenticated'])
 
 
 class MFAEnrollmentTests(APITestCase):
@@ -1002,6 +1219,29 @@ class SponsorMFATests(MailAssertMixin, APITestCase):
         response = self.client.post(self.url, {'driver_mfa_required': True}, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_admins_and_anonymous_callers_cannot_change_the_setting(self):
+        admin = get_user_model().objects.create_user(
+            username='admin.one', password='ExamplePassword123!', is_staff=True
+        )
+        enroll_totp(admin)
+        # A staff user who also has a sponsor relation is still an admin.
+        staff_sponsor = get_user_model().objects.create_user(
+            username='staff.sponsor', password='ExamplePassword123!', is_staff=True
+        )
+        SponsorAccount.objects.create(user=staff_sponsor, company=self.sponsor)
+        enroll_totp(staff_sponsor)
+
+        for name, user in (('admin', admin), ('staff sponsor', staff_sponsor), ('anon', None)):
+            self.client.force_authenticate(user)
+            with self.subTest(caller=name):
+                self.assertEqual(self.client.get(self.url).status_code, status.HTTP_403_FORBIDDEN)
+                response = self.client.post(self.url, {'driver_mfa_required': True}, format='json')
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        self.sponsor.refresh_from_db()
+        self.assertFalse(self.sponsor.driver_mfa_required)
+        self.assertFalse(DriverNotification.objects.exists())
+
 
 class MFANotificationTests(MailAssertMixin, APITestCase):
     def setUp(self):
@@ -1137,3 +1377,23 @@ class SMSConsoleFallbackTests(APITestCase):
         output = buffer.getvalue()
         self.assertIn('console fallback', output)
         self.assertIn('+18645551234', output)
+
+    def test_sms_is_sent_through_twilio_when_configured(self):
+        from ..services.delivery import send_sms_code
+
+        credentials = {
+            'TWILIO_ACCOUNT_SID': 'AC-test',
+            'TWILIO_AUTH_TOKEN': 'token-test',
+            'TWILIO_FROM_NUMBER': '+18645550000',
+        }
+        with (
+            patch.dict('os.environ', credentials),
+            patch('twilio.rest.Client') as client_class,
+        ):
+            send_sms_code('+18645551234', '123456')
+
+        client_class.assert_called_once_with('AC-test', 'token-test')
+        sent = client_class.return_value.messages.create.call_args.kwargs
+        self.assertEqual(sent['to'], '+18645551234')
+        self.assertEqual(sent['from_'], '+18645550000')
+        self.assertIn('123456', sent['body'])

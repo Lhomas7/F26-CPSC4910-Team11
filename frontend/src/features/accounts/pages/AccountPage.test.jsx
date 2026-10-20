@@ -23,6 +23,13 @@ beforeEach(() => {
   api.getProfile.mockResolvedValue(profile);
   api.updateProfile.mockResolvedValue(profile);
   api.getLoginAttempts.mockResolvedValue({ recent: [], last_24_hours: [] });
+  api.getNotificationPreferences.mockResolvedValue({
+    points_added_enabled: true,
+    points_removed_enabled: true,
+    email_enabled: true,
+    sms_enabled: false,
+    sms_available: false,
+  });
 });
 
 afterEach(() => jest.clearAllMocks());
@@ -309,4 +316,18 @@ test('shows a read-only account and hides security controls during View-as', asy
   ).not.toBeInTheDocument();
   expect(api.getLoginAttempts).not.toHaveBeenCalled();
   expect(api.updateProfile).not.toHaveBeenCalled();
+});
+
+test('drivers get notification settings and sponsors do not', async () => {
+  const { unmount } = render(<AccountPage />);
+  expect(
+    await screen.findByRole('heading', { name: 'Notifications', level: 2 }),
+  ).toBeInTheDocument();
+  unmount();
+
+  api.getProfile.mockResolvedValue({ ...profile, account_type: 'sponsor' });
+  render(<AccountPage />);
+  expect(await screen.findByText('Driver One')).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'Notifications' })).not.toBeInTheDocument();
+  expect(api.getNotificationPreferences).toHaveBeenCalledTimes(1);
 });

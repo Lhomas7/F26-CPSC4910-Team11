@@ -83,6 +83,18 @@ class EncryptedPhoneNumberTests(TestCase):
         mfa.refresh_from_db()
         self.assertEqual(mfa.phone_number, NUMBER)
 
+    def test_pending_mfa_phone_number_is_ciphertext_in_the_database(self):
+        mfa = MFASettings.objects.create(
+            user=self.driver.user,
+            pending_phone_number=NUMBER,
+        )
+
+        stored = raw_column('accounts_mfasettings', 'pending_phone_number', mfa.pk)
+
+        self.assertTrue(stored.startswith(CIPHERTEXT_PREFIX))
+        mfa.refresh_from_db()
+        self.assertEqual(mfa.pending_phone_number, NUMBER)
+
     def test_the_same_number_is_encrypted_differently_each_time(self):
         first = raw_column('drivers_driver', 'phone_number', self.driver.pk)
         self.driver.save(update_fields=['phone_number'])

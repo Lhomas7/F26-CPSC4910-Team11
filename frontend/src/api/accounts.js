@@ -26,6 +26,14 @@ export function updateProfile(data) {
   return request('/profile/', { method: 'PATCH', body: data }).then(readJson);
 }
 
+export function getNotificationPreferences() {
+  return request('/notifications/preferences/').then(readJson);
+}
+
+export function updateNotificationPreferences(data) {
+  return request('/notifications/preferences/', { method: 'PATCH', body: data }).then(readJson);
+}
+
 export function registerDriver(data) {
   return request('/accounts/driver/', { method: 'POST', body: data }).then(readJson);
 }

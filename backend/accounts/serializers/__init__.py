@@ -25,6 +25,7 @@ from .mfa import (
     SponsorMFASerializer,
     validate_code_for_method,
 )
+from .notifications import NotificationPreferencesSerializer
 from .profiles import (
     ChangePasswordSerializer,
     PasswordResetRequestSerializer,
@@ -57,6 +58,7 @@ __all__ = [
     'MFAResetSerializer',
     'MFASetupSerializer',
     'MFAVerifySerializer',
+    'NotificationPreferencesSerializer',
     'PasswordResetRequestSerializer',
     'RegistrationSerializer',
     'RegistrationSettingsSerializer',

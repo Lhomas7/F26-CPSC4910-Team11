@@ -8,7 +8,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from accounts.permissions import MFAEnrolled
+from accounts.permissions import MFAEnrolled, SponsorAccount
 from accounts.services import get_account_type
 
 from .models import Driver, PointTransaction
@@ -42,6 +42,14 @@ class DriverViewSet(viewsets.ReadOnlyModelViewSet):
 
     serializer_class = DriverSerializer
     permission_classes = [IsAuthenticated, MFAEnrolled]
+    # Actions that change a driver's membership or points; only the sponsor
+    # side of the relationship may call them.
+    sponsor_actions = frozenset({'points', 'approve', 'remove', 'link'})
+
+    def get_permissions(self):
+        if self.action in self.sponsor_actions:
+            return [IsAuthenticated(), SponsorAccount(), MFAEnrolled()]
+        return super().get_permissions()
 
     def get_queryset(self):
         # Sponsors manage their own company's drivers and drivers see their own
@@ -64,12 +72,6 @@ class DriverViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=['post'], url_path='points')
     def points(self, request, pk=None):
-        if not hasattr(request.user, 'sponsor_account'):
-            return Response(
-                {'detail': 'Only sponsor accounts can adjust driver points.'},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
         request_serializer = PointAdjustmentRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
         driver = self.get_object()
@@ -104,12 +106,6 @@ class DriverViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
         """Approve a pending driver belonging to the sponsor's company."""
-        if not hasattr(request.user, 'sponsor_account'):
-            return Response(
-                {'detail': 'Only sponsor accounts can approve drivers.'},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
         driver = self.get_object()
         if driver.status != 'approved':
             driver.status = 'approved'
@@ -119,12 +115,6 @@ class DriverViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=['post'], url_path='remove')
     def remove(self, request, pk=None):
         """Reject a pending driver or drop an approved one; a reason is required."""
-        if not hasattr(request.user, 'sponsor_account'):
-            return Response(
-                {'detail': 'Only sponsor accounts can reject or drop drivers.'},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
         request_serializer = DriverRemovalRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
         driver = self.get_object()

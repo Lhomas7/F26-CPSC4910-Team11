@@ -1,5 +1,5 @@
 import { API_ACTIVITY_EVENT, SESSION_EXPIRED_EVENT } from '../auth/sessionEvents';
-import { ApiError, NetworkError, checkHealth, isOutageError, request } from './client';
+import { ApiError, NetworkError, checkHealth, isOutageError, readJson, request } from './client';
 
 function jsonResponse(status, data) {
   return new Response(JSON.stringify(data), {
@@ -77,4 +77,17 @@ test('other 401s do not announce an expiry', async () => {
   global.fetch = jest.fn().mockResolvedValue(jsonResponse(401, { detail: 'Nope.' }));
   await request('/me/');
   expect(expired).not.toHaveBeenCalled();
+});
+
+test('a field with several errors reports all of them', async () => {
+  const response = jsonResponse(400, {
+    password: [
+      'Password must contain at least two numbers.',
+      'Password must contain at least one approved symbol.',
+    ],
+  });
+
+  await expect(readJson(response)).rejects.toThrow(
+    'Password must contain at least two numbers. Password must contain at least one approved symbol.',
+  );
 });

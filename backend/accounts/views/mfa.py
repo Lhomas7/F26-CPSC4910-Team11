@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 
 from drivers.models import Driver
 
-from ..permissions import MFAEnrolled
+from ..permissions import MFAEnrolled, SponsorAccount
 from ..sensitive import hide_sensitive_data
 from ..serializers import (
     BackupCodesRegenerateSerializer,
@@ -108,8 +108,11 @@ class MFASetupView(APIView):
 
         mfa = get_or_create_mfa_settings(user)
         if method == 'sms':
-            mfa.phone_number = phone_number
-            mfa.save(update_fields=['phone_number'])
+            # Hold the number until its code is verified. Sign-in codes keep
+            # going to the verified number, so a hijacked session cannot
+            # redirect them by entering a new one.
+            mfa.pending_phone_number = phone_number
+            mfa.save(update_fields=['pending_phone_number'])
 
         raw_code = create_mfa_code(user, purpose='enroll', method=method)
         if method == 'email':
@@ -161,7 +164,13 @@ class MFAVerifyView(APIView):
         was_enrolled = mfa.any_enabled
         field = f'{method}_enabled'
         setattr(mfa, field, True)
-        mfa.save(update_fields=[field])
+        update_fields = [field]
+        if method == 'sms' and mfa.pending_phone_number:
+            # The code reached this number, which proves the user controls it.
+            mfa.phone_number = mfa.pending_phone_number
+            mfa.pending_phone_number = None
+            update_fields += ['phone_number', 'pending_phone_number']
+        mfa.save(update_fields=update_fields)
         notify_method_change(user, method, 'enabled')
         response = {'detail': f'{method.title()} enabled.'}
         if not was_enrolled:
@@ -189,8 +198,10 @@ class MFARequestCodeView(APIView):
         if method == 'sms':
             mfa = getattr(user, 'mfa_settings', None)
             phone_number = None
-            if mfa is not None and mfa.phone_number:
-                phone_number = mfa.phone_number
+            if mfa is not None:
+                # Setup codes confirm the number awaiting verification; every
+                # other code goes only to the verified number.
+                phone_number = mfa.pending_phone_number if purpose == 'enroll' else mfa.phone_number
             if not phone_number:
                 return Response(
                     {'detail': 'No phone number on file.'},
@@ -335,31 +346,18 @@ class MFABackupCodesRegenerateView(APIView):
 
 
 class SponsorMFASettingsView(APIView):
-    permission_classes = [IsAuthenticated, MFAEnrolled]
+    permission_classes = [IsAuthenticated, SponsorAccount, MFAEnrolled]
 
     def get(self, request):
-        user = request.user
-        if not hasattr(user, 'sponsor_account') or user.sponsor_account is None:
-            return Response(
-                {'detail': 'Only a sponsor can manage this setting.'},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        company = user.sponsor_account.company
+        company = request.user.sponsor_account.company
         return Response({'driver_mfa_required': company.driver_mfa_required})
 
     def post(self, request):
         serializer = SponsorMFASerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         driver_mfa_required = serializer.validated_data['driver_mfa_required']
-        user = request.user
 
-        if not hasattr(user, 'sponsor_account') or user.sponsor_account is None:
-            return Response(
-                {'detail': 'Only a sponsor can manage this setting.'},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        company = user.sponsor_account.company
+        company = request.user.sponsor_account.company
         company.driver_mfa_required = driver_mfa_required
         company.save(update_fields=['driver_mfa_required'])
 

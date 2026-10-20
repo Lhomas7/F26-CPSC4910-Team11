@@ -1,8 +1,6 @@
 import re
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.password_validation import validate_password as django_validate_password
-from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from rest_framework import serializers
 
@@ -13,7 +11,8 @@ from ..input_cleaning import (
     NameField,
     NormalizedEmailField,
     UsernameField,
-    validate_password_policy,
+    unsaved_user_from,
+    validate_new_password,
 )
 from ..models import RegistrationSettings, SponsorAccount, SponsorCompany
 from ..services import get_account_type
@@ -317,16 +316,13 @@ class AdminUserCreateSerializer(serializers.Serializer):
         return value
 
     def validate_password(self, value):
-        return validate_password_policy(value)
+        # Compared against the submitted username, email, and names, so every
+        # password problem is reported together with the other field errors.
+        return validate_new_password(value, unsaved_user_from(self.initial_data))
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
             raise serializers.ValidationError({'password_confirm': 'Passwords do not match.'})
-        validate_password_policy(
-            attrs['password'],
-            username=attrs['username'],
-            email=attrs['email'],
-        )
         role = attrs['role']
         sponsor_org = attrs.get('sponsor_org')
         if role == 'sponsor' and sponsor_org is None:
@@ -337,17 +333,6 @@ class AdminUserCreateSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 {'sponsor_org_id': 'Administrator accounts cannot have a sponsor organization.'}
             )
-
-        proposed_user = get_user_model()(
-            username=attrs['username'],
-            first_name=attrs['first_name'],
-            last_name=attrs['last_name'],
-            email=attrs['email'],
-        )
-        try:
-            django_validate_password(attrs['password'], proposed_user)
-        except DjangoValidationError as exc:
-            raise serializers.ValidationError({'password': list(exc.messages)}) from exc
         return attrs
 
     @transaction.atomic

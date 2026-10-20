@@ -93,31 +93,70 @@ def password_requirements():
         get_default_password_validators,
     )
 
+    from .password_validation import AccountPasswordPolicyValidator
+
     requirements = [text for text, _check, _message in PASSWORD_RULES]
     requirements.append(PASSWORD_IDENTITY_REQUIREMENT)
-    # Django's validators also run on every password; the custom 12-character
-    # rule supersedes MinimumLengthValidator, so its weaker text is left out.
+    # Django's other validators also run on every password. The account policy
+    # is already listed rule by rule above, and its 12-character rule
+    # supersedes MinimumLengthValidator, so neither adds its own summary text.
     for validator in get_default_password_validators():
-        if isinstance(validator, MinimumLengthValidator):
+        if isinstance(validator, (AccountPasswordPolicyValidator, MinimumLengthValidator)):
             continue
         requirements.append(validator.get_help_text().rstrip('.'))
     return requirements
 
 
-def validate_password_policy(value, *, username='', email=''):
-    """Apply the account password policy without returning the secret in errors."""
-    for _requirement, check, message in PASSWORD_RULES:
-        if not check(value):
-            raise serializers.ValidationError(message)
+def unmet_password_requirements(value, *, username='', email=''):
+    """Messages for every policy rule this password fails, in display order.
+
+    Rules the password already meets are left out, so users see exactly what
+    to fix in one pass instead of one rule per submission.
+    """
+    problems = [message for _requirement, check, message in PASSWORD_RULES if not check(value)]
 
     folded_password = value.casefold()
-    for identity_value in (username, email):
-        normalized_identity = identity_value.strip().casefold()
-        if normalized_identity and normalized_identity in folded_password:
-            raise serializers.ValidationError(
-                'Password must not contain your username or email address.'
-            )
+    if any(
+        identity.strip() and identity.strip().casefold() in folded_password
+        for identity in (username, email)
+    ):
+        problems.append('Password must not contain your username or email address.')
+    return problems
+
+
+def validate_new_password(value, user):
+    """Run every server-side password check and report all failures together.
+
+    This is Django's validate_password, so it applies AUTH_PASSWORD_VALIDATORS:
+    the account policy (AccountPasswordPolicyValidator) plus Django's
+    similarity, common-password, and numeric checks. `user` may be unsaved;
+    its username, email, and names are what the password is compared against.
+    Call it from a serializer's validate_password so the messages are reported
+    under the password field. Error messages never include the password.
+    """
+    # Imported here so this module stays importable before app loading.
+    from django.contrib.auth.password_validation import validate_password
+    from django.core.exceptions import ValidationError as DjangoValidationError
+
+    try:
+        validate_password(value, user)
+    except DjangoValidationError as exc:
+        raise serializers.ValidationError(list(exc.messages)) from exc
     return value
+
+
+def unsaved_user_from(data):
+    """An unsaved user built from submitted account fields, for password checks.
+
+    Field validators run before cleaned values exist, so this reads the raw
+    submission; anything missing or not a string is treated as blank.
+    """
+    from django.contrib.auth import get_user_model
+
+    fields = ('username', 'email', 'first_name', 'last_name')
+    return get_user_model()(
+        **{field: value if isinstance(value := data.get(field), str) else '' for field in fields}
+    )
 
 
 class HumanTextField(serializers.CharField):

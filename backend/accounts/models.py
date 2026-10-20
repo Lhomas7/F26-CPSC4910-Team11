@@ -99,7 +99,11 @@ class MFASettings(models.Model):
     totp_enabled = models.BooleanField(default=False)
     email_enabled = models.BooleanField(default=False)
     sms_enabled = models.BooleanField(default=False)
+    # Verified number that sign-in and reset codes are sent to.
     phone_number = EncryptedCharField(null=True, blank=True)
+    # Number entered during SMS setup, held here until its enroll code is
+    # verified so an unconfirmed number never receives sign-in codes.
+    pending_phone_number = EncryptedCharField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -185,9 +189,35 @@ class DriverNotification(models.Model):
     driver = models.ForeignKey(
         'drivers.Driver', on_delete=models.CASCADE, related_name='notifications'
     )
-    message = models.CharField(max_length=500)
+    # Room for a 500-character point reason plus the surrounding alert text.
+    message = models.CharField(max_length=1000)
     read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class DriverNotificationPreferences(models.Model):
+    """Which point-change alerts a driver wants and how they are delivered.
+
+    Rows are created on first use; use DriverNotificationPreferences.for_driver()
+    rather than querying so drivers without a row get the defaults.
+    """
+
+    driver = models.OneToOneField(
+        'drivers.Driver',
+        on_delete=models.CASCADE,
+        related_name='notification_preferences',
+    )
+    points_added_enabled = models.BooleanField(default=True)
+    points_removed_enabled = models.BooleanField(default=True)
+    email_enabled = models.BooleanField(default=True)
+    # The driver contact number is unverified, so texts are opt-in.
+    sms_enabled = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @classmethod
+    def for_driver(cls, driver):
+        preferences, _ = cls.objects.get_or_create(driver=driver)
+        return preferences
 
 
 class AdminImpersonationEvent(models.Model):

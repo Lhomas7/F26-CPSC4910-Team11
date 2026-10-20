@@ -1,12 +1,20 @@
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
+from django.core import mail
 from django.db import IntegrityError, transaction
 from django.db.models.deletion import ProtectedError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from accounts.models import SponsorAccount, SponsorCompany
+from accounts.models import (
+    DriverNotification,
+    DriverNotificationPreferences,
+    SponsorAccount,
+    SponsorCompany,
+)
 from accounts.tests.common import enroll_totp
 
 from .models import Driver, DriverStatusChange, PointTransaction
@@ -217,6 +225,127 @@ class PointAdjustmentServiceTests(TestCase):
 
         self.assertEqual(error.field, 'driver')
         self.assertFalse(PointTransaction.objects.exists())
+
+
+@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+@patch('accounts.services.notify.send_sms')
+class PointChangeNotificationTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.company = SponsorCompany.objects.create(name='Palmetto Freight')
+        cls.sponsor_user = get_user_model().objects.create_user(
+            username='notify.sponsor',
+            password='ExamplePassword123!',
+        )
+        SponsorAccount.objects.create(user=cls.sponsor_user, company=cls.company)
+        cls.driver_user = get_user_model().objects.create_user(
+            username='notify.driver',
+            email='notify.driver@example.com',
+            password='ExamplePassword123!',
+        )
+        cls.driver = Driver.objects.create(
+            user=cls.driver_user,
+            name='Notify Driver',
+            sponsor=cls.company,
+            status='approved',
+            phone_number='+18645550100',
+        )
+
+    def adjust(self, amount, reason='Consistent safe driving'):
+        mail.outbox = []
+        with self.captureOnCommitCallbacks(execute=True):
+            return adjust_driver_points(
+                driver=self.driver,
+                changed_by_user=self.sponsor_user,
+                point_change=amount,
+                reason=reason,
+            )
+
+    def set_preferences(self, **values):
+        DriverNotificationPreferences.objects.update_or_create(driver=self.driver, defaults=values)
+
+    def test_award_notifies_in_app_and_by_email_by_default(self, send_sms):
+        self.adjust(150, 'Excellent quarterly performance')
+
+        notification = DriverNotification.objects.get(driver=self.driver)
+        self.assertIn('added 150 points', notification.message)
+        self.assertIn('Reason: Excellent quarterly performance.', notification.message)
+        self.assertIn('Your balance is now 150 points.', notification.message)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ['notify.driver@example.com'])
+        self.assertEqual(mail.outbox[0].subject, 'Points added to your Good Driver account')
+        self.assertEqual(mail.outbox[0].body, notification.message)
+        send_sms.assert_not_called()
+
+    def test_deduction_notifies_with_remaining_balance_by_default(self, send_sms):
+        self.adjust(100)
+
+        self.adjust(-1, 'Late delivery')
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, 'Points removed from your Good Driver account')
+        self.assertIn('removed 1 point from', mail.outbox[0].body)
+        self.assertIn('Reason: Late delivery.', mail.outbox[0].body)
+        self.assertIn('Your balance is now 99 points.', mail.outbox[0].body)
+
+    def test_disabled_added_alerts_still_send_removed_alerts(self, send_sms):
+        self.set_preferences(points_added_enabled=False)
+
+        self.adjust(100)
+        self.assertFalse(DriverNotification.objects.exists())
+        self.assertEqual(len(mail.outbox), 0)
+
+        self.adjust(-10)
+        self.assertEqual(DriverNotification.objects.count(), 1)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_disabled_removed_alerts_still_send_added_alerts(self, send_sms):
+        self.set_preferences(points_removed_enabled=False)
+
+        self.adjust(100)
+        self.assertEqual(len(mail.outbox), 1)
+
+        self.adjust(-10)
+        self.assertEqual(DriverNotification.objects.count(), 1)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_text_only_delivery(self, send_sms):
+        self.set_preferences(email_enabled=False, sms_enabled=True)
+
+        self.adjust(25)
+
+        self.assertEqual(len(mail.outbox), 0)
+        send_sms.assert_called_once()
+        phone_number, message = send_sms.call_args.args
+        self.assertEqual(phone_number, '+18645550100')
+        self.assertIn('Your balance is now 25 points.', message)
+
+    def test_text_needs_a_phone_number(self, send_sms):
+        self.set_preferences(sms_enabled=True)
+        Driver.objects.filter(pk=self.driver.pk).update(phone_number='')
+
+        self.adjust(25)
+
+        send_sms.assert_not_called()
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_failed_email_still_sends_text_and_keeps_adjustment(self, send_sms):
+        self.set_preferences(sms_enabled=True)
+
+        with patch('accounts.services.notify.EmailMessage.send', side_effect=OSError):
+            result = self.adjust(25)
+
+        self.assertEqual(result.balance, 25)
+        self.assertEqual(self.driver.point_balance, 25)
+        send_sms.assert_called_once()
+
+    def test_rejected_adjustment_sends_nothing(self, send_sms):
+        with self.assertRaises(PointAdjustmentError):
+            self.adjust(-5)
+
+        self.assertFalse(DriverNotification.objects.exists())
+        self.assertEqual(len(mail.outbox), 0)
+        send_sms.assert_not_called()
 
 
 class PointAdjustmentAPITests(APITestCase):
@@ -650,6 +779,101 @@ class DriverRemovalTests(RoleScopedDriverTestData):
         )
         self.pending.refresh_from_db()
         self.assertEqual(self.pending.sponsor, self.company)
+
+
+class SponsorOnlyActionTests(RoleScopedDriverTestData):
+    """Every sponsor action refuses every caller that is not a sponsor account."""
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        # A staff user who also has a sponsor relation is still an admin.
+        cls.staff_sponsor_user = get_user_model().objects.create_user(
+            username='staff.sponsor',
+            password='ExamplePassword123!',
+            is_staff=True,
+        )
+        SponsorAccount.objects.create(user=cls.staff_sponsor_user, company=cls.company)
+        enroll_totp(cls.staff_sponsor_user)
+        unassigned = get_user_model().objects.create_user(
+            username='scope.unassigned',
+            password='ExamplePassword123!',
+        )
+        Driver.objects.create(user=unassigned, name='Dana Unassigned', status='approved')
+
+    def sponsor_requests(self):
+        return {
+            'points': (
+                reverse('driver-points', kwargs={'pk': self.approved.pk}),
+                {'point_change': 10, 'reason': 'Not authorized'},
+            ),
+            'approve': (reverse('driver-approve', kwargs={'pk': self.pending.pk}), {}),
+            'remove': (
+                reverse('driver-remove', kwargs={'pk': self.pending.pk}),
+                {'reason': 'Not authorized'},
+            ),
+            'link': (reverse('driver-link'), {'username': 'scope.unassigned'}),
+        }
+
+    def snapshot(self):
+        return (
+            PointTransaction.objects.count(),
+            DriverStatusChange.objects.count(),
+            list(Driver.objects.order_by('pk').values_list('sponsor_id', 'status')),
+        )
+
+    def test_non_sponsor_callers_are_refused_every_sponsor_action(self):
+        callers = {
+            'driver': self.approved.user,
+            'pending driver': self.pending.user,
+            'admin': self.admin_user,
+            'staff with sponsor relation': self.staff_sponsor_user,
+            'anonymous': None,
+        }
+        before = self.snapshot()
+
+        for caller_name, user in callers.items():
+            self.client.force_authenticate(user)
+            for action_name, (url, data) in self.sponsor_requests().items():
+                with self.subTest(caller=caller_name, action=action_name):
+                    response = self.client.post(url, data, format='json')
+                    self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        self.assertEqual(self.snapshot(), before)
+
+    def test_signed_in_non_sponsors_get_the_sponsor_only_message(self):
+        self.client.force_authenticate(self.approved.user)
+
+        for action_name, (url, data) in self.sponsor_requests().items():
+            with self.subTest(action=action_name):
+                response = self.client.post(url, data, format='json')
+                self.assertEqual(response.data['detail'], 'Only sponsor accounts can do this.')
+
+    def test_sponsor_can_use_every_sponsor_action(self):
+        self.client.force_authenticate(self.sponsor_user)
+        expected = {
+            'points': status.HTTP_201_CREATED,
+            'approve': status.HTTP_200_OK,
+            'link': status.HTTP_200_OK,
+        }
+
+        for action_name, (url, data) in self.sponsor_requests().items():
+            if action_name == 'remove':
+                continue  # Runs last below, since approve changes the same driver.
+            with self.subTest(action=action_name):
+                response = self.client.post(url, data, format='json')
+                self.assertEqual(response.status_code, expected[action_name])
+
+        url, data = self.sponsor_requests()['remove']
+        self.assertEqual(self.client.post(url, data, format='json').status_code, status.HTTP_200_OK)
+
+    def test_drivers_can_still_read_their_own_record(self):
+        self.client.force_authenticate(self.approved.user)
+
+        response = self.client.get(reverse('driver-list'))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual([row['name'] for row in response.data], ['Avery Approved'])
 
 
 class PointHistoryApiTests(RoleScopedDriverTestData):

@@ -55,6 +55,7 @@ erDiagram
         boolean email_enabled
         boolean sms_enabled
         varchar phone_number "nullable"
+        varchar pending_phone_number "nullable"
         datetime created_at
         datetime updated_at
         int user_id FK, UK
@@ -267,6 +268,7 @@ erDiagram
         boolean email_enabled
         boolean sms_enabled
         varchar phone_number "nullable"
+        varchar pending_phone_number "nullable"
         datetime created_at
         datetime updated_at
         int user_id FK, UK

@@ -229,6 +229,58 @@ class RegistrationTests(APITestCase):
             'Password must contain at least three lowercase letters.',
         )
 
+    def test_registration_rejects_a_password_too_similar_to_the_name(self):
+        # Meets every account rule, so only Django's similarity check catches it.
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(
+                first_name='Maximilian',
+                password='Maximilian12!R',
+                password_confirm='Maximilian12!R',
+            ),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data['password'], ['The password is too similar to the first name.']
+        )
+        self.assertFalse(get_user_model().objects.filter(username='jamie.rivera').exists())
+
+    def test_registration_rejects_a_common_password(self):
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(password='password', password_confirm='password'),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('This password is too common.', response.data['password'])
+
+    def test_every_password_problem_is_reported_with_the_other_field_errors(self):
+        response = self.client.post(
+            self.driver_url,
+            self.registration_data(
+                email='not-an-email',
+                password='jamie.rivera',
+                password_confirm='jamie.rivera',
+            ),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('email', response.data)
+        self.assertNotIn('non_field_errors', response.data)
+        self.assertEqual(
+            response.data['password'][:3],
+            [
+                'Password must contain at least two uppercase letters.',
+                'Password must contain at least two numbers.',
+                'Password must not contain your username or email address.',
+            ],
+        )
+        self.assertIn('The password is too similar to the username.', response.data['password'])
+
 
 class RegistrationEmailVerificationTests(APITestCase):
     driver_url = reverse('accounts:driver-register')
