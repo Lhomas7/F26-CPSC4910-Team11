@@ -9,6 +9,8 @@ from django.core import mail
 from django.core.cache import cache
 from django.test import RequestFactory, SimpleTestCase, override_settings
 from django.urls import reverse
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 from django.views.debug import ExceptionReporter
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -25,7 +27,10 @@ from ..models import (
 )
 from ..services.mfa import create_mfa_code
 from ..views import LoginView
-from ..views.authentication import PASSWORD_RESET_REQUEST_MESSAGE
+from ..views.authentication import (
+    PASSWORD_RESET_INVALID_LINK_MESSAGE,
+    PASSWORD_RESET_REQUEST_MESSAGE,
+)
 from .common import enroll_totp, send_reset_emails_inline
 
 
@@ -457,12 +462,72 @@ class PasswordResetTests(APITestCase):
     def test_link_can_only_be_used_once(self):
         uid, token = self.issue_link()
         self.confirm(uid, token)
+        mail.outbox = []
 
         response = self.confirm(uid, token, password='AnotherSecurePass33!')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {'detail': PASSWORD_RESET_INVALID_LINK_MESSAGE})
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password(self.new_password))
+        # Only the first, successful use notified the owner.
+        self.assertEqual(len(mail.outbox), 0)
+        self.assertEqual(DriverNotification.objects.filter(driver=self.driver).count(), 1)
+
+    def test_older_unused_link_stops_working_once_a_newer_one_is_used(self):
+        old_uid, old_token = self.issue_link()
+        cache.clear()  # Skip the request cooldown so a second link is sent.
+        new_uid, new_token = self.issue_link()
+        self.assertEqual(self.confirm(new_uid, new_token).status_code, status.HTTP_200_OK)
+
+        response = self.confirm(old_uid, old_token, password='AnotherSecurePass33!')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(self.new_password))
+
+    def test_link_stops_working_after_the_owner_signs_in(self):
+        uid, token = self.issue_link()
+        self.client_class().post(
+            reverse('accounts:login'),
+            {'username': 'driver.one', 'password': 'ExamplePassword123!'},
+            format='json',
+        )
+
+        response = self.confirm(uid, token)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('ExamplePassword123!'))
+
+    def test_rejected_password_does_not_use_up_the_link(self):
+        uid, token = self.issue_link()
+        self.assertEqual(
+            self.confirm(uid, token, password='short').status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        response = self.confirm(uid, token)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(self.new_password))
+
+    def test_link_only_works_for_the_account_it_was_sent_to(self):
+        other = get_user_model().objects.create_user(
+            username='driver.two',
+            email='two@example.com',
+            password='ExamplePassword123!',
+        )
+        Driver.objects.create(user=other, name='Driver Two', status='approved')
+        _uid, token = self.issue_link()
+        other_uid = urlsafe_base64_encode(force_bytes(other.pk))
+
+        response = self.confirm(other_uid, token)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        other.refresh_from_db()
+        self.assertTrue(other.check_password('ExamplePassword123!'))
 
     def test_expired_link_is_rejected(self):
         uid, token = self.issue_link()
