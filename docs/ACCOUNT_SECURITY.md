@@ -33,6 +33,63 @@ cannot keep a lock alive by hammering it.
 - Not encrypted in the app: email addresses (used for lookup). Turn on RDS storage
   encryption for the database as the base layer.
 
+## Administrator View-As eligibility
+
+Starting View-As requires an authenticated staff administrator whose required
+MFA is enrolled. The target must be an active Driver or Sponsor. When the
+target's role or Sponsor Organization requires MFA, the target must complete
+enrollment before an administrator can enter View-As. Viewing an account does
+not grant permission to enroll or change its security methods on its behalf.
+
+The start endpoint checks eligibility before storing a session or creating a
+successful `start` audit event. Rejections retain the existing `detail` message
+and include a stable `code`:
+
+- `view_as_invalid_role`: the target is not a Driver or Sponsor.
+- `view_as_inactive_target`: the target account is inactive.
+- `view_as_target_mfa_required`: the target has required MFA without enrollment.
+- `view_as_already_active`: a View-As session is already active.
+
+Administrator Driver and Sponsor detail responses include a read-only
+`view_as` object with `eligible`, `code`, and `detail`. Their account pages use
+this metadata to disable the View-As action and explain the restriction before
+opening the confirmation dialog. The start endpoint still checks eligibility
+again because the target's policy or account state can change after loading.
+
+Active sessions recheck target eligibility on every request. Expiration,
+deletion, deactivation, loss of an eligible role, or loss of required MFA ends
+View-As. Invalid or timezone-naive start timestamps are treated as expired.
+
+An ended session is reported as inactive impersonation metadata on `/api/me/`,
+including a `code` such as `view_as_expired` or `view_as_target_deleted`.
+Other API requests return `409` until the client acknowledges the return using
+the existing stop endpoint. This prevents a request intended for the viewed
+user from silently executing as the administrator. Stop also succeeds when it
+races automatic expiration. The shared API client handles this response by
+restoring the administrator identity and showing the existing session-ended
+notice. Detection occurs on the next API request; idle polling is not added.
+
+### View-As audit trail
+
+`AdminImpersonationEvent` records `start`, `stop`, `expire`, and `invalidate`.
+Automatic termination stores a stable `reason` code. Manual return uses
+`view_as_stopped`; signing out uses `signed_out`. An administrator session
+timeout records `session_expired` before clearing authentication.
+
+Loss of administrator privileges ends authentication. Loss of required
+administrator MFA ends View-As and returns to the MFA enrollment gate.
+Target deletion, an ineligible target role, deactivation, and required-MFA loss
+are recorded as invalidations. The original viewed role is retained in session
+metadata; deleted account foreign keys remain nullable. Existing audit rows
+retain an empty reason because their historical reason cannot be reconstructed.
+
+Migration `accounts.0013_impersonation_termination_reason` adds this metadata.
+Apply it before running the updated backend. Events remain read-only in Django
+administration, where action and reason can be filtered. Acknowledging an
+automatically ended session does not add a second terminal event. These are
+request-based records, not a guarantee of deduplication between simultaneous
+requests; a database-backed session identity would be needed for that guarantee.
+
 ## Administrator password reset
 
 Admins are excluded from the public "Forgot password" email flow. Instead:

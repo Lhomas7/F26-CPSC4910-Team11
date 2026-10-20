@@ -200,14 +200,20 @@ export default function SponsorAccountPage() {
                 <button
                   type="button"
                   onClick={() => setConfirmingViewAs(true)}
-                  disabled={viewingAs || !account.is_active}
-                  aria-describedby={!account.is_active ? 'sponsor-view-as-disabled' : undefined}
+                  disabled={viewingAs || !account.is_active || account.view_as?.eligible === false}
+                  aria-describedby={
+                    !account.is_active || account.view_as?.eligible === false
+                      ? 'sponsor-view-as-disabled'
+                      : undefined
+                  }
                 >
                   {viewingAs ? 'Opening…' : 'View as sponsor'}
                 </button>
-                {!account.is_active && (
+                {(!account.is_active || account.view_as?.eligible === false) && (
                   <p className="view-as-disabled-reason" id="sponsor-view-as-disabled">
-                    Inactive accounts cannot be viewed as.
+                    {!account.is_active
+                      ? 'Inactive accounts cannot be viewed as.'
+                      : account.view_as.detail}
                   </p>
                 )}
                 <button

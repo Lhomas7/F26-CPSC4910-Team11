@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 import * as api from '../api';
 import { AuthProvider, useAuth } from './AuthContext';
-import { API_ACTIVITY_EVENT, SESSION_EXPIRED_EVENT } from './sessionEvents';
+import { API_ACTIVITY_EVENT, SESSION_EXPIRED_EVENT, VIEW_AS_ENDED_EVENT } from './sessionEvents';
 
 jest.mock('../api');
 
@@ -33,6 +33,17 @@ function renderWithSignedInDriver() {
 }
 
 afterEach(() => jest.clearAllMocks());
+
+test('a server-ended View-As session acknowledges return and restores the administrator', async () => {
+  api.stopAdminImpersonation.mockResolvedValue({ username: 'admin.one', account_type: 'admin' });
+  renderWithSignedInDriver();
+  expect(await screen.findByText('Signed in as driver.one')).toBeInTheDocument();
+
+  act(() => window.dispatchEvent(new Event(VIEW_AS_ENDED_EVENT)));
+
+  expect(await screen.findByText('Signed in as admin.one')).toBeInTheDocument();
+  expect(api.stopAdminImpersonation).toHaveBeenCalledTimes(1);
+});
 
 test('signing out calls the API and clears the user', async () => {
   api.logout.mockResolvedValue(null);

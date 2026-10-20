@@ -1,4 +1,4 @@
-import { API_ACTIVITY_EVENT, SESSION_EXPIRED_EVENT } from '../auth/sessionEvents';
+import { API_ACTIVITY_EVENT, SESSION_EXPIRED_EVENT, VIEW_AS_ENDED_EVENT } from '../auth/sessionEvents';
 
 const DEFAULT_API_URL = 'http://localhost:8000/api';
 
@@ -78,6 +78,12 @@ export async function request(path, { method = 'GET', body, headers } = {}) {
       .catch(() => ({}));
     if (data.code === 'session_expired') {
       window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+    }
+  }
+  if (response.status === 409) {
+    const data = await response.clone().json().catch(() => ({}));
+    if (data.active === false && data.code?.startsWith('view_as_')) {
+      window.dispatchEvent(new CustomEvent(VIEW_AS_ENDED_EVENT, { detail: data }));
     }
   }
   return response;

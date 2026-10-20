@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 import * as api from '../api';
-import { API_ACTIVITY_EVENT, SESSION_EXPIRED_EVENT } from './sessionEvents';
+import { API_ACTIVITY_EVENT, SESSION_EXPIRED_EVENT, VIEW_AS_ENDED_EVENT } from './sessionEvents';
 
 const AuthContext = createContext(null);
 
@@ -21,12 +21,39 @@ export function AuthProvider({ children }) {
   const [state, setState] = useState({ loading: true, user: null, notice: null });
 
   useEffect(() => {
+    let returning = false;
+    const onViewAsEnded = async () => {
+      if (returning) return;
+      returning = true;
+      // Hide the stale target while acknowledging the server-ended session.
+      setState((current) => ({ ...current, loading: true }));
+      try {
+        const user = await api.stopAdminImpersonation();
+        setState((current) => ({
+          ...current, loading: false,
+          user: keepSession(current.user, user), notice: 'view-as-ended',
+        }));
+      } catch {
+        setState({ loading: false, user: null, notice: 'expired' });
+      } finally {
+        returning = false;
+      }
+    };
+    window.addEventListener(VIEW_AS_ENDED_EVENT, onViewAsEnded);
+    return () => window.removeEventListener(VIEW_AS_ENDED_EVENT, onViewAsEnded);
+  }, []);
+
+  useEffect(() => {
     let active = true;
     api
       .ensureCsrf()
       .then(() => api.me())
       .then((data) => {
         if (!active) return;
+        if (data.user?.impersonation?.active === false && data.user.impersonation.code) {
+          window.dispatchEvent(new Event(VIEW_AS_ENDED_EVENT));
+          return;
+        }
         setState((current) => ({
           ...current,
           loading: false,
@@ -106,6 +133,10 @@ export function AuthProvider({ children }) {
   }, []);
 
   const updateUser = useCallback((user) => {
+    if (user?.impersonation?.active === false && user.impersonation.code) {
+      window.dispatchEvent(new Event(VIEW_AS_ENDED_EVENT));
+      return;
+    }
     setState((current) => ({
       ...current,
       loading: false,

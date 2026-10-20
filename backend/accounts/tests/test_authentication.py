@@ -292,6 +292,7 @@ class LogoutTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_admin_logout_while_viewing_as_a_driver_records_the_stop(self):
+        enroll_totp(self.admin)
         self.client.force_login(self.admin)
         started = self.client.post(
             reverse('accounts:admin-impersonation-start', args=[self.driver.id]),
@@ -308,6 +309,8 @@ class LogoutTests(APITestCase):
         self.assertEqual(stop.target_role, 'driver')
 
     def test_admin_logout_while_viewing_as_a_sponsor_records_the_stop(self):
+        enroll_totp(self.admin)
+        enroll_totp(self.sponsor)
         self.client.force_login(self.admin)
         started = self.client.post(
             reverse('accounts:admin-impersonation-start', args=[self.sponsor.id]),
