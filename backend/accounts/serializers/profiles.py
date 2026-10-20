@@ -2,8 +2,6 @@ import re
 from pathlib import Path
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.password_validation import validate_password as django_validate_password
-from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from rest_framework import serializers
 
@@ -11,7 +9,7 @@ from ..input_cleaning import (
     HumanTextField,
     NormalizedEmailField,
     UsernameField,
-    validate_password_policy,
+    validate_new_password,
 )
 from ..models import AccountProfile
 from ..services import get_account_type, get_mfa_status
@@ -22,7 +20,7 @@ class ChangePasswordSerializer(serializers.Serializer):
     password_confirm = serializers.CharField(write_only=True, trim_whitespace=False)
 
     def validate_password(self, value):
-        return validate_password_policy(value)
+        return validate_new_password(value, self.context.get('user'))
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
@@ -33,17 +31,6 @@ class ChangePasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 {'password': 'Choose a different password than your current one.'}
             )
-
-        validate_password_policy(
-            attrs['password'],
-            username=user.username if user else '',
-            email=user.email if user else '',
-        )
-        if user is not None:
-            try:
-                django_validate_password(attrs['password'], user)
-            except DjangoValidationError as exc:
-                raise serializers.ValidationError({'password': list(exc.messages)}) from exc
         return attrs
 
 

@@ -1,8 +1,11 @@
 from unittest.mock import patch
 
+from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import AdminPasswordChangeForm
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.exceptions import ValidationError
 from rest_framework.test import APITestCase
 
 from .. import input_cleaning
@@ -10,15 +13,19 @@ from ..input_cleaning import (
     PASSWORD_IDENTITY_REQUIREMENT,
     PASSWORD_RULES,
     PASSWORD_SPECIAL_CHARACTERS,
-    validate_password_policy,
 )
+from ..password_validation import AccountPasswordPolicyValidator
+
+
+def unsaved_user(username='', email=''):
+    return get_user_model()(username=username, email=email)
 
 
 class PasswordPolicyRulesTests(APITestCase):
-    def assert_rejected_with(self, password, *messages, **identity):
+    def assert_rejected_with(self, password, *messages, username='', email=''):
         with self.assertRaises(ValidationError) as caught:
-            validate_password_policy(password, **identity)
-        self.assertEqual(caught.exception.detail, list(messages))
+            AccountPasswordPolicyValidator().validate(password, unsaved_user(username, email))
+        self.assertEqual(caught.exception.messages, list(messages))
 
     def test_each_rule_keeps_its_specific_error(self):
         self.assert_rejected_with('abcdefAB12!', 'Password must be at least 12 characters long.')
@@ -45,10 +52,10 @@ class PasswordPolicyRulesTests(APITestCase):
 
     def test_unmet_rules_keep_the_order_users_read_them_in(self):
         with self.assertRaises(ValidationError) as caught:
-            validate_password_policy('Ab1!', username='ab1')
+            AccountPasswordPolicyValidator().validate('Ab1!', unsaved_user(username='ab1'))
 
         rule_messages = [message for _text, _check, message in PASSWORD_RULES]
-        reported = [str(message) for message in caught.exception.detail]
+        reported = caught.exception.messages
         self.assertEqual(reported[:-1], [m for m in rule_messages if m in reported])
         self.assertEqual(
             reported[-1], 'Password must not contain your username or email address.'
@@ -73,7 +80,30 @@ class PasswordPolicyRulesTests(APITestCase):
         )
 
     def test_valid_password_passes(self):
-        self.assertEqual(validate_password_policy('abcdefAB12!x'), 'abcdefAB12!x')
+        self.assertIsNone(AccountPasswordPolicyValidator().validate('abcdefAB12!x'))
+
+    def test_policy_runs_with_djangos_validators_on_every_password_path(self):
+        # validate_password is what the API serializers, the Django admin, and
+        # createsuperuser/changepassword all call.
+        with self.assertRaises(ValidationError) as caught:
+            validate_password('password', unsaved_user(username='casey'))
+
+        self.assertEqual(
+            caught.exception.messages,
+            [
+                'Password must be at least 12 characters long.',
+                'Password must contain at least two uppercase letters.',
+                'Password must contain at least two numbers.',
+                'Password must contain at least one approved symbol.',
+                'This password is too common.',
+            ],
+        )
+
+    def test_djangos_eight_character_minimum_is_not_reported_twice(self):
+        with self.assertRaises(ValidationError) as caught:
+            validate_password('Ab1!', unsaved_user())
+
+        self.assertFalse(any('at least 8 characters' in m for m in caught.exception.messages))
 
 
 class PasswordPolicyViewTests(APITestCase):
@@ -102,3 +132,30 @@ class PasswordPolicyViewTests(APITestCase):
             requirements = self.client.get(self.url).data['requirements']
 
         self.assertIn('At least 1 emoji', requirements)
+
+
+class DjangoAdminPasswordFormTests(APITestCase):
+    """The Django admin's password forms enforce the same account policy."""
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username='admin.target', password='ExamplePassword123!'
+        )
+
+    def test_admin_password_change_form_rejects_a_policy_violation(self):
+        form = AdminPasswordChangeForm(
+            self.user, {'password1': 'abcdefgh12!x', 'password2': 'abcdefgh12!x'}
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertEqual(
+            form.errors['password2'],
+            ['Password must contain at least two uppercase letters.'],
+        )
+
+    def test_admin_password_change_form_accepts_a_compliant_password(self):
+        form = AdminPasswordChangeForm(
+            self.user, {'password1': 'ValidSecurePassword22!', 'password2': 'ValidSecurePassword22!'}
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
