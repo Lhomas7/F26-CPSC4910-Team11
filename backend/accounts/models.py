@@ -90,7 +90,11 @@ class MFASettings(models.Model):
     totp_enabled = models.BooleanField(default=False)
     email_enabled = models.BooleanField(default=False)
     sms_enabled = models.BooleanField(default=False)
+    # Verified number that sign-in and reset codes are sent to.
     phone_number = models.CharField(max_length=20, null=True, blank=True)
+    # Number entered during SMS setup, held here until its enroll code is
+    # verified so an unconfirmed number never receives sign-in codes.
+    pending_phone_number = models.CharField(max_length=20, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
