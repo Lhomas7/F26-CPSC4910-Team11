@@ -75,6 +75,50 @@ Secrets Manager path below. Consequently, the active workflow injects runtime
 values from GitHub environment secrets into `web/.env` on the runner, protects
 that file with mode `600`, and ships it to EC2. Never commit `web/.env`.
 
+## Domain and TLS
+
+Production is served over HTTPS on the Route 53 subdomain, which has an A
+record pointing at the instance's Elastic IP. Caddy terminates TLS itself:
+
+- The `production` environment variable `SITE_DOMAIN` is a **bare hostname**
+  (for example `app.example.com`, with no `http://`). Caddy uses it as the site
+  address, gets and renews a Let's Encrypt certificate automatically, and
+  redirects HTTP to HTTPS. With an `http://` prefix it serves plain HTTP only.
+- The EC2 security group must allow inbound TCP 80 and 443 from anywhere
+  (Let's Encrypt validates over them; UDP 443 is optional for HTTP/3).
+- Certificates live in the `caddy_data` volume, so redeploys and
+  `docker compose restart webproxy` do not request new ones. Do not delete that
+  volume casually: Let's Encrypt rate-limits repeated issuance.
+- Caddy only answers requests whose `Host` matches `SITE_DOMAIN`. Anything else,
+  including the bare Elastic IP, gets an empty `200` (a blank page), not the app.
+
+Related `production` environment variables:
+
+| Variable       | Example                   | Used for                                        |
+| -------------- | ------------------------- | ----------------------------------------------- |
+| `SITE_DOMAIN`  | `app.example.com`         | Caddy site address (enables auto-TLS)           |
+| `APP_DOMAIN`   | `app.example.com`         | `DJANGO_ALLOWED_HOSTS` and CSRF trusted origin  |
+| `EC2_HOST`     | Elastic IP                | SSH/rsync target; also kept in allowed hosts    |
+| `FRONTEND_URL` | `https://app.example.com` | Password-reset links                            |
+| `HEALTH_URL`   | `https://app.example.com` | Post-deploy smoke tests (also proves TLS works) |
+
+The workflow writes `DJANGO_SECURE_SSL_REDIRECT=true`,
+`DJANGO_SESSION_COOKIE_SECURE=true`, and
+`DJANGO_CSRF_TRUSTED_ORIGINS=https://$APP_DOMAIN`. `DJANGO_BEHIND_PROXY=true`
+makes Django trust Caddy's `X-Forwarded-Proto`, so the redirect does not loop.
+HSTS stays at the `3600` second default until HTTPS has run cleanly for a while.
+
+If a deploy's smoke tests fail after a domain change, check the certificate on
+the host:
+
+```bash
+cd /opt/gooddriver/src
+docker compose logs webproxy | grep -i -E "certificate|acme|error"
+```
+
+The usual causes are a closed port 80/443, DNS not yet pointing at the Elastic
+IP, or `SITE_DOMAIN` still carrying an `http://` prefix.
+
 ## AWS Secrets Manager
 
 Secrets are stored as **one JSON object** of `KEY: value` strings. Only these keys
@@ -138,9 +182,6 @@ Smoke test after every deploy: `GET /api/health/` returns `{"status": "ok"}`
 - **Staging and release gates.** The workflow currently deploys directly to the
   GitHub `production` environment after CI. Add staging, required approval, and
   tag/release-based promotion before relying on it for mature releases.
-- **Domain and TLS.** The Caddy configuration supports automatic HTTPS once
-  `SITE_DOMAIN` is a real domain. Until then, the workflow explicitly supports a
-  bare-IP HTTP phase with secure redirects/cookies disabled.
 - **Uploaded profile pictures.** Docker Compose stores `/app/media` in a named
   volume on the single EC2 host and Caddy serves `/media/`. This survives
   container replacement but is not multi-host or disaster-recovery storage;
@@ -154,4 +195,4 @@ Smoke test after every deploy: `GET /api/health/` returns `{"status": "ok"}`
 
 ---
 
-_Last reviewed against the Docker Compose and GitHub Actions configuration: 2026-10-01._
+_Last reviewed against the Docker Compose and GitHub Actions configuration: 2026-10-20._
