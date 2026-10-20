@@ -1,5 +1,6 @@
 from django.urls import path
 
+from ..views.admin_password_reset import AdminPasswordResetRequestView
 from ..views.admin_users import (
     AdminAccountDetailView,
     AdminDriverDetailView,
@@ -37,6 +38,11 @@ urlpatterns = [
         'admin/admins/<int:user_id>/',
         AdminAccountDetailView.as_view(),
         name='admin-account-detail',
+    ),
+    path(
+        'admin/admins/<int:user_id>/password-reset/',
+        AdminPasswordResetRequestView.as_view(),
+        name='admin-password-reset-request',
     ),
     path(
         'admin/sponsors/<int:user_id>/',

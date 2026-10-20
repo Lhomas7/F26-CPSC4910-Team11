@@ -24,6 +24,13 @@ export function updateAdminAccount(userId, data) {
   return request(`/admin/admins/${userId}/`, { method: 'PATCH', body: data }).then(readJson);
 }
 
+export function requestAdminPasswordReset(userId, currentPassword) {
+  return request(`/admin/admins/${userId}/password-reset/`, {
+    method: 'POST',
+    body: { current_password: currentPassword },
+  }).then(readJson);
+}
+
 export function getAdminSponsor(userId) {
   return request(`/admin/sponsors/${userId}/`).then(readJson);
 }

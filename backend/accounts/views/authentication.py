@@ -39,6 +39,7 @@ from ..services.device_trust import (
     trust_device,
 )
 from ..services.login_audit import record_login_attempt
+from ..services.login_throttle import locked_out_response, lockout_seconds_remaining
 from ..services.mfa import create_mfa_code, verify_backup_code, verify_code
 from ..services.notify import notify_password_reset, notify_unrecognized_sign_in
 from ..services.password_reset import (
@@ -81,6 +82,12 @@ class LoginView(AnonymousAPIView):
         serializer.is_valid(raise_exception=True)
         username = serializer.validated_data['username'].strip()
         password = serializer.validated_data['password']
+
+        # Checked before the password is, so a locked username cannot be guessed
+        # at, and an unknown username is refused exactly like a real one.
+        locked_for = lockout_seconds_remaining(username)
+        if locked_for:
+            return locked_out_response(locked_for)
 
         user = authenticate(request, username=username, password=password)
         if user is None or get_account_type(user) is None:
@@ -155,6 +162,11 @@ class LoginMFAView(AnonymousAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        locked_for = lockout_seconds_remaining(user.get_username())
+        if locked_for:
+            self._clear_pending_mfa(request)
+            return locked_out_response(locked_for)
+
         verified = False
         if method == 'totp':
             mfa = getattr(user, 'mfa_settings', None)
@@ -213,6 +225,10 @@ class LoginMFARequestCodeView(AnonymousAPIView):
                 {'detail': 'Session expired, log in again.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        locked_for = lockout_seconds_remaining(user.get_username())
+        if locked_for:
+            return locked_out_response(locked_for)
 
         serializer = LoginMFARequestCodeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -381,7 +397,15 @@ class PasswordResetConfirmView(AnonymousAPIView):
         uid = request.data.get('uid')
         token = request.data.get('token')
         user = user_from_uid(uid) if isinstance(uid, str) else None
-        if user is None or not isinstance(token, str) or not token_is_valid(user, token):
+        if (
+            user is None
+            # Administrators reset through the separate, stricter admin flow
+            # (services/admin_password_reset.py); a link for one is never honored here.
+            or user.is_staff
+            or user.is_superuser
+            or not isinstance(token, str)
+            or not token_is_valid(user, token)
+        ):
             return Response(
                 {'detail': PASSWORD_RESET_INVALID_LINK_MESSAGE},
                 status=status.HTTP_400_BAD_REQUEST,

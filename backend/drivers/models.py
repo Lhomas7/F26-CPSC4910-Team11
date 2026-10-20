@@ -7,6 +7,8 @@ from django.db import models
 from django.db.models import Sum, Value
 from django.db.models.functions import Coalesce
 
+from accounts.fields import EncryptedCharField
+
 
 def profile_picture_upload_to(instance, filename):
     """Keep user-provided filenames out of storage paths."""
@@ -40,7 +42,8 @@ class Driver(models.Model):
         validators=[FileExtensionValidator(['jpg', 'jpeg', 'png', 'webp'])],
     )
     # Store a normalized international number; blank means no contact number.
-    phone_number = models.CharField(max_length=16, blank=True)
+    # Encrypted at rest (see accounts/fields.py), so it cannot be filtered on in SQL.
+    phone_number = EncryptedCharField(blank=True)
 
     def __str__(self):
         return self.name

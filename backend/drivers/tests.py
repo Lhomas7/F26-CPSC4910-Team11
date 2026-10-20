@@ -532,11 +532,15 @@ class DriverLinkTests(RoleScopedDriverTestData):
         self.assertEqual(self.approved.status, 'approved')
         self.assertEqual(self.approved.sponsor, self.company)
 
-    def test_refuses_driver_linked_to_another_company(self):
-        response = self.link(self.outsider.user.username)
+    def test_driver_linked_to_another_company_looks_the_same_as_an_unknown_username(self):
+        unknown = self.link('does.not.exist')
+        elsewhere = self.link(self.outsider.user.username)
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('another sponsor', response.data['detail'])
+        # Neither the status nor the wording may reveal that the account exists
+        # or who sponsors it.
+        self.assertEqual(elsewhere.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(elsewhere.status_code, unknown.status_code)
+        self.assertEqual(elsewhere.data, unknown.data)
         self.outsider.refresh_from_db()
         self.assertEqual(self.outsider.sponsor, self.other_company)
 
@@ -676,3 +680,90 @@ class PointHistoryApiTests(RoleScopedDriverTestData):
 
     def test_admins_have_no_point_history(self):
         self.assertEqual(self.history(self.admin_user).status_code, status.HTTP_403_FORBIDDEN)
+
+
+class PersonalDataAccessTests(RoleScopedDriverTestData):
+    """Who can read a driver's record is decided by the backend, per request."""
+
+    def detail_url(self, driver):
+        return reverse('driver-detail', kwargs={'pk': driver.pk})
+
+    def test_anonymous_requests_get_nothing(self):
+        self.assertEqual(
+            self.client.get(reverse('driver-list')).status_code, status.HTTP_403_FORBIDDEN
+        )
+        self.assertEqual(
+            self.client.get(self.detail_url(self.approved)).status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_a_driver_cannot_read_another_drivers_record(self):
+        self.client.force_authenticate(self.approved.user)
+
+        own = self.client.get(self.detail_url(self.approved))
+        same_company = self.client.get(self.detail_url(self.pending))
+        other_company = self.client.get(self.detail_url(self.outsider))
+
+        self.assertEqual(own.status_code, status.HTTP_200_OK)
+        self.assertEqual(same_company.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(other_company.status_code, status.HTTP_404_NOT_FOUND)
+        listed = {row['username'] for row in self.client.get(reverse('driver-list')).data}
+        self.assertEqual(listed, {'scope.approved'})
+
+    def test_a_sponsor_only_reaches_their_own_companys_drivers(self):
+        self.client.force_authenticate(self.sponsor_user)
+
+        self.assertEqual(
+            self.client.get(self.detail_url(self.approved)).status_code, status.HTTP_200_OK
+        )
+        self.assertEqual(
+            self.client.get(self.detail_url(self.outsider)).status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+        points = self.client.post(
+            reverse('driver-points', kwargs={'pk': self.outsider.pk}),
+            {'point_change': 5, 'reason': 'Not my driver'},
+            format='json',
+        )
+        self.assertEqual(points.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_driver_records_carry_no_contact_details(self):
+        self.approved.phone_number = '+18645550123'
+        self.approved.save(update_fields=['phone_number'])
+        self.approved.user.email = 'avery@example.com'
+        self.approved.user.save(update_fields=['email'])
+        self.client.force_authenticate(self.sponsor_user)
+
+        row = self.client.get(self.detail_url(self.approved)).data
+
+        self.assertNotIn('email', row)
+        self.assertNotIn('phone_number', row)
+        self.assertNotIn('+18645550123', str(row))
+        self.assertNotIn('avery@example.com', str(row))
+
+    def test_personal_data_responses_are_never_cached(self):
+        self.client.force_authenticate(self.sponsor_user)
+        responses = [
+            self.client.get(reverse('driver-list')),
+            self.client.get(self.detail_url(self.approved)),
+            self.client.get(reverse('point-history')),
+            self.client.get(reverse('accounts:self-profile')),
+        ]
+
+        for response in responses:
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertIn('no-store', response['Cache-Control'])
+
+    def test_admin_directory_is_closed_to_drivers_and_sponsors(self):
+        for user in (self.approved.user, self.sponsor_user):
+            self.client.force_authenticate(user)
+            self.assertEqual(
+                self.client.get(reverse('accounts:admin-user-list')).status_code,
+                status.HTTP_403_FORBIDDEN,
+            )
+            self.assertEqual(
+                self.client.get(
+                    reverse('accounts:admin-driver-detail', kwargs={'user_id': self.approved.user_id})
+                ).status_code,
+                status.HTTP_403_FORBIDDEN,
+            )

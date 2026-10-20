@@ -157,6 +157,17 @@ else:
     raise ImproperlyConfigured("DB_ENGINE must be either 'sqlite' or 'mysql'.")
 
 
+# Password storage. Every password is hashed with PBKDF2-HMAC-SHA256 and its own
+# random salt (stored inside the hash string: algorithm$iterations$salt$hash), so
+# two accounts with the same password never share a hash. Listing the hashers
+# explicitly means a Django upgrade or a stray setting can never silently
+# weaken what is used for new passwords. The first entry hashes new passwords;
+# the rest only verify (and upgrade on next sign-in) hashes that already exist.
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+]
+
 # Password validation
 # https://docs.djangoproject.com/en/6.1/ref/settings/#auth-password-validators
 
@@ -226,6 +237,12 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'no-reply@gooddriver.e
 # See SPRINT_MFA_README_FINAL.md Section 4.5.
 TOTP_ENCRYPTION_KEY = os.environ['TOTP_ENCRYPTION_KEY']
 
+# Key for encrypting personal data columns (phone numbers; see accounts/fields.py).
+# Defaults to the TOTP key so no new secret is needed to deploy, but can be split
+# out with FIELD_ENCRYPTION_KEY. Like the TOTP key it must stay stable: changing it
+# makes existing encrypted values unreadable.
+FIELD_ENCRYPTION_KEY = os.environ.get('FIELD_ENCRYPTION_KEY') or TOTP_ENCRYPTION_KEY
+
 # Logging: route app-level INFO logs (e.g. the SMS console fallback in
 # accounts/services/sms.py) to the terminal so dev/CI can read sent codes.
 LOGGING = {
@@ -258,6 +275,24 @@ TRUSTED_DEVICE_DAYS = 90
 TRUSTED_DEVICE_COOKIE_NAME = 'gd_device'
 SUSPICIOUS_FAILURE_THRESHOLD = 3
 SUSPICIOUS_FAILURE_WINDOW_MINUTES = 15
+
+# Sign-in lockout (accounts.services.login_throttle). After this many failed
+# attempts against one username within the window, further attempts are refused
+# until enough of those failures age out. Counts password and MFA-code failures,
+# for every account type, and applies to usernames that do not exist too, so the
+# response never reveals which usernames are real.
+LOGIN_MAX_FAILED_ATTEMPTS = int(os.environ.get('LOGIN_MAX_FAILED_ATTEMPTS', 5))
+LOGIN_LOCKOUT_MINUTES = int(os.environ.get('LOGIN_LOCKOUT_MINUTES', 15))
+
+# Administrator password reset (accounts.services.admin_password_reset). Another
+# administrator starts it; the emailed link is shorter-lived than an ordinary
+# reset link (it can never outlive PASSWORD_RESET_TIMEOUT) and finishing the
+# reset also requires the target's authenticator or backup code.
+ADMIN_PASSWORD_RESET_TIMEOUT = min(
+    int(os.environ.get('ADMIN_PASSWORD_RESET_TIMEOUT_SECONDS', 900)), PASSWORD_RESET_TIMEOUT
+)
+# Minimum seconds between reset links for the same administrator.
+ADMIN_PASSWORD_RESET_COOLDOWN = int(os.environ.get('ADMIN_PASSWORD_RESET_COOLDOWN_SECONDS', 300))
 
 # Server-enforced session limits, in seconds (accounts.middleware.
 # SessionTimeoutMiddleware). "idle" signs the user out after that long without a
