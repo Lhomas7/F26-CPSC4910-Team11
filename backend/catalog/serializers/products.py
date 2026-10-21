@@ -74,3 +74,14 @@ class CatalogProductSerializer(serializers.ModelSerializer):
             'is_available', 'created_at', 'updated_at',
         )
         read_only_fields = fields
+
+
+class CatalogBrowseProductSerializer(CatalogProductSerializer):
+    # Unknown is not zero/false: the client must distinguish unconfigured
+    # pricing from a free reward or an actually unaffordable one.
+    point_cost = serializers.ReadOnlyField(default=None)
+    can_afford = serializers.ReadOnlyField(default=None)
+
+    class Meta(CatalogProductSerializer.Meta):
+        fields = (*CatalogProductSerializer.Meta.fields, 'point_cost', 'can_afford')
+        read_only_fields = fields

@@ -9,12 +9,21 @@ The sidebar intentionally has no Catalog link yet. Direct navigation displays
 an explicit not-yet-available panel without making a request or presenting fake
 products, balances, empty results, or purchase controls.
 
-`src/api/catalog.js` reserves a session-scoped GET `/api/catalog/` boundary using
-the shared HTTP client. The endpoint does not exist yet; the page must not call
-it until backend integration is ready. The backend now defines manually entered
-products with HTTPS image URLs and USD prices, and permits approved,
-sponsor-linked Drivers only. Conversion rates, calculated point costs, API
-responses, and pagination remain pending; the placeholder is not a browsing grant.
+`src/api/catalog.js` reads the first page of session-scoped GET `/api/catalog/`
+through the shared HTTP client. The backend endpoint now exists; the placeholder
+page intentionally remains disconnected until the catalog UI is ready. The
+backend defines manually entered products with HTTPS image URLs and USD prices,
+and permits approved, sponsor-linked Drivers only (or Sponsors managing their
+organization). The placeholder is not a browsing grant.
+
+Responses contain `count`, `next`, `previous`, `results`, `sponsor`,
+`point_balance`, and `pricing`. The backend supports `page` and `page_size`
+(default 25, maximum 100). Conversion remains unconfigured, so `pricing.status`
+is `unconfigured`, and product `point_cost`/`can_afford` are null. Do not coerce
+these to zero/false or imply redemption is ready. Keep manual `is_available`
+independent from unknown affordability. Pending and unassigned Drivers receive
+403 with `driver_not_approved` or `sponsor_required` codes rather than an empty
+catalog response. Implement pagination and guidance states with the future UI.
 
 Focused tests from `frontend`:
 

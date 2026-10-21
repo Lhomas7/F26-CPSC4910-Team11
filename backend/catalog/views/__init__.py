@@ -1,3 +1,4 @@
 from .products import SponsorProductAvailabilityView, SponsorProductCreateView
+from .browsing import CatalogBrowseView
 
-__all__ = ['SponsorProductAvailabilityView', 'SponsorProductCreateView']
+__all__ = ['CatalogBrowseView', 'SponsorProductAvailabilityView', 'SponsorProductCreateView']

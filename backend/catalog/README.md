@@ -1,8 +1,8 @@
 # Catalog backend
 
 This app owns sponsor-scoped reward catalog behavior. It currently defines the
-product model, initial migration, access helpers, and Sponsor mutation endpoints.
-Catalog browsing endpoints and the product-management UI are not implemented yet.
+product model, initial migration, access helpers, Sponsor mutation endpoints,
+and session-scoped catalog browsing. The product-management UI is not implemented yet.
 
 ## Access contract
 
@@ -82,6 +82,43 @@ not report a point cost while conversion is unconfigured. Shared View-As
 middleware supplies the effective target identity; the real administrator does
 not grant additional Sponsor privileges.
 
+## Catalog browsing API
+
+`GET /api/catalog/` resolves the effective user's organization on the server.
+Sponsors receive their organization's products. Drivers must be active,
+approved, sponsor-linked, and compliant with any required MFA policy.
+Administrators cannot browse as themselves; eligible View-As sessions use the
+target's role and organization.
+
+The response contains:
+
+| Field | Meaning |
+| --- | --- |
+| `count`, `next`, `previous`, `results` | Standard page-number pagination, scoped before counting |
+| `sponsor` | The resolved organization's `id` and `name` |
+| `point_balance` | The Driver's existing ledger-derived balance; null for Sponsors |
+| `pricing` | `{"status": "unconfigured", "points_per_dollar": null}` until pricing is implemented |
+
+Each result contains the product fields returned by the Sponsor API, plus
+`point_cost: null` and `can_afford: null`. Unknown pricing is not a free product,
+an affordable product, or an unaffordable one. Even a zero-dollar product is not
+assigned a point cost before the conversion contract is implemented. Manual
+`is_available` is independent of those unknown values. Unavailable products
+remain visible rather than disappearing from the catalog.
+
+Supported parameters are `page` and `page_size`. Default page size is 25 and
+the maximum is 100; results are ordered by name and then ID. Out-of-range pages
+return 404. Other query parameters, including sponsor/Driver IDs and submitted
+balances, return 400. DRF pagination defaults apply to invalid page sizes.
+
+An empty catalog is a successful response with organization context and no
+results. Pending or unassigned Drivers instead receive 403 with a `code` of
+`driver_not_approved` or `sponsor_required`, respectively. Other authorization
+denials retain their service code (such as `inactive_account`) or use
+`permission_denied`. Request/database failures must
+not be converted into successful empty catalogs by clients. Responses are not
+cached. Browsing never creates a point transaction or notification.
+
 ## Focused verification
 
 From `backend`, with the virtual environment active and `DB_ENGINE=sqlite`:
@@ -96,3 +133,6 @@ It also checks product validation/database constraints and the initial migration
 against an isolated schema with an existing sponsor.
 Sponsor API tests cover validation/normalization, same-company collaboration,
 ownership spoofing, cross-organization IDs, CSRF, and real View-As sessions.
+Browsing tests cover paginated isolation/counts, unavailable/empty catalogs,
+ledger balances, unknown conversion pricing, pending/unassigned guidance,
+authentication/MFA rules, and both View-As roles.
