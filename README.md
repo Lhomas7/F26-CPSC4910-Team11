@@ -235,6 +235,16 @@ See [Local development tasks](docs/LOCAL_DEV_TASKS.md) for migration options,
 shared MySQL safeguards, diagnostics, and setup prerequisites. The manual
 platform-specific steps below remain available for troubleshooting.
 
+For disposable local accounts and point-history data after migrations:
+
+```text
+python dev.py seed
+```
+
+This SQLite/debug-only command prompts for a new-account password and preserves
+existing passwords, MFA, and profile edits. See the
+[demo-data guide](docs/LOCAL_OFFLINE_DEVELOPMENT.md#create-local-demonstration-data).
+
 ## Local setup on Windows
 
 Run these commands from PowerShell.

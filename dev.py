@@ -156,6 +156,9 @@ def main(argv=None):
         task.add_argument('--allow-shared-db', action='store_true', help='Explicitly acknowledge migrations against the selected MySQL database.')
     doctor = subcommands.add_parser('doctor', help='Report configuration without writing application data.')
     doctor.add_argument('--check-database', action='store_true')
+    seed = subcommands.add_parser('seed', help='Create or complete local SQLite demo records without resetting existing accounts.')
+    seed.add_argument('--noinput', action='store_true')
+    seed.add_argument('--with-about', action='store_true')
     subcommands.add_parser('frontend', help='Start React in this terminal.')
     options = parser.parse_args(argv)
     try:
@@ -186,6 +189,15 @@ def main(argv=None):
         engine = preflight(config)
         if options.command == 'doctor':
             manage(config, 'doctor', *(['--check-database'] if options.check_database else []))
+        elif options.command == 'seed':
+            if engine != 'sqlite':
+                raise TaskError('Demo seeding is restricted to isolated SQLite databases.')
+            args = ['seed_local_demo']
+            if options.noinput:
+                args.append('--noinput')
+            if options.with_about:
+                args.append('--with-about')
+            manage(config, *args)
         else:
             prepare_database(config, options, engine)
             if options.command == 'run':

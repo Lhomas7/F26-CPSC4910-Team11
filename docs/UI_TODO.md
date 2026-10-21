@@ -836,8 +836,13 @@ snippets with supported project workflows.
 
 ### DX-005: Deterministic Demo-Data Management Command
 
-- [ ] Add an idempotent Django management command such as `seed_demo_data`.
-- [ ] Create a coherent demonstration organization, Sponsor, approved Driver,
+Basic dataset implemented as `seed_local_demo` / `python dev.py seed`.
+Reruns preserve existing demo edits rather than resetting them. Expanded
+scenario datasets, notifications/status fixtures, and a destructive reset flow
+remain separate work.
+
+- [x] Add an idempotent Django management command such as `seed_demo_data`.
+- [x] Create a coherent demonstration organization, Sponsor, approved Driver,
       pending Driver, unlinked Driver, and Administrator without requiring raw
       SQL or long `manage.py shell -c` commands.
 - [ ] Include representative point transactions, reasons, timestamps,
@@ -845,18 +850,18 @@ snippets with supported project workflows.
       Points all have meaningful populated states.
 - [ ] Offer named datasets or options for populated, empty, pending-only,
       partial, and mixed-status demonstrations where practical.
-- [ ] Make repeated runs deterministic and safe: update owned demo records,
+- [x] Make repeated runs deterministic and safe: preserve owned demo records,
       avoid duplicate ledger entries, and never modify unrelated user data.
-- [ ] Require an explicit local/demo-environment guard before creating known
+- [x] Require an explicit local/demo-environment guard before creating known
       credentials or resetting data.
-- [ ] Do not embed a shared or production password in source control. Accept a
+- [x] Do not embed a shared or production password in source control. Accept a
       local password interactively, generate a disposable one, or read an
       explicitly local environment value without printing secrets by default.
 - [ ] Add a separate explicit reset option that identifies exactly which demo
       records it will remove and requires confirmation.
-- [ ] Add backend tests for first run, repeated run, partial preexisting data,
+- [x] Add backend tests for first run, repeated run, partial preexisting data,
       and refusal to run in a protected environment.
-- [ ] Update `docs/LOCAL_OFFLINE_DEVELOPMENT.md` to use the supported command
+- [x] Update `docs/LOCAL_OFFLINE_DEVELOPMENT.md` to use the supported command
       after it exists.
 
 This should implement the deterministic demo-data requirement already tracked

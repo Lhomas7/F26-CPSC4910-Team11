@@ -38,6 +38,16 @@ class DevelopmentTaskTests(unittest.TestCase):
                 dev.prepare_database(self.config, self.options(), 'sqlite')
         self.assertFalse(any(call.args[1] == 'migrate' for call in manage.call_args_list))
 
+    def test_seed_refuses_mysql_before_running_management_commands(self):
+        with (
+            patch.object(dev, 'configuration', return_value=self.config),
+            patch.object(dev, 'preflight', return_value='mysql'),
+            patch.object(dev, 'manage') as manage,
+            redirect_stderr(StringIO()),
+        ):
+            self.assertEqual(dev.main(['seed']), 1)
+        manage.assert_not_called()
+
     def test_shared_database_migration_requires_acknowledgment(self):
         options = self.options()
         options.migrate = True

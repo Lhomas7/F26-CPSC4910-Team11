@@ -72,6 +72,23 @@ Use `--address 127.0.0.1:8001` to select another backend address. Update the
 frontend API configuration if you change the port; the launcher does not alter
 frontend environment files.
 
+## Local demonstration data
+
+After initializing the local database, create the demo accounts and point ledger:
+
+```text
+python dev.py seed
+```
+
+It requires SQLite and Debug mode. Enter a password privately for new accounts;
+reruns preserve existing passwords, MFA, edited profiles, and transaction history.
+Use `--noinput` with a private `GDIP_DEMO_PASSWORD` environment value for automation.
+Use `--with-about` only when you want a separate `Local demo` About entry.
+
+See the [demo-data guide](LOCAL_OFFLINE_DEVELOPMENT.md#create-local-demonstration-data)
+for account names, initial states, and limitations. Seeding is a separate explicit
+step; ordinary setup and startup do not create or reset accounts.
+
 ## Diagnose configuration
 
 ```text
