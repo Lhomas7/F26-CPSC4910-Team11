@@ -159,6 +159,11 @@ def main(argv=None):
     seed = subcommands.add_parser('seed', help='Create or complete local SQLite demo records without resetting existing accounts.')
     seed.add_argument('--noinput', action='store_true')
     seed.add_argument('--with-about', action='store_true')
+    database = subcommands.add_parser('db', help='Manage isolated local SQLite backups.')
+    database.add_argument('action', choices=('backup', 'list', 'inspect', 'restore'))
+    database.add_argument('--archive')
+    database.add_argument('--server-stopped', action='store_true')
+    database.add_argument('--confirm')
     subcommands.add_parser('frontend', help='Start React in this terminal.')
     options = parser.parse_args(argv)
     try:
@@ -189,6 +194,17 @@ def main(argv=None):
         engine = preflight(config)
         if options.command == 'doctor':
             manage(config, 'doctor', *(['--check-database'] if options.check_database else []))
+        elif options.command == 'db':
+            if engine != 'sqlite':
+                raise TaskError('Local database archives require SQLite.')
+            args = ['local_database', options.action]
+            if options.archive:
+                args.extend(['--archive', options.archive])
+            if options.server_stopped:
+                args.append('--server-stopped')
+            if options.confirm:
+                args.extend(['--confirm', options.confirm])
+            manage(config, *args)
         elif options.command == 'seed':
             if engine != 'sqlite':
                 raise TaskError('Demo seeding is restricted to isolated SQLite databases.')

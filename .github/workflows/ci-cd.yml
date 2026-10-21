@@ -39,7 +39,7 @@ jobs:
         run: pip install -r backend/requirements.txt
 
       - name: Local development launcher tests
-        run: python -m unittest discover -s tests -p test_dev_tasks.py
+        run: python -m unittest discover -s tests
 
       - name: Django system checks
         working-directory: backend

@@ -93,6 +93,48 @@ Official About metadata has a separate reviewed import command:
 `python manage.py seed_about_page` from `backend` with its environment active.
 See [ABOUT_RELEASES.md](ABOUT_RELEASES.md); demo seeding does not publish releases.
 
+## Local SQLite backups
+
+From the repository root:
+
+```text
+python dev.py db backup
+python dev.py db list
+python dev.py db inspect --archive BACKUP_FILENAME.sqlite3
+```
+
+Replace `BACKUP_FILENAME.sqlite3` with a name printed by `db list`. Backups
+are stored in ignored `backend/.local-backups/`, with UTC timestamps and random
+suffixes. The backup API includes committed WAL data; filenames are created
+exclusively to prevent overwriting another archive. Inspection checks SQLite
+integrity and lists migration history without displaying application records.
+
+Stop Django and all SQLite database tools before restoring:
+
+```text
+python dev.py db restore --archive BACKUP_FILENAME.sqlite3 --server-stopped --confirm db.sqlite3
+```
+
+Restore validates the archive and rejects journal sidecars, creates a
+`before-restore` backup of the current database, then replaces the target using
+a validated staged snapshot. It does not delete the source archive. If the
+current database is corrupt and cannot be backed up, restore stops; it does not
+silently discard that database.
+
+The stopped-server flag is your acknowledgment, not automatic detection of
+every process using the file. If SQLite journal files remain after stopping
+the server, resolve the active transaction or close the owning tool; do not
+blindly delete WAL files. Restore can fail on Windows if another program still
+holds the database open. Do not operate on the database concurrently.
+
+These tasks require SQLite and Debug mode, and paths remain inside `backend`.
+They never run migrations or seed/reset accounts. Keep the encryption key
+matching each database; archives do not include `.env`, MFA keys, or uploaded
+media. A restored historical database may require a matching code checkout
+before upgrading. Review `doctor --check-database` and `migrate --plan` before
+restarting. Backups contain personal data and remain private even though Git
+ignores them. No automated retention or deletion is performed.
+
 ## Diagnose configuration
 
 ```text

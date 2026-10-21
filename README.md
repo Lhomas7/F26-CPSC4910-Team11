@@ -494,6 +494,11 @@ Generated build output is not source code and should not be committed.
 
 ## Database and migrations
 
+Use `python dev.py db backup` and `python dev.py db list` from the repository
+root to preserve isolated SQLite data. See the
+[backup and restore workflow](docs/LOCAL_DEV_TASKS.md#local-sqlite-backups)
+before restoring; shared MySQL is refused.
+
 CI runs the full SQLite suite and a focused suite on disposable MySQL 8.4.
 See [Database compatibility](docs/DATABASE_COMPATIBILITY.md) for coverage,
 row-locking differences, and remaining integration limits.

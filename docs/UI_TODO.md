@@ -926,17 +926,17 @@ requires its first passing GitHub run; shared RDS was not inspected.
 
 ### DX-009: Local Data Lifecycle and Backup Safety
 
-- [ ] Provide a supported way to archive, name, inspect, and restore disposable
+- [x] Provide a supported way to archive, name, inspect, and restore disposable
       local SQLite databases without overwriting another backup.
-- [ ] Prefer timestamped backup names and detect collisions before moving a
+- [x] Prefer timestamped backup names and detect collisions before moving a
       database file.
-- [ ] Explain when an old local database can be migrated and when a clean reset
+- [x] Explain when an old local database can be migrated and when a clean reset
       is appropriate.
 - [ ] Confirm all SQLite databases, local media, generated codes, and demo
       artifacts remain ignored by Git.
 - [ ] Add a pre-commit or CI guard against accidentally tracked database files
       and populated environment files.
-- [ ] Keep destructive reset behavior separate from ordinary startup and require
+- [x] Keep database replacement separate from ordinary startup and require
       an explicit target and confirmation.
 
 ## Offline and Administrative UI Follow-ups

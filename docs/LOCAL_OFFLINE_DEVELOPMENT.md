@@ -131,6 +131,12 @@ python manage.py check
 
 ### Replace an incompatible old SQLite database
 
+Prefer the supported [SQLite backup workflow](LOCAL_DEV_TASKS.md#local-sqlite-backups)
+to archive or inspect data before recovery. Restore requires an explicit target
+confirmation and preserves the current database separately. The manual move
+below remains an option for preserving an incompatible database before starting
+fresh; it does not recover records automatically.
+
 If migration reports invalid legacy rows or missing relationships, stop Django, preserve the old file, and migrate a clean database.
 
 ```powershell
