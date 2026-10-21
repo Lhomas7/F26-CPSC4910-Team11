@@ -1,24 +1,31 @@
 import PageHeader from '../../../app/PageHeader';
 import { useAuth } from '../../../auth/AuthContext';
 import StatePanel from '../../../components/feedback/StatePanel';
+import SponsorCatalogPage from './SponsorCatalogPage';
 
 export default function CatalogPage() {
   const { user } = useAuth();
-  const isSponsor = user?.account_type === 'sponsor';
+  if (user?.account_type === 'sponsor') {
+    // Remount synchronously on identity/organization/View-As changes. A hook
+    // cleanup alone would leave the previous account's cards visible for a render.
+    const identity = JSON.stringify([
+      user.id, user.username, user.account_type, user.company,
+      Boolean(user.impersonation?.active), user.impersonation?.admin?.id,
+      user.impersonation?.expires_at,
+    ]);
+    return <SponsorCatalogPage key={identity} />;
+  }
 
-  // This unlinked route establishes the shell only. Do not request a nonexistent
-  // API or present an empty catalog as though data has successfully loaded.
+  // Driver UI remains separate until its own mockup/integration group.
   return (
     <>
       <PageHeader
         title="Catalog"
-        subtitle={isSponsor ? 'Your organization’s reward catalog' : 'Your sponsor’s reward catalog'}
+        subtitle="Your sponsor’s reward catalog"
       />
       <StatePanel title="Catalog is not available yet">
         <p>
-          {isSponsor
-            ? 'Product management is being prepared. You cannot add or change products here yet.'
-            : 'Reward browsing is being prepared. Products and point costs are not available here yet.'}
+          Reward browsing is being prepared. Products and point costs are not available here yet.
         </p>
       </StatePanel>
     </>

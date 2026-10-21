@@ -2,10 +2,12 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 import { useAuth } from '../auth/AuthContext';
+import { getCatalog } from '../api/catalog';
 import { AppRoutes } from './AppRoutes';
 import { navItemsFor } from './navigation';
 
 jest.mock('../auth/AuthContext');
+jest.mock('../api/catalog');
 // Isolate route authorization from shell menus and unrelated dashboard requests.
 jest.mock('./AppLayout', () => {
   const { Outlet } = require('react-router-dom');
@@ -32,17 +34,25 @@ function renderCatalog(user, loading = false) {
 
 beforeEach(() => {
   global.fetch = jest.fn();
+  getCatalog.mockReset();
+  getCatalog.mockReturnValue(new Promise(() => {}));
 });
 
-test.each(['driver', 'sponsor'])('%s can open the unlinked catalog foundation', (role) => {
-  renderCatalog({ account_type: role });
+test('driver route remains a placeholder without API calls', () => {
+  renderCatalog({ account_type: 'driver' });
   expect(screen.getByRole('heading', { level: 1, name: 'Catalog' })).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: 'Catalog is not available yet' })).toBeInTheDocument();
   expect(global.fetch).not.toHaveBeenCalled();
   expect(screen.queryByRole('button')).not.toBeInTheDocument();
-  expect(screen.getByText(role === 'sponsor'
-    ? /Product management is being prepared/
-    : /Reward browsing is being prepared/)).toBeInTheDocument();
+  expect(screen.getByText(/Reward browsing is being prepared/)).toBeInTheDocument();
+  expect(getCatalog).not.toHaveBeenCalled();
+});
+
+test('sponsor route loads the real catalog', () => {
+  renderCatalog({ account_type: 'sponsor' });
+  expect(screen.getByRole('heading', { level: 1, name: 'Catalog' })).toBeInTheDocument();
+  expect(screen.getByRole('status', { name: 'Loading catalog' })).toBeInTheDocument();
+  expect(getCatalog).toHaveBeenCalledWith(1);
 });
 
 test('signed-out visitors are redirected to sign in', () => {
@@ -67,8 +77,9 @@ test.each(['driver', 'sponsor'])('View-As uses the effective %s role', (role) =>
   expect(screen.getByRole('heading', { name: 'Catalog' })).toBeInTheDocument();
 });
 
-test('catalog remains absent from every sidebar until the feature is usable', () => {
-  for (const user of [null, ...['driver', 'sponsor', 'admin'].map((account_type) => ({ account_type }))]) {
+test('catalog is linked for sponsors only until the driver UI is implemented', () => {
+  expect(navItemsFor({ account_type: 'sponsor' }).some((item) => item.to === '/catalog')).toBe(true);
+  for (const user of [null, ...['driver', 'admin'].map((account_type) => ({ account_type }))]) {
     expect(navItemsFor(user).some((item) => item.to === '/catalog')).toBe(false);
   }
 });

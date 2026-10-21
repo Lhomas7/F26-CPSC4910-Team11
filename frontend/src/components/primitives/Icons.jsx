@@ -217,6 +217,17 @@ export function ImageIcon(props) {
   );
 }
 
+export function CatalogIcon(props) {
+  return (
+    <SvgIcon {...props}>
+      <g stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="m3 7 9-4 9 4-9 4-9-4Z" />
+        <path d="M3 7v10l9 4 9-4V7M12 11v10M7.5 5l9 4" />
+      </g>
+    </SvgIcon>
+  );
+}
+
 export function ImageOffIcon(props) {
   return (
     <SvgIcon {...props}>
