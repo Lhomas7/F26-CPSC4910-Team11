@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+!.env.*.example
 
 # Python / Django
 __pycache__/
@@ -19,6 +20,9 @@ htmlcov/
 coverage.xml
 *.sqlite3
 *.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
+backend/.local-backups/
 backend/media/
 
 # Node / React

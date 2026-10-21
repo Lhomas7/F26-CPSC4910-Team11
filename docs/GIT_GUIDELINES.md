@@ -531,6 +531,15 @@ flowchart LR
 
 ## What never goes into Git
 
+Run `python scripts/check_tracked_files.py` from the repository root before
+committing. CI runs this path guard before backend dependency installation. It
+checks the Git index, including force-added artifacts, while allowing example
+environment templates and reviewed SQL scripts. It complements the Gitleaks
+content scan; it does not print file contents or rewrite Git history.
+
+See [Local development verification](LOCAL_DEV_TASKS.md#verification) for
+supported patterns and how to untrack a file without deleting its local copy.
+
 - Secrets of any kind: `.env` files, keys, passwords, tokens. Deployment secrets
   belong in GitHub Actions secrets; see [DEPLOYMENT.md](DEPLOYMENT.md).
 - Local databases (`db.sqlite3`), virtual environments (`venv/`), and

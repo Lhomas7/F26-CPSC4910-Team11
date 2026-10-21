@@ -20,6 +20,7 @@ This repository is maintained by **CPSC 4910 Team 11**.
   - [Architecture](#architecture)
   - [Repository structure](#repository-structure)
   - [Prerequisites](#prerequisites)
+  - [Cross-platform task commands](#cross-platform-task-commands)
   - [Local setup on Windows](#local-setup-on-windows)
     - [1. Clone and enter the repository](#1-clone-and-enter-the-repository)
     - [2. Create the backend virtual environment](#2-create-the-backend-virtual-environment)
@@ -178,12 +179,17 @@ F26-CPSC4910-Team11/
 │   ├── ACCOUNT_INPUT_VALIDATION.md
 │   ├── DATABASE_ERD.md
 │   ├── DEPLOYMENT.md
+│   ├── LOCAL_DEV_TASKS.md
 │   ├── LOCAL_OFFLINE_DEVELOPMENT.md
+│   ├── MIGRATIONS.md
 │   ├── PROJECT_TODO.md
 │   └── SESSION_SECURITY.md
 ├── .dockerignore
 ├── .gitignore
 ├── docker-compose.yml
+├── dev.py                       # Cross-platform setup, checks, and launch tasks
+├── pyproject.toml               # Development task paths and Ruff configuration
+├── tests/                       # Fast launcher tests, independent of Django
 ├── THIRD_PARTY_NOTICES.md
 └── README.md
 ```
@@ -191,12 +197,53 @@ F26-CPSC4910-Team11/
 ## Prerequisites
 
 - Git
-- Python compatible with the pinned Django version
-- Node.js and npm
+- Python 3.12+ compatible with the pinned Django version
+- Node.js 22+ and npm (CI uses Node.js 22)
 - MySQL client development dependencies when using MySQL
 - Team 11 database credentials when using shared AWS RDS
 
 SQLite can be used for isolated local development and automated tests. Shared integration work should be verified against MySQL before release.
+
+## Cross-platform task commands
+
+From the repository root, with Python 3.12+ and Node.js 22+ available:
+
+```text
+python dev.py setup
+```
+
+If setup creates `backend/.env`, configure its local secrets and database, then
+complete initialization:
+
+```text
+python dev.py setup --skip-install --migrate
+```
+
+Launch the backend and frontend in separate terminals:
+
+```text
+python dev.py run
+python dev.py frontend
+```
+
+Use `python3` in place of `python` if that is your macOS Python launcher. Task
+names and options are identical. The runner selects `backend/venv` directly;
+terminal activation is optional. Settings live under `[tool.gdip.dev]` in
+`pyproject.toml`; dependencies remain in the existing requirements files.
+
+See [Local development tasks](docs/LOCAL_DEV_TASKS.md) for migration options,
+shared MySQL safeguards, diagnostics, and setup prerequisites. The manual
+platform-specific steps below remain available for troubleshooting.
+
+For disposable local accounts and point-history data after migrations:
+
+```text
+python dev.py seed
+```
+
+This SQLite/debug-only command prompts for a new-account password and preserves
+existing passwords, MFA, and profile edits. See the
+[demo-data guide](docs/LOCAL_OFFLINE_DEVELOPMENT.md#create-local-demonstration-data).
 
 ## Local setup on Windows
 
@@ -258,7 +305,7 @@ python manage.py migrate
 python manage.py check --database default
 ```
 
-Optionally seed the About page:
+Optionally import reviewed About releases (not just the legacy Sprint 1 seed):
 
 ```powershell
 python manage.py seed_about_page
@@ -313,7 +360,7 @@ python manage.py migrate
 python manage.py check --database default
 ```
 
-Optionally seed the About page:
+Optionally import reviewed About releases (not just the legacy Sprint 1 seed):
 
 ```bash
 python manage.py seed_about_page
@@ -447,6 +494,22 @@ Generated build output is not source code and should not be committed.
 
 ## Database and migrations
 
+Use `python dev.py db backup` and `python dev.py db list` from the repository
+root to preserve isolated SQLite data. See the
+[backup and restore workflow](docs/LOCAL_DEV_TASKS.md#local-sqlite-backups)
+before restoring; shared MySQL is refused.
+
+CI runs the full SQLite suite and a focused suite on disposable MySQL 8.4.
+See [Database compatibility](docs/DATABASE_COMPATIBILITY.md) for coverage,
+row-locking differences, and remaining integration limits.
+
+The About seed command now imports the versioned release catalog without
+overwriting existing metadata. See [About release metadata](docs/ABOUT_RELEASES.md)
+for validation, deliberate updates, and shared-database imports.
+
+See [Migration workflow and audit](docs/MIGRATIONS.md) for the current graph,
+upgrade verification, and recovery procedures.
+
 | `DB_ENGINE` | Use case                                           |
 | ----------- | -------------------------------------------------- |
 | `sqlite`    | Isolated local development and tests               |
@@ -567,6 +630,20 @@ See [`docs/PROJECT_TODO.md`](docs/PROJECT_TODO.md) for the detailed engineering,
 - Run `python manage.py check --deploy` before production deployment.
 
 ## Troubleshooting
+
+From `backend`, with the virtual environment active, run the same diagnostic
+command on Windows and macOS:
+
+```text
+python manage.py doctor
+python manage.py doctor --check-database
+```
+
+The first reports configuration without connecting to the database. The second
+performs read-only connectivity and migration-history checks against the selected
+database. Neither applies migrations nor creates a missing SQLite file.
+See [the offline diagnostic guide](docs/LOCAL_OFFLINE_DEVELOPMENT.md#diagnose-the-environment)
+for output, environment overrides, and command limitations.
 
 <details>
 <summary><strong>PowerShell cannot activate the virtual environment</strong></summary>

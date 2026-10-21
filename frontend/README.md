@@ -7,11 +7,24 @@ and the Windows/macOS launch workflow.
 
 ## Requirements
 
-- Node.js 20 is used by CI.
+- Node.js 22 is used by CI; the development launcher requires Node.js 22+.
 - npm and the checked-in `package-lock.json` manage dependencies.
 - The Django API normally runs at `http://localhost:8000/api`.
 
 ## Setup and launch
+
+The full-project launcher can install frontend dependencies and start React
+from the repository root:
+
+```text
+python dev.py setup
+python dev.py frontend
+```
+
+Use `python3` if that is your macOS Python command. See
+[Local development tasks](../docs/LOCAL_DEV_TASKS.md) for environment setup and
+the separate backend process. The direct npm workflow below also remains
+supported.
 
 The commands are identical in PowerShell, macOS Terminal, and Linux shells:
 

@@ -8,6 +8,13 @@ Use this guide when the shared AWS RDS instance is unavailable or when you need 
 
 ## One-time setup
 
+The preferred repeatable workflow is now the repository-root
+[development task launcher](LOCAL_DEV_TASKS.md): `python dev.py setup`, followed
+by `.env` configuration and `python dev.py setup --skip-install --migrate`.
+Launch with `python dev.py run` and `python dev.py frontend` in separate
+terminals. Existing environments are reused and existing `.env` files are
+preserved. The manual commands below remain available for troubleshooting.
+
 ### Windows PowerShell
 
 ```powershell
@@ -124,6 +131,12 @@ python manage.py check
 
 ### Replace an incompatible old SQLite database
 
+Prefer the supported [SQLite backup workflow](LOCAL_DEV_TASKS.md#local-sqlite-backups)
+to archive or inspect data before recovery. Restore requires an explicit target
+confirmation and preserves the current database separately. The manual move
+below remains an option for preserving an incompatible database before starting
+fresh; it does not recover records automatically.
+
 If migration reports invalid legacy rows or missing relationships, stop Django, preserve the old file, and migrate a clean database.
 
 ```powershell
@@ -142,63 +155,64 @@ The backup remains local and ignored by Git.
 
 ## Create local demonstration data
 
-Run these from `backend` with the virtual environment active. The account commands are safe to rerun and use the disposable local password `DemoAccessAB12!`.
+After applying migrations, run from the repository root:
 
-### Administrator
-
-```powershell
-python manage.py createsuperuser
+```text
+python dev.py seed
 ```
 
-Use the credentials you enter on the normal application sign-in page. The Django admin at `http://localhost:8000/admin/` is useful for direct model inspection but is not the normal application workflow.
+Or from `backend` with the virtual environment active:
 
-### Sponsor organization
-
-```powershell
-python manage.py shell -c "from accounts.models import SponsorCompany; company, created = SponsorCompany.objects.get_or_create(name='Palmetto Freight'); print(('Created' if created else 'Already exists') + ': ' + company.name)"
+```text
+python manage.py seed_local_demo
 ```
 
-### Sponsor user
+The command requires SQLite and `DJANGO_DEBUG=true`. It refuses MySQL and
+non-debug environments, checks for pending migrations, and creates these
+accounts only when missing:
 
-```powershell
-python manage.py shell -c "from django.contrib.auth import get_user_model; from accounts.models import SponsorCompany, SponsorAccount; User=get_user_model(); company=SponsorCompany.objects.get(name='Palmetto Freight'); user,_=User.objects.get_or_create(username='pat.sponsor'); user.first_name='Pat'; user.last_name='Sponsor'; user.email='pat.sponsor@example.com'; user.is_active=True; user.set_password('DemoAccessAB12!'); user.save(); SponsorAccount.objects.update_or_create(user=user, defaults={'company': company}); print('Ready: pat.sponsor')"
+| Username | Initial state |
+| -------- | ------------- |
+| `demo.admin` | Application administrator; enroll MFA at first sign-in |
+| `pat.sponsor` | Sponsor at Palmetto Freight; enroll MFA at first sign-in |
+| `jamie.rivera` | Approved Driver at Palmetto Freight |
+| `priya.nair` | Pending Driver at Palmetto Freight |
+| `unlinked.driver` | Pending Driver without an organization |
+
+Enter a password privately when prompted. It must satisfy the application
+password policy and is assigned only to newly created accounts. There is no
+hardcoded password or automatic MFA enrollment. The seeded administrator is an
+application staff account, not a Django superuser. Use `createsuperuser`
+separately if you need unrestricted access to Django's administrative site.
+
+Reruns preserve existing passwords, MFA, edited names, activation, organization
+assignments, and Driver states. A matching username with an unexpected email
+or role stops the command instead of repurposing the account. The legacy
+`unlinked.driver` email `morgan.lee@example.com` remains supported.
+
+Jamie receives two sample point entries: +100 and -15, for a starting balance
+of 85. Reruns do not duplicate those entries. Sample points are skipped if the
+existing approved Driver or Sponsor has moved to another organization or the
+Driver's status has changed. No external point-change notifications are sent
+by this fixture command.
+
+For noninteractive setup, provide a private `GDIP_DEMO_PASSWORD` environment
+value and use `python dev.py seed --noinput`. Do not put the password in command
+arguments or commit it. If all accounts already exist, no password is needed.
+
+About data is optional:
+
+```text
+python dev.py seed --with-about
 ```
 
-### Approved driver
+This adds a separate `Local demo` release dated on its first creation. It can
+become the current About entry; it does not rewrite historical sprint records.
+Reruns preserve the existing local release. This is demonstration data, not the
+official release-metadata publishing workflow.
 
-```powershell
-python manage.py shell -c "from django.contrib.auth import get_user_model; from accounts.models import SponsorCompany; from drivers.models import Driver; User=get_user_model(); company=SponsorCompany.objects.get(name='Palmetto Freight'); user,_=User.objects.get_or_create(username='jamie.rivera'); user.first_name='Jamie'; user.last_name='Rivera'; user.email='jamie.rivera@example.com'; user.is_active=True; user.set_password('DemoAccessAB12!'); user.save(); Driver.objects.update_or_create(user=user, defaults={'name':'Jamie Rivera','sponsor':company,'status':'approved'}); print('Ready: jamie.rivera - approved')"
-```
-
-### Pending driver
-
-```powershell
-python manage.py shell -c "from django.contrib.auth import get_user_model; from accounts.models import SponsorCompany; from drivers.models import Driver; User=get_user_model(); company=SponsorCompany.objects.get(name='Palmetto Freight'); user,_=User.objects.get_or_create(username='priya.nair'); user.first_name='Priya'; user.last_name='Nair'; user.email='priya.nair@example.com'; user.is_active=True; user.set_password('DemoAccessAB12!'); user.save(); Driver.objects.update_or_create(user=user, defaults={'name':'Priya Nair','sponsor':company,'status':'pending'}); print('Ready: priya.nair - pending')"
-```
-
-### Unlinked driver
-
-```powershell
-python manage.py shell -c "from django.contrib.auth import get_user_model; from drivers.models import Driver; User=get_user_model(); user,_=User.objects.get_or_create(username='unlinked.driver'); user.first_name='Morgan'; user.last_name='Lee'; user.email='morgan.lee@example.com'; user.is_active=True; user.set_password('DemoAccessAB12!'); user.save(); Driver.objects.update_or_create(user=user, defaults={'name':'Morgan Lee','sponsor':None,'status':'pending'}); print('Ready: unlinked.driver - unlinked')"
-```
-
-### Verify accounts
-
-```powershell
-python manage.py shell -c "from accounts.models import SponsorAccount; from drivers.models import Driver; print('SPONSORS'); [print(s.user.username, '-', s.company.name) for s in SponsorAccount.objects.select_related('user','company')]; print('DRIVERS'); [print(d.user.username, '-', d.status, '-', d.sponsor or 'No sponsor') for d in Driver.objects.select_related('user','sponsor')]"
-```
-
-### About-page release
-
-Migrations provide baseline release data. To add or update the current local demo release, adjust this example's version, date, and description:
-
-```powershell
-python manage.py shell -c "from datetime import date; from about_page.models import AboutPageRelease; release, created = AboutPageRelease.objects.update_or_create(version_number='Sprint 4', defaults={'team_number': 11, 'release_date': date(2026, 10, 8), 'product_name': 'Good Driver Incentive Program', 'product_description': 'A role-based driver incentive platform with secure account management, sponsor driver enrollment, and auditable point-management workflows.'}); print(('Created' if created else 'Updated') + ': ' + release.version_number)"
-```
-
-```powershell
-python manage.py shell -c "from about_page.models import AboutPageRelease; print(list(AboutPageRelease.objects.values('version_number', 'release_date')))"
-```
+The command has no reset/delete option. To recover or rebuild an isolated
+local database, preserve it first and follow [MIGRATIONS.md](MIGRATIONS.md).
 
 ## Launch the application
 
@@ -267,6 +281,47 @@ MFA still applies locally. With console email and blank Twilio settings:
 Keep the backend terminal visible while testing authentication. Do not commit or share printed codes.
 
 ## Troubleshooting
+
+### Diagnose the environment
+
+From `backend`, with the virtual environment active:
+
+```text
+python manage.py doctor
+```
+
+This command reports SQLite versus potentially shared MySQL, the database
+target, Debug status, frontend origin/CORS/CSRF alignment, email/SMS delivery
+modes, and encryption-key format. Secret values, database passwords, and provider
+credentials are hidden. A valid key format does not prove it can decrypt data
+that was encrypted previously.
+
+If effective environment values differ from `backend/.env`, the report names
+the variables without printing either value. Inherited process variables and
+runtime secrets can override the file. Review those names and retry from a
+fresh terminal if an old shell override is selecting the wrong database.
+
+Connectivity is opt-in:
+
+```text
+python manage.py doctor --check-database
+```
+
+The database check uses `SELECT 1` and reads migration metadata. It does not
+apply migrations, seed records, or create a missing SQLite database. It lists
+unapplied migrations and checks for inconsistent history or conflicting leaves.
+Pending migrations are advisory and do not fail the command; failed
+connectivity, invalid keys, conflicts, and inconsistent history do. Inspect
+`python manage.py migrate --plan` before applying migrations separately.
+
+Django settings must load before any management command can run. If a required
+startup value such as `TOTP_ENCRYPTION_KEY` or a MySQL connection variable is
+missing, correct the startup error first. The future setup/bootstrap command
+will handle diagnostics before Django loads.
+
+Diagnostics do not test the HTTP server, prove external email/SMS delivery,
+or guarantee parity between SQLite and MySQL. Windows tests cover the command;
+macOS and live MySQL checks remain separate verification work.
 
 ### Django tries to contact RDS
 

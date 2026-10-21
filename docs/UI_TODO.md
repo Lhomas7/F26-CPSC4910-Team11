@@ -739,11 +739,15 @@ commits from the visual work above.
 
 ### DX-001: Audit and Stabilize the Django Migration Graph
 
+Sprint 5 audit and recovery guidance: [MIGRATIONS.md](MIGRATIONS.md). Forward
+upgrades from both Sprint 5 branches are covered on isolated SQLite databases;
+shared MySQL verification remains outstanding.
+
 - [ ] Capture the current migration graph with `showmigrations` and `migrate
       --plan` against a fresh local database and the shared development schema.
-- [ ] Confirm `makemigrations --check --dry-run` produces no uncommitted model
+- [x] Confirm `makemigrations --check --dry-run` produces no uncommitted model
       changes.
-- [ ] Document why `accounts` contains two `0004` branch migrations and the
+- [x] Document why `accounts` contains two `0004` branch migrations and the
       subsequent `0005` merge migration.
 - [ ] Check for duplicate operations, obsolete temporary models, unsafe data
       migrations, and dependencies that produce different fresh-install and
@@ -752,9 +756,9 @@ commits from the visual work above.
       database merely to make filenames sequential.
 - [ ] If cleanup requires squashing, write and test a coordinated migration plan
       for existing databases and fresh installs before changing history.
-- [ ] Add a CI check that rejects missing migrations and verifies the migration
+- [x] Add a CI check that rejects missing migrations and verifies the migration
       plan on a clean test database.
-- [ ] Record a repeatable recovery procedure for local databases whose migration
+- [x] Record a repeatable recovery procedure for local databases whose migration
       history is inconsistent.
 
 Known graph detail: `accounts/0004_adminimpersonationevent.py` and
@@ -764,20 +768,23 @@ numbers alone do not mean the Django graph is invalid.
 
 ### DX-002: Universal Local Startup Command
 
-- [ ] Choose one cross-platform task entry point configured through
+Implemented via [LOCAL_DEV_TASKS.md](LOCAL_DEV_TASKS.md); native macOS and
+shared MySQL verification remain outstanding.
+
+- [x] Choose one cross-platform task entry point configured through
       `pyproject.toml`.
-- [ ] Make the command run Django system checks, show or apply the intended
+- [x] Make the command run Django system checks, show or apply the intended
       migrations, and start the backend development server in a predictable
       order.
-- [ ] Decide whether frontend startup is coordinated by the same entry point or
+- [x] Decide whether frontend startup is coordinated by the same entry point or
       remains a second explicitly documented process.
-- [ ] Fail immediately when prerequisites, environment variables, database
+- [x] Fail immediately when prerequisites, environment variables, database
       connectivity, checks, or migrations fail.
-- [ ] Support Windows PowerShell and macOS shells without maintaining different
+- [x] Support Windows PowerShell and macOS shells without maintaining different
       command names.
-- [ ] Keep the underlying steps independently runnable for troubleshooting and
+- [x] Keep the underlying steps independently runnable for troubleshooting and
       CI.
-- [ ] Update both repository READMEs and local-development documentation after
+- [x] Update both repository READMEs and local-development documentation after
       the command is stable.
 
 Constraint: `pyproject.toml` can configure a task runner or Python entry point,
@@ -787,16 +794,16 @@ environment activation/bootstrap a clearly documented prerequisite.
 
 ### DX-003: Universal Local Setup Command
 
-- [ ] Define a cross-platform setup/bootstrap command through the selected
+- [x] Define a cross-platform setup/bootstrap command through the selected
       `pyproject.toml` tool or entry point.
-- [ ] Cover virtual-environment creation or detection, Python dependency
+- [x] Cover virtual-environment creation or detection, Python dependency
       installation, frontend dependency installation, `.env` setup guidance,
       Django checks, and initial migrations.
-- [ ] Never generate, copy, print, or commit real secrets.
-- [ ] Make repeated runs safe and idempotent.
-- [ ] State supported Python and Node versions and validate them early.
+- [x] Never generate, copy, print, or commit real secrets.
+- [x] Make repeated runs safe and idempotent.
+- [x] State supported Python and Node versions and validate them early.
 - [ ] Test from a clean clone on both Windows and macOS.
-- [ ] Keep production deployment commands separate from local bootstrap.
+- [x] Keep production deployment commands separate from local bootstrap.
 
 ### DX-004: Finalize Linting and Formatting Policy
 
@@ -829,8 +836,13 @@ snippets with supported project workflows.
 
 ### DX-005: Deterministic Demo-Data Management Command
 
-- [ ] Add an idempotent Django management command such as `seed_demo_data`.
-- [ ] Create a coherent demonstration organization, Sponsor, approved Driver,
+Basic dataset implemented as `seed_local_demo` / `python dev.py seed`.
+Reruns preserve existing demo edits rather than resetting them. Expanded
+scenario datasets, notifications/status fixtures, and a destructive reset flow
+remain separate work.
+
+- [x] Add an idempotent Django management command such as `seed_demo_data`.
+- [x] Create a coherent demonstration organization, Sponsor, approved Driver,
       pending Driver, unlinked Driver, and Administrator without requiring raw
       SQL or long `manage.py shell -c` commands.
 - [ ] Include representative point transactions, reasons, timestamps,
@@ -838,18 +850,18 @@ snippets with supported project workflows.
       Points all have meaningful populated states.
 - [ ] Offer named datasets or options for populated, empty, pending-only,
       partial, and mixed-status demonstrations where practical.
-- [ ] Make repeated runs deterministic and safe: update owned demo records,
+- [x] Make repeated runs deterministic and safe: preserve owned demo records,
       avoid duplicate ledger entries, and never modify unrelated user data.
-- [ ] Require an explicit local/demo-environment guard before creating known
+- [x] Require an explicit local/demo-environment guard before creating known
       credentials or resetting data.
-- [ ] Do not embed a shared or production password in source control. Accept a
+- [x] Do not embed a shared or production password in source control. Accept a
       local password interactively, generate a disposable one, or read an
       explicitly local environment value without printing secrets by default.
 - [ ] Add a separate explicit reset option that identifies exactly which demo
       records it will remove and requires confirmation.
-- [ ] Add backend tests for first run, repeated run, partial preexisting data,
+- [x] Add backend tests for first run, repeated run, partial preexisting data,
       and refusal to run in a protected environment.
-- [ ] Update `docs/LOCAL_OFFLINE_DEVELOPMENT.md` to use the supported command
+- [x] Update `docs/LOCAL_OFFLINE_DEVELOPMENT.md` to use the supported command
       after it exists.
 
 This should implement the deterministic demo-data requirement already tracked
@@ -857,70 +869,74 @@ in `PROJECT_TODO.md`, not create a second competing fixture system.
 
 ### DX-006: Repair the About-Release Seed Workflow
 
-- [ ] Audit `seed_about_page`; it currently represents older Sprint content and
+- [x] Audit `seed_about_page`; it previously represented older Sprint content and
       is not the authoritative source for the latest release shown by a fresh
       database.
-- [ ] Decide whether releases are supplied by a versioned fixture, a migration,
+- [x] Decide whether releases are supplied by a versioned fixture, a migration,
       a management command with arguments, or release metadata generated by the
       release workflow.
-- [ ] Ensure a clean migration and an upgraded database produce the same set of
-      intended release records.
-- [ ] Make release creation idempotent by using a stable key and deliberate
+- [x] Ensure fresh and upgraded databases receive the same canonical release
+      records after the reviewed catalog import; preserve existing legacy aliases.
+- [x] Make release creation idempotent by using a stable key and deliberate
       update rules.
-- [ ] Validate version, Team number, release date, product name, and description
+- [x] Validate version, Team number, release date, product name, and description
       rather than requiring developers to paste a Python one-liner.
-- [ ] Prevent a local demonstration seed from silently rewriting historical
+- [x] Prevent a local demonstration seed from silently rewriting historical
       release records in shared environments.
-- [ ] Add command/migration tests and document the one authoritative procedure.
-- [ ] Correct README claims and setup commands after the workflow is finalized.
+- [x] Add command tests and document the authoritative procedure in [ABOUT_RELEASES.md](ABOUT_RELEASES.md).
+- [x] Correct README claims and setup commands after the workflow is finalized.
 
 ### DX-007: Environment Doctor and Explicit Database Selection
 
-- [ ] Add a non-destructive command such as `manage.py doctor` that reports the
+- [x] Add a non-destructive command such as `manage.py doctor` that reports the
       selected database engine, database target without its password, Debug
       state, frontend origin, email/SMS delivery mode, migration state, and API
       health prerequisites.
 - [ ] Clearly label SQLite as isolated/local and MySQL as shared before commands
       that can mutate data.
-- [ ] Detect and explain shell variables that override `backend/.env`, since a
+- [x] Detect and explain shell variables that override `backend/.env`, since a
       fresh PowerShell terminal and an existing server process can otherwise
       select different databases.
-- [ ] Fail with a concise actionable message when `TOTP_ENCRYPTION_KEY` or
+- [x] Fail with a concise actionable message when `TOTP_ENCRYPTION_KEY` or
       another required value is missing.
-- [ ] Warn when console email/SMS delivery is not active during local MFA tests.
-- [ ] Add a safe connectivity check that does not run migrations or write data.
-- [ ] Integrate the diagnostic into the future universal setup/start commands
+- [x] Warn when console email/SMS delivery is not active during local MFA tests.
+- [x] Add a safe connectivity check that does not run migrations or write data.
+- [x] Integrate the diagnostic into the future universal setup/start commands
       rather than maintaining unrelated scripts.
 - [ ] Test output with secrets redacted on Windows, macOS, SQLite, and MySQL.
 
 ### DX-008: SQLite and MySQL Compatibility Verification
 
-- [ ] Define which automated tests run against SQLite and which must also run
+Coverage and limitations are recorded in
+[DATABASE_COMPATIBILITY.md](DATABASE_COMPATIBILITY.md). The new MySQL job still
+requires its first passing GitHub run; shared RDS was not inspected.
+
+- [x] Define which automated tests run against SQLite and which must also run
       against MySQL.
-- [ ] Add CI coverage for migrations and critical account, Driver, Sponsor, and
+- [x] Add CI coverage for migrations and critical account, Driver, Sponsor, and
       points workflows on the same engine used by the deployed application.
 - [ ] Check constraints, indexes, date/time behavior, case-insensitive
       uniqueness, ordering, and transaction behavior for engine differences.
 - [ ] Verify that a fresh database and an upgraded database both reach the same
       expected schema and baseline data.
-- [ ] Document features that are intentionally unavailable or behave
+- [x] Document features that are intentionally unavailable or behave
       differently under SQLite.
 - [ ] Keep local SQLite convenient without allowing it to become the only
       pre-merge database signal.
 
 ### DX-009: Local Data Lifecycle and Backup Safety
 
-- [ ] Provide a supported way to archive, name, inspect, and restore disposable
+- [x] Provide a supported way to archive, name, inspect, and restore disposable
       local SQLite databases without overwriting another backup.
-- [ ] Prefer timestamped backup names and detect collisions before moving a
+- [x] Prefer timestamped backup names and detect collisions before moving a
       database file.
-- [ ] Explain when an old local database can be migrated and when a clean reset
+- [x] Explain when an old local database can be migrated and when a clean reset
       is appropriate.
-- [ ] Confirm all SQLite databases, local media, generated codes, and demo
+- [x] Confirm SQLite databases/sidecars, local media, logs, and demo backup
       artifacts remain ignored by Git.
-- [ ] Add a pre-commit or CI guard against accidentally tracked database files
+- [x] Add a pre-commit or CI guard against accidentally tracked database files
       and populated environment files.
-- [ ] Keep destructive reset behavior separate from ordinary startup and require
+- [x] Keep database replacement separate from ordinary startup and require
       an explicit target and confirmation.
 
 ## Offline and Administrative UI Follow-ups
@@ -1102,7 +1118,8 @@ split where responsibilities and tests have become difficult to reason about.
 
 ### DX-010: Decide Python Dependency Ownership
 
-The current root `pyproject.toml` configures Ruff only. It has no `[build-system]`
+The root `pyproject.toml` configures Ruff and the `[tool.gdip.dev]` launcher
+paths. It has no `[build-system]`
 or `[project]` metadata and therefore does not install Django or any backend
 runtime dependency. For now, `backend/requirements.txt` and
 `backend/requirements-dev.txt` are required by local setup, Docker, and CI.
