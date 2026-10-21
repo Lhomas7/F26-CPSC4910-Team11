@@ -8,8 +8,8 @@ own account type. Server-side catalog permissions remain mandatory.
 The sidebar now includes Catalog for Sponsors only. Drivers still see the
 not-yet-available placeholder on direct navigation and have no Catalog link
 until their separate UI group. Sponsor cards use real API data; there are no
-fake products or purchase controls. Add Product and availability controls will
-be connected in their own commit groups, not exposed as dead buttons here.
+fake products or purchase controls. Sponsor availability controls are connected;
+Add Product remains for its own commit group and is not exposed as a dead button.
 
 `src/api/catalog.js` reads session-scoped GET `/api/catalog/` through the shared
 HTTP client. `getCatalog(page = 1)` only accepts positive safe-integer page
@@ -59,6 +59,39 @@ Focused tests from `frontend`:
 
 ```text
 npm test -- --watchAll=false --runInBand --runTestsByPath src/app/CatalogRoute.test.jsx src/app/navigation.test.js src/api/catalog.test.js
+```
+
+## Sponsor availability controls
+
+`AvailabilityControl` occupies the shared card's footer slot. The action names
+the product (for example, `Mark unavailable: Travel Mug`), becomes disabled and
+busy while saving, and retains the last confirmed badge until success. An
+immediate in-flight guard prevents duplicate submissions. Controls are disabled
+while a catalog read is in progress, but separate cards can save independently.
+
+`setProductAvailability(id, boolean)` uses the shared session/CSRF client and
+sends only the availability boolean. It validates the returned product ID,
+confirmed value, and update timestamp before changing UI state. Failed or
+malformed responses never produce a success announcement. The page has one
+polite live region for successful changes and updates the card in place.
+
+Failures preserve the last confirmed value, not a claim that the server could
+not have changed. Retry resends the same explicit boolean, rather than toggling
+whatever value is displayed at retry time. A 404 replaces the mutation action
+with Refresh catalog; a successful read clears obsolete failure feedback.
+401/403/409 responses fail closed at page level and hide prior organization data.
+
+Confirmed availability is reconciled with read timestamps, including server
+microseconds: late old reads cannot revert a successful PATCH, while a newer
+server read can supersede it. Only availability and its timestamp are overlaid;
+an old mutation response cannot overwrite a newly read name, price, or other
+product fields. Identity-scoped callbacks ignore completion after an account or
+View-As switch. No automatic mutation retry or product editing is introduced.
+
+Focused availability tests:
+
+```text
+npm test -- --watchAll=false --runInBand --runTestsByPath src/features/catalog/components/AvailabilityControl.test.jsx src/features/catalog/utils/availability.test.js src/features/catalog/pages/SponsorCatalogPage.test.jsx src/api/catalog.test.js src/features/catalog/components/ProductCard.test.jsx
 ```
 
 ## Shared product UI foundation

@@ -26,7 +26,7 @@ export default function ProductCard({ product, footer, headingLevel = 3 }) {
       </div>
       {(footer != null || validUpdated) && (
         <div className="catalog-product-footer">
-          {/* The Sponsor page will supply its availability control here. A
+          {/* The Sponsor page supplies its availability control here. A
               Driver card can use the same shell without management actions. */}
           {footer}
           {validUpdated && (

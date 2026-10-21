@@ -1,13 +1,15 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import PageHeader from '../../../app/PageHeader';
 import Skeleton from '../../../components/feedback/Skeleton';
 import StatePanel from '../../../components/feedback/StatePanel';
 import CatalogPagination from '../components/CatalogPagination';
+import AvailabilityControl from '../components/AvailabilityControl';
 import ProductCard from '../components/ProductCard';
 import ProductGrid from '../components/ProductGrid';
 import useCatalogPage from '../hooks/useCatalogPage';
+import { withConfirmedAvailability } from '../utils/availability';
 import '../Catalog.css';
 
 function readPage(value) {
@@ -49,7 +51,35 @@ export default function SponsorCatalogPage() {
     }, { replace });
   }, [setParams]);
   const recoverPage = useCallback(() => changePage(1, true), [changePage]);
-  const { data, status, error, reload } = useCatalogPage(page, recoverPage);
+  const { data, status, error: loadError, reload } = useCatalogPage(page, recoverPage);
+  const [accessError, setAccessError] = useState(null);
+  const [availability, setAvailability] = useState({ confirmed: {}, announcement: '' });
+  const active = useRef(false);
+  useEffect(() => {
+    active.current = true;
+    return () => { active.current = false; };
+  }, []);
+  const onSaved = useCallback((updated) => {
+    if (!active.current) return;
+    setAvailability((current) => {
+      const previous = current.confirmed[updated.id];
+      const confirmed = withConfirmedAvailability(previous || updated, updated);
+      if (previous && confirmed === previous) return current;
+      return {
+        confirmed: { ...current.confirmed, [updated.id]: confirmed },
+        announcement: `${updated.name} is now ${confirmed.is_available ? 'available' : 'unavailable'}.`,
+      };
+    });
+  }, []);
+  const onAccessError = useCallback((failure) => {
+    if (active.current) setAccessError(failure);
+  }, []);
+  useEffect(() => {
+    // Do not leave a previous "now available" announcement behind after a
+    // fresh read may have confirmed a different value from another Sponsor.
+    setAvailability((current) => current.announcement ? { ...current, announcement: '' } : current);
+  }, [data]);
+  const error = accessError || loadError;
   const busy = status === 'loading';
   // A denied/ended session is not a transient refresh failure. Never keep its
   // previously loaded organization data visible while auth state catches up.
@@ -67,6 +97,9 @@ export default function SponsorCatalogPage() {
         subtitle={visible ? `${visible.sponsor.name}’s reward catalog` : busy ? 'Loading your catalog' : 'Your organization’s reward catalog'}
       />
       <main className="catalog-content" aria-busy={busy}>
+        <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+          {denied ? '' : availability.announcement}
+        </p>
         {!denied && (visible || busy) && (
           <p className="banner">
             Point pricing isn&apos;t configured yet. Product prices are currently stored in US dollars. Reward redemption is not available.
@@ -107,7 +140,17 @@ export default function SponsorCatalogPage() {
               <section aria-labelledby="catalog-products-heading">
                 <h2 className="sr-only" id="catalog-products-heading">Products</h2>
                 <ProductGrid>
-                  {visible.results.map((product) => <ProductCard key={product.id} product={product} />)}
+                  {visible.results.map((record) => {
+                    const product = withConfirmedAvailability(record, availability.confirmed[record.id]);
+                    return (
+                      <ProductCard key={product.id} product={product} footer={
+                        <AvailabilityControl
+                          product={product} catalogVersion={data} disabled={busy}
+                          onSaved={onSaved} onAccessError={onAccessError} onRefresh={reload}
+                        />
+                      } />
+                    );
+                  })}
                 </ProductGrid>
               </section>
             ) : (
