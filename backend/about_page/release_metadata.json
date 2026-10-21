@@ -1,0 +1,30 @@
+[
+  {
+    "team_number": 11,
+    "version_number": "0.1.0",
+    "release_date": "2026-09-17",
+    "product_name": "Good Driver Incentive Program",
+    "product_description": "Initial account access, Sponsor-to-Driver linking, and database-backed product and release information."
+  },
+  {
+    "team_number": 11,
+    "version_number": "0.2.0",
+    "release_date": "2026-09-24",
+    "product_name": "Good Driver Incentive Program",
+    "product_description": "Profile management, password recovery, multi-factor authentication, initial deployment, and database documentation."
+  },
+  {
+    "team_number": 11,
+    "version_number": "0.3.0",
+    "release_date": "2026-10-01",
+    "product_name": "Good Driver Incentive Program",
+    "product_description": "Administrator account management, initial View-As access, role-based MFA enforcement, and password-security improvements."
+  },
+  {
+    "team_number": 11,
+    "version_number": "0.4.0",
+    "release_date": "2026-10-09",
+    "product_name": "Good Driver Incentive Program",
+    "product_description": "Points and Driver management, security improvements, role-specific dashboards, UI architecture, and Administrator View-As refinements. Demonstrated October 8 and finalized October 9, 2026."
+  }
+]

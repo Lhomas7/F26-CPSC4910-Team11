@@ -89,6 +89,10 @@ See the [demo-data guide](LOCAL_OFFLINE_DEVELOPMENT.md#create-local-demonstratio
 for account names, initial states, and limitations. Seeding is a separate explicit
 step; ordinary setup and startup do not create or reset accounts.
 
+Official About metadata has a separate reviewed import command:
+`python manage.py seed_about_page` from `backend` with its environment active.
+See [ABOUT_RELEASES.md](ABOUT_RELEASES.md); demo seeding does not publish releases.
+
 ## Diagnose configuration
 
 ```text

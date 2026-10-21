@@ -305,7 +305,7 @@ python manage.py migrate
 python manage.py check --database default
 ```
 
-Optionally seed the About page:
+Optionally import reviewed About releases (not just the legacy Sprint 1 seed):
 
 ```powershell
 python manage.py seed_about_page
@@ -360,7 +360,7 @@ python manage.py migrate
 python manage.py check --database default
 ```
 
-Optionally seed the About page:
+Optionally import reviewed About releases (not just the legacy Sprint 1 seed):
 
 ```bash
 python manage.py seed_about_page
@@ -493,6 +493,10 @@ npm run build
 Generated build output is not source code and should not be committed.
 
 ## Database and migrations
+
+The About seed command now imports the versioned release catalog without
+overwriting existing metadata. See [About release metadata](docs/ABOUT_RELEASES.md)
+for validation, deliberate updates, and shared-database imports.
 
 See [Migration workflow and audit](docs/MIGRATIONS.md) for the current graph,
 upgrade verification, and recovery procedures.
