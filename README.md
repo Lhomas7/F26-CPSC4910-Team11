@@ -494,6 +494,10 @@ Generated build output is not source code and should not be committed.
 
 ## Database and migrations
 
+CI runs the full SQLite suite and a focused suite on disposable MySQL 8.4.
+See [Database compatibility](docs/DATABASE_COMPATIBILITY.md) for coverage,
+row-locking differences, and remaining integration limits.
+
 The About seed command now imports the versioned release catalog without
 overwriting existing metadata. See [About release metadata](docs/ABOUT_RELEASES.md)
 for validation, deliberate updates, and shared-database imports.

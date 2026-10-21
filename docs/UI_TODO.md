@@ -907,15 +907,19 @@ in `PROJECT_TODO.md`, not create a second competing fixture system.
 
 ### DX-008: SQLite and MySQL Compatibility Verification
 
-- [ ] Define which automated tests run against SQLite and which must also run
+Coverage and limitations are recorded in
+[DATABASE_COMPATIBILITY.md](DATABASE_COMPATIBILITY.md). The new MySQL job still
+requires its first passing GitHub run; shared RDS was not inspected.
+
+- [x] Define which automated tests run against SQLite and which must also run
       against MySQL.
-- [ ] Add CI coverage for migrations and critical account, Driver, Sponsor, and
+- [x] Add CI coverage for migrations and critical account, Driver, Sponsor, and
       points workflows on the same engine used by the deployed application.
 - [ ] Check constraints, indexes, date/time behavior, case-insensitive
       uniqueness, ordering, and transaction behavior for engine differences.
 - [ ] Verify that a fresh database and an upgraded database both reach the same
       expected schema and baseline data.
-- [ ] Document features that are intentionally unavailable or behave
+- [x] Document features that are intentionally unavailable or behave
       differently under SQLite.
 - [ ] Keep local SQLite convenient without allowing it to become the only
       pre-merge database signal.

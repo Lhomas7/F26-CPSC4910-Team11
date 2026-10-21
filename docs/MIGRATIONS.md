@@ -59,6 +59,10 @@ not prove shared MySQL data is clean. MySQL schema alterations and real shared
 data still require a separate integration check; this audit does not claim
 that the shared RDS database was inspected or modified.
 
+The separate [MySQL compatibility job](DATABASE_COMPATIBILITY.md) now provisions
+a disposable MySQL 8.4 schema for fresh migrations and selected contracts.
+Populated historical MySQL upgrades and shared RDS inspection remain unverified.
+
 ## After pulling changes
 
 From `backend`, with the virtual environment active and the intended database
