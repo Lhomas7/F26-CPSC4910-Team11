@@ -14,6 +14,7 @@ from accounts.middleware import (
 from accounts.models import MFASettings, SponsorAccount, SponsorCompany
 from accounts.permissions import MFAEnrolled
 from catalog.services import driver_catalog_scope, sponsor_catalog_scope
+from catalog.models import CatalogProduct
 from drivers.models import Driver
 
 
@@ -53,13 +54,18 @@ class CatalogAccessTests(TestCase):
         self.assertEqual(scope.driver_status, 'approved')
 
     def test_scopes_exclude_other_organizations_before_lookup(self):
-        # Use an existing sponsor-owned model until catalog products are defined.
+        own_product = CatalogProduct.objects.create(
+            sponsor=self.company, name='Own reward', price_usd='12.50',
+        )
+        other_product = CatalogProduct.objects.create(
+            sponsor=self.other_company, name='Other reward', price_usd='15.00',
+        )
         for scope in (sponsor_catalog_scope(self.sponsor), driver_catalog_scope(self.driver_user)):
             with self.subTest(scope=scope):
-                scoped = scope.restrict(Driver.objects.all())
-                self.assertEqual(list(scoped.values_list('pk', flat=True)), [self.driver.pk])
-                with self.assertRaises(Driver.DoesNotExist):
-                    scoped.get(pk=self.other_driver.pk)
+                scoped = scope.restrict(CatalogProduct.objects.all())
+                self.assertEqual(list(scoped.values_list('pk', flat=True)), [own_product.pk])
+                with self.assertRaises(CatalogProduct.DoesNotExist):
+                    scoped.get(pk=other_product.pk)
 
     def test_other_company_driver_resolves_its_own_scope(self):
         self.assertEqual(driver_catalog_scope(self.other_user).company_id, self.other_company.pk)
@@ -123,10 +129,12 @@ class CatalogAccessTests(TestCase):
             driver_catalog_scope(user)
         self.assertEqual(error.exception.get_codes(), 'sponsor_required')
 
-    def test_pending_status_is_preserved_without_deciding_browsing_policy(self):
+    def test_pending_driver_cannot_browse_catalog(self):
         Driver.objects.filter(pk=self.driver.pk).update(status='pending')
         user = get_user_model().objects.get(pk=self.driver_user.pk)
-        self.assertEqual(driver_catalog_scope(user).driver_status, 'pending')
+        with self.assertRaises(PermissionDenied) as error:
+            driver_catalog_scope(user)
+        self.assertEqual(error.exception.get_codes(), 'driver_not_approved')
 
     def test_view_as_uses_effective_target_scope_for_both_roles(self):
         for target, role, resolver in (

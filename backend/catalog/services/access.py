@@ -44,17 +44,18 @@ def sponsor_catalog_scope(user):
 
 
 def driver_catalog_scope(user):
-    """Resolve the driver's organization, not their eventual browsing eligibility.
-
-    Pending/approved browsing policy is still a product decision. Preserve that
-    status for the future endpoint rather than silently choosing a policy here.
-    """
+    """Allow only approved, sponsor-linked drivers to browse their catalog."""
     _require_access(user, DriverAccount)
     driver = user.driver_profile
     if driver.sponsor_id is None:
         raise PermissionDenied(
             'A sponsor organization is required to access its catalog.',
             code='sponsor_required',
+        )
+    if driver.status != 'approved':
+        raise PermissionDenied(
+            'Your sponsor must approve your driver account before you can browse its catalog.',
+            code='driver_not_approved',
         )
     return CatalogScope(
         company_id=driver.sponsor_id,

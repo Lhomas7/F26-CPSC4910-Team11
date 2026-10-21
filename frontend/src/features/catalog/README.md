@@ -11,8 +11,10 @@ products, balances, empty results, or purchase controls.
 
 `src/api/catalog.js` reserves a session-scoped GET `/api/catalog/` boundary using
 the shared HTTP client. The endpoint does not exist yet; the page must not call
-it until backend integration is ready. Product fields, pricing, image handling,
-pagination, and pending-Driver eligibility remain undecided.
+it until backend integration is ready. The backend now defines manually entered
+products with HTTPS image URLs and USD prices, and permits approved,
+sponsor-linked Drivers only. Conversion rates, calculated point costs, API
+responses, and pagination remain pending; the placeholder is not a browsing grant.
 
 Focused tests from `frontend`:
 
