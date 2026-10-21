@@ -20,6 +20,7 @@ This repository is maintained by **CPSC 4910 Team 11**.
   - [Architecture](#architecture)
   - [Repository structure](#repository-structure)
   - [Prerequisites](#prerequisites)
+  - [Cross-platform task commands](#cross-platform-task-commands)
   - [Local setup on Windows](#local-setup-on-windows)
     - [1. Clone and enter the repository](#1-clone-and-enter-the-repository)
     - [2. Create the backend virtual environment](#2-create-the-backend-virtual-environment)
@@ -178,12 +179,17 @@ F26-CPSC4910-Team11/
 │   ├── ACCOUNT_INPUT_VALIDATION.md
 │   ├── DATABASE_ERD.md
 │   ├── DEPLOYMENT.md
+│   ├── LOCAL_DEV_TASKS.md
 │   ├── LOCAL_OFFLINE_DEVELOPMENT.md
+│   ├── MIGRATIONS.md
 │   ├── PROJECT_TODO.md
 │   └── SESSION_SECURITY.md
 ├── .dockerignore
 ├── .gitignore
 ├── docker-compose.yml
+├── dev.py                       # Cross-platform setup, checks, and launch tasks
+├── pyproject.toml               # Development task paths and Ruff configuration
+├── tests/                       # Fast launcher tests, independent of Django
 ├── THIRD_PARTY_NOTICES.md
 └── README.md
 ```
@@ -191,12 +197,43 @@ F26-CPSC4910-Team11/
 ## Prerequisites
 
 - Git
-- Python compatible with the pinned Django version
-- Node.js and npm
+- Python 3.12+ compatible with the pinned Django version
+- Node.js 22+ and npm (CI uses Node.js 22)
 - MySQL client development dependencies when using MySQL
 - Team 11 database credentials when using shared AWS RDS
 
 SQLite can be used for isolated local development and automated tests. Shared integration work should be verified against MySQL before release.
+
+## Cross-platform task commands
+
+From the repository root, with Python 3.12+ and Node.js 22+ available:
+
+```text
+python dev.py setup
+```
+
+If setup creates `backend/.env`, configure its local secrets and database, then
+complete initialization:
+
+```text
+python dev.py setup --skip-install --migrate
+```
+
+Launch the backend and frontend in separate terminals:
+
+```text
+python dev.py run
+python dev.py frontend
+```
+
+Use `python3` in place of `python` if that is your macOS Python launcher. Task
+names and options are identical. The runner selects `backend/venv` directly;
+terminal activation is optional. Settings live under `[tool.gdip.dev]` in
+`pyproject.toml`; dependencies remain in the existing requirements files.
+
+See [Local development tasks](docs/LOCAL_DEV_TASKS.md) for migration options,
+shared MySQL safeguards, diagnostics, and setup prerequisites. The manual
+platform-specific steps below remain available for troubleshooting.
 
 ## Local setup on Windows
 

@@ -8,6 +8,13 @@ Use this guide when the shared AWS RDS instance is unavailable or when you need 
 
 ## One-time setup
 
+The preferred repeatable workflow is now the repository-root
+[development task launcher](LOCAL_DEV_TASKS.md): `python dev.py setup`, followed
+by `.env` configuration and `python dev.py setup --skip-install --migrate`.
+Launch with `python dev.py run` and `python dev.py frontend` in separate
+terminals. Existing environments are reused and existing `.env` files are
+preserved. The manual commands below remain available for troubleshooting.
+
 ### Windows PowerShell
 
 ```powershell

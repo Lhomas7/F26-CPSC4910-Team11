@@ -768,20 +768,23 @@ numbers alone do not mean the Django graph is invalid.
 
 ### DX-002: Universal Local Startup Command
 
-- [ ] Choose one cross-platform task entry point configured through
+Implemented via [LOCAL_DEV_TASKS.md](LOCAL_DEV_TASKS.md); native macOS and
+shared MySQL verification remain outstanding.
+
+- [x] Choose one cross-platform task entry point configured through
       `pyproject.toml`.
-- [ ] Make the command run Django system checks, show or apply the intended
+- [x] Make the command run Django system checks, show or apply the intended
       migrations, and start the backend development server in a predictable
       order.
-- [ ] Decide whether frontend startup is coordinated by the same entry point or
+- [x] Decide whether frontend startup is coordinated by the same entry point or
       remains a second explicitly documented process.
-- [ ] Fail immediately when prerequisites, environment variables, database
+- [x] Fail immediately when prerequisites, environment variables, database
       connectivity, checks, or migrations fail.
-- [ ] Support Windows PowerShell and macOS shells without maintaining different
+- [x] Support Windows PowerShell and macOS shells without maintaining different
       command names.
-- [ ] Keep the underlying steps independently runnable for troubleshooting and
+- [x] Keep the underlying steps independently runnable for troubleshooting and
       CI.
-- [ ] Update both repository READMEs and local-development documentation after
+- [x] Update both repository READMEs and local-development documentation after
       the command is stable.
 
 Constraint: `pyproject.toml` can configure a task runner or Python entry point,
@@ -791,16 +794,16 @@ environment activation/bootstrap a clearly documented prerequisite.
 
 ### DX-003: Universal Local Setup Command
 
-- [ ] Define a cross-platform setup/bootstrap command through the selected
+- [x] Define a cross-platform setup/bootstrap command through the selected
       `pyproject.toml` tool or entry point.
-- [ ] Cover virtual-environment creation or detection, Python dependency
+- [x] Cover virtual-environment creation or detection, Python dependency
       installation, frontend dependency installation, `.env` setup guidance,
       Django checks, and initial migrations.
-- [ ] Never generate, copy, print, or commit real secrets.
-- [ ] Make repeated runs safe and idempotent.
-- [ ] State supported Python and Node versions and validate them early.
+- [x] Never generate, copy, print, or commit real secrets.
+- [x] Make repeated runs safe and idempotent.
+- [x] State supported Python and Node versions and validate them early.
 - [ ] Test from a clean clone on both Windows and macOS.
-- [ ] Keep production deployment commands separate from local bootstrap.
+- [x] Keep production deployment commands separate from local bootstrap.
 
 ### DX-004: Finalize Linting and Formatting Policy
 
@@ -889,11 +892,11 @@ in `PROJECT_TODO.md`, not create a second competing fixture system.
 - [x] Detect and explain shell variables that override `backend/.env`, since a
       fresh PowerShell terminal and an existing server process can otherwise
       select different databases.
-- [ ] Fail with a concise actionable message when `TOTP_ENCRYPTION_KEY` or
+- [x] Fail with a concise actionable message when `TOTP_ENCRYPTION_KEY` or
       another required value is missing.
 - [x] Warn when console email/SMS delivery is not active during local MFA tests.
 - [x] Add a safe connectivity check that does not run migrations or write data.
-- [ ] Integrate the diagnostic into the future universal setup/start commands
+- [x] Integrate the diagnostic into the future universal setup/start commands
       rather than maintaining unrelated scripts.
 - [ ] Test output with secrets redacted on Windows, macOS, SQLite, and MySQL.
 
@@ -1106,7 +1109,8 @@ split where responsibilities and tests have become difficult to reason about.
 
 ### DX-010: Decide Python Dependency Ownership
 
-The current root `pyproject.toml` configures Ruff only. It has no `[build-system]`
+The root `pyproject.toml` configures Ruff and the `[tool.gdip.dev]` launcher
+paths. It has no `[build-system]`
 or `[project]` metadata and therefore does not install Django or any backend
 runtime dependency. For now, `backend/requirements.txt` and
 `backend/requirements-dev.txt` are required by local setup, Docker, and CI.
