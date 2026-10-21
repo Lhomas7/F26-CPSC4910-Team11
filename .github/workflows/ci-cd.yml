@@ -32,6 +32,9 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements.txt
 
+      - name: Reject tracked local files
+        run: python scripts/check_tracked_files.py
+
       - name: System deps for mysqlclient wheel build
         run: sudo apt-get update && sudo apt-get install -y libmysqlclient-dev pkg-config
 

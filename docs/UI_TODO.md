@@ -932,9 +932,9 @@ requires its first passing GitHub run; shared RDS was not inspected.
       database file.
 - [x] Explain when an old local database can be migrated and when a clean reset
       is appropriate.
-- [ ] Confirm all SQLite databases, local media, generated codes, and demo
+- [x] Confirm SQLite databases/sidecars, local media, logs, and demo backup
       artifacts remain ignored by Git.
-- [ ] Add a pre-commit or CI guard against accidentally tracked database files
+- [x] Add a pre-commit or CI guard against accidentally tracked database files
       and populated environment files.
 - [x] Keep database replacement separate from ordinary startup and require
       an explicit target and confirmation.

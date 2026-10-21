@@ -193,6 +193,34 @@ replacement for Gunicorn, Docker, or the deployment entrypoint.
 
 ## Verification
 
+Before committing, check the Git index for local artifacts:
+
+```text
+python scripts/check_tracked_files.py
+```
+
+The guard inspects paths tracked or staged in Git, including force-added files.
+It does not read their contents or flag ordinary untracked local `.env` files.
+It rejects environment files except example templates, SQLite/database files
+and sidecars, local backup directories, uploaded media, dependency directories,
+generated frontend builds, bytecode, logs, and coverage output. The backend CI
+job runs it before dependency installation.
+
+Templates such as `.env.example` and `.env.production.example` remain allowed
+outside local-only directories. Reviewed administrative `.sql` scripts are
+allowed. This path guard complements Gitleaks; it does not detect every secret
+or prove that a template or SQL script contains no sensitive values.
+
+If a local file is tracked, review the exact reported path and untrack it while
+keeping the local copy. For example:
+
+```text
+git rm --cached -- backend/.env
+```
+
+Commit the index removal and rerun the guard. Untracking does not erase Git
+history or revoke exposed credentials; rotate any credential that was exposed.
+
 The focused launcher tests mock installation and server processes and use
 temporary fixtures:
 
