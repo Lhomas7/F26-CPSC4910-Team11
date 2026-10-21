@@ -30,3 +30,38 @@ Focused tests from `frontend`:
 ```text
 npm test -- --watchAll=false --runInBand --runTestsByPath src/app/CatalogRoute.test.jsx src/app/navigation.test.js src/api/catalog.test.js
 ```
+
+## Shared product UI foundation
+
+`components/` implements the Sponsor mockup's reusable card structure without
+connecting the page or changing navigation yet:
+
+- `ProductGrid`: list semantics, 0.7rem gaps, top-aligned cards, and a responsive
+  `minmax(min(17rem, 100%), 1fr)` track minimum that cannot exceed content width.
+- `ProductCard`: wrapped heading, shared availability badge, pricing and
+  description, a role-specific footer slot, and local US 12-hour update time.
+  The default product heading is h3; the page should supply an h2 Products
+  heading. `headingLevel={2}` is available where the surrounding hierarchy differs.
+- `ProductImage`: a 3:2 contained-image frame, lazy HTTPS images, and distinct
+  missing/broken fallbacks. A new URL resets only that image's failure state.
+- `ProductPricing`: US dollar display from the API decimal string, including
+  zero, and explicit unconfigured point pricing. Malformed prices never become
+  free products. No point conversion or affordability styling is invented.
+- `ClampedText`: three-line descriptions with measured-overflow Show more/less,
+  product-specific accessible labels, resize observation, and cleanup on unmount.
+
+Each styled component has its own CSS file, scoped with `catalog-` classes and
+existing design tokens. Shared `.card`, `.badge`, and `.button` styling is reused.
+No mockup review controls, fake catalog data, purchase actions, or availability
+mutation controls are included in this group. The route remains a placeholder
+until the next integration group. These components are ready for later Sponsor
+and Driver pages to consume without separate card implementations.
+
+Focused component tests:
+
+```text
+npm test -- --watchAll=false --runInBand --runTestsByPath src/features/catalog/components/ProductCard.test.jsx src/features/catalog/components/ClampedText.test.jsx
+```
+
+DOM tests cover rendering and interactions; real viewport measurements and
+visual comparison belong to the page integration step, not a JSDOM claim.

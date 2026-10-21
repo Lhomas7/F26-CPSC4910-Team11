@@ -204,3 +204,28 @@ export function ViewingAsIcon(props) {
     </SvgIcon>
   );
 }
+
+export function ImageIcon(props) {
+  return (
+    <SvgIcon {...props}>
+      <g stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4.5" width="18" height="15" rx="2" />
+        <circle cx="8.5" cy="9.5" r="1.6" />
+        <path d="m4 17 4.8-4.8L13 16.4l2.7-2.6L20 18" />
+      </g>
+    </SvgIcon>
+  );
+}
+
+export function ImageOffIcon(props) {
+  return (
+    <SvgIcon {...props}>
+      <g stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 13.5v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2h7" />
+        <path d="m4 17 4.8-4.8L12 15.4" />
+        <circle cx="8.5" cy="9.5" r="1.3" />
+        <path d="m16.5 4.5 5 5m0-5-5 5" />
+      </g>
+    </SvgIcon>
+  );
+}

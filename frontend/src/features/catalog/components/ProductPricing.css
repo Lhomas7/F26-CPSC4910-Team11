@@ -1,0 +1,18 @@
+.catalog-product-price-block {
+  display: grid;
+  gap: 0.1rem;
+  margin-top: 0.15rem;
+}
+
+.catalog-product-price {
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+/* Unconfigured conversion is a neutral condition, not availability or an error. */
+.catalog-product-points {
+  color: var(--ink-2);
+  font-size: 0.72rem;
+}

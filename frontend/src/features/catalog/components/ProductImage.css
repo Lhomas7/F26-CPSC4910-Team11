@@ -1,0 +1,32 @@
+.catalog-product-media {
+  align-items: center;
+  aspect-ratio: 3 / 2;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0.5rem;
+}
+
+.catalog-product-media img {
+  display: block;
+  height: 100%;
+  object-fit: contain;
+  width: 100%;
+}
+
+.catalog-product-media-fallback {
+  align-items: center;
+  color: var(--ink-3);
+  display: grid;
+  gap: 0.3rem;
+  justify-items: center;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.catalog-product-media-fallback span {
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
