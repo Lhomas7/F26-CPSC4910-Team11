@@ -4,3 +4,4 @@ export * from './authentication';
 export * from './accounts';
 export * from './drivers';
 export * from './adminUsers';
+export * from './catalog';

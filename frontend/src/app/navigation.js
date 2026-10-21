@@ -17,6 +17,8 @@ export const NAV_ITEMS = [
 
 // Role lists for the signed-in-only pages, shared with AppRoutes.
 export const PAGE_ROLES = {
+  // Route foundation only: keep Catalog out of NAV_ITEMS until browsing works.
+  catalog: ['driver', 'sponsor'],
   points: ['driver', 'sponsor'],
   drivers: ['sponsor'],
   users: ['admin'],
