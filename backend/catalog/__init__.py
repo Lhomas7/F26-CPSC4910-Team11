@@ -1,0 +1,1 @@
+"""Sponsor-owned reward catalogs."""
