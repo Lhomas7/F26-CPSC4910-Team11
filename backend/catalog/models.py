@@ -55,7 +55,7 @@ class CatalogProduct(models.Model):
 
     def clean(self):
         super().clean()
-        # The future creation serializer must also validate input. full_clean()
+        # The creation serializer also validates input. full_clean()
         # provides the same whitespace-only-name guard to non-API callers.
         if isinstance(self.name, str):
             self.name = self.name.strip()

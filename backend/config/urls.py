@@ -28,6 +28,7 @@ urlpatterns = [
     path('api/', include('accounts.urls')),
     path('api/', include('about_page.urls')),
     path('api/', include('drivers.urls')),
+    path('api/', include('catalog.urls')),
 ]
 
 if settings.DEBUG:
