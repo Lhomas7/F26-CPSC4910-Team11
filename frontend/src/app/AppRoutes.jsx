@@ -18,6 +18,7 @@ import {
   ResetPasswordPage,
 } from '../features/authentication';
 import { DriverDetailPage, DriverListPage } from '../features/drivers';
+import { AddProductPage, CatalogPage } from '../features/catalog';
 import { WelcomePage } from '../features/home';
 import { PrivacyPage, TermsPage } from '../features/legal';
 import { PlaygroundPage } from '../features/playground';
@@ -58,6 +59,22 @@ export function AppRoutes() {
       <Route path="/playground" element={<PlaygroundPage />} />
       <Route element={<AppLayout />}>
         <Route path="/" element={<WelcomePage />} />
+        <Route
+          path="/catalog"
+          element={
+            <RequireAuth roles={PAGE_ROLES.catalog}>
+              <CatalogPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/catalog/new"
+          element={
+            <RequireAuth roles={PAGE_ROLES.catalogManage}>
+              <AddProductPage />
+            </RequireAuth>
+          }
+        />
         <Route
           path="/points"
           element={

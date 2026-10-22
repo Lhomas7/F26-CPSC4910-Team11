@@ -1,0 +1,40 @@
+.catalog-pagination {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.catalog-pagination-range {
+  color: var(--ink-2);
+  font-size: 0.78rem;
+  margin: 0;
+}
+
+.catalog-pagination-controls {
+  align-items: center;
+  display: flex;
+  gap: 0.6rem;
+}
+
+.catalog-pagination-position {
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@media (max-width: 42rem) {
+  .catalog-pagination {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .catalog-pagination-controls {
+    justify-content: space-between;
+  }
+
+  .catalog-pagination-controls .button {
+    flex: 1 1 auto;
+  }
+}

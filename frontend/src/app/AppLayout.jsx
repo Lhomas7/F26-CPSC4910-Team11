@@ -6,6 +6,7 @@ import BrandMark from '../components/branding/BrandMark';
 import ConfirmDialog from '../components/feedback/ConfirmDialog';
 import {
   AccountIcon,
+  CatalogIcon,
   DriversIcon,
   ChevronDownIcon,
   HomeIcon,
@@ -28,6 +29,7 @@ const NAV_ICONS = {
   home: HomeIcon,
   points: PointsIcon,
   drivers: DriversIcon,
+  catalog: CatalogIcon,
   users: UsersIcon,
   about: InfoIcon,
 };

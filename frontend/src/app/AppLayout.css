@@ -472,6 +472,37 @@
 }
 
 @media (max-width: 42rem) {
+  /* Keep the growing link strip scrollable without widening the page or
+     clipping the separate account dropdown. Brand/topbar heights stay intact. */
+  .site-nav {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .site-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .site-nav a {
+    flex: 0 0 auto;
+    padding: 1rem 0.55rem 0.875rem;
+  }
+
+  .site-nav a:focus-visible {
+    outline-offset: -3px;
+  }
+
+  .brand {
+    padding: 0.625rem 0.75rem;
+  }
+
+  .sidebar-account {
+    flex-shrink: 0;
+    padding: 0.45rem 0.55rem;
+  }
+
   .view-as-ended-notice {
     align-items: stretch;
     flex-direction: column;

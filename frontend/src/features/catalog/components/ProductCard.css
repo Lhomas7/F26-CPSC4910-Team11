@@ -1,0 +1,42 @@
+.catalog-product-card {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.catalog-product-card.is-unavailable .catalog-product-media {
+  opacity: 0.55;
+}
+
+/* Page background recedes in both themes; never dim the entire card or its
+   interactive description control to indicate insufficient points. */
+.catalog-product-card.is-unaffordable { background: var(--bg); }
+.catalog-product-card.is-unaffordable .catalog-product-price { color: var(--ink-2); }
+
+.catalog-product-body {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0.8rem 0.9rem 0.85rem;
+}
+
+.catalog-product-name {
+  font-size: 0.95rem;
+  line-height: 1.25;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.catalog-product-footer {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.7rem 0.9rem;
+}
+
+.catalog-product-updated {
+  color: var(--ink-3);
+  font-size: 0.68rem;
+  overflow-wrap: anywhere;
+}

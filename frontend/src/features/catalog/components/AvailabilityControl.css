@@ -1,0 +1,17 @@
+.catalog-product-error {
+  font-size: 0.76rem;
+  overflow-wrap: anywhere;
+  padding: 0.5rem 0.6rem;
+}
+
+.catalog-product-error strong {
+  display: block;
+}
+
+.catalog-product-error p {
+  margin: 0.3rem 0 0;
+}
+
+.catalog-product-error .button {
+  margin-top: 0.4rem;
+}

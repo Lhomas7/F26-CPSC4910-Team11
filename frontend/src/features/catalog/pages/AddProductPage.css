@@ -1,0 +1,241 @@
+.catalog-add-content {
+  align-content: start;
+  display: grid;
+  gap: 1.35rem;
+  margin: 0 auto;
+  max-width: 62rem;
+  padding: 1.5rem 1.75rem 4rem;
+  width: 100%;
+}
+
+.catalog-add-card {
+  padding: 1.15rem 1.25rem 1.25rem;
+}
+
+.catalog-add-layout {
+  display: grid;
+  gap: 1.35rem;
+  grid-template-columns: minmax(0, 1fr) 19rem;
+}
+
+.catalog-add-fields {
+  display: grid;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.catalog-add-field {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.catalog-add-field > label,
+.catalog-add-availability > legend {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.catalog-add-optional {
+  color: var(--ink-2);
+  font-weight: 400;
+}
+
+.catalog-add-field input,
+.catalog-add-field textarea {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.85rem;
+  min-width: 0;
+  padding: 0.5rem 0.65rem;
+  width: 100%;
+}
+
+.catalog-add-field textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.catalog-add-field input:focus,
+.catalog-add-field textarea:focus {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.catalog-add-field [aria-invalid='true'] {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+}
+
+.catalog-add-field small {
+  color: var(--ink-2);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.catalog-add-field small.catalog-add-error,
+.catalog-add-error {
+  color: var(--danger-ink);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.catalog-add-field-foot {
+  align-items: baseline;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.catalog-add-counter {
+  color: var(--ink-3);
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.catalog-add-counter.is-over {
+  color: var(--danger-ink);
+  font-weight: 700;
+}
+
+.catalog-add-price {
+  align-items: center;
+  display: flex;
+  min-width: 0;
+  position: relative;
+}
+
+.catalog-add-price > span {
+  color: var(--ink-2);
+  font-size: 0.85rem;
+  left: 0.65rem;
+  pointer-events: none;
+  position: absolute;
+}
+
+.catalog-add-price input {
+  padding-left: 1.6rem;
+}
+
+.catalog-add-availability {
+  border: 0;
+  display: block;
+  margin: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.catalog-add-availability > legend {
+  padding: 0;
+}
+
+.catalog-add-radio-row {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+}
+
+.catalog-add-radio-row label {
+  align-items: flex-start;
+  cursor: pointer;
+  display: flex;
+  font-size: 0.82rem;
+  gap: 0.5rem;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+.catalog-add-radio-row input {
+  accent-color: var(--accent);
+  flex: 0 0 auto;
+  margin: 0.15rem 0 0;
+}
+
+.catalog-add-radio-row label > span {
+  display: block;
+  font-weight: 700;
+  min-width: 0;
+}
+
+.catalog-add-radio-row small {
+  color: var(--ink-2);
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 400;
+}
+
+.catalog-add-preview {
+  align-content: start;
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.catalog-add-preview h2 {
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.catalog-add-preview .catalog-product-media {
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+}
+
+.catalog-add-preview p,
+.catalog-add-cancel-note {
+  color: var(--ink-2);
+  font-size: 0.72rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.catalog-add-actions {
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 1.15rem;
+  padding-top: 1.1rem;
+}
+
+.catalog-add-cancel-note {
+  margin-right: auto;
+  max-width: 28rem;
+}
+
+@media (max-width: 53.75rem) {
+  .catalog-add-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Fields remain first; an empty preview must not push them off a phone. */
+  .catalog-add-preview .catalog-product-media {
+    max-width: 22rem;
+  }
+}
+
+@media (max-width: 42rem) {
+  .catalog-add-content {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .catalog-add-actions {
+    flex-direction: column-reverse;
+  }
+
+  .catalog-add-actions .button {
+    width: 100%;
+  }
+
+  .catalog-add-cancel-note {
+    margin: 0;
+    max-width: none;
+  }
+}

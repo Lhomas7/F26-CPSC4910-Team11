@@ -1,0 +1,19 @@
+.catalog-product-description {
+  color: var(--ink-2);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  margin: 0.15rem 0 0;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.catalog-product-description.is-clamped {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+.catalog-product-more {
+  justify-self: start;
+}

@@ -1,0 +1,39 @@
+.catalog-product-price-block {
+  display: grid;
+  gap: 0.1rem;
+  margin-top: 0.15rem;
+}
+
+.catalog-product-price {
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+/* Unconfigured conversion is a neutral condition, not availability or an error. */
+.catalog-product-points {
+  color: var(--ink-2);
+  font-size: 0.72rem;
+}
+
+.catalog-product-price.is-unset {
+  color: var(--ink-2);
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.catalog-product-afford {
+  align-items: flex-start;
+  display: flex;
+  font-size: 0.74rem;
+  font-weight: 700;
+  gap: 0.3rem;
+  line-height: 1.35;
+  margin-top: 0.1rem;
+}
+
+.catalog-product-afford svg { flex: 0 0 auto; margin-top: 0.1rem; }
+.catalog-product-afford.is-within { color: var(--success); }
+.catalog-product-afford.is-short { color: var(--warning-ink); }
+.catalog-product-afford.is-unknown { color: var(--danger-ink); }

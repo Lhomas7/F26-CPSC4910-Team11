@@ -1,0 +1,125 @@
+.catalog-content {
+  align-content: start;
+  display: grid;
+  gap: 1.35rem;
+  margin: 0 auto;
+  max-width: 71rem;
+  padding: 1.5rem 1.75rem 4rem;
+  width: 100%;
+}
+
+/* Two short lines fit the existing fixed-height topbar. Unbroken organization
+   names wrap rather than disappearing behind the shell's overflow clipping. */
+.catalog-header-subtitle {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.25;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.catalog-toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.catalog-count {
+  color: var(--ink-2);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.catalog-toolbar-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.catalog-created-notice {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.catalog-created-notice p {
+  margin: 0.3rem 0 0;
+}
+
+.catalog-refresh-error {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.catalog-refresh-error p {
+  margin: 0.3rem 0 0;
+}
+
+.catalog-skeleton-toolbar {
+  height: 2.25rem;
+  margin-bottom: 1rem;
+  max-width: 22rem;
+}
+
+.catalog-balance {
+  max-width: 20rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.catalog-balance-stale {
+  background: var(--warning-soft);
+  border: 1px solid var(--warning-line);
+  border-radius: 999px;
+  color: var(--warning-ink);
+  font-size: 0.66rem;
+  font-weight: 700;
+  justify-self: start;
+  margin-top: 0.25rem;
+  padding: 0.08rem 0.45rem;
+}
+
+.catalog-skeleton-balance {
+  height: 6rem;
+  margin-bottom: 1.35rem;
+  max-width: 20rem;
+}
+
+.catalog-skeleton-media {
+  aspect-ratio: 3 / 2;
+  border-radius: 0;
+}
+
+.catalog-skeleton-line {
+  height: 0.75rem;
+}
+
+@media (max-width: 42rem) {
+  .catalog-content {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .catalog-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .catalog-toolbar .button {
+    width: 100%;
+  }
+
+  .catalog-toolbar-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
