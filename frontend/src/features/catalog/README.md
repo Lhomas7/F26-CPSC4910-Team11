@@ -1,5 +1,8 @@
 # Catalog frontend
 
+See [Catalog UI verification](../../../../docs/CATALOG_QA.md) for the mockup
+state matrix, rendered browser-check scope, and remaining manual checks.
+
 The `/catalog` route supports Sponsor management and read-only Driver browsing. It uses
 the existing application shell, page header, and state panel. Administrators
 can reach it through an eligible Driver/Sponsor View-As session, not as their

@@ -72,7 +72,11 @@ export default function SponsorCatalogPage({ identity }) {
     <>
       <PageHeader
         title="Catalog"
-        subtitle={visible ? `${visible.sponsor.name}’s reward catalog` : busy ? 'Loading your catalog' : 'Your organization’s reward catalog'}
+        subtitle={
+          <span className="catalog-header-subtitle" title={visible ? `${visible.sponsor.name}’s reward catalog` : undefined}>
+            {visible ? `${visible.sponsor.name}’s reward catalog` : busy ? 'Loading your catalog' : 'Your organization’s reward catalog'}
+          </span>
+        }
       />
       <main className="catalog-content" aria-busy={busy}>
         {createdNotice && !denied && (

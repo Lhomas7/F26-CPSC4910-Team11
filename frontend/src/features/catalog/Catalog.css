@@ -8,6 +8,17 @@
   width: 100%;
 }
 
+/* Two short lines fit the existing fixed-height topbar. Unbroken organization
+   names wrap rather than disappearing behind the shell's overflow clipping. */
+.catalog-header-subtitle {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.25;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
 .catalog-toolbar {
   align-items: center;
   display: flex;

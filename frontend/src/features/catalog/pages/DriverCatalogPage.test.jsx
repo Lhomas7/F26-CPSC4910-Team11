@@ -214,3 +214,29 @@ test('malformed individual cost stays unknown without gray styling', async () =>
   expect(await screen.findByText(/We can’t confirm this cost/)).toBeInTheDocument();
   expect(screen.getByRole('listitem')).not.toHaveClass('is-unaffordable');
 });
+
+test('long organization names retain full accessible text and a title in the constrained subtitle', async () => {
+  const name = 'VeryLongOrganizationName'.repeat(8);
+  getCatalog.mockResolvedValue(response({ sponsor: { id: 1, name } }));
+  renderPage();
+  const subtitle = await screen.findByText(`${name}’s reward catalog`);
+  expect(subtitle).toHaveClass('catalog-header-subtitle');
+  expect(subtitle).toHaveAttribute('title', `${name}’s reward catalog`);
+});
+
+test('all four availability/affordability combinations remain independently represented on the page', async () => {
+  const rows = [true, false].flatMap((available, i) => [true, false].map((affordable, j) => ({
+    ...product, id: i * 2 + j + 1, name: `Reward ${i}-${j}`,
+    is_available: available, point_cost: affordable ? 2495 : 4900, can_afford: affordable,
+  })));
+  getCatalog.mockResolvedValue(response({ count: 4, results: rows }));
+  renderPage();
+  await screen.findByRole('heading', { name: 'Reward 0-0' });
+  const cards = within(screen.getByRole('list', { name: 'Rewards' })).getAllByRole('listitem');
+  rows.forEach((row, i) => {
+    expect(within(cards[i]).getByText(row.is_available ? 'Available' : 'Unavailable')).toBeInTheDocument();
+    expect(within(cards[i]).getByText(row.can_afford ? 'Within your balance' : 'Need 1,700 more points')).toBeInTheDocument();
+    if (!row.can_afford) expect(cards[i]).toHaveClass('is-unaffordable');
+    else expect(cards[i]).not.toHaveClass('is-unaffordable');
+  });
+});

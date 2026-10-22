@@ -84,6 +84,15 @@ test('configured Sponsor pricing shows calculated points without an unconfigured
   expect(screen.getByText(/^Updated /)).toHaveAttribute('datetime', product.updated_at);
 });
 
+test('Sponsor long organization subtitle preserves complete text without changing the shared header', async () => {
+  const name = 'LongSponsorOrganization'.repeat(8);
+  getCatalog.mockResolvedValue(response({ sponsor: { id: 1, name } }));
+  renderPage();
+  const subtitle = await screen.findByText(`${name}’s reward catalog`);
+  expect(subtitle).toHaveClass('catalog-header-subtitle');
+  expect(subtitle).toHaveAttribute('title', `${name}’s reward catalog`);
+});
+
 test('empty catalog is a successful state with organization context', async () => {
   getCatalog.mockResolvedValue(response({ results: [], count: 0 }));
   renderPage();

@@ -36,8 +36,11 @@ export default function DriverCatalogPage() {
 
   return (
     <>
-      <PageHeader title="Catalog" subtitle={visible ? `${visible.sponsor.name}’s reward catalog`
-        : busy ? 'Loading your catalog' : 'Your sponsor’s reward catalog'} />
+      <PageHeader title="Catalog" subtitle={
+        <span className="catalog-header-subtitle" title={visible ? `${visible.sponsor.name}’s reward catalog` : undefined}>
+          {visible ? `${visible.sponsor.name}’s reward catalog` : busy ? 'Loading your catalog' : 'Your sponsor’s reward catalog'}
+        </span>
+      } />
       <main className="catalog-content" aria-busy={busy}>
         {visible && (
           <p className="banner">{configured
