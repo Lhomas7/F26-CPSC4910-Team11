@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 import { useAuth } from '../auth/AuthContext';
-import { getCatalog } from '../api/catalog';
+import { createProduct, getCatalog } from '../api/catalog';
 import { AppRoutes } from './AppRoutes';
 import { navItemsFor } from './navigation';
 
@@ -20,11 +20,11 @@ jest.mock('../features/authentication', () => ({
   AdminResetPasswordPage: () => null,
 }));
 
-function renderCatalog(user, loading = false) {
+function renderCatalog(user, loading = false, path = '/catalog') {
   useAuth.mockReturnValue({ user, loading });
   render(
     <MemoryRouter
-      initialEntries={['/catalog']}
+      initialEntries={[path]}
       future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
     >
       <AppRoutes />
@@ -35,6 +35,7 @@ function renderCatalog(user, loading = false) {
 beforeEach(() => {
   global.fetch = jest.fn();
   getCatalog.mockReset();
+  createProduct.mockReset();
   getCatalog.mockReturnValue(new Promise(() => {}));
 });
 
@@ -82,4 +83,21 @@ test('catalog is linked for sponsors only until the driver UI is implemented', (
   for (const user of [null, ...['driver', 'admin'].map((account_type) => ({ account_type }))]) {
     expect(navItemsFor(user).some((item) => item.to === '/catalog')).toBe(false);
   }
+});
+
+test.each(['driver', 'admin'])('%s cannot open the Add Product route', (role) => {
+  renderCatalog({ account_type: role }, false, '/catalog/new');
+  expect(screen.getByRole('heading', { name: "You don't have access to this page" })).toBeInTheDocument();
+  expect(screen.queryByLabelText('Product name')).not.toBeInTheDocument();
+});
+
+test('Sponsor View-As can open Add Product without automatically posting', () => {
+  renderCatalog({ account_type: 'sponsor', impersonation: { active: true, admin: { id: 1 } } }, false, '/catalog/new');
+  expect(screen.getByRole('heading', { level: 1, name: 'Add product' })).toBeInTheDocument();
+  expect(createProduct).not.toHaveBeenCalled();
+});
+
+test('signed-out visitors cannot open Add Product', () => {
+  renderCatalog(null, false, '/catalog/new');
+  expect(screen.getByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
 });

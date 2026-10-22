@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 import PageHeader from '../../../app/PageHeader';
 import Skeleton from '../../../components/feedback/Skeleton';
 import StatePanel from '../../../components/feedback/StatePanel';
+import { PlusIcon } from '../../../components/primitives/Icons';
 import CatalogPagination from '../components/CatalogPagination';
 import AvailabilityControl from '../components/AvailabilityControl';
 import ProductCard from '../components/ProductCard';
@@ -38,7 +39,23 @@ function CatalogSkeleton() {
   );
 }
 
-export default function SponsorCatalogPage() {
+export default function SponsorCatalogPage({ identity }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const noticeRef = useRef(null);
+  const [createdNotice, setCreatedNotice] = useState(() => {
+    const notice = location.state?.catalogCreated;
+    return notice && notice.identity === identity && Number.isSafeInteger(notice.id) && typeof notice.name === 'string' ? notice : null;
+  });
+  useEffect(() => {
+    if (!location.state?.catalogCreated) return;
+    // Consume this identity-bound notice once so Back cannot replay it after
+    // returning from another form or account. Keep unrelated location state.
+    const next = { ...location.state };
+    delete next.catalogCreated;
+    navigate(location.pathname + location.search, { replace: true, state: Object.keys(next).length ? next : null });
+  }, [location.state, location.pathname, location.search, navigate]);
+  useEffect(() => { if (createdNotice) noticeRef.current?.focus(); }, [createdNotice]);
   const [params, setParams] = useSearchParams();
   const rawPage = params.get('page');
   const page = readPage(rawPage);
@@ -97,6 +114,18 @@ export default function SponsorCatalogPage() {
         subtitle={visible ? `${visible.sponsor.name}’s reward catalog` : busy ? 'Loading your catalog' : 'Your organization’s reward catalog'}
       />
       <main className="catalog-content" aria-busy={busy}>
+        {createdNotice && !denied && (
+          <div className="banner banner-success catalog-created-notice" role="status" ref={noticeRef} tabIndex={-1}>
+            <div>
+              <strong>“{createdNotice.name}” was added.</strong>
+              <p>Products are listed alphabetically, so it may be on a later page.</p>
+            </div>
+            <div className="catalog-toolbar-actions">
+              <Link className="button" to="/catalog/new">Add another product</Link>
+              <button className="button" type="button" onClick={() => setCreatedNotice(null)}>Dismiss</button>
+            </div>
+          </div>
+        )}
         <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
           {denied ? '' : availability.announcement}
         </p>
@@ -129,11 +158,12 @@ export default function SponsorCatalogPage() {
           <>
             <div className="catalog-toolbar">
               <p className="catalog-count">{visible.count} {visible.count === 1 ? 'product' : 'products'}</p>
-              {/* A real reload action also makes background-refresh feedback
-                  reachable before Add Product arrives in its own commit. */}
-              <button className="button" type="button" disabled={busy} onClick={reload}>
-                {busy ? 'Refreshing…' : 'Refresh catalog'}
-              </button>
+              <div className="catalog-toolbar-actions">
+                <button className="button" type="button" disabled={busy} onClick={reload}>
+                  {busy ? 'Refreshing…' : 'Refresh catalog'}
+                </button>
+                <Link className="button button-primary" to="/catalog/new"><PlusIcon size={16} />Add product</Link>
+              </div>
             </div>
             {busy && <p className="sr-only" role="status">Loading catalog page</p>}
             {visible.results.length ? (
@@ -156,6 +186,7 @@ export default function SponsorCatalogPage() {
             ) : (
               <StatePanel title="No products yet">
                 <p>Products added by your organization will appear here.</p>
+                <Link className="button button-primary" to="/catalog/new"><PlusIcon size={16} />Add product</Link>
               </StatePanel>
             )}
             <CatalogPagination

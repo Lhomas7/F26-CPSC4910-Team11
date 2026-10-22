@@ -52,3 +52,15 @@ export function setProductAvailability(productId, isAvailable) {
     return product;
   });
 }
+
+export function createProduct(product) {
+  return request('/sponsor/catalog/products/', { method: 'POST', body: product }).then(async (response) => {
+    const created = await readJson(response);
+    if (response.status !== 201 || !isProduct(created)) {
+      // The POST may have committed despite an unusable confirmation. Do not
+      // retry automatically or navigate as though creation was confirmed.
+      throw new ApiError('The server did not confirm product creation. Check the catalog before trying again.', 502, created);
+    }
+    return created;
+  });
+}

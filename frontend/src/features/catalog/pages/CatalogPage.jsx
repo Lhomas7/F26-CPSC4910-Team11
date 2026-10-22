@@ -2,18 +2,15 @@ import PageHeader from '../../../app/PageHeader';
 import { useAuth } from '../../../auth/AuthContext';
 import StatePanel from '../../../components/feedback/StatePanel';
 import SponsorCatalogPage from './SponsorCatalogPage';
+import { catalogIdentity } from '../utils/identity';
 
 export default function CatalogPage() {
   const { user } = useAuth();
   if (user?.account_type === 'sponsor') {
     // Remount synchronously on identity/organization/View-As changes. A hook
     // cleanup alone would leave the previous account's cards visible for a render.
-    const identity = JSON.stringify([
-      user.id, user.username, user.account_type, user.company,
-      Boolean(user.impersonation?.active), user.impersonation?.admin?.id,
-      user.impersonation?.expires_at,
-    ]);
-    return <SponsorCatalogPage key={identity} />;
+    const identity = catalogIdentity(user);
+    return <SponsorCatalogPage key={identity} identity={identity} />;
   }
 
   // Driver UI remains separate until its own mockup/integration group.

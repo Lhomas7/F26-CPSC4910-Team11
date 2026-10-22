@@ -20,6 +20,7 @@ export const NAV_ITEMS = [
 export const PAGE_ROLES = {
   // Driver route remains a placeholder and is deliberately not linked yet.
   catalog: ['driver', 'sponsor'],
+  catalogManage: ['sponsor'],
   points: ['driver', 'sponsor'],
   drivers: ['sponsor'],
   users: ['admin'],

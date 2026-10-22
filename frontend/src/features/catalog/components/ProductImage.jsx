@@ -11,7 +11,7 @@ function isHttpsUrl(value) {
   }
 }
 
-function ImageContent({ src, name }) {
+function ImageContent({ src, name, emptyText, failedText }) {
   const [failed, setFailed] = useState(false);
   const missing = !src;
   const showImage = !missing && isHttpsUrl(src) && !failed;
@@ -31,15 +31,15 @@ function ImageContent({ src, name }) {
       ) : (
         <span className="catalog-product-media-fallback">
           <FallbackIcon size={26} />
-          <span>{missing ? 'No image added' : 'Image didn’t load'}</span>
+          <span>{missing ? emptyText : failedText}</span>
         </span>
       )}
     </div>
   );
 }
 
-export default function ProductImage({ src, name }) {
+export default function ProductImage({ src, name, emptyText = 'No image added', failedText = 'Image didn’t load' }) {
   // A replacement URL gets a fresh error state; one failed image never affects
   // another card. Images are loaded by the browser, not fetched by our server.
-  return <ImageContent key={src || ''} src={src} name={name} />;
+  return <ImageContent key={src || ''} src={src} name={name} emptyText={emptyText} failedText={failedText} />;
 }

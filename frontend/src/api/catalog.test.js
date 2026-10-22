@@ -1,5 +1,5 @@
 import { ApiError, NetworkError } from './client';
-import { getCatalog, setProductAvailability } from './catalog';
+import { createProduct, getCatalog, setProductAvailability } from './catalog';
 
 beforeEach(() => {
   global.fetch = jest.fn();
@@ -105,4 +105,28 @@ test.each([
 test('availability preserves a 404 response for refresh recovery', async () => {
   global.fetch.mockResolvedValue({ ok: false, status: 404, json: async () => ({ detail: 'Not found.' }) });
   await expect(setProductAvailability(7, false)).rejects.toEqual(expect.objectContaining({ status: 404 }));
+});
+
+test('creation posts decimal money and boolean availability through the shared client', async () => {
+  const payload = { name: 'Mug', description: '', price_usd: '0.00', image_url: '', is_available: false };
+  const created = { ...savedProduct, ...payload };
+  global.fetch.mockResolvedValue({ ok: true, status: 201, json: async () => created });
+  await expect(createProduct(payload)).resolves.toEqual(created);
+  expect(global.fetch).toHaveBeenCalledWith(
+    expect.stringMatching(/\/sponsor\/catalog\/products\/$/),
+    expect.objectContaining({ method: 'POST', credentials: 'include', body: JSON.stringify(payload) }),
+  );
+});
+
+test.each([
+  [200, savedProduct], [201, {}], [201, { ...savedProduct, id: null }],
+])('does not treat unconfirmed creation HTTP %s as success', async (status, data) => {
+  global.fetch.mockResolvedValue({ ok: true, status, json: async () => data });
+  await expect(createProduct({})).rejects.toEqual(expect.objectContaining({ status: 502 }));
+});
+
+test('creation does not automatically retry an uncertain network failure', async () => {
+  global.fetch.mockRejectedValue(new TypeError('Connection lost'));
+  await expect(createProduct({ name: 'Mug', price_usd: '12.50' })).rejects.toBeInstanceOf(NetworkError);
+  expect(global.fetch).toHaveBeenCalledTimes(1);
 });

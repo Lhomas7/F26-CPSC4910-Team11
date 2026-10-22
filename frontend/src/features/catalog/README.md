@@ -8,8 +8,8 @@ own account type. Server-side catalog permissions remain mandatory.
 The sidebar now includes Catalog for Sponsors only. Drivers still see the
 not-yet-available placeholder on direct navigation and have no Catalog link
 until their separate UI group. Sponsor cards use real API data; there are no
-fake products or purchase controls. Sponsor availability controls are connected;
-Add Product remains for its own commit group and is not exposed as a dead button.
+fake products or purchase controls. Sponsor availability controls and the
+Add Product workflow at `/catalog/new` are connected to the existing API.
 
 `src/api/catalog.js` reads session-scoped GET `/api/catalog/` through the shared
 HTTP client. `getCatalog(page = 1)` only accepts positive safe-integer page
@@ -32,8 +32,9 @@ catalog response. Driver guidance remains part of the future Driver UI group.
 
 `pages/SponsorCatalogPage.jsx` renders the mockup's organization heading,
 neutral pricing notice, product grid, empty/loading/error states, and paginated
-results. It includes a Refresh catalog action while the Add Product action is
-pending. `CatalogPagination` uses a fixed page size of 25 and tracks the page
+results. Its toolbar includes Refresh catalog and Add product actions; the
+empty state also links to creation. `CatalogPagination` uses a fixed page size
+of 25 and tracks the page
 in the browser URL so refresh and Back work. It does not assume the API returns
 `page` or `page_size` fields. Counts/ranges describe the products actually loaded.
 
@@ -92,6 +93,56 @@ Focused availability tests:
 
 ```text
 npm test -- --watchAll=false --runInBand --runTestsByPath src/features/catalog/components/AvailabilityControl.test.jsx src/features/catalog/utils/availability.test.js src/features/catalog/pages/SponsorCatalogPage.test.jsx src/api/catalog.test.js src/features/catalog/components/ProductCard.test.jsx
+```
+
+## Add Product workflow
+
+`pages/AddProductPage.jsx` implements `/catalog/new`, restricted by
+`PAGE_ROLES.catalogManage` to effective Sponsor accounts. Administrator View-As
+uses the target Sponsor's session permissions, not administrator privileges.
+`catalogIdentity` keys both creation and browsing so a changed account,
+organization, or View-As session clears the previous form/data synchronously.
+
+The form follows the supplied HTML: wide two-column fields/preview, fields first
+on smaller screens, and responsive action buttons. It uses feature-scoped CSS,
+existing tokens/buttons, shared `ProductImage`, and shared `ConfirmDialog`.
+Fields are name, decimal-string USD price, optional description, optional HTTPS
+image URL, and boolean availability. There is no owner selector, image upload,
+quantity, or point-conversion field.
+
+`utils/productInput.js` normalizes human text and validates client boundaries;
+the backend remains authoritative. Validation links errors/hints to inputs and
+focuses the first invalid field. Server field errors preserve all entered
+values. A broken image preview does not prevent submission of a valid HTTPS
+URL; the browser loads the preview and the server does not verify it.
+
+`createProduct` uses the shared session/CSRF client and requires HTTP 201 with a
+valid product record before treating creation as confirmed. The in-flight guard
+prevents duplicate submits; fields, Cancel, and breadcrumb navigation are
+disabled while saving. Native browser leaving/refresh gets a warning while the
+form is dirty or saving. Explicit Cancel and the breadcrumb ask before
+discarding dirty values; unrelated in-app sidebar/Back navigation is not a
+global route-blocking mechanism. Drafts are not persisted across navigation or
+refresh, and no automatic POST retries occur.
+
+Network errors, server failures, or malformed creation confirmations preserve
+the form and warn that the product may already exist. An explicit new-tab
+catalog link lets the Sponsor check without losing the draft. A deliberate
+resubmit can create a duplicate because there is no idempotency-key contract.
+Access/session errors fail closed and remove the editable draft from view.
+Late responses after an identity change or navigation cannot redirect the new
+view or announce the old account's creation.
+
+After confirmation, creation replaces the form route with Catalog page 1 and an
+identity-bound, one-time success notice. The page reloads data, explains
+alphabetical placement, and offers Add another product plus Dismiss. It does
+not assume the newly created item must be on page 1. The next form starts blank;
+no form values are cleared before creation is confirmed.
+
+Focused creation tests:
+
+```text
+npm test -- --watchAll=false --runInBand --runTestsByPath src/features/catalog/pages/AddProductPage.test.jsx src/features/catalog/utils/productInput.test.js src/api/catalog.test.js src/app/CatalogRoute.test.jsx src/features/catalog/pages/SponsorCatalogPage.test.jsx
 ```
 
 ## Shared product UI foundation
