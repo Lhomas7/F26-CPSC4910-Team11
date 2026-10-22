@@ -71,6 +71,19 @@ test('shows loading placeholders instead of invented products', () => {
   expect(screen.queryByRole('heading', { name: product.name })).not.toBeInTheDocument();
 });
 
+test('configured Sponsor pricing shows calculated points without an unconfigured notice', async () => {
+  getCatalog.mockResolvedValue(response({
+    pricing: { status: 'configured', points_per_dollar: 100 },
+    results: [{ ...product, point_cost: 1250 }],
+  }));
+  renderPage();
+  expect(await screen.findByText('Point cost: 1,250 points')).toBeInTheDocument();
+  expect(screen.getByText('$12.50')).toBeInTheDocument();
+  expect(screen.queryByText(/isn’t configured/)).not.toBeInTheDocument();
+  expect(screen.getByText(/Reward redemption is not available/)).toBeInTheDocument();
+  expect(screen.getByText(/^Updated /)).toHaveAttribute('datetime', product.updated_at);
+});
+
 test('empty catalog is a successful state with organization context', async () => {
   getCatalog.mockResolvedValue(response({ results: [], count: 0 }));
   renderPage();

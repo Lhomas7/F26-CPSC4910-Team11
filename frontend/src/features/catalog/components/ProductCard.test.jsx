@@ -4,6 +4,7 @@ import ProductCard from './ProductCard';
 import ProductGrid from './ProductGrid';
 import ProductImage from './ProductImage';
 import ProductPricing from './ProductPricing';
+import SponsorProductFooter from './SponsorProductFooter';
 
 const product = {
   id: 1,
@@ -104,7 +105,7 @@ test.each(['http://images.example.com/mug.png', 'javascript:alert(1)', 'data:ima
 });
 
 test('formats a valid timestamp in local US 12-hour time while keeping the ISO value', () => {
-  render(<ProductGrid><ProductCard product={product} /></ProductGrid>);
+  render(<ProductGrid><ProductCard product={product} footer={<SponsorProductFooter product={product} />} /></ProductGrid>);
   const formatted = new Intl.DateTimeFormat('en-US', {
     month: 'numeric', day: 'numeric', year: 'numeric',
     hour: 'numeric', minute: '2-digit', hour12: true,

@@ -8,6 +8,7 @@ import { PlusIcon } from '../../../components/primitives/Icons';
 import CatalogPagination from '../components/CatalogPagination';
 import AvailabilityControl from '../components/AvailabilityControl';
 import ProductCard from '../components/ProductCard';
+import SponsorProductFooter from '../components/SponsorProductFooter';
 import ProductGrid from '../components/ProductGrid';
 import useCatalogPage from '../hooks/useCatalogPage';
 import { withConfirmedAvailability } from '../utils/availability';
@@ -131,7 +132,8 @@ export default function SponsorCatalogPage({ identity }) {
         </p>
         {!denied && (visible || busy) && (
           <p className="banner">
-            Point pricing isn&apos;t configured yet. Product prices are currently stored in US dollars. Reward redemption is not available.
+            {visible?.pricing?.status === 'configured' ? '' : 'Point pricing isn’t configured yet. '}
+            Product prices are shown in US dollars. Reward redemption is not available.
           </p>
         )}
         {visible?.recovered && (
@@ -173,11 +175,13 @@ export default function SponsorCatalogPage({ identity }) {
                   {visible.results.map((record) => {
                     const product = withConfirmedAvailability(record, availability.confirmed[record.id]);
                     return (
-                      <ProductCard key={product.id} product={product} footer={
+                      <ProductCard key={product.id} product={product} pricing={visible.pricing} footer={
+                        <SponsorProductFooter product={product}>
                         <AvailabilityControl
                           product={product} catalogVersion={data} disabled={busy}
                           onSaved={onSaved} onAccessError={onAccessError} onRefresh={reload}
                         />
+                        </SponsorProductFooter>
                       } />
                     );
                   })}

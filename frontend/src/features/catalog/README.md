@@ -152,14 +152,25 @@ npm test -- --watchAll=false --runInBand --runTestsByPath src/features/catalog/p
 - `ProductGrid`: list semantics, 0.7rem gaps, top-aligned cards, and a responsive
   `minmax(min(17rem, 100%), 1fr)` track minimum that cannot exceed content width.
 - `ProductCard`: wrapped heading, shared availability badge, pricing and
-  description, a role-specific footer slot, and local US 12-hour update time.
+  description, and an explicit footer slot with no default management content.
+  `viewer="driver"`, `pricing`, and `pointBalance` select points-first Driver
+  presentation; the default Sponsor presentation keeps USD primary.
   The default product heading is h3; the page should supply an h2 Products
   heading. `headingLevel={2}` is available where the surrounding hierarchy differs.
 - `ProductImage`: a 3:2 contained-image frame, lazy HTTPS images, and distinct
   missing/broken fallbacks. A new URL resets only that image's failure state.
-- `ProductPricing`: US dollar display from the API decimal string, including
-  zero, and explicit unconfigured point pricing. Malformed prices never become
-  free products. No point conversion or affordability styling is invented.
+- `SponsorProductFooter`: composes caller-supplied availability controls with
+  a valid update timestamp in local US 12-hour time. Drivers omit the footer.
+- `ProductPricing`: Sponsor USD-primary and server-calculated points-secondary;
+  Driver points-primary with independent affordability feedback and no USD.
+  No frontend conversion or rounding. Missing/malformed configured costs,
+  invalid balances, and contradictory server verdicts produce unknown feedback,
+  never a guessed free cost or affordability verdict. Explicit unconfigured
+  pricing has smaller neutral text with no affordability line.
+- `utils/pricing`: checks safe integer costs/balances and verdict consistency
+  for both card treatment and text. Insufficient points use the page-background
+  fill and muted price, not card-level opacity; unavailable products independently
+  dim only the image. Description controls remain usable in either state.
 - `ClampedText`: three-line descriptions with measured-overflow Show more/less,
   product-specific accessible labels, resize observation, and cleanup on unmount.
 

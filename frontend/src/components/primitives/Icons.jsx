@@ -1,3 +1,12 @@
+export function CheckIcon(props) {
+  return (
+    <SvgIcon {...props}>
+      <path d="m5 12 4 4L19 6" stroke="currentColor" strokeWidth="2"
+        strokeLinecap="round" strokeLinejoin="round" />
+    </SvgIcon>
+  );
+}
+
 function SvgIcon({ children, size = 20, ...props }) {
   return (
     <svg aria-hidden="true" fill="none" height={size} viewBox="0 0 24 24" width={size} {...props}>
