@@ -41,6 +41,22 @@ test.each([
 });
 
 test.each([
+  [999999999999000, true, 'Within your balance'],
+  [999999999998999, false, 'Need 1 more point'],
+  [0, false, 'Need 999,999,999,999,000 more points'],
+])('formats the largest supported catalog point cost at balance %s', (balance, affordable, message) => {
+  // Maximum model USD price times the maximum organization rate. Use a
+  // literal expected display so the test does not duplicate the formatter.
+  render(<ProductCard viewer="driver" pricing={{ status: 'configured', points_per_dollar: 100000 }}
+    pointBalance={balance} product={{ ...product, point_cost: 999999999999000, can_afford: affordable }} />);
+  expect(screen.getByText('999,999,999,999,000 points')).toBeInTheDocument();
+  expect(screen.getByText(message)).toBeInTheDocument();
+  expect(screen.queryByText(/We can’t confirm this cost/)).not.toBeInTheDocument();
+  if (affordable) expect(screen.getByRole('listitem')).not.toHaveClass('is-unaffordable');
+  else expect(screen.getByRole('listitem')).toHaveClass('is-unaffordable');
+});
+
+test.each([
   { point_cost: null }, { point_cost: -1 }, { point_cost: 1.5 },
   { point_cost: '2495' }, { point_cost: Number.MAX_SAFE_INTEGER + 1 },
   { can_afford: undefined }, { can_afford: 'true' }, { can_afford: false },
@@ -97,6 +113,10 @@ test('Show more remains usable on an unavailable, unaffordable card', () => {
     expect(screen.getByRole('listitem')).toHaveClass('is-unavailable', 'is-unaffordable');
     const more = screen.getByRole('button', { name: 'Show more of the description for Mug' });
     expect(more).toBeEnabled();
+    // Unavailable rewards remain browsable, but never expose purchase actions.
+    expect(screen.getAllByRole('button')).toHaveLength(1);
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
     fireEvent.click(more);
     expect(screen.getByRole('button', { name: 'Show less of the description for Mug' })).toHaveAttribute('aria-expanded', 'true');
   } finally {

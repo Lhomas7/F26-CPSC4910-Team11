@@ -3,7 +3,8 @@
 This app owns sponsor-scoped reward catalog behavior. It currently defines the
 product model, initial migration, access helpers, Sponsor mutation endpoints,
 and session-scoped catalog browsing. Sponsor browsing, creation, and availability
-controls are implemented in the frontend; Driver UI integration is a separate group.
+controls and read-only Driver browsing are implemented in the frontend. See
+`docs/SPRINT5_CATALOG_CLOSEOUT.md` for migration and final verification status.
 
 ## Access contract
 

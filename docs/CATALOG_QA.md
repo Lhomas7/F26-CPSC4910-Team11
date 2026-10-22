@@ -1,5 +1,8 @@
 # Catalog UI verification
 
+See [Sprint 5 catalog closeout](SPRINT5_CATALOG_CLOSEOUT.md) for the remaining
+work-item checks and copy-paste task wording that reflects the approved design.
+
 ## Scope and evidence — October 21, 2026
 
 The implementation uses the approved Sponsor and Driver Catalog HTML mockups as
