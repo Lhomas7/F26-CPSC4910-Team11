@@ -23,8 +23,8 @@ class CatalogProduct(models.Model):
         max_length=2048, blank=True,
         validators=[URLValidator(schemes=['https'])],
     )
-    # Keep money exact. Point cost is intentionally absent until conversion
-    # settings and the default rate are agreed; zero dollars remains valid.
+    # Keep money exact. Point cost is derived at read time from the sponsor's
+    # current conversion rate rather than stored as a second, stale price.
     price_usd = models.DecimalField(
         max_digits=12, decimal_places=2,
         validators=[MinValueValidator(Decimal('0.00'))],

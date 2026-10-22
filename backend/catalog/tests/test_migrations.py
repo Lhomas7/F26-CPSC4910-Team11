@@ -40,6 +40,16 @@ class CatalogMigrationTests(TransactionTestCase):
             self.assertIn('catalog_product_name_nonempty', constraints)
             self.assertIn('catalog_sponsor_available_idx', constraints)
             self.assertFalse(MigrationExecutor(connection).migration_plan(target))
+            # Existing organizations receive the default without changing
+            # their identity or the USD prices in their existing catalog.
+            target = [('accounts', '0014_sponsor_catalog_rate'), ('catalog', '0001_initial')]
+            executor = MigrationExecutor(connection)
+            executor.migrate(target)
+            apps = executor.loader.project_state(target).apps
+            Sponsor = apps.get_model('accounts', 'SponsorCompany')
+            Product = apps.get_model('catalog', 'CatalogProduct')
+            self.assertEqual(Sponsor.objects.get(pk=sponsor.pk).points_per_dollar, 100)
+            self.assertEqual(str(Product.objects.get(pk=product.pk).price_usd), '12.50')
         finally:
             isolated.close()
             connections['default'] = original

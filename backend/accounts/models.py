@@ -2,7 +2,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from django.conf import settings
-from django.core.validators import FileExtensionValidator
+from django.core.validators import FileExtensionValidator, MaxValueValidator, MinValueValidator
 from django.db import models
 
 from .fields import EncryptedCharField
@@ -35,8 +35,21 @@ class AccountProfile(models.Model):
 
 class SponsorCompany(models.Model):
     name = models.CharField(max_length=200, unique=True)
+    # Organization-wide catalog pricing, not a cash value for a Driver's balance.
+    # Bound the rate so even the maximum product price remains a safe JS integer.
+    points_per_dollar = models.PositiveIntegerField(
+        default=100, validators=[MinValueValidator(1), MaxValueValidator(100000)],
+    )
     driver_mfa_required = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(points_per_dollar__gte=1, points_per_dollar__lte=100000),
+                name='sponsor_catalog_rate_range',
+            ),
+        ]
 
     def __str__(self):
         return self.name

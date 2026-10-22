@@ -61,15 +61,40 @@ class CatalogBrowseApiTests(APITestCase):
         self.assertFalse(response.data['results'][1]['is_available'])
         self.assertIn('no-store', response['Cache-Control'])
 
-    def test_unconfigured_pricing_is_unknown_not_free_or_unaffordable(self):
+    def test_default_pricing_and_zero_cost(self):
         CatalogProduct.objects.filter(pk=self.first.pk).update(price_usd='0.00')
         response = self.client.get(self.url)
-        self.assertEqual(response.data['pricing'], {'status': 'unconfigured', 'points_per_dollar': None})
-        for product in response.data['results']:
-            self.assertIn('point_cost', product)
-            self.assertIsNone(product['point_cost'])
-            self.assertIn('can_afford', product)
-            self.assertIsNone(product['can_afford'])
+        self.assertEqual(response.data['pricing'], {'status': 'configured', 'points_per_dollar': 100})
+        free, expensive = response.data['results']
+        self.assertEqual(free['point_cost'], 0)
+        self.assertIs(free['can_afford'], True)
+        self.assertEqual(expensive['point_cost'], 4000)
+        self.assertIs(expensive['can_afford'], False)
+
+    def test_rate_change_reprices_catalog_without_changing_balance(self):
+        CatalogProduct.objects.filter(pk=self.first.pk).update(price_usd='24.95')
+        self.assertEqual(self.client.get(self.url).data['results'][0]['point_cost'], 2495)
+        SponsorCompany.objects.filter(pk=self.company.pk).update(points_per_dollar=25)
+        response = self.client.get(self.url)
+        self.assertEqual(response.data['pricing']['points_per_dollar'], 25)
+        self.assertEqual(response.data['results'][0]['point_cost'], 624)
+        self.assertEqual(response.data['point_balance'], 250)
+        self.assertEqual(PointTransaction.objects.get(driver=self.driver).point_change, 250)
+        self.assertEqual(SponsorCompany.objects.get(pk=self.other_company.pk).points_per_dollar, 100)
+
+    def test_affordability_at_parity_and_one_point_short_is_independent_of_availability(self):
+        CatalogProduct.objects.filter(pk=self.first.pk).update(price_usd='2.50', is_available=False)
+        CatalogProduct.objects.filter(pk=self.unavailable.pk).update(price_usd='2.51', is_available=True)
+        equal, short = self.client.get(self.url).data['results']
+        self.assertIs(equal['can_afford'], True)
+        self.assertIs(short['can_afford'], False)
+
+    def test_zero_balance_can_afford_only_zero_cost(self):
+        PointTransaction.objects.filter(driver=self.driver).delete()
+        CatalogProduct.objects.filter(pk=self.first.pk).update(price_usd='0.00')
+        free, paid = self.client.get(self.url).data['results']
+        self.assertIs(free['can_afford'], True)
+        self.assertIs(paid['can_afford'], False)
 
     def test_sponsor_gets_organization_catalog_without_driver_balance(self):
         self.client.force_authenticate(self.sponsor)
@@ -77,6 +102,8 @@ class CatalogBrowseApiTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['count'], 2)
         self.assertIsNone(response.data['point_balance'])
+        self.assertEqual(response.data['results'][0]['point_cost'], 1250)
+        self.assertTrue(all(row['can_afford'] is None for row in response.data['results']))
 
     def test_no_point_history_means_zero_balance_not_an_error(self):
         PointTransaction.objects.filter(driver=self.driver).delete()

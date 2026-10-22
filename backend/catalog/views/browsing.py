@@ -36,10 +36,15 @@ class CatalogBrowseView(APIView):
             raise ValidationError({key: 'This query parameter is not supported.' for key in sorted(unknown)})
         paginator = CatalogPagination()
         page = paginator.paginate_queryset(listing.products, request, view=self)
-        response = paginator.get_paginated_response(CatalogBrowseProductSerializer(page, many=True).data)
+        rate = listing.sponsor.points_per_dollar
+        response = paginator.get_paginated_response(CatalogBrowseProductSerializer(
+            page, many=True, context={
+                'points_per_dollar': rate, 'point_balance': listing.point_balance,
+            },
+        ).data)
         response.data.update({
             'sponsor': {'id': listing.sponsor.pk, 'name': listing.sponsor.name},
             'point_balance': listing.point_balance,
-            'pricing': {'status': 'unconfigured', 'points_per_dollar': None},
+            'pricing': {'status': 'configured', 'points_per_dollar': rate},
         })
         return response

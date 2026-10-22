@@ -392,6 +392,10 @@ products. The foreign key protects the sponsor from deletion while products exis
 ```mermaid
 erDiagram
     ACCOUNTS_SPONSORCOMPANY ||--o{ CATALOG_CATALOGPRODUCT : "offers"
+    ACCOUNTS_SPONSORCOMPANY {
+        bigint id PK
+        int points_per_dollar "default 100, range 1..100000"
+    }
     CATALOG_CATALOGPRODUCT {
         bigint id PK
         bigint sponsor_id FK
@@ -408,8 +412,14 @@ erDiagram
 `catalog_sponsor_available_idx` indexes (`sponsor_id`, `is_available`). Database
 checks enforce nonnegative prices and nonempty names. HTTPS URL validation and
 whitespace-only-name validation are application-level rules, not SQL checks.
-Prices are USD; conversion rates and calculated point costs are intentionally
-not implemented yet. Availability does not claim live provider inventory.
+Prices are USD. `accounts.0014_sponsor_catalog_rate` adds the organization-wide
+`points_per_dollar` field shown above (other organization fields are omitted
+from this supplement). A database check enforces the range 1..100000; existing
+organizations receive 100. Point cost is derived, not stored:
+`ceil(price_usd * points_per_dollar)` using Decimal arithmetic. Changing the
+rate does not change Driver ledger balances. Availability is independent of
+affordability and does not claim live provider inventory. This supplement
+describes migrations in the repository, not a verified live-database export.
 
 ## Composite unique constraints and indexes
 

@@ -2,7 +2,8 @@
 
 This app owns sponsor-scoped reward catalog behavior. It currently defines the
 product model, initial migration, access helpers, Sponsor mutation endpoints,
-and session-scoped catalog browsing. The product-management UI is not implemented yet.
+and session-scoped catalog browsing. Sponsor browsing, creation, and availability
+controls are implemented in the frontend; Driver UI integration is a separate group.
 
 ## Access contract
 
@@ -44,14 +45,32 @@ direct ORM `save()` does not automatically call `full_clean()`. The creation
 service validates input and assigns sponsor ownership itself. Sponsor
 deletion is protected while products exist.
 
-No point cost or conversion rate is stored or calculated yet. A missing rate
-must never be treated as zero cost or a guessed conversion. Cart, quantities,
-redemption, orders, and live provider stock are outside this implementation.
+`SponsorCompany.points_per_dollar` is the organization's catalog conversion rate,
+defaulting to 100 for new and existing organizations. Whole-number values from
+1 through 100,000 are enforced by model validators and a database constraint.
+This bound keeps the largest supported product cost below JavaScript's safe
+integer limit. Administratively update this field through validated Django ORM
+code (`full_clean()` before `save()`) or the existing Django admin SponsorCompany
+form. There is no public rate-editing endpoint or React rate-management UI in
+this group.
+
+Point costs are calculated on each catalog read using exact Decimal arithmetic:
+`ceil(price_usd * points_per_dollar)`. For example, $24.95 costs 2,495 points at
+100 points/$1 and 624 points at 25 points/$1. Zero dollars costs zero points.
+Rate changes reprice the catalog without rewriting products, altering Driver
+balances, creating ledger entries, or sending notifications. This rate describes
+catalog prices, not cash redemption. Cart, quantities, redemption, orders, and
+live provider stock are outside this implementation.
 
 The additive migration is `catalog.0001_initial`. Apply it through the normal
 project migration workflow after reviewing the target environment. The tests
 apply it only to disposable SQLite databases; no shared database was migrated
 as part of this change.
+
+`accounts.0014_sponsor_catalog_rate` adds the rate and its constraint, supplying
+100 for existing organizations without changing existing product prices. Review
+and apply it through the normal migration workflow; no shared database was
+migrated as part of this change.
 
 ## Sponsor API
 
@@ -78,7 +97,8 @@ There is no arbitrary edit, delete, or inventory-count endpoint.
 
 Both actions return `id`, `name`, `description`, `image_url`, `price_usd`,
 `is_available`, `created_at`, and `updated_at`. The serializer deliberately does
-not report a point cost while conversion is unconfigured. Shared View-As
+not report derived pricing on mutation responses; refresh the catalog to read
+the current rate and point costs. Shared View-As
 middleware supplies the effective target identity; the real administrator does
 not grant additional Sponsor privileges.
 
@@ -97,14 +117,16 @@ The response contains:
 | `count`, `next`, `previous`, `results` | Standard page-number pagination, scoped before counting |
 | `sponsor` | The resolved organization's `id` and `name` |
 | `point_balance` | The Driver's existing ledger-derived balance; null for Sponsors |
-| `pricing` | `{"status": "unconfigured", "points_per_dollar": null}` until pricing is implemented |
+| `pricing` | `{"status": "configured", "points_per_dollar": 100}` with the organization's current rate |
 
 Each result contains the product fields returned by the Sponsor API, plus
-`point_cost: null` and `can_afford: null`. Unknown pricing is not a free product,
-an affordable product, or an unaffordable one. Even a zero-dollar product is not
-assigned a point cost before the conversion contract is implemented. Manual
-`is_available` is independent of those unknown values. Unavailable products
-remain visible rather than disappearing from the catalog.
+`point_cost` (nonnegative whole points) and `can_afford` (a boolean for Drivers,
+null for Sponsors). A Driver can afford a product exactly when their ledger
+balance is greater than or equal to its point cost, including equality and
+zero-cost products at zero balance. Manual `is_available` is independent of
+affordability. Unavailable products remain visible. The current backend always
+provides configured pricing; clients must still distinguish unknown or malformed
+pricing from zero cost and must not invent an affordability verdict.
 
 Supported parameters are `page` and `page_size`. Default page size is 25 and
 the maximum is 100; results are ordered by name and then ID. Out-of-range pages
@@ -134,5 +156,6 @@ against an isolated schema with an existing sponsor.
 Sponsor API tests cover validation/normalization, same-company collaboration,
 ownership spoofing, cross-organization IDs, CSRF, and real View-As sessions.
 Browsing tests cover paginated isolation/counts, unavailable/empty catalogs,
-ledger balances, unknown conversion pricing, pending/unassigned guidance,
+ledger balances, default/custom rates, upward rounding, zero costs, affordability
+boundaries, migration defaults, rate constraints, pending/unassigned guidance,
 authentication/MFA rules, and both View-As roles.

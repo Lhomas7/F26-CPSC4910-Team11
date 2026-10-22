@@ -5,6 +5,7 @@ from rest_framework import serializers
 
 from accounts.input_cleaning import normalize_human_text, normalize_identifier
 from catalog.models import CatalogProduct
+from catalog.pricing import point_cost
 
 
 class StrictInputSerializer(serializers.Serializer):
@@ -79,8 +80,19 @@ class CatalogProductSerializer(serializers.ModelSerializer):
 class CatalogBrowseProductSerializer(CatalogProductSerializer):
     # Unknown is not zero/false: the client must distinguish unconfigured
     # pricing from a free reward or an actually unaffordable one.
-    point_cost = serializers.ReadOnlyField(default=None)
-    can_afford = serializers.ReadOnlyField(default=None)
+    point_cost = serializers.SerializerMethodField()
+    can_afford = serializers.SerializerMethodField()
+
+    def get_point_cost(self, obj):
+        rate = self.context.get('points_per_dollar')
+        return point_cost(obj.price_usd, rate) if rate is not None else None
+
+    def get_can_afford(self, obj):
+        balance = self.context.get('point_balance')
+        cost = self.get_point_cost(obj)
+        # Availability is independent: an unavailable reward can still be
+        # within a Driver's balance. Sponsors have no spending balance.
+        return balance >= cost if balance is not None and cost is not None else None
 
     class Meta(CatalogProductSerializer.Meta):
         fields = (*CatalogProductSerializer.Meta.fields, 'point_cost', 'can_afford')
