@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import PageHeader from '../../../app/PageHeader';
-import Skeleton from '../../../components/feedback/Skeleton';
 import StatePanel from '../../../components/feedback/StatePanel';
 import { PlusIcon } from '../../../components/primitives/Icons';
 import CatalogPagination from '../components/CatalogPagination';
@@ -11,34 +10,10 @@ import ProductCard from '../components/ProductCard';
 import SponsorProductFooter from '../components/SponsorProductFooter';
 import ProductGrid from '../components/ProductGrid';
 import useCatalogPage from '../hooks/useCatalogPage';
+import useCatalogPagination from '../hooks/useCatalogPagination';
+import CatalogSkeleton from '../components/CatalogSkeleton';
 import { withConfirmedAvailability } from '../utils/availability';
 import '../Catalog.css';
-
-function readPage(value) {
-  if (!value || !/^[1-9]\d*$/.test(value)) return 1;
-  const page = Number(value);
-  return Number.isSafeInteger(page) ? page : 1;
-}
-
-function CatalogSkeleton() {
-  return (
-    <div role="status" aria-label="Loading catalog">
-      <span className="sr-only">Loading catalog</span>
-      <Skeleton className="catalog-skeleton-toolbar" />
-      <ul className="catalog-product-grid" aria-hidden="true">
-        {Array.from({ length: 6 }, (_, index) => (
-          <li className="card catalog-product-card" key={index}>
-            <Skeleton className="catalog-skeleton-media" />
-            <div className="catalog-product-body">
-              <Skeleton className="catalog-skeleton-line" />
-              <Skeleton className="catalog-skeleton-line" />
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
 
 export default function SponsorCatalogPage({ identity }) {
   const location = useLocation();
@@ -57,18 +32,7 @@ export default function SponsorCatalogPage({ identity }) {
     navigate(location.pathname + location.search, { replace: true, state: Object.keys(next).length ? next : null });
   }, [location.state, location.pathname, location.search, navigate]);
   useEffect(() => { if (createdNotice) noticeRef.current?.focus(); }, [createdNotice]);
-  const [params, setParams] = useSearchParams();
-  const rawPage = params.get('page');
-  const page = readPage(rawPage);
-  const changePage = useCallback((value, replace = false) => {
-    setParams((current) => {
-      const next = new URLSearchParams(current);
-      if (value === 1) next.delete('page');
-      else next.set('page', String(value));
-      return next;
-    }, { replace });
-  }, [setParams]);
-  const recoverPage = useCallback(() => changePage(1, true), [changePage]);
+  const { page, changePage, recoverPage } = useCatalogPagination();
   const { data, status, error: loadError, reload } = useCatalogPage(page, recoverPage);
   const [accessError, setAccessError] = useState(null);
   const [availability, setAvailability] = useState({ confirmed: {}, announcement: '' });
@@ -103,10 +67,6 @@ export default function SponsorCatalogPage({ identity }) {
   // previously loaded organization data visible while auth state catches up.
   const denied = [401, 403, 409].includes(error?.status);
   const visible = denied ? null : data;
-
-  useEffect(() => {
-    if (rawPage !== null && rawPage !== String(page)) changePage(page, true);
-  }, [rawPage, page, changePage]);
 
   return (
     <>

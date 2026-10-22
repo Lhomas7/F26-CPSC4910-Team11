@@ -39,14 +39,13 @@ beforeEach(() => {
   getCatalog.mockReturnValue(new Promise(() => {}));
 });
 
-test('driver route remains a placeholder without API calls', () => {
+test('driver route loads the real catalog without Sponsor actions', () => {
   renderCatalog({ account_type: 'driver' });
   expect(screen.getByRole('heading', { level: 1, name: 'Catalog' })).toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: 'Catalog is not available yet' })).toBeInTheDocument();
+  expect(screen.getByRole('status', { name: 'Loading catalog' })).toBeInTheDocument();
   expect(global.fetch).not.toHaveBeenCalled();
   expect(screen.queryByRole('button')).not.toBeInTheDocument();
-  expect(screen.getByText(/Reward browsing is being prepared/)).toBeInTheDocument();
-  expect(getCatalog).not.toHaveBeenCalled();
+  expect(getCatalog).toHaveBeenCalledWith(1);
 });
 
 test('sponsor route loads the real catalog', () => {
@@ -78,9 +77,10 @@ test.each(['driver', 'sponsor'])('View-As uses the effective %s role', (role) =>
   expect(screen.getByRole('heading', { name: 'Catalog' })).toBeInTheDocument();
 });
 
-test('catalog is linked for sponsors only until the driver UI is implemented', () => {
+test('catalog is linked for Drivers and Sponsors only', () => {
   expect(navItemsFor({ account_type: 'sponsor' }).some((item) => item.to === '/catalog')).toBe(true);
-  for (const user of [null, ...['driver', 'admin'].map((account_type) => ({ account_type }))]) {
+  expect(navItemsFor({ account_type: 'driver' }).some((item) => item.to === '/catalog')).toBe(true);
+  for (const user of [null, { account_type: 'admin' }]) {
     expect(navItemsFor(user).some((item) => item.to === '/catalog')).toBe(false);
   }
 });

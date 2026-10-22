@@ -1,14 +1,12 @@
 # Catalog frontend
 
-The `/catalog` route supports Sponsor browsing and a Driver placeholder. It uses
+The `/catalog` route supports Sponsor management and read-only Driver browsing. It uses
 the existing application shell, page header, and state panel. Administrators
 can reach it through an eligible Driver/Sponsor View-As session, not as their
 own account type. Server-side catalog permissions remain mandatory.
 
-The sidebar now includes Catalog for Sponsors only. Drivers still see the
-not-yet-available placeholder on direct navigation and have no Catalog link
-until their separate UI group. Sponsor cards use real API data; there are no
-fake products or purchase controls. Sponsor availability controls and the
+The sidebar includes Catalog for Drivers and Sponsors. Both views use real API
+data; there are no fake products or purchase controls. Sponsor availability controls and the
 Add Product workflow at `/catalog/new` are connected to the existing API.
 
 `src/api/catalog.js` reads session-scoped GET `/api/catalog/` through the shared
@@ -17,16 +15,51 @@ numbers, never browser-supplied organization IDs or arbitrary pagination URLs.
 Malformed successful responses are errors, not successful empty catalogs. The
 backend defines manually entered products with HTTPS image URLs and USD prices,
 and permits approved, sponsor-linked Drivers only (or Sponsors managing their
-organization). The placeholder is not a browsing grant.
+organization). Navigation visibility is not a browsing grant.
 
 Responses contain `count`, `next`, `previous`, `results`, `sponsor`,
 `point_balance`, and `pricing`. The backend supports `page` and `page_size`
-(default 25, maximum 100). Conversion remains unconfigured, so `pricing.status`
-is `unconfigured`, and product `point_cost`/`can_afford` are null. Do not coerce
-these to zero/false or imply redemption is ready. Keep manual `is_available`
-independent from unknown affordability. Pending and unassigned Drivers receive
+(default 25, maximum 100). Configured pricing supplies a positive whole-number
+`points_per_dollar`, server-calculated integer `point_cost`, and boolean Driver
+`can_afford` (null for Sponsors). The default rate is 100 points/$1; organization
+overrides and upward rounding are owned by the backend, never recalculated in
+the browser. Explicit unconfigured pricing still displays as unknown, not zero
+cost or a false affordability verdict. Manual `is_available` is independent
+from affordability. Pending and unassigned Drivers receive
 403 with `driver_not_approved` or `sponsor_required` codes rather than an empty
-catalog response. Driver guidance remains part of the future Driver UI group.
+catalog response. Driver guidance offers Return home without inventing an
+application or sponsor-selection flow.
+
+## Driver browsing
+
+`pages/DriverCatalogPage.jsx` renders the sponsor heading, a single neutral
+redemption/pricing notice, a constrained shared-stat balance tile and rate note,
+Rewards grid, and shared pagination. Driver cards show points, not USD, with no
+management controls or update footer. There is no purchase or quantity action.
+Refresh catalog is a read-only action for obtaining a current balance and prices;
+it is a deliberate addition to the mockup's count-only toolbar.
+
+Same-identity refresh failures retain loaded products and balance with a warning
+banner and "May be out of date" balance chip. Pending/unassigned denials and
+401/403/409 session/access failures remove the entire grid, balance, rate, and
+organization subtitle. A denial is latched for that mounted identity so query
+changes cannot bring prior data back. A new identity remount or leaving and
+returning to the page starts a fresh request. Initial failures offer retry;
+empty catalogs are successful states, not errors.
+
+`useCatalogPagination` shares URL normalization and page changes across roles;
+`useCatalogPage` shares request handling and recover-once page-one behavior.
+`CatalogSkeleton` shares product placeholders with an optional Driver balance
+placeholder. Identity changes clear balance and products synchronously, and late
+responses from the previous identity are ignored. API validation rejects malformed
+pricing metadata and balances; individual invalid costs/verdicts stay visibly
+unknown without false affordability claims or unaffordable styling.
+
+Focused Driver verification:
+
+```text
+npm test -- --watchAll=false --runInBand --runTestsByPath src/features/catalog/pages/DriverCatalogPage.test.jsx src/features/catalog/pages/SponsorCatalogPage.test.jsx src/app/CatalogRoute.test.jsx src/app/navigation.test.js src/api/catalog.test.js
+```
 
 ## Sponsor browsing
 
@@ -45,7 +78,7 @@ disabled. A 404 above page 1 tries page 1 once, replaces the URL on success, and
 reuses that response rather than requesting it again. A failed recovery is a
 real error; it cannot loop. Invalid URL page numbers normalize to page 1.
 
-The `CatalogPage` wrapper keys the Sponsor view by effective identity,
+The `CatalogPage` wrapper keys each role's view by effective identity,
 organization, and View-As metadata. A change clears prior cards synchronously;
 late responses from the unmounted view cannot repopulate them. Access/session
 errors (401/403/409) also hide previously loaded data rather than presenting it

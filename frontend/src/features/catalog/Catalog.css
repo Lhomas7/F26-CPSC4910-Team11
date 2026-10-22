@@ -59,6 +59,30 @@
   max-width: 22rem;
 }
 
+.catalog-balance {
+  max-width: 20rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.catalog-balance-stale {
+  background: var(--warning-soft);
+  border: 1px solid var(--warning-line);
+  border-radius: 999px;
+  color: var(--warning-ink);
+  font-size: 0.66rem;
+  font-weight: 700;
+  justify-self: start;
+  margin-top: 0.25rem;
+  padding: 0.08rem 0.45rem;
+}
+
+.catalog-skeleton-balance {
+  height: 6rem;
+  margin-bottom: 1.35rem;
+  max-width: 20rem;
+}
+
 .catalog-skeleton-media {
   aspect-ratio: 3 / 2;
   border-radius: 0;

@@ -12,10 +12,14 @@ function readCatalog(data) {
   // A malformed successful response is an error, never an empty catalog.
   const productsValid = Array.isArray(data?.results) && data.results.every(isProduct);
   const validLink = (value) => value === null || typeof value === 'string';
+  const pricingValid = (data?.pricing?.status === 'configured' &&
+    Number.isSafeInteger(data.pricing.points_per_dollar) && data.pricing.points_per_dollar > 0) ||
+    (data?.pricing?.status === 'unconfigured' && data.pricing.points_per_dollar === null);
   if (!productsValid || !Number.isSafeInteger(data.count) || data.count < 0 ||
       !Number.isSafeInteger(data.sponsor?.id) || data.sponsor.id < 1 ||
       typeof data.sponsor.name !== 'string' || !data.sponsor.name.trim() ||
-      !validLink(data.next) || !validLink(data.previous)) {
+      !validLink(data.next) || !validLink(data.previous) || !pricingValid ||
+      (data.point_balance !== null && !Number.isSafeInteger(data.point_balance))) {
     throw new ApiError('The server returned an invalid catalog response.', 502, data);
   }
   return data;

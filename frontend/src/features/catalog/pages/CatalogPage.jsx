@@ -2,6 +2,7 @@ import PageHeader from '../../../app/PageHeader';
 import { useAuth } from '../../../auth/AuthContext';
 import StatePanel from '../../../components/feedback/StatePanel';
 import SponsorCatalogPage from './SponsorCatalogPage';
+import DriverCatalogPage from './DriverCatalogPage';
 import { catalogIdentity } from '../utils/identity';
 
 export default function CatalogPage() {
@@ -13,16 +14,21 @@ export default function CatalogPage() {
     return <SponsorCatalogPage key={identity} identity={identity} />;
   }
 
-  // Driver UI remains separate until its own mockup/integration group.
+  if (user?.account_type === 'driver') {
+    return <DriverCatalogPage key={catalogIdentity(user)} />;
+  }
+
+  // Route authorization normally handles this; never load catalog data for an
+  // unexpected role if this feature is rendered on its own.
   return (
     <>
       <PageHeader
         title="Catalog"
         subtitle="Your sponsor’s reward catalog"
       />
-      <StatePanel title="Catalog is not available yet">
+      <StatePanel title="Catalog access is unavailable">
         <p>
-          Reward browsing is being prepared. Products and point costs are not available here yet.
+          Only Driver and Sponsor accounts can browse a reward catalog.
         </p>
       </StatePanel>
     </>
