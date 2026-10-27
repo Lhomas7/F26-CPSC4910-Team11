@@ -95,3 +95,12 @@ test('a failed load leaves the settings disabled and explains why', async () => 
   expect(await screen.findByRole('alert')).toHaveTextContent('Network error');
   expect(checkbox('Email alerts')).toBeDisabled();
 });
+
+test('explains which alerts are always sent', async () => {
+  api.getNotificationPreferences.mockResolvedValue(defaults);
+  await renderLoaded();
+
+  expect(
+    screen.getByText(/being added to or dropped by a sponsor are always sent/),
+  ).toBeInTheDocument();
+});

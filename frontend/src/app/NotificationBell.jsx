@@ -20,8 +20,10 @@ function formatTime(value) {
 /**
  * Bell in the sidebar that opens the signed-in user's recent alerts.
  *
- * A red dot marks unread alerts. Opening the panel marks them read, except
- * while an administrator is viewing as this user: their alerts stay unread.
+ * A red dot marks unread alerts. Opening the panel marks them read; they stay
+ * highlighted until the panel is next opened. Alerts can be cleared one at a
+ * time or all at once. While an administrator is viewing as this user, the
+ * alerts are read-only and stay unread.
  * Messages are rendered as text, never as HTML.
  */
 export default function NotificationBell({ viewingAs = false }) {
@@ -74,7 +76,7 @@ export default function NotificationBell({ viewingAs = false }) {
       setOpen(false);
       return;
     }
-    // Remember what was unread so it stays highlighted after being marked read.
+    // Remember what was unread so it stays highlighted until the next open.
     setUnreadAtOpen(new Set(center.results.filter((item) => !item.read).map((item) => item.id)));
     setOpen(true);
     if (center.unread_count > 0 && !viewingAs) {
@@ -83,6 +85,31 @@ export default function NotificationBell({ viewingAs = false }) {
       } catch (err) {
         setError(err.message || 'Could not update your alerts.');
       }
+    }
+  };
+
+  const clearOne = async (id) => {
+    setError('');
+    try {
+      await api.clearNotification(id);
+      setCenter((current) => {
+        const removed = current.results.find((item) => item.id === id);
+        return {
+          results: current.results.filter((item) => item.id !== id),
+          unread_count: current.unread_count - (removed && !removed.read ? 1 : 0),
+        };
+      });
+    } catch (err) {
+      setError(err.message || 'Could not clear that alert.');
+    }
+  };
+
+  const clearAll = async () => {
+    setError('');
+    try {
+      setCenter(await api.clearAllNotifications());
+    } catch (err) {
+      setError(err.message || 'Could not clear your alerts.');
     }
   };
 
@@ -106,6 +133,16 @@ export default function NotificationBell({ viewingAs = false }) {
         <section className="notification-panel" aria-label="Recent alerts">
           <header className="notification-panel-header">
             <strong>Recent alerts</strong>
+            {!viewingAs && (
+              <button
+                className="notification-clear-all"
+                type="button"
+                onClick={clearAll}
+                disabled={center.results.length === 0}
+              >
+                Clear all
+              </button>
+            )}
           </header>
           {error && <p className="notification-panel-error">{error}</p>}
           {center.results.length === 0 ? (
@@ -119,9 +156,20 @@ export default function NotificationBell({ viewingAs = false }) {
                     key={item.id}
                     className={isNew ? 'notification-item is-unread' : 'notification-item'}
                   >
+                    {isNew && <span className="notification-item-dot" aria-hidden="true" />}
                     <p>{item.message}</p>
                     <time dateTime={item.created_at}>{formatTime(item.created_at)}</time>
                     {isNew && <span className="sr-only">Unread</span>}
+                    {!viewingAs && (
+                      <button
+                        aria-label="Clear notification"
+                        className="notification-clear"
+                        type="button"
+                        onClick={() => clearOne(item.id)}
+                      >
+                        ×
+                      </button>
+                    )}
                   </li>
                 );
               })}

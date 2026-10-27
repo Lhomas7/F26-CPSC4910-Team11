@@ -11,3 +11,11 @@ export function markNotificationsRead(ids) {
     body: ids ? { ids } : {},
   }).then(readJson);
 }
+
+export function clearNotification(id) {
+  return request(`/notifications/${id}/`, { method: 'DELETE' }).then(readJson);
+}
+
+export function clearAllNotifications() {
+  return request('/notifications/clear/', { method: 'POST' }).then(readJson);
+}

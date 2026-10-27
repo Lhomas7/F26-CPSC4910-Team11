@@ -21,6 +21,11 @@ from .common import enroll_totp
 class NotificationCenterTests(APITestCase):
     list_url = reverse('accounts:notifications')
     read_url = reverse('accounts:notifications-read')
+    clear_url = reverse('accounts:notifications-clear')
+
+    @staticmethod
+    def detail_url(notification):
+        return reverse('accounts:notification-detail', kwargs={'notification_id': notification.pk})
 
     @classmethod
     def setUpTestData(cls):
@@ -120,7 +125,7 @@ class NotificationCenterTests(APITestCase):
             status.HTTP_403_FORBIDDEN,
         )
 
-    def test_view_as_can_read_but_not_clear_unread_alerts(self):
+    def test_view_as_can_read_but_not_change_alerts(self):
         alert = self.notify(self.driver_user, 'Unread')
         client = APIClient()
         client.force_login(self.admin)
@@ -131,10 +136,46 @@ class NotificationCenterTests(APITestCase):
         session.save()
 
         self.assertEqual(client.get(self.list_url).data['unread_count'], 1)
-        client.post(self.read_url, {}, format='json')
+        for response in (
+            client.post(self.read_url, {}, format='json'),
+            client.post(self.clear_url, {}, format='json'),
+            client.delete(self.detail_url(alert)),
+        ):
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         alert.refresh_from_db()
         self.assertFalse(alert.read)
+
+    def test_clear_one_of_your_own_alerts(self):
+        mine = self.notify(self.driver_user, 'Mine')
+        keep = self.notify(self.driver_user, 'Keep')
+        self.client.force_authenticate(self.driver_user)
+
+        response = self.client.delete(self.detail_url(mine))
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(list(Notification.objects.filter(user=self.driver_user)), [keep])
+
+    def test_cannot_clear_another_users_alert(self):
+        theirs = self.notify(self.other_user, 'Theirs')
+        self.client.force_authenticate(self.driver_user)
+
+        response = self.client.delete(self.detail_url(theirs))
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertTrue(Notification.objects.filter(pk=theirs.pk).exists())
+
+    def test_clear_all_only_clears_your_own_alerts(self):
+        self.notify(self.driver_user, 'One')
+        self.notify(self.driver_user, 'Two')
+        theirs = self.notify(self.other_user, 'Theirs')
+        self.client.force_authenticate(self.driver_user)
+
+        response = self.client.post(self.clear_url, {}, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {'results': [], 'unread_count': 0})
+        self.assertEqual(list(Notification.objects.all()), [theirs])
 
     def test_verification_codes_never_reach_the_notification_center(self):
         send_email_code(self.driver_user, '123456')

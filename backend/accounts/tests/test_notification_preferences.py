@@ -54,6 +54,7 @@ class NotificationPreferencesViewTests(APITestCase):
                 'email_enabled': True,
                 'sms_enabled': False,
                 'sms_available': True,
+                'always_on': ['sponsor_dropped', 'security'],
             },
         )
 

@@ -5,6 +5,7 @@ from django.db import transaction
 from rest_framework import serializers
 
 from drivers.models import Driver
+from drivers.services import reassign_driver_sponsor
 
 from ..input_cleaning import (
     HumanTextField,
@@ -282,6 +283,13 @@ class AdminDriverDetailSerializer(ViewAsEligibilityMixin, serializers.ModelSeria
         for field, value in validated_data.items():
             setattr(instance, field, value)
         instance.save()
+        if 'sponsor' in driver_data:
+            # Leaving a sponsor is audited and always announced to the driver.
+            instance.driver_profile = reassign_driver_sponsor(
+                driver=instance.driver_profile,
+                new_sponsor=driver_data.pop('sponsor'),
+                changed_by_user=self.context['request'].user,
+            )
         for field, value in driver_data.items():
             setattr(instance.driver_profile, field, value)
         if driver_data:

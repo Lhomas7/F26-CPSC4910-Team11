@@ -1,3 +1,5 @@
+from django.shortcuts import get_object_or_404
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -60,11 +62,29 @@ class NotificationReadView(APIView):
     def post(self, request):
         serializer = MarkNotificationsReadSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        # An administrator viewing as this user must not clear their unread alerts.
-        if not getattr(request, 'impersonation_active', False):
-            unread = Notification.objects.filter(user=request.user, read=False)
-            ids = serializer.validated_data.get('ids')
-            if ids is not None:
-                unread = unread.filter(pk__in=ids)
-            unread.update(read=True)
+        unread = Notification.objects.filter(user=request.user, read=False)
+        ids = serializer.validated_data.get('ids')
+        if ids is not None:
+            unread = unread.filter(pk__in=ids)
+        unread.update(read=True)
         return Response(notification_center(request.user))
+
+
+class NotificationClearAllView(APIView):
+    """Delete every alert in the signed-in user's notification center."""
+
+    permission_classes = [IsAuthenticated, DriverOrSponsor, MFAEnrolled]
+
+    def post(self, request):
+        Notification.objects.filter(user=request.user).delete()
+        return Response(notification_center(request.user))
+
+
+class NotificationDetailView(APIView):
+    """Delete one of the signed-in user's alerts."""
+
+    permission_classes = [IsAuthenticated, DriverOrSponsor, MFAEnrolled]
+
+    def delete(self, request, notification_id):
+        get_object_or_404(Notification, pk=notification_id, user=request.user).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

@@ -115,3 +115,45 @@ def notify_point_change(driver, point_change, reason, balance, sponsor_name):
             send_sms(driver.phone_number, message)
         except Exception:
             logger.exception('Could not text point change notification.')
+
+
+def notify_driver_dropped(driver, sponsor_name, reason, *, rejected):
+    """Tell a driver a sponsor dropped them or declined their application.
+
+    This is a required affiliation notice: it is always recorded in-app and
+    always emailed, whatever the driver's alert settings. A text is added only
+    when the driver has turned texts on. A failure on one channel is logged and
+    never stops the others.
+    """
+    if rejected:
+        subject = f'{sponsor_name} declined your Good Driver application'
+        message = (
+            f'{sponsor_name} declined your application to its Good Driver program. '
+            f'Reason: {reason}. You can be linked to another sponsor.'
+        )
+    else:
+        subject = f'You were removed from the {sponsor_name} Good Driver program'
+        message = (
+            f'{sponsor_name} removed you from its Good Driver program. '
+            f'Reason: {reason}. Your point history is kept, and you can be linked to '
+            'another sponsor.'
+        )
+    _record(driver.user, Notification.SPONSOR_DROPPED, message)
+
+    if driver.user.email:
+        try:
+            EmailMessage(
+                subject=subject,
+                body=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[driver.user.email],
+            ).send()
+        except Exception:
+            logger.exception('Could not email sponsor removal notification.')
+
+    preferences = DriverNotificationPreferences.for_driver(driver)
+    if preferences.sms_enabled and driver.phone_number:
+        try:
+            send_sms(driver.phone_number, message)
+        except Exception:
+            logger.exception('Could not text sponsor removal notification.')

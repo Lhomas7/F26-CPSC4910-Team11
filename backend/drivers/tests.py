@@ -781,6 +781,149 @@ class DriverRemovalTests(RoleScopedDriverTestData):
         self.assertEqual(self.pending.sponsor, self.company)
 
 
+
+@patch('accounts.services.notify.send_sms')
+class DriverRemovalNotificationTests(RoleScopedDriverTestData):
+    """Being dropped or rejected is a required notice the driver cannot turn off."""
+
+    def setUp(self):
+        for driver in (self.approved, self.pending):
+            driver.user.email = f'{driver.user.username}@example.com'
+            driver.user.save(update_fields=['email'])
+
+    def remove(self, driver, reason):
+        self.client.force_authenticate(self.sponsor_user)
+        with self.captureOnCommitCallbacks(execute=True):
+            return self.client.post(
+                reverse('driver-remove', kwargs={'pk': driver.pk}),
+                {'reason': reason},
+                format='json',
+            )
+
+    def test_drop_is_announced_in_app_and_by_email(self, send_sms):
+        self.remove(self.approved, 'Left the company')
+
+        notification = Notification.objects.get(user=self.approved.user)
+        self.assertEqual(notification.category, Notification.SPONSOR_DROPPED)
+        self.assertIn('Scope Freight removed you', notification.message)
+        self.assertIn('Reason: Left the company.', notification.message)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ['scope.approved@example.com'])
+        send_sms.assert_not_called()
+
+    def test_drop_is_emailed_even_with_every_optional_alert_turned_off(self, send_sms):
+        DriverNotificationPreferences.objects.create(
+            driver=self.approved,
+            points_added_enabled=False,
+            points_removed_enabled=False,
+            email_enabled=False,
+        )
+
+        self.remove(self.approved, 'Left the company')
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertTrue(Notification.objects.filter(user=self.approved.user).exists())
+
+    def test_drop_is_also_texted_when_texts_are_on(self, send_sms):
+        self.approved.phone_number = '+18645550100'
+        self.approved.save(update_fields=['phone_number'])
+        DriverNotificationPreferences.objects.create(driver=self.approved, sms_enabled=True)
+
+        self.remove(self.approved, 'Left the company')
+
+        send_sms.assert_called_once()
+        self.assertEqual(send_sms.call_args.args[0], '+18645550100')
+
+    def test_rejected_application_is_announced(self, send_sms):
+        self.remove(self.pending, 'Missing CDL details')
+
+        notification = Notification.objects.get(user=self.pending.user)
+        self.assertIn('declined your application', notification.message)
+        self.assertIn('declined', mail.outbox[0].subject)
+
+    def test_failed_removal_sends_nothing(self, send_sms):
+        self.remove(self.approved, '   ')
+
+        self.assertFalse(Notification.objects.exists())
+        self.assertEqual(mail.outbox, [])
+
+    def test_email_failure_still_records_the_in_app_notice(self, send_sms):
+        with patch('accounts.services.notify.EmailMessage.send', side_effect=OSError):
+            self.remove(self.approved, 'Left the company')
+
+        self.assertTrue(Notification.objects.filter(user=self.approved.user).exists())
+
+
+@patch('accounts.services.notify.send_sms')
+class AdminSponsorReassignmentTests(RoleScopedDriverTestData):
+    """Admins can move a driver, but a driver only ever has one sponsor."""
+
+    def patch_sponsor(self, driver, company):
+        self.client.force_authenticate(self.admin_user)
+        with self.captureOnCommitCallbacks(execute=True):
+            return self.client.patch(
+                reverse('accounts:admin-driver-detail', kwargs={'user_id': driver.user.pk}),
+                {'sponsor_org_id': company.pk if company else None},
+                format='json',
+            )
+
+    def test_moving_a_driver_audits_and_announces_leaving_the_old_sponsor(self, send_sms):
+        response = self.patch_sponsor(self.approved, self.other_company)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['sponsor_org']['name'], 'Elsewhere Freight')
+        self.approved.refresh_from_db()
+        self.assertEqual(self.approved.sponsor, self.other_company)
+        self.assertEqual(self.approved.status, 'pending')
+        record = DriverStatusChange.objects.get(driver=self.approved)
+        self.assertEqual(record.action, DriverStatusChange.DROPPED)
+        self.assertEqual(record.sponsor, self.company)
+        self.assertEqual(record.changed_by_user, self.admin_user)
+        notification = Notification.objects.get(user=self.approved.user)
+        self.assertEqual(notification.category, Notification.SPONSOR_DROPPED)
+        self.assertIn('administrator', notification.message)
+
+    def test_unassigning_a_driver_announces_it(self, send_sms):
+        self.patch_sponsor(self.pending, None)
+
+        self.pending.refresh_from_db()
+        self.assertIsNone(self.pending.sponsor)
+        self.assertEqual(
+            DriverStatusChange.objects.get(driver=self.pending).action,
+            DriverStatusChange.REJECTED,
+        )
+        self.assertTrue(Notification.objects.filter(user=self.pending.user).exists())
+
+    def test_saving_the_same_sponsor_changes_nothing(self, send_sms):
+        self.patch_sponsor(self.approved, self.company)
+
+        self.approved.refresh_from_db()
+        self.assertEqual(self.approved.status, 'approved')
+        self.assertFalse(DriverStatusChange.objects.exists())
+        self.assertFalse(Notification.objects.exists())
+
+    def test_assigning_an_unaffiliated_driver_is_not_a_drop(self, send_sms):
+        self.patch_sponsor(self.approved, None)
+        Notification.objects.all().delete()
+
+        self.patch_sponsor(self.approved, self.company)
+
+        self.approved.refresh_from_db()
+        self.assertEqual(self.approved.sponsor, self.company)
+        self.assertEqual(self.approved.status, 'pending')
+        self.assertFalse(Notification.objects.exists())
+
+    def test_a_linked_driver_cannot_be_linked_by_a_second_sponsor(self, send_sms):
+        self.client.force_authenticate(self.other_sponsor_user)
+
+        response = self.client.post(
+            reverse('driver-link'), {'username': self.approved.user.username}, format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.approved.refresh_from_db()
+        self.assertEqual(self.approved.sponsor, self.company)
+
 class SponsorOnlyActionTests(RoleScopedDriverTestData):
     """Every sponsor action refuses every caller that is not a sponsor account."""
 

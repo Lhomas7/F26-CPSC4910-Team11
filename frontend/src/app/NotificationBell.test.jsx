@@ -108,3 +108,43 @@ test('messages are rendered as text, not HTML', async () => {
   expect(screen.getByText('<img src=x onerror=alert(1)>')).toBeInTheDocument();
   expect(screen.queryByRole('img')).not.toBeInTheDocument();
 });
+
+test('the × clears a single alert', async () => {
+  api.listNotifications.mockResolvedValue({ ...ALERTS, unread_count: 0 });
+  api.clearNotification.mockResolvedValue(null);
+  render(<NotificationBell />);
+  await waitFor(() => expect(api.listNotifications).toHaveBeenCalled());
+
+  fireEvent.click(screen.getByRole('button', { name: 'Notifications' }));
+  const panel = screen.getByRole('region', { name: 'Recent alerts' });
+  fireEvent.click(within(panel).getAllByRole('button', { name: 'Clear notification' })[0]);
+
+  await waitFor(() =>
+    expect(within(panel).queryByText('Acme added 5 points.')).not.toBeInTheDocument(),
+  );
+  expect(api.clearNotification).toHaveBeenCalledWith(2);
+  expect(within(panel).getByText('Your password was reset.')).toBeInTheDocument();
+});
+
+test('Clear all empties the panel', async () => {
+  api.listNotifications.mockResolvedValue({ ...ALERTS, unread_count: 0 });
+  api.clearAllNotifications.mockResolvedValue({ results: [], unread_count: 0 });
+  render(<NotificationBell />);
+  await waitFor(() => expect(api.listNotifications).toHaveBeenCalled());
+
+  fireEvent.click(screen.getByRole('button', { name: 'Notifications' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Clear all' }));
+
+  expect(await screen.findByText('No alerts yet.')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Clear all' })).toBeDisabled();
+});
+
+test('view-as sessions cannot clear alerts', async () => {
+  api.listNotifications.mockResolvedValue(ALERTS);
+  render(<NotificationBell viewingAs />);
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Notifications, 1 unread' }));
+
+  expect(screen.queryByRole('button', { name: 'Clear all' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Clear notification' })).not.toBeInTheDocument();
+});

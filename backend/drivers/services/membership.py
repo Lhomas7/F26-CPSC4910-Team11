@@ -1,5 +1,6 @@
 from django.db import transaction
 
+from accounts.services.notify import notify_driver_dropped
 from drivers.models import Driver, DriverStatusChange
 
 from .reasons import normalize_reason
@@ -121,9 +122,47 @@ def remove_driver_from_sponsor(*, driver, changed_by_user, reason):
         error=lambda code, message: DriverMembershipError('reason', message, code=code),
     )
 
+    return _end_membership(locked_driver, action, changed_by_user, reason)
+
+
+ADMIN_REASSIGNMENT_REASON = 'An administrator changed your sponsor organization.'
+
+
+@transaction.atomic
+def reassign_driver_sponsor(*, driver, new_sponsor, changed_by_user):
+    """Move a driver to another sponsor, or none, as an administrator.
+
+    Leaving the current sponsor is audited and announced exactly like a sponsor
+    removing the driver, so a driver is never silently moved. The new sponsor
+    gets a pending application to approve. Assigning the current sponsor again
+    changes nothing.
+    """
+    locked_driver = Driver.objects.select_for_update().get(pk=driver.pk)
+    new_sponsor_id = new_sponsor.pk if new_sponsor is not None else None
+    if locked_driver.sponsor_id == new_sponsor_id:
+        return locked_driver
+
+    if locked_driver.sponsor_id is not None:
+        action = (
+            DriverStatusChange.DROPPED
+            if locked_driver.status == 'approved'
+            else DriverStatusChange.REJECTED
+        )
+        _end_membership(locked_driver, action, changed_by_user, ADMIN_REASSIGNMENT_REASON)
+
+    if new_sponsor_id is not None:
+        locked_driver.sponsor_id = new_sponsor_id
+        locked_driver.status = 'pending'
+        locked_driver.save(update_fields=['sponsor', 'status'])
+    return locked_driver
+
+
+def _end_membership(locked_driver, action, changed_by_user, reason):
+    """Audit, unlink, and tell the driver. The alert cannot be turned off."""
+    sponsor = locked_driver.sponsor
     record = DriverStatusChange.objects.create(
         driver=locked_driver,
-        sponsor_id=sponsor_account.company_id,
+        sponsor=sponsor,
         changed_by_user=changed_by_user,
         action=action,
         reason=reason,
@@ -131,4 +170,12 @@ def remove_driver_from_sponsor(*, driver, changed_by_user, reason):
     locked_driver.sponsor = None
     locked_driver.status = 'pending'
     locked_driver.save(update_fields=['sponsor', 'status'])
+    transaction.on_commit(
+        lambda: notify_driver_dropped(
+            locked_driver,
+            sponsor.name,
+            reason,
+            rejected=action == DriverStatusChange.REJECTED,
+        )
+    )
     return record
