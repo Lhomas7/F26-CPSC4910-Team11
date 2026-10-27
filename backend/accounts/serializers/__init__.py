@@ -1,3 +1,7 @@
+from .admin_password_reset import (
+    AdminPasswordResetConfirmSerializer,
+    AdminPasswordResetRequestSerializer,
+)
 from .admin_users import (
     AdminAccountDetailSerializer,
     AdminDriverDetailSerializer,
@@ -6,10 +10,6 @@ from .admin_users import (
     AdminUserListSerializer,
     RegistrationSettingsSerializer,
     SponsorCompanySerializer,
-)
-from .admin_password_reset import (
-    AdminPasswordResetConfirmSerializer,
-    AdminPasswordResetRequestSerializer,
 )
 from .authentication import DeviceCheckSerializer, LoginSerializer
 from .login_attempts import LoginAttemptSerializer
@@ -25,7 +25,11 @@ from .mfa import (
     SponsorMFASerializer,
     validate_code_for_method,
 )
-from .notifications import NotificationPreferencesSerializer
+from .notifications import (
+    MarkNotificationsReadSerializer,
+    NotificationPreferencesSerializer,
+    NotificationSerializer,
+)
 from .profiles import (
     ChangePasswordSerializer,
     PasswordResetRequestSerializer,
@@ -58,7 +62,9 @@ __all__ = [
     'MFAResetSerializer',
     'MFASetupSerializer',
     'MFAVerifySerializer',
+    'MarkNotificationsReadSerializer',
     'NotificationPreferencesSerializer',
+    'NotificationSerializer',
     'PasswordResetRequestSerializer',
     'RegistrationSerializer',
     'RegistrationSettingsSerializer',

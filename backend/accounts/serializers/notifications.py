@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from ..models import DriverNotificationPreferences
+from ..models import DriverNotificationPreferences, Notification
 
 
 class NotificationPreferencesSerializer(serializers.ModelSerializer):
@@ -26,3 +26,17 @@ class NotificationPreferencesSerializer(serializers.ModelSerializer):
                 'Add a phone number to your profile before turning on text alerts.'
             )
         return value
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ('id', 'category', 'message', 'read', 'created_at')
+        read_only_fields = fields
+
+
+class MarkNotificationsReadSerializer(serializers.Serializer):
+    # Omitted means "mark everything read", which is what opening the bell does.
+    ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1), required=False, max_length=200
+    )

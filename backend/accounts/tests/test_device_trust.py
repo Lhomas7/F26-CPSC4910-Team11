@@ -14,7 +14,7 @@ from rest_framework.test import APITestCase
 
 from drivers.models import Driver
 
-from ..models import DriverNotification, MFASettings, TrustedDevice
+from ..models import MFASettings, Notification, TrustedDevice
 from ..services.mfa import create_mfa_code
 from .common import MailAssertMixin
 
@@ -153,7 +153,7 @@ class DeviceCheckTests(MailAssertMixin, APITestCase):
         self.assertTrue(self.client.session.get_expire_at_browser_close())
         self.assertEqual(self.client.session['device_mode'], 'shared')
         self.assertEqual(mail.outbox[0].to, ['driver@example.com'])
-        self.assertTrue(DriverNotification.objects.filter(driver=self.driver).exists())
+        self.assertTrue(Notification.objects.filter(user=self.driver.user).exists())
 
     def test_shared_browser_is_asked_again_next_time(self):
         self.login()

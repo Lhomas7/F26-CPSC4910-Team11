@@ -23,6 +23,7 @@ import { DeviceCheckDialog } from '../features/authentication';
 import './AppLayout.css';
 import ActiveViewAsIndicator from './ActiveViewAsIndicator';
 import { navItemsFor } from './navigation';
+import NotificationBell from './NotificationBell';
 import { PageHeaderTargetProvider } from './PageHeader';
 
 const NAV_ICONS = {
@@ -204,6 +205,8 @@ export function AppLayout() {
     user.mfa &&
     user.mfa.required &&
     !user.mfa.enrolled;
+  const showBell =
+    !mfaWallNeeded && (user?.account_type === 'driver' || user?.account_type === 'sponsor');
 
   // A timed-out session goes straight to sign-in, even from public pages.
   useEffect(() => {
@@ -260,10 +263,15 @@ export function AppLayout() {
         Skip to content
       </a>
       <aside className="site-sidebar">
-        <Link className="brand" to="/" aria-label="Good Driver home">
-          <BrandMark />
-          <span className="brand-name">Good Driver</span>
-        </Link>
+        <div className="brand-bar">
+          <Link className="brand" to="/" aria-label="Good Driver home">
+            <BrandMark />
+            <span className="brand-name">Good Driver</span>
+          </Link>
+          {showBell && (
+            <NotificationBell key={user.username} viewingAs={Boolean(user.impersonation?.active)} />
+          )}
+        </div>
         <nav className="site-nav" aria-label="Primary navigation">
           {navItemsFor(user).map((item) => {
             const Icon = NAV_ICONS[item.icon];

@@ -198,14 +198,40 @@ class RegistrationEmailCode(models.Model):
         ]
 
 
-class DriverNotification(models.Model):
-    driver = models.ForeignKey(
-        'drivers.Driver', on_delete=models.CASCADE, related_name='notifications'
+class Notification(models.Model):
+    """An in-app alert shown in the user's notification center.
+
+    One-time verification and sign-in codes are never stored here: they are
+    delivered by email or text only, so they cannot be read back later.
+    """
+
+    POINTS_ADDED = 'points_added'
+    POINTS_REMOVED = 'points_removed'
+    SPONSOR_DROPPED = 'sponsor_dropped'
+    SECURITY = 'security'
+    DRIVER_POINTS = 'driver_points'
+    CATEGORY_CHOICES = [
+        (POINTS_ADDED, 'Points added'),
+        (POINTS_REMOVED, 'Points removed'),
+        (SPONSOR_DROPPED, 'Dropped from sponsor'),
+        (SECURITY, 'Account security'),
+        (DRIVER_POINTS, "A driver's points changed"),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications'
     )
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
     # Room for a 500-character point reason plus the surrounding alert text.
     message = models.CharField(max_length=1000)
     read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at', '-id']
+        indexes = [
+            models.Index(fields=['user', 'read', 'created_at'], name='notification_user_read_idx'),
+        ]
 
 
 class DriverNotificationPreferences(models.Model):

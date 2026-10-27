@@ -10,8 +10,8 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from accounts.models import (
-    DriverNotification,
     DriverNotificationPreferences,
+    Notification,
     SponsorAccount,
     SponsorCompany,
 )
@@ -267,7 +267,7 @@ class PointChangeNotificationTests(TestCase):
     def test_award_notifies_in_app_and_by_email_by_default(self, send_sms):
         self.adjust(150, 'Excellent quarterly performance')
 
-        notification = DriverNotification.objects.get(driver=self.driver)
+        notification = Notification.objects.get(user=self.driver.user)
         self.assertIn('added 150 points', notification.message)
         self.assertIn('Reason: Excellent quarterly performance.', notification.message)
         self.assertIn('Your balance is now 150 points.', notification.message)
@@ -292,11 +292,11 @@ class PointChangeNotificationTests(TestCase):
         self.set_preferences(points_added_enabled=False)
 
         self.adjust(100)
-        self.assertFalse(DriverNotification.objects.exists())
+        self.assertFalse(Notification.objects.exists())
         self.assertEqual(len(mail.outbox), 0)
 
         self.adjust(-10)
-        self.assertEqual(DriverNotification.objects.count(), 1)
+        self.assertEqual(Notification.objects.count(), 1)
         self.assertEqual(len(mail.outbox), 1)
 
     def test_disabled_removed_alerts_still_send_added_alerts(self, send_sms):
@@ -306,7 +306,7 @@ class PointChangeNotificationTests(TestCase):
         self.assertEqual(len(mail.outbox), 1)
 
         self.adjust(-10)
-        self.assertEqual(DriverNotification.objects.count(), 1)
+        self.assertEqual(Notification.objects.count(), 1)
         self.assertEqual(len(mail.outbox), 0)
 
     def test_text_only_delivery(self, send_sms):
@@ -343,7 +343,7 @@ class PointChangeNotificationTests(TestCase):
         with self.assertRaises(PointAdjustmentError):
             self.adjust(-5)
 
-        self.assertFalse(DriverNotification.objects.exists())
+        self.assertFalse(Notification.objects.exists())
         self.assertEqual(len(mail.outbox), 0)
         send_sms.assert_not_called()
 

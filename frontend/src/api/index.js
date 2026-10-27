@@ -5,3 +5,4 @@ export * from './accounts';
 export * from './drivers';
 export * from './adminUsers';
 export * from './catalog';
+export * from './notifications';

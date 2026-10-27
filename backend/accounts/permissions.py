@@ -66,3 +66,15 @@ class DriverAccount(BasePermission):
     def has_permission(self, request, view):
         user = request.user
         return bool(user and user.is_authenticated and get_account_type(user) == 'driver')
+
+
+class DriverOrSponsor(BasePermission):
+    """Limits an endpoint to driver and sponsor accounts."""
+
+    message = 'Only driver and sponsor accounts can do this.'
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        return get_account_type(user) in ('driver', 'sponsor')

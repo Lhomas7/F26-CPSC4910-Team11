@@ -19,9 +19,9 @@ from drivers.models import Driver
 
 from ..models import (
     AdminImpersonationEvent,
-    DriverNotification,
     LoginAttempt,
     MFASettings,
+    Notification,
     SponsorAccount,
     SponsorCompany,
 )
@@ -498,7 +498,7 @@ class PasswordResetTests(APITestCase):
         self.assertTrue(self.user.check_password(self.new_password))
         # Only the first, successful use notified the owner.
         self.assertEqual(len(mail.outbox), 0)
-        self.assertEqual(DriverNotification.objects.filter(driver=self.driver).count(), 1)
+        self.assertEqual(Notification.objects.filter(user=self.driver.user).count(), 1)
 
     def test_older_unused_link_stops_working_once_a_newer_one_is_used(self):
         old_uid, old_token = self.issue_link()
@@ -602,7 +602,7 @@ class PasswordResetTests(APITestCase):
         self.assertEqual(mail.outbox[0].to, ['driver@example.com'])
         self.assertIn('was reset', mail.outbox[0].subject)
         self.assertNotIn(self.new_password, mail.outbox[0].body)
-        self.assertEqual(DriverNotification.objects.filter(driver=self.driver).count(), 1)
+        self.assertEqual(Notification.objects.filter(user=self.driver.user).count(), 1)
 
     def test_failed_confirm_sends_no_notification(self):
         uid, token = self.issue_link()
@@ -610,7 +610,7 @@ class PasswordResetTests(APITestCase):
         self.confirm(uid, token, password='short')
 
         self.assertEqual(len(mail.outbox), 0)
-        self.assertEqual(DriverNotification.objects.count(), 0)
+        self.assertEqual(Notification.objects.count(), 0)
 
     def test_existing_sessions_stop_working_after_reset(self):
         self.client.force_login(self.user)

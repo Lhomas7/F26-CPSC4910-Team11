@@ -3,18 +3,23 @@ import logging
 from django.conf import settings
 from django.core.mail import EmailMessage
 
-from accounts.models import DriverNotification, DriverNotificationPreferences
+from accounts.models import DriverNotificationPreferences, Notification
 
 from .sms import send_sms
 
 logger = logging.getLogger(__name__)
 
 
+def _record(user, category, message):
+    """Add an alert to the user's in-app notification center."""
+    Notification.objects.create(user=user, category=category, message=message)
+
+
 def notify_driver_mfa_change(
     driver, message, subject='Good Driver multi-factor authentication update'
 ):
     """Record an in-app notification for a driver and email them if we have an address."""
-    DriverNotification.objects.create(driver=driver, message=message)
+    _record(driver.user, Notification.SECURITY, message)
     if driver.user.email:
         EmailMessage(
             subject=subject,
@@ -28,15 +33,14 @@ def notify_password_reset(user):
     """Tell the account owner their password was just reset.
 
     This is the security signal for account takeover: the person who owns the
-    account gets an email even though the reset itself required no login. Drivers
-    also get an in-app notification.
+    account gets an email even though the reset itself required no login, plus
+    an in-app notification.
     """
     message = (
         'The password for your Good Driver account was just reset. '
         'If this was not you, contact your sponsor or an administrator right away.'
     )
-    if hasattr(user, 'driver_profile'):
-        DriverNotification.objects.create(driver=user.driver_profile, message=message)
+    _record(user, Notification.SECURITY, message)
     if user.email:
         EmailMessage(
             subject='Your Good Driver password was reset',
@@ -49,7 +53,7 @@ def notify_password_reset(user):
 def notify_unrecognized_sign_in(user):
     """Tell the account owner someone signed in on a device marked as not theirs.
 
-    No device details are included: none are collected. Drivers also get an
+    No device details are included: none are collected. The owner also gets an
     in-app notification.
     """
     message = (
@@ -58,8 +62,7 @@ def notify_unrecognized_sign_in(user):
         'was not you, change your password and contact your sponsor or an '
         'administrator right away.'
     )
-    if hasattr(user, 'driver_profile'):
-        DriverNotification.objects.create(driver=user.driver_profile, message=message)
+    _record(user, Notification.SECURITY, message)
     if user.email:
         EmailMessage(
             subject='New sign-in to your Good Driver account',
@@ -92,7 +95,9 @@ def notify_point_change(driver, point_change, reason, balance, sponsor_name):
         f'Good Driver account. Reason: {reason}. '
         f'Your balance is now {_points_phrase(balance)}.'
     )
-    DriverNotification.objects.create(driver=driver, message=message)
+    _record(
+        driver.user, Notification.POINTS_ADDED if added else Notification.POINTS_REMOVED, message
+    )
 
     if preferences.email_enabled and driver.user.email:
         try:
