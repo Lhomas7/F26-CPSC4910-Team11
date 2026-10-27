@@ -5,17 +5,19 @@ import PasswordInput from '../../../components/forms/PasswordInput';
 import PasswordRequirements from '../../../components/forms/PasswordRequirements';
 import { validatePassword } from '../../../utils/accountValidation';
 
-function PasswordField({ id, label, ...inputProps }) {
+function PasswordField({ id, label, autoComplete = 'new-password', ...inputProps }) {
   return (
     <>
       <label htmlFor={id}>{label}</label>
-      <PasswordInput id={id} label={label} autoComplete="new-password" {...inputProps} />
+      <PasswordInput id={id} label={label} autoComplete={autoComplete} {...inputProps} />
     </>
   );
 }
 
 export default function PasswordPanel() {
   const [expanded, setExpanded] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [currentVisible, setCurrentVisible] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -26,6 +28,8 @@ export default function PasswordPanel() {
 
   const closePanel = () => {
     setExpanded(false);
+    setCurrentPassword('');
+    setCurrentVisible(false);
     setPassword('');
     setConfirmation('');
     setPasswordVisible(false);
@@ -46,6 +50,10 @@ export default function PasswordPanel() {
     event.preventDefault();
     setError('');
     setSuccess('');
+    if (!currentPassword) {
+      setError('Enter your current password.');
+      return;
+    }
     const problem = validatePassword(password);
     if (problem) {
       setError(problem);
@@ -58,14 +66,20 @@ export default function PasswordPanel() {
 
     setBusy(true);
     try {
-      await api.changePassword(password, confirmation);
+      await api.changePassword(currentPassword, password, confirmation);
+      setCurrentPassword('');
+      setCurrentVisible(false);
       setPassword('');
       setConfirmation('');
       setPasswordVisible(false);
       setConfirmationVisible(false);
       setSuccess('Password changed successfully.');
     } catch (requestError) {
-      setError(requestError.message || 'Password could not be changed.');
+      setError(
+        requestError.data?.current_password?.[0] ||
+          requestError.message ||
+          'Password could not be changed.',
+      );
     } finally {
       setBusy(false);
     }
@@ -91,6 +105,16 @@ export default function PasswordPanel() {
       </div>
       {expanded && (
         <form id="password-panel-content" className="password-form" onSubmit={changePassword}>
+          <PasswordField
+            id="current-password"
+            label="Current password"
+            autoComplete="current-password"
+            value={currentPassword}
+            onChange={(event) => setCurrentPassword(event.target.value)}
+            visible={currentVisible}
+            onToggleVisible={() => setCurrentVisible((current) => !current)}
+            disabled={busy}
+          />
           <PasswordField
             id="new-password"
             label="New password"

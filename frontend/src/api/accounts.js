@@ -1,9 +1,9 @@
 import { readJson, request } from './client';
 
-export function changePassword(password, passwordConfirm) {
+export function changePassword(currentPassword, password, passwordConfirm) {
   return request('/change-password/', {
     method: 'POST',
-    body: { password, password_confirm: passwordConfirm },
+    body: { current_password: currentPassword, password, password_confirm: passwordConfirm },
   }).then(readJson);
 }
 

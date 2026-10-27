@@ -71,10 +71,17 @@ test('edits, unassigns, and deactivates a driver account', async () => {
   fireEvent.change(screen.getByLabelText(/^Sponsor organization/), { target: { value: '' } });
   fireEvent.change(screen.getByLabelText(/^Account status/), { target: { value: 'false' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+  // Deactivating asks for the admin's own password first.
+  const dialog = screen.getByRole('dialog', { name: 'Deactivate this account?' });
+  fireEvent.change(within(dialog).getByLabelText('Your current password'), {
+    target: { value: 'AdminPassword123!' },
+  });
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Deactivate account' }));
   await waitFor(() =>
     expect(api.updateAdminDriver).toHaveBeenCalledWith(
       '5',
       expect.objectContaining({
+        current_password: 'AdminPassword123!',
         display_name: 'Tasha Green',
         sponsor_org_id: null,
         is_active: false,

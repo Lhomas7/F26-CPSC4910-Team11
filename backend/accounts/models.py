@@ -260,6 +260,23 @@ class DriverNotificationPreferences(models.Model):
 
 
 
+
+class PasswordHistory(models.Model):
+    """Hashes of a user's recent passwords, newest first, so they cannot be reused.
+
+    Rows are written by accounts.signals.remember_password whenever a user is
+    saved with a new password hash. Only hashes are stored.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='password_history'
+    )
+    password_hash = models.CharField(max_length=128)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at', '-id']
+
 class SponsorDriverAlert(models.Model):
     """A sponsor's choice to be alerted when one driver's points change.
 

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 import { useAuth } from '../../../auth/AuthContext';
@@ -97,4 +97,59 @@ test('shows duplicate username returned by the API', async () => {
   completeIdentityFields();
   fireEvent.click(screen.getByRole('button', { name: 'Create driver account' }));
   expect(await screen.findByText('That username is already taken.')).toBeInTheDocument();
+});
+
+test('creating an administrator asks for your password first', async () => {
+  api.createAdminUser.mockResolvedValue({
+    id: 5,
+    display_name: 'Jamie Rivera',
+    username: 'jamie.rivera',
+    role: 'admin',
+    sponsor_org: null,
+    is_active: true,
+  });
+  renderPage();
+  await screen.findByRole('button', { name: 'Create driver account' });
+  fireEvent.click(screen.getByRole('radio', { name: /^Admin/i }));
+  completeIdentityFields();
+  fireEvent.click(screen.getByRole('button', { name: 'Create admin account' }));
+
+  const dialog = screen.getByRole('dialog', { name: 'Create an administrator?' });
+  expect(api.createAdminUser).not.toHaveBeenCalled();
+  fireEvent.change(within(dialog).getByLabelText('Your current password'), {
+    target: { value: 'AdminPassword123!' },
+  });
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Create admin account' }));
+
+  await waitFor(() =>
+    expect(api.createAdminUser).toHaveBeenCalledWith(
+      expect.objectContaining({ role: 'admin', current_password: 'AdminPassword123!' }),
+    ),
+  );
+  await waitFor(() =>
+    expect(
+      screen.queryByRole('dialog', { name: 'Create an administrator?' }),
+    ).not.toBeInTheDocument(),
+  );
+});
+
+test('a wrong password keeps the administrator dialog open', async () => {
+  const error = Object.assign(new Error('Bad request'), {
+    status: 400,
+    data: { current_password: ['Incorrect password.'] },
+  });
+  api.createAdminUser.mockRejectedValue(error);
+  renderPage();
+  await screen.findByRole('button', { name: 'Create driver account' });
+  fireEvent.click(screen.getByRole('radio', { name: /^Admin/i }));
+  completeIdentityFields();
+  fireEvent.click(screen.getByRole('button', { name: 'Create admin account' }));
+
+  const dialog = screen.getByRole('dialog', { name: 'Create an administrator?' });
+  fireEvent.change(within(dialog).getByLabelText('Your current password'), {
+    target: { value: 'WrongPassword123!' },
+  });
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Create admin account' }));
+
+  expect(await within(dialog).findByRole('alert')).toHaveTextContent('Incorrect password.');
 });

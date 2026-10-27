@@ -211,6 +211,7 @@ class AdminUserCreationTests(APITestCase):
             email='new.admin@example.com',
             role='admin',
             sponsor_org_id=None,
+            current_password='ExamplePassword123!',
         )
 
         response = self.client.post(self.user_url, data, format='json')
@@ -307,6 +308,7 @@ class AdminAccountDetailTests(APITestCase):
                 'username': 'updated.admin',
                 'email': 'updated@example.com',
                 'is_active': False,
+                'current_password': 'ExamplePassword123!',
             },
             format='json',
         )
@@ -464,6 +466,7 @@ class AdminSponsorDetailTests(APITestCase):
                 'email': 'danielle@example.com',
                 'sponsor_org_id': self.other_company.id,
                 'is_active': False,
+                'current_password': 'ExamplePassword123!',
             },
             format='json',
         )
@@ -564,6 +567,7 @@ class AdminDriverDetailTests(APITestCase):
                 'email': 'tasha.green@example.com',
                 'sponsor_org_id': None,
                 'is_active': False,
+                'current_password': 'ExamplePassword123!',
             },
             format='json',
         )

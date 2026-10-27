@@ -6,6 +6,7 @@ import * as api from '../../../api';
 import PageHeader from '../../../app/PageHeader';
 import useApiRequest from '../../../hooks/useApiRequest';
 import Avatar from '../../../components/primitives/Avatar';
+import ConfirmPasswordDialog from '../../../components/feedback/ConfirmPasswordDialog';
 import StatePanel from '../../../components/feedback/StatePanel';
 import ViewAsConfirmationDialog from '../components/ViewAsConfirmationDialog';
 import '../AdminUsers.css';
@@ -29,6 +30,7 @@ export default function DriverAccountPage() {
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [errors, setErrors] = useState({});
+  const [confirmingDeactivation, setConfirmingDeactivation] = useState(false);
   const [notice, setNotice] = useState('');
   const [viewingAs, setViewingAs] = useState(false);
   const [confirmingViewAs, setConfirmingViewAs] = useState(false);
@@ -82,8 +84,9 @@ export default function DriverAccountPage() {
     setEditing(false);
   };
 
-  const save = async (event) => {
-    event.preventDefault();
+  // Deactivating locks the owner out, so the server asks for the admin's password.
+  const save = async (event, currentPassword) => {
+    event?.preventDefault();
     const clientErrors = {};
     if (!form.display_name.trim()) clientErrors.display_name = 'Name is required.';
     if (!/^[A-Za-z0-9._-]{3,30}$/.test(form.username))
@@ -93,11 +96,16 @@ export default function DriverAccountPage() {
       setErrors(clientErrors);
       return;
     }
+    if (account.is_active && !form.is_active && currentPassword === undefined) {
+      setConfirmingDeactivation(true);
+      return;
+    }
     setSaving(true);
     setErrors({});
     try {
       const saved = await api.updateAdminDriver(userId, {
         ...form,
+        ...(currentPassword ? { current_password: currentPassword } : {}),
         display_name: form.display_name.trim(),
         username: form.username.trim(),
         email: form.email.trim(),
@@ -107,7 +115,12 @@ export default function DriverAccountPage() {
       setForm(formFrom(saved));
       setEditing(false);
       setNotice('Driver account saved.');
+      setConfirmingDeactivation(false);
     } catch (error) {
+      // A wrong password is shown in the password dialog, which stays open.
+      if (currentPassword !== undefined && (error.data?.current_password || error.status === 429))
+        throw error;
+      setConfirmingDeactivation(false);
       setErrors(error.data || { detail: error.message });
     } finally {
       setSaving(false);
@@ -349,6 +362,15 @@ export default function DriverAccountPage() {
           )}
         </section>
       </main>
+      {confirmingDeactivation && (
+        <ConfirmPasswordDialog
+          title="Deactivate this account?"
+          message={`${account.display_name} won't be able to sign in until the account is made active again. Enter your password to confirm.`}
+          confirmLabel="Deactivate account"
+          onConfirm={(password) => save(null, password)}
+          onCancel={() => setConfirmingDeactivation(false)}
+        />
+      )}
       {confirmingViewAs && (
         <ViewAsConfirmationDialog
           account={{

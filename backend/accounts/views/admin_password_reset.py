@@ -30,6 +30,7 @@ from ..services.login_audit import record_login_attempt
 from ..services.login_throttle import locked_out_response, lockout_seconds_remaining
 from ..services.notify import notify_password_reset
 from ..services.password_reset import user_from_uid
+from ..services.reauth import current_password_error
 from .authentication import PASSWORD_RESET_INVALID_LINK_MESSAGE, AnonymousAPIView
 
 logger = logging.getLogger(__name__)
@@ -54,15 +55,9 @@ class AdminPasswordResetRequestView(APIView):
 
         # Wrong passwords here count toward the same lockout as sign-in, so this
         # prompt cannot be used to guess an administrator's password.
-        locked_for = lockout_seconds_remaining(requester.get_username())
-        if locked_for:
-            return locked_out_response(locked_for)
-        if not requester.check_password(serializer.validated_data['current_password']):
-            record_login_attempt(requester.get_username(), successful=False, user=requester)
-            return Response(
-                {'current_password': ['Incorrect password.']},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        error = current_password_error(requester, serializer.validated_data['current_password'])
+        if error:
+            return error
 
         target = get_object_or_404(
             get_user_model().objects.filter(is_staff=True).exclude(pk=requester.pk),

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 import { useAuth } from '../../../auth/AuthContext';
@@ -56,11 +56,18 @@ test('edits and saves another administrator account', async () => {
   fireEvent.change(screen.getByLabelText('First name'), { target: { value: 'Danielle' } });
   fireEvent.change(screen.getByLabelText(/^Account status/), { target: { value: 'false' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+  // Deactivating asks for the admin's own password first.
+  const dialog = screen.getByRole('dialog', { name: 'Deactivate this account?' });
+  fireEvent.change(within(dialog).getByLabelText('Your current password'), {
+    target: { value: 'AdminPassword123!' },
+  });
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Deactivate account' }));
 
   await waitFor(() =>
     expect(api.updateAdminAccount).toHaveBeenCalledWith(
       '8',
       expect.objectContaining({
+        current_password: 'AdminPassword123!',
         first_name: 'Danielle',
         is_active: false,
       }),
