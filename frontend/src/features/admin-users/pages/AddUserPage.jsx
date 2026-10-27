@@ -5,6 +5,7 @@ import { useAuth } from '../../../auth/AuthContext';
 import * as api from '../../../api';
 import PageHeader from '../../../app/PageHeader';
 import useApiRequest from '../../../hooks/useApiRequest';
+import ConfirmPasswordDialog from '../../../components/feedback/ConfirmPasswordDialog';
 import Skeleton from '../../../components/feedback/Skeleton';
 import StatePanel from '../../../components/feedback/StatePanel';
 import PasswordInput from '../../../components/forms/PasswordInput';
@@ -36,6 +37,7 @@ export default function AddUserPage() {
   const [errors, setErrors] = useState({});
   const [created, setCreated] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [confirmingAdmin, setConfirmingAdmin] = useState(false);
 
   const {
     data,
@@ -85,9 +87,15 @@ export default function AddUserPage() {
     return Object.keys(next).length === 0;
   };
 
-  const submit = async (event) => {
-    event.preventDefault();
+  // A new administrator controls the whole site, so the server asks for the
+  // signed-in admin's password first.
+  const submit = async (event, currentPassword) => {
+    event?.preventDefault();
     if (!validate()) return;
+    if (form.role === 'admin' && currentPassword === undefined) {
+      setConfirmingAdmin(true);
+      return;
+    }
     setPhase('saving');
     setErrors({});
     const payload = {
@@ -100,11 +108,19 @@ export default function AddUserPage() {
         form.role === 'admin' || !form.sponsor_org_id ? null : Number(form.sponsor_org_id),
       password: form.password,
       password_confirm: form.confirm_password,
+      ...(currentPassword ? { current_password: currentPassword } : {}),
     };
     try {
       setCreated(await api.createAdminUser(payload));
+      setConfirmingAdmin(false);
       setPhase('created');
     } catch (error) {
+      if (currentPassword !== undefined && (error.data?.current_password || error.status === 429)) {
+        // Shown in the password dialog, which stays open for another try.
+        setPhase(null);
+        throw error;
+      }
+      setConfirmingAdmin(false);
       if (error.status === 403) {
         setPhase('forbidden');
       } else {
@@ -383,6 +399,15 @@ export default function AddUserPage() {
           </form>
         )}
       </main>
+      {confirmingAdmin && (
+        <ConfirmPasswordDialog
+          title="Create an administrator?"
+          message="Administrators can manage every account and organization. Enter your password to confirm."
+          confirmLabel="Create admin account"
+          onConfirm={(password) => submit(null, password)}
+          onCancel={() => setConfirmingAdmin(false)}
+        />
+      )}
     </div>
   );
 }

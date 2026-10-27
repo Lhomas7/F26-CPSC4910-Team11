@@ -33,6 +33,14 @@ from ..serializers import (
 )
 from ..services import get_account_type, get_public_user
 from ..services.impersonation import view_as_eligibility
+from ..services.reauth import current_password_error
+
+
+def deactivation_password_error(request, account):
+    """Deactivating an active account locks its owner out, so confirm the admin."""
+    if account.is_active and request.data.get('is_active') is False:
+        return current_password_error(request.user, request.data.get('current_password'))
+    return None
 
 
 class AdminImpersonationStartView(APIView):
@@ -152,6 +160,11 @@ class AdminUserListView(APIView):
         return Response(sorted(data, key=lambda user: user['display_name'].casefold()))
 
     def post(self, request):
+        # A new administrator gets full control of the site, so confirm who is asking.
+        if request.data.get('role') == 'admin':
+            error = current_password_error(request.user, request.data.get('current_password'))
+            if error:
+                return error
         serializer = AdminUserCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -205,6 +218,9 @@ class AdminAccountDetailView(APIView):
 
     def patch(self, request, user_id):
         account = self.get_object(request, user_id)
+        error = deactivation_password_error(request, account)
+        if error:
+            return error
         serializer = AdminAccountDetailSerializer(
             account,
             data=request.data,
@@ -232,6 +248,9 @@ class AdminSponsorDetailView(APIView):
 
     def patch(self, request, user_id):
         user = self.get_object(user_id)
+        error = deactivation_password_error(request, user)
+        if error:
+            return error
         serializer = AdminSponsorDetailSerializer(
             user,
             data=request.data,
@@ -263,6 +282,9 @@ class AdminDriverDetailView(APIView):
 
     def patch(self, request, user_id):
         user = self.get_object(user_id)
+        error = deactivation_password_error(request, user)
+        if error:
+            return error
         serializer = self.serializer(user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()

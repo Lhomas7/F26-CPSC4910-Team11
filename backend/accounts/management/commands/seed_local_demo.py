@@ -1,8 +1,8 @@
 """Create disposable demo records without altering existing accounts."""
 
+import os
 from datetime import date
 from getpass import getpass
-import os
 from pathlib import Path
 
 from django.conf import settings
@@ -16,7 +16,6 @@ from django.db.migrations.executor import MigrationExecutor
 from about_page.models import AboutPageRelease
 from accounts.models import SponsorAccount, SponsorCompany
 from drivers.models import Driver, PointTransaction
-
 
 ACCOUNTS = (
     ('demo.admin', 'Demo', 'Administrator', 'admin'),
@@ -57,7 +56,7 @@ class Command(BaseCommand):
             username__in=[row[0] for row in ACCOUNTS]
         )}
         # Never promote or commandeer an account just because its username matches.
-        for username, first, last, role in ACCOUNTS:
+        for username, _first, _last, role in ACCOUNTS:
             user = existing.get(username)
             if user is None:
                 continue
@@ -81,7 +80,7 @@ class Command(BaseCommand):
                 password = getpass('Password for newly created local demo accounts: ')
                 if password != getpass('Confirm local demo password: '):
                     raise CommandError('Passwords do not match. Nothing was seeded.')
-            for username, first, last, role in missing:
+            for username, first, last, _role in missing:
                 try:
                     validate_password(password, User(username=username, first_name=first, last_name=last, email=demo_email(username)))
                 except ValidationError:
@@ -131,6 +130,6 @@ class Command(BaseCommand):
                 )
 
         self.stdout.write(f'Created {len(missing)} local demo accounts; preserved {len(existing)} existing accounts.')
-        for username, first, last, role in ACCOUNTS:
+        for username, _first, _last, role in ACCOUNTS:
             self.stdout.write(f'  {username}: {role}')
         self.stdout.write('Passwords and MFA enrollment were preserved for existing accounts. Enroll Administrator and Sponsor MFA through the UI.')

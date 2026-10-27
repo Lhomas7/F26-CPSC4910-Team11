@@ -6,6 +6,7 @@ import * as api from '../../../api';
 import PageHeader from '../../../app/PageHeader';
 import useApiRequest from '../../../hooks/useApiRequest';
 import Avatar from '../../../components/primitives/Avatar';
+import ConfirmPasswordDialog from '../../../components/feedback/ConfirmPasswordDialog';
 import StatePanel from '../../../components/feedback/StatePanel';
 import PasswordInput from '../../../components/forms/PasswordInput';
 import { validateEmail, validateName, validateUsername } from '../../../utils/accountValidation';
@@ -124,6 +125,7 @@ export default function AdminAccountPage() {
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [errors, setErrors] = useState({});
+  const [confirmingDeactivation, setConfirmingDeactivation] = useState(false);
   const [notice, setNotice] = useState('');
 
   const {
@@ -151,8 +153,9 @@ export default function AdminAccountPage() {
     setEditing(false);
   };
 
-  const save = async (event) => {
-    event.preventDefault();
+  // Deactivating locks the owner out, so the server asks for the admin's password.
+  const save = async (event, currentPassword) => {
+    event?.preventDefault();
     const clientErrors = {
       first_name: validateName(form.first_name, 'first name'),
       last_name: validateName(form.last_name, 'last name'),
@@ -167,11 +170,16 @@ export default function AdminAccountPage() {
       return;
     }
 
+    if (account.is_active && !form.is_active && currentPassword === undefined) {
+      setConfirmingDeactivation(true);
+      return;
+    }
     setSaving(true);
     setErrors({});
     try {
       const saved = await api.updateAdminAccount(userId, {
         ...form,
+        ...(currentPassword ? { current_password: currentPassword } : {}),
         first_name: form.first_name.trim(),
         last_name: form.last_name.trim(),
         username: form.username.trim(),
@@ -181,7 +189,12 @@ export default function AdminAccountPage() {
       setForm(formFrom(saved));
       setEditing(false);
       setNotice('Administrator account saved.');
+      setConfirmingDeactivation(false);
     } catch (error) {
+      // A wrong password is shown in the password dialog, which stays open.
+      if (currentPassword !== undefined && (error.data?.current_password || error.status === 429))
+        throw error;
+      setConfirmingDeactivation(false);
       setErrors(error.data || { detail: error.message });
     } finally {
       setSaving(false);
@@ -392,6 +405,15 @@ export default function AdminAccountPage() {
         </section>
         {!editing && <ResetLinkPanel userId={userId} name={name} />}
       </main>
+      {confirmingDeactivation && (
+        <ConfirmPasswordDialog
+          title="Deactivate this account?"
+          message={`${name} won't be able to sign in until the account is made active again. Enter your password to confirm.`}
+          confirmLabel="Deactivate account"
+          onConfirm={(password) => save(null, password)}
+          onCancel={() => setConfirmingDeactivation(false)}
+        />
+      )}
     </div>
   );
 }

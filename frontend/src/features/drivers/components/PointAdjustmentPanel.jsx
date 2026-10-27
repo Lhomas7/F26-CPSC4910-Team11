@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { adjustDriverPoints } from '../../../api';
+import { announceNotificationsChanged } from '../../../app/notificationEvents';
 
 const MAX_ADJUSTMENT = 1_000_000;
 const MAX_REASON_LENGTH = 500;
@@ -71,6 +72,7 @@ export default function PointAdjustmentPanel({ driverId, driverName, balance, on
       const signedAmount = mode === 'award' ? values.numericAmount : -values.numericAmount;
       const result = await adjustDriverPoints(driverId, signedAmount, values.cleanedReason);
       onAdjusted(result.balance);
+      announceNotificationsChanged();
       setAmount('');
       setReason('');
       setConfirming(false);

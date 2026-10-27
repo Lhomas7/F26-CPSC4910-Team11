@@ -38,3 +38,19 @@ export function removeDriver(driverId, reason) {
     readJson,
   );
 }
+
+/** The signed-in sponsor's point alert choices for one driver. */
+export function getDriverAlerts(driverId) {
+  return request(`/sponsor/drivers/${driverId}/alerts/`).then(readJson);
+}
+
+export function updateDriverAlerts(driverId, data) {
+  return request(`/sponsor/drivers/${driverId}/alerts/`, { method: 'PATCH', body: data }).then(
+    readJson,
+  );
+}
+
+/** A read-only copy of which alerts the driver has turned on. */
+export function getDriverAlertSettings(driverId) {
+  return request(`/sponsor/drivers/${driverId}/notification-preferences/`).then(readJson);
+}

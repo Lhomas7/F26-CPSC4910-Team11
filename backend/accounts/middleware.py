@@ -140,6 +140,8 @@ class AdminImpersonationMiddleware:
         '/api/change-password/',
         '/api/password-reset/',
         '/api/mfa/',
+        # Reading, clearing, and alert settings belong to the account owner.
+        '/api/notifications/',
     )
     stop_path = '/api/admin/impersonation/stop/'
 

@@ -1,3 +1,9 @@
+-- Seed demo accounts directly in MySQL.
+--
+-- Inserting a hash skips Django's password checks (complexity and reuse
+-- history), so generate @dev_password_hash with the validating one-liner in
+-- create_admin_user.sql. Never put the plaintext password or hash in Git.
+
 USE Team11_DB;
 
 SET @dev_password_hash = '<paste-django-password-hash-here>';

@@ -54,6 +54,7 @@ class NotificationPreferencesViewTests(APITestCase):
                 'email_enabled': True,
                 'sms_enabled': False,
                 'sms_available': True,
+                'always_on': ['sponsor_dropped', 'security'],
             },
         )
 
@@ -101,5 +102,37 @@ class NotificationPreferencesViewTests(APITestCase):
     def test_driver_must_enroll_mfa_when_sponsor_requires_it(self):
         SponsorCompany.objects.filter(pk=self.company.pk).update(driver_mfa_required=True)
         self.sign_in_driver()
+
+        self.assertEqual(self.client.get(self.url).status_code, status.HTTP_403_FORBIDDEN)
+
+
+class SponsorNotificationPreferencesViewTests(APITestCase):
+    url = reverse('accounts:sponsor-notification-preferences')
+
+    @classmethod
+    def setUpTestData(cls):
+        User = get_user_model()
+        company = SponsorCompany.objects.create(name='Palmetto Freight')
+        cls.sponsor = User.objects.create_user(
+            username='sponsor.email', password='ExamplePassword123!'
+        )
+        SponsorAccount.objects.create(user=cls.sponsor, company=company)
+        MFASettings.objects.create(user=cls.sponsor, totp_enabled=True)
+        cls.driver_user = User.objects.create_user(
+            username='driver.email', password='ExamplePassword123!'
+        )
+        Driver.objects.create(user=cls.driver_user, name='Driver Email')
+
+    def test_email_is_off_by_default_and_can_be_turned_on(self):
+        self.client.force_authenticate(self.sponsor)
+
+        self.assertEqual(self.client.get(self.url).data, {'email_enabled': False})
+        response = self.client.patch(self.url, {'email_enabled': True}, format='json')
+
+        self.assertEqual(response.data, {'email_enabled': True})
+        self.assertEqual(self.client.get(self.url).data, {'email_enabled': True})
+
+    def test_drivers_cannot_use_sponsor_preferences(self):
+        self.client.force_authenticate(self.driver_user)
 
         self.assertEqual(self.client.get(self.url).status_code, status.HTTP_403_FORBIDDEN)

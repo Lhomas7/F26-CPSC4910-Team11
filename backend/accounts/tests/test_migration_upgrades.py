@@ -72,3 +72,43 @@ class Sprint5MigrationUpgradeTests(TransactionTestCase):
 
     def test_upgrade_from_security_branch_preserves_and_encrypts_phone_data(self):
         self.upgrade_from('0011_encrypt_mfa_phone_number')
+
+
+@skipUnless(connection.vendor == 'sqlite', 'These isolated historical upgrade checks use SQLite.')
+class NotificationCenterMigrationTests(TransactionTestCase):
+    def test_driver_alerts_move_to_the_shared_notification_table(self):
+        original = connections['default']
+        isolated = original.copy(alias='default')
+        isolated.settings_dict['NAME'] = ':memory:'
+        connections['default'] = isolated
+        before = [('accounts', '0014_sponsor_catalog_rate'), ('drivers', '0009_encrypt_driver_phone_number')]
+        after = [('accounts', '0015_notification')]
+        try:
+            executor = MigrationExecutor(connection)
+            executor.migrate(before)
+            apps = executor.loader.project_state(before).apps
+            user = apps.get_model('auth', 'User').objects.create(username='migration.driver')
+            driver = apps.get_model('drivers', 'Driver').objects.create(user_id=user.pk, name='D')
+            DriverNotification = apps.get_model('accounts', 'DriverNotification')
+            DriverNotification.objects.create(
+                driver_id=driver.pk,
+                message='Acme added 5 points to your Good Driver account. Reason: Safe week. '
+                'Your balance is now 5 points.',
+            )
+            DriverNotification.objects.create(
+                driver_id=driver.pk, message='Your Good Driver password was reset.', read=True,
+            )
+
+            executor = MigrationExecutor(connection)
+            executor.migrate(after)
+            Notification = executor.loader.project_state(after).apps.get_model(
+                'accounts', 'Notification'
+            )
+            rows = Notification.objects.filter(user_id=user.pk).order_by('id')
+            self.assertEqual(
+                [(row.category, row.read) for row in rows],
+                [('points_added', False), ('security', True)],
+            )
+        finally:
+            isolated.close()
+            connections['default'] = original

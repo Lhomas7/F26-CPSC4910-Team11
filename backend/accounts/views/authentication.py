@@ -48,6 +48,7 @@ from ..services.password_reset import (
     token_is_valid,
     user_from_uid,
 )
+from ..services.reauth import current_password_error
 from ..services.session_state import session_info, stamp_sign_in
 
 logger = logging.getLogger(__name__)
@@ -351,9 +352,14 @@ class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        serializer = ChangePasswordSerializer(data=request.data, context={'user': request.user})
-        serializer.is_valid(raise_exception=True)
         user = request.user
+        # Checked before the new password, so a hijacked session cannot change
+        # it, or learn which earlier passwords the account used.
+        error = current_password_error(user, request.data.get('current_password'))
+        if error:
+            return error
+        serializer = ChangePasswordSerializer(data=request.data, context={'user': user})
+        serializer.is_valid(raise_exception=True)
         user.set_password(serializer.validated_data['password'])
         user.save()
 

@@ -32,6 +32,49 @@
     "extends": [
       "react-app",
       "react-app/jest"
+    ],
+    "rules": {
+      "react/no-danger": "error",
+      "no-eval": "error",
+      "no-implied-eval": "error",
+      "no-new-func": "error",
+      "no-script-url": "error",
+      "no-restricted-properties": [
+        "error",
+        {
+          "property": "innerHTML",
+          "message": "Render user text with JSX so React escapes it."
+        },
+        {
+          "property": "outerHTML",
+          "message": "Render user text with JSX so React escapes it."
+        },
+        {
+          "property": "insertAdjacentHTML",
+          "message": "Render user text with JSX so React escapes it."
+        },
+        {
+          "object": "document",
+          "property": "write",
+          "message": "document.write parses its argument as HTML."
+        },
+        {
+          "object": "document",
+          "property": "writeln",
+          "message": "document.writeln parses its argument as HTML."
+        }
+      ]
+    },
+    "overrides": [
+      {
+        "files": [
+          "**/*.test.js",
+          "**/*.test.jsx"
+        ],
+        "rules": {
+          "no-script-url": "off"
+        }
+      }
     ]
   },
   "browserslist": {

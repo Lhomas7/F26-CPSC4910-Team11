@@ -1,7 +1,7 @@
 """Explicit, guarded local SQLite archive commands."""
 
-from pathlib import Path
 import sqlite3
+from pathlib import Path
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError

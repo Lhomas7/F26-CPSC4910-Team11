@@ -188,6 +188,11 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
+    {
+        # Covers every way a password is set: the API, the Django admin, and
+        # manage.py. See accounts.password_validation for the history depth.
+        'NAME': 'accounts.password_validation.PasswordHistoryValidator',
+    },
 ]
 
 

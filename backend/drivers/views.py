@@ -8,7 +8,9 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from accounts.models import DriverNotificationPreferences, SponsorDriverAlert
 from accounts.permissions import MFAEnrolled, SponsorAccount
+from accounts.serializers import DriverAlertSettingsSerializer
 from accounts.services import get_account_type
 
 from .models import Driver, PointTransaction
@@ -19,6 +21,7 @@ from .serializers import (
     PointAdjustmentRequestSerializer,
     PointHistorySerializer,
     PointTransactionSerializer,
+    SponsorDriverAlertSerializer,
 )
 from .services import (
     DriverMembershipError,
@@ -45,9 +48,11 @@ class DriverViewSet(viewsets.ReadOnlyModelViewSet):
     # Actions that change a driver's membership or points; only the sponsor
     # side of the relationship may call them.
     sponsor_actions = frozenset({'points', 'approve', 'remove', 'link'})
+    # A sponsor's own alerts about a driver, and a view of the driver's settings.
+    sponsor_alert_actions = frozenset({'alerts', 'alert_settings'})
 
     def get_permissions(self):
-        if self.action in self.sponsor_actions:
+        if self.action in self.sponsor_actions | self.sponsor_alert_actions:
             return [IsAuthenticated(), SponsorAccount(), MFAEnrolled()]
         return super().get_permissions()
 
@@ -102,6 +107,33 @@ class DriverViewSet(viewsets.ReadOnlyModelViewSet):
             },
             status=status.HTTP_201_CREATED,
         )
+
+    @action(detail=True, methods=['get', 'patch'])
+    def alerts(self, request, pk=None):
+        """The signed-in sponsor's point alert choices for this driver."""
+        driver = self.get_object()
+        sponsor_account = request.user.sponsor_account
+        if request.method == 'GET':
+            alert = SponsorDriverAlert.objects.filter(
+                sponsor_account=sponsor_account, driver=driver
+            ).first()
+            return Response(SponsorDriverAlertSerializer(alert or SponsorDriverAlert()).data)
+
+        if getattr(request, 'impersonation_active', False):
+            raise PermissionDenied('Stop viewing as this user before changing their alerts.')
+        alert, _ = SponsorDriverAlert.objects.get_or_create(
+            sponsor_account=sponsor_account, driver=driver
+        )
+        serializer = SponsorDriverAlertSerializer(alert, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['get'], url_path='notification-preferences')
+    def alert_settings(self, request, pk=None):
+        """Which alerts this driver has turned on, read-only for their sponsor."""
+        preferences = DriverNotificationPreferences.for_driver(self.get_object())
+        return Response(DriverAlertSettingsSerializer(preferences).data)
 
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):

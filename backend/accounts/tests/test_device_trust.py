@@ -14,7 +14,7 @@ from rest_framework.test import APITestCase
 
 from drivers.models import Driver
 
-from ..models import DriverNotification, MFASettings, TrustedDevice
+from ..models import MFASettings, Notification, SponsorAccount, SponsorCompany, TrustedDevice
 from ..services.mfa import create_mfa_code
 from .common import MailAssertMixin
 
@@ -153,7 +153,7 @@ class DeviceCheckTests(MailAssertMixin, APITestCase):
         self.assertTrue(self.client.session.get_expire_at_browser_close())
         self.assertEqual(self.client.session['device_mode'], 'shared')
         self.assertEqual(mail.outbox[0].to, ['driver@example.com'])
-        self.assertTrue(DriverNotification.objects.filter(driver=self.driver).exists())
+        self.assertTrue(Notification.objects.filter(user=self.driver.user).exists())
 
     def test_shared_browser_is_asked_again_next_time(self):
         self.login()
@@ -207,6 +207,40 @@ class DeviceCheckTests(MailAssertMixin, APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['session']['device_check'], 'new_device')
+
+    def test_sponsors_are_asked_too_and_no_ends_the_session_at_browser_close(self):
+        sponsor = get_user_model().objects.create_user(
+            username='sponsor.one', password=PASSWORD, email='sponsor@example.com'
+        )
+        company = SponsorCompany.objects.create(name='Device Freight')
+        SponsorAccount.objects.create(user=sponsor, company=company)
+
+        response = self.login('sponsor.one')
+
+        self.assertEqual(response.data['session']['device_check'], 'new_device')
+        self.assertEqual(self.answer(False).status_code, status.HTTP_200_OK)
+        self.assertTrue(self.client.session.get_expire_at_browser_close())
+
+    def test_sponsor_registration_asks_about_the_device(self):
+        response = self.client.post(
+            reverse('accounts:sponsor-register'),
+            {
+                'first_name': 'Sam',
+                'last_name': 'Sponsor',
+                'email': 'sam@example.com',
+                'username': 'sam.sponsor',
+                'password': PASSWORD,
+                'password_confirm': PASSWORD,
+                'accepted_terms': True,
+                'company_name': 'Device Freight',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['session']['device_check'], 'new_device')
+        self.assertEqual(self.answer(False).status_code, status.HTTP_200_OK)
+        self.assertTrue(self.client.session.get_expire_at_browser_close())
 
     def test_password_reset_forgets_trusted_browsers(self):
         self.trust_this_browser()

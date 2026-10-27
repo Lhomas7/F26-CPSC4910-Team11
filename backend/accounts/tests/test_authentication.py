@@ -19,9 +19,9 @@ from drivers.models import Driver
 
 from ..models import (
     AdminImpersonationEvent,
-    DriverNotification,
     LoginAttempt,
     MFASettings,
+    Notification,
     SponsorAccount,
     SponsorCompany,
 )
@@ -45,25 +45,22 @@ class ChangePasswordTests(APITestCase):
         )
         self.client.force_authenticate(self.user)
 
+    def change(self, password, password_confirm=None, current_password='ExamplePassword123!'):
+        data = {'password': password, 'password_confirm': password_confirm or password}
+        if current_password is not None:
+            data['current_password'] = current_password
+        return self.client.post(self.url, data, format='json')
+
     def test_requires_matching_confirmation(self):
-        response = self.client.post(
-            self.url,
-            {
-                'password': 'ValidSecurePassword22!',
-                'password_confirm': 'DifferentSecurePassword33!',
-            },
-            format='json',
+        response = self.change(
+            password='ValidSecurePassword22!', password_confirm='DifferentSecurePassword33!'
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('password_confirm', response.data)
 
     def test_reports_every_unmet_requirement_and_no_met_ones(self):
-        response = self.client.post(
-            self.url,
-            {'password': 'abcdefghijklmn', 'password_confirm': 'abcdefghijklmn'},
-            format='json',
-        )
+        response = self.change(password='abcdefghijklmn')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(
@@ -77,28 +74,39 @@ class ChangePasswordTests(APITestCase):
 
     def test_changes_password_after_server_side_validation(self):
         password = 'ValidSecurePassword22!'
-        response = self.client.post(
-            self.url,
-            {'password': password, 'password_confirm': password},
-            format='json',
-        )
+        response = self.change(password=password)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password(password))
 
     def test_rejects_reusing_the_current_password(self):
-        response = self.client.post(
-            self.url,
-            {
-                'password': 'ExamplePassword123!',
-                'password_confirm': 'ExamplePassword123!',
-            },
-            format='json',
-        )
+        response = self.change(password='ExamplePassword123!')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('password', response.data)
+
+    def test_requires_the_current_password(self):
+        for current_password in (None, '', 'WrongPassword123!'):
+            with self.subTest(current_password=current_password):
+                response = self.change(
+                    password='ValidSecurePassword22!', current_password=current_password
+                )
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn('current_password', response.data)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('ExamplePassword123!'))
+
+    def test_wrong_current_password_counts_toward_lockout(self):
+        self.change(password='ValidSecurePassword22!', current_password='WrongPassword123!')
+
+        self.assertTrue(LoginAttempt.objects.filter(user=self.user, successful=False).exists())
+
+    def test_current_password_is_checked_before_the_new_one(self):
+        # A wrong current password must not reveal anything about past passwords.
+        response = self.change(password='ExamplePassword123!', current_password='Wrong123!!aa')
+
+        self.assertEqual(list(response.data), ['current_password'])
 
 
 class LoginAttemptLoggingTests(APITestCase):
@@ -498,7 +506,7 @@ class PasswordResetTests(APITestCase):
         self.assertTrue(self.user.check_password(self.new_password))
         # Only the first, successful use notified the owner.
         self.assertEqual(len(mail.outbox), 0)
-        self.assertEqual(DriverNotification.objects.filter(driver=self.driver).count(), 1)
+        self.assertEqual(Notification.objects.filter(user=self.driver.user).count(), 1)
 
     def test_older_unused_link_stops_working_once_a_newer_one_is_used(self):
         old_uid, old_token = self.issue_link()
@@ -602,7 +610,7 @@ class PasswordResetTests(APITestCase):
         self.assertEqual(mail.outbox[0].to, ['driver@example.com'])
         self.assertIn('was reset', mail.outbox[0].subject)
         self.assertNotIn(self.new_password, mail.outbox[0].body)
-        self.assertEqual(DriverNotification.objects.filter(driver=self.driver).count(), 1)
+        self.assertEqual(Notification.objects.filter(user=self.driver.user).count(), 1)
 
     def test_failed_confirm_sends_no_notification(self):
         uid, token = self.issue_link()
@@ -610,7 +618,7 @@ class PasswordResetTests(APITestCase):
         self.confirm(uid, token, password='short')
 
         self.assertEqual(len(mail.outbox), 0)
-        self.assertEqual(DriverNotification.objects.count(), 0)
+        self.assertEqual(Notification.objects.count(), 0)
 
     def test_existing_sessions_stop_working_after_reset(self):
         self.client.force_login(self.user)

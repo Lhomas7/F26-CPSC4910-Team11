@@ -6,6 +6,7 @@ import { useAuth } from '../auth/AuthContext';
 import { AppLayout } from './AppLayout';
 
 jest.mock('../auth/AuthContext');
+jest.mock('./NotificationBell', () => () => <div data-testid="notification-bell" />);
 
 const USER = { username: 'jordan.lee', name: 'Jordan Lee', account_type: 'driver' };
 
@@ -152,4 +153,14 @@ test('an expired session is sent to the sign-in page', () => {
   );
 
   expect(screen.getByText('Sign in page')).toBeInTheDocument();
+});
+
+test.each([
+  ['driver', true],
+  ['sponsor', true],
+  ['admin', false],
+])('%s accounts see the notification bell: %s', (accountType, expected) => {
+  renderLayout({ user: { ...USER, account_type: accountType } });
+
+  expect(Boolean(screen.queryByTestId('notification-bell'))).toBe(expected);
 });

@@ -198,14 +198,40 @@ class RegistrationEmailCode(models.Model):
         ]
 
 
-class DriverNotification(models.Model):
-    driver = models.ForeignKey(
-        'drivers.Driver', on_delete=models.CASCADE, related_name='notifications'
+class Notification(models.Model):
+    """An in-app alert shown in the user's notification center.
+
+    One-time verification and sign-in codes are never stored here: they are
+    delivered by email or text only, so they cannot be read back later.
+    """
+
+    POINTS_ADDED = 'points_added'
+    POINTS_REMOVED = 'points_removed'
+    SPONSOR_DROPPED = 'sponsor_dropped'
+    SECURITY = 'security'
+    DRIVER_POINTS = 'driver_points'
+    CATEGORY_CHOICES = [
+        (POINTS_ADDED, 'Points added'),
+        (POINTS_REMOVED, 'Points removed'),
+        (SPONSOR_DROPPED, 'Dropped from sponsor'),
+        (SECURITY, 'Account security'),
+        (DRIVER_POINTS, "A driver's points changed"),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications'
     )
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
     # Room for a 500-character point reason plus the surrounding alert text.
     message = models.CharField(max_length=1000)
     read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at', '-id']
+        indexes = [
+            models.Index(fields=['user', 'read', 'created_at'], name='notification_user_read_idx'),
+        ]
 
 
 class DriverNotificationPreferences(models.Model):
@@ -232,6 +258,67 @@ class DriverNotificationPreferences(models.Model):
         preferences, _ = cls.objects.get_or_create(driver=driver)
         return preferences
 
+
+
+
+class PasswordHistory(models.Model):
+    """Hashes of a user's recent passwords, newest first, so they cannot be reused.
+
+    Rows are written by accounts.signals.remember_password whenever a user is
+    saved with a new password hash. Only hashes are stored.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='password_history'
+    )
+    password_hash = models.CharField(max_length=128)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at', '-id']
+
+class SponsorDriverAlert(models.Model):
+    """A sponsor's choice to be alerted when one driver's points change.
+
+    Only sponsors in the driver's current organization are alerted, so a row
+    left behind after a driver or sponsor changes organization never leaks.
+    """
+
+    sponsor_account = models.ForeignKey(
+        SponsorAccount, on_delete=models.CASCADE, related_name='driver_alerts'
+    )
+    driver = models.ForeignKey(
+        'drivers.Driver', on_delete=models.CASCADE, related_name='sponsor_alerts'
+    )
+    on_points_added = models.BooleanField(default=False)
+    on_points_removed = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['sponsor_account', 'driver'], name='sponsor_driver_alert_unique'
+            ),
+        ]
+
+
+class SponsorNotificationPreferences(models.Model):
+    """How a sponsor's driver alerts reach them beyond the notification center.
+
+    Use SponsorNotificationPreferences.for_sponsor() rather than querying so
+    sponsors without a row get the defaults.
+    """
+
+    sponsor_account = models.OneToOneField(
+        SponsorAccount, on_delete=models.CASCADE, related_name='notification_preferences'
+    )
+    email_enabled = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @classmethod
+    def for_sponsor(cls, sponsor_account):
+        preferences, _ = cls.objects.get_or_create(sponsor_account=sponsor_account)
+        return preferences
 
 class AdminImpersonationEvent(models.Model):
     """Append-only audit record for an administrator's view-as session."""

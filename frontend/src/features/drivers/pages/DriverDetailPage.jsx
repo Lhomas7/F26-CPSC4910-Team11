@@ -8,6 +8,7 @@ import StatePanel from '../../../components/feedback/StatePanel';
 import Avatar from '../../../components/primitives/Avatar';
 import useApiRequest from '../../../hooks/useApiRequest';
 import { PointHistoryList } from '../../points';
+import DriverAlertsPanel from '../components/DriverAlertsPanel';
 import PointAdjustmentPanel from '../components/PointAdjustmentPanel';
 import RemoveDriverDialog from '../components/RemoveDriverDialog';
 import '../Drivers.css';
@@ -246,6 +247,8 @@ function DriverWorkspace({
           onAdjusted={onAdjust}
         />
       )}
+
+      {approved && <DriverAlertsPanel driverId={driver.id} driverName={driver.name} />}
 
       <section className="card driver-history" aria-labelledby="driver-history-heading">
         <header>

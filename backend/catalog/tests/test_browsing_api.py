@@ -5,9 +5,11 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.test import APIClient, APITestCase
 
 from accounts.middleware import (
-    IMPERSONATION_ROLE_KEY, IMPERSONATION_STARTED_KEY, IMPERSONATION_TARGET_KEY,
+    IMPERSONATION_ROLE_KEY,
+    IMPERSONATION_STARTED_KEY,
+    IMPERSONATION_TARGET_KEY,
 )
-from accounts.models import DriverNotification, MFASettings, SponsorAccount, SponsorCompany
+from accounts.models import MFASettings, Notification, SponsorAccount, SponsorCompany
 from catalog.models import CatalogProduct
 from catalog.services import browse_catalog
 from drivers.models import Driver, PointTransaction
@@ -185,9 +187,9 @@ class CatalogBrowseApiTests(APITestCase):
         self.assertEqual(len(response.data['results']), 100)
 
     def test_browsing_has_no_point_or_notification_side_effects(self):
-        before = (PointTransaction.objects.count(), DriverNotification.objects.count())
+        before = (PointTransaction.objects.count(), Notification.objects.count())
         self.client.get(self.url)
-        self.assertEqual((PointTransaction.objects.count(), DriverNotification.objects.count()), before)
+        self.assertEqual((PointTransaction.objects.count(), Notification.objects.count()), before)
 
     def test_browse_endpoint_does_not_accept_mutations(self):
         self.assertEqual(self.client.post(self.url, {}, format='json').status_code, 405)

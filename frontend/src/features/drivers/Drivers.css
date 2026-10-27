@@ -1114,3 +1114,87 @@
     width: 100%;
   }
 }
+
+.driver-alerts {
+  overflow: hidden;
+}
+
+.driver-alerts > header {
+  border-bottom: 1px solid var(--line-soft);
+  padding: 0.9rem 1.15rem;
+}
+
+.driver-alerts h2,
+.driver-alerts header p {
+  margin: 0;
+}
+
+.driver-alerts h2 {
+  font-size: 0.95rem;
+}
+
+.driver-alerts header p {
+  color: var(--ink-2);
+  font-size: 0.78rem;
+  margin-top: 0.2rem;
+}
+
+.driver-alerts-body {
+  display: grid;
+  gap: 0.6rem;
+  padding: 1.05rem 1.15rem;
+}
+
+.driver-alert-toggle {
+  align-items: center;
+  color: var(--ink);
+  display: flex;
+  font-weight: 600;
+  gap: 0.6rem;
+}
+
+.driver-alert-toggle input {
+  accent-color: var(--accent);
+  height: 1.05rem;
+  width: 1.05rem;
+}
+
+.driver-alert-toggle:has(input:disabled) {
+  color: var(--ink-2);
+}
+
+.driver-alerts-hint,
+.driver-alerts-message {
+  color: var(--ink-2);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.driver-alerts-message {
+  color: var(--accent);
+}
+
+.driver-alerts-message.error {
+  color: var(--danger-ink);
+}
+
+.driver-alert-settings {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.driver-alert-settings > div {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.driver-alert-settings dt {
+  font-size: 0.85rem;
+}
+
+.driver-alert-settings dd {
+  margin: 0;
+}

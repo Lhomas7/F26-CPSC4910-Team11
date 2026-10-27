@@ -16,9 +16,9 @@ from rest_framework.test import APITestCase
 from drivers.models import Driver
 
 from ..models import (
-    DriverNotification,
     MFACode,
     MFASettings,
+    Notification,
     SponsorAccount,
     SponsorCompany,
 )
@@ -1187,8 +1187,8 @@ class SponsorMFATests(MailAssertMixin, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, {'driver_mfa_required': True})
 
-        self.assertTrue(DriverNotification.objects.filter(driver=self.driver).exists())
-        self.assertFalse(DriverNotification.objects.filter(driver=self.other_driver).exists())
+        self.assertTrue(Notification.objects.filter(user=self.driver.user).exists())
+        self.assertFalse(Notification.objects.filter(user=self.other_driver.user).exists())
 
     def test_toggle_off_also_notifies_drivers(self):
         self.sponsor.driver_mfa_required = True
@@ -1197,8 +1197,8 @@ class SponsorMFATests(MailAssertMixin, APITestCase):
         with self.assertSendsMail(1):
             response = self.client.post(self.url, {'driver_mfa_required': False}, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue(DriverNotification.objects.filter(driver=self.driver).exists())
-        self.assertFalse(DriverNotification.objects.filter(driver=self.other_driver).exists())
+        self.assertTrue(Notification.objects.filter(user=self.driver.user).exists())
+        self.assertFalse(Notification.objects.filter(user=self.other_driver.user).exists())
 
     def test_get_returns_current_setting_for_sponsor(self):
         self.sponsor.driver_mfa_required = True
@@ -1240,7 +1240,7 @@ class SponsorMFATests(MailAssertMixin, APITestCase):
 
         self.sponsor.refresh_from_db()
         self.assertFalse(self.sponsor.driver_mfa_required)
-        self.assertFalse(DriverNotification.objects.exists())
+        self.assertFalse(Notification.objects.exists())
 
 
 class MFANotificationTests(MailAssertMixin, APITestCase):
@@ -1280,7 +1280,7 @@ class MFANotificationTests(MailAssertMixin, APITestCase):
         with self.assertSendsMail(1):
             self.enable_email()
 
-        self.assertTrue(DriverNotification.objects.filter(driver=self.driver).exists())
+        self.assertTrue(Notification.objects.filter(user=self.driver.user).exists())
         self.assertEqual(mail.outbox[0].to, ['driver@example.com'])
 
     def test_driver_disabling_method_creates_notification_and_email(self):
@@ -1288,7 +1288,7 @@ class MFANotificationTests(MailAssertMixin, APITestCase):
 
         with self.assertSendsMail(1):
             self.enable_email()
-        self.assertEqual(DriverNotification.objects.count(), 1)
+        self.assertEqual(Notification.objects.count(), 1)
 
         with self.assertSendsMail(1):
             response = self.client.post(
@@ -1297,7 +1297,7 @@ class MFANotificationTests(MailAssertMixin, APITestCase):
                 format='json',
             )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(DriverNotification.objects.count(), 2)
+        self.assertEqual(Notification.objects.count(), 2)
 
     def test_sponsor_enabling_method_creates_no_driver_notification(self):
         sponsor_user = get_user_model().objects.create_user(
@@ -1324,7 +1324,7 @@ class MFANotificationTests(MailAssertMixin, APITestCase):
                 format='json',
             )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertFalse(DriverNotification.objects.filter(driver=self.driver).exists())
+        self.assertFalse(Notification.objects.filter(user=self.driver.user).exists())
 
 
 class MFARequestCodeThrottleTests(APITestCase):

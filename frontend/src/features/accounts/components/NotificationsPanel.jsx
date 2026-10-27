@@ -88,8 +88,9 @@ export default function NotificationsPanel({ phoneNumber }) {
           )}
         </fieldset>
         <p className="notification-hint">
-          Alerts show the reason for the change and your new balance. Security alerts about your
-          password, sign-ins, and multi-factor authentication are always sent.
+          Point alerts show the reason for the change and your new balance. Alerts about account
+          security and being added to or dropped by a sponsor are always sent and can't be turned
+          off.
         </p>
         {message && (
           <p

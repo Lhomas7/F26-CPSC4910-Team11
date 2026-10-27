@@ -11,6 +11,10 @@ function openPanel() {
   fireEvent.click(screen.getByRole('button', { name: 'Change password' }));
 }
 
+function enterCurrentPassword(value = 'CurrentPassword!11') {
+  fireEvent.change(screen.getByLabelText('Current password'), { target: { value } });
+}
+
 test('is collapsed until the user chooses to change their password', () => {
   render(<PasswordPanel />);
   const toggle = screen.getByRole('button', { name: 'Change password' });
@@ -42,6 +46,7 @@ test('shows and hides each password field independently', () => {
 test('validates the password before calling the API', () => {
   render(<PasswordPanel />);
   openPanel();
+  enterCurrentPassword();
   fireEvent.change(screen.getByLabelText('New password'), { target: { value: 'short' } });
   fireEvent.change(screen.getByLabelText('Confirm new password'), { target: { value: 'short' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save new password' }));
@@ -54,6 +59,7 @@ test('submits a valid password and clears the fields', async () => {
   api.changePassword.mockResolvedValue({});
   render(<PasswordPanel />);
   openPanel();
+  enterCurrentPassword();
   fireEvent.change(screen.getByLabelText('New password'), {
     target: { value: 'ValidPassword!22' },
   });
@@ -63,11 +69,50 @@ test('submits a valid password and clears the fields', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Save new password' }));
 
   await waitFor(() =>
-    expect(api.changePassword).toHaveBeenCalledWith('ValidPassword!22', 'ValidPassword!22'),
+    expect(api.changePassword).toHaveBeenCalledWith(
+      'CurrentPassword!11',
+      'ValidPassword!22',
+      'ValidPassword!22',
+    ),
   );
   expect(await screen.findByRole('status')).toHaveTextContent('Password changed successfully');
+  expect(screen.getByLabelText('Current password')).toHaveValue('');
   expect(screen.getByLabelText('New password')).toHaveValue('');
   expect(screen.getByLabelText('Confirm new password')).toHaveValue('');
+});
+
+test('requires the current password', () => {
+  render(<PasswordPanel />);
+  openPanel();
+  fireEvent.change(screen.getByLabelText('New password'), {
+    target: { value: 'ValidPassword!22' },
+  });
+  fireEvent.change(screen.getByLabelText('Confirm new password'), {
+    target: { value: 'ValidPassword!22' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Save new password' }));
+
+  expect(screen.getByRole('alert')).toHaveTextContent('Enter your current password.');
+  expect(api.changePassword).not.toHaveBeenCalled();
+});
+
+test("shows the server's answer when the current password is wrong", async () => {
+  const error = Object.assign(new Error('Fix the highlighted fields.'), {
+    data: { current_password: ['Incorrect password.'] },
+  });
+  api.changePassword.mockRejectedValue(error);
+  render(<PasswordPanel />);
+  openPanel();
+  enterCurrentPassword('WrongPassword!11');
+  fireEvent.change(screen.getByLabelText('New password'), {
+    target: { value: 'ValidPassword!22' },
+  });
+  fireEvent.change(screen.getByLabelText('Confirm new password'), {
+    target: { value: 'ValidPassword!22' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Save new password' }));
+
+  expect(await screen.findByRole('alert')).toHaveTextContent('Incorrect password.');
 });
 
 test('clears sensitive values when the panel closes', () => {

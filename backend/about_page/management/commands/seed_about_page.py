@@ -1,7 +1,7 @@
-from datetime import date
 import json
-from pathlib import Path
 import re
+from datetime import date
+from pathlib import Path
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -9,7 +9,6 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import connection, transaction
 
 from about_page.models import AboutPageRelease
-
 
 FIELDS = {'team_number', 'version_number', 'release_date', 'product_name', 'product_description'}
 VERSION = re.compile(

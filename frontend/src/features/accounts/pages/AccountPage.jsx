@@ -12,6 +12,7 @@ import LoginActivityPanel from '../components/LoginActivityPanel';
 import MfaPanel from '../components/MfaPanel';
 import NotificationsPanel from '../components/NotificationsPanel';
 import PasswordPanel from '../components/PasswordPanel';
+import SponsorNotificationsPanel from '../components/SponsorNotificationsPanel';
 import '../Accounts.css';
 
 const ACCOUNT_LABELS = { driver: 'Driver', sponsor: 'Sponsor', admin: 'Admin' };
@@ -498,6 +499,7 @@ export default function AccountPage() {
                 {profile.account_type === 'driver' && (
                   <NotificationsPanel phoneNumber={profile.phone_number} />
                 )}
+                {profile.account_type === 'sponsor' && <SponsorNotificationsPanel />}
                 {LOGIN_ACTIVITY_ROLES.includes(profile.account_type) && <LoginActivityPanel />}
               </>
             )}

@@ -49,3 +49,17 @@
   justify-content: flex-end;
   margin-top: 1.1rem;
 }
+
+.confirm-password-form {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.confirm-password-form label {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.confirm-password-form .banner {
+  margin: 0.25rem 0 0;
+}
