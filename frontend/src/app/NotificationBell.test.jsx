@@ -1,11 +1,20 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 import * as api from '../api';
 import NotificationBell from './NotificationBell';
+import { announceNotificationsChanged } from './notificationEvents';
 
 jest.mock('../api');
 
 afterEach(() => jest.clearAllMocks());
+
+/** Open the panel and wait for the refresh that opening triggers. */
+async function openPanel(button) {
+  const calls = api.listNotifications.mock.calls.length;
+  fireEvent.click(button);
+  await waitFor(() => expect(api.listNotifications.mock.calls.length).toBeGreaterThan(calls));
+  await screen.findByRole('region', { name: 'Recent alerts' });
+}
 
 const ALERTS = {
   results: [
@@ -54,7 +63,7 @@ test('opening the panel lists alerts and marks them read', async () => {
   });
   render(<NotificationBell />);
 
-  fireEvent.click(await screen.findByRole('button', { name: 'Notifications, 1 unread' }));
+  await openPanel(await screen.findByRole('button', { name: 'Notifications, 1 unread' }));
 
   const panel = screen.getByRole('region', { name: 'Recent alerts' });
   expect(within(panel).getByText('Acme added 5 points.')).toBeInTheDocument();
@@ -69,7 +78,7 @@ test('view-as sessions never mark alerts read', async () => {
   api.listNotifications.mockResolvedValue(ALERTS);
   render(<NotificationBell viewingAs />);
 
-  fireEvent.click(await screen.findByRole('button', { name: 'Notifications, 1 unread' }));
+  await openPanel(await screen.findByRole('button', { name: 'Notifications, 1 unread' }));
 
   expect(screen.getByRole('region', { name: 'Recent alerts' })).toBeInTheDocument();
   expect(api.markNotificationsRead).not.toHaveBeenCalled();
@@ -80,7 +89,7 @@ test('Escape closes the panel', async () => {
   render(<NotificationBell />);
   await waitFor(() => expect(api.listNotifications).toHaveBeenCalled());
 
-  fireEvent.click(screen.getByRole('button', { name: 'Notifications' }));
+  await openPanel(screen.getByRole('button', { name: 'Notifications' }));
   expect(screen.getByText('No alerts yet.')).toBeInTheDocument();
   fireEvent.keyDown(document, { key: 'Escape' });
 
@@ -103,7 +112,7 @@ test('messages are rendered as text, not HTML', async () => {
   render(<NotificationBell />);
   await waitFor(() => expect(api.listNotifications).toHaveBeenCalled());
 
-  fireEvent.click(screen.getByRole('button', { name: 'Notifications' }));
+  await openPanel(screen.getByRole('button', { name: 'Notifications' }));
 
   expect(screen.getByText('<img src=x onerror=alert(1)>')).toBeInTheDocument();
   expect(screen.queryByRole('img')).not.toBeInTheDocument();
@@ -115,7 +124,7 @@ test('the × clears a single alert', async () => {
   render(<NotificationBell />);
   await waitFor(() => expect(api.listNotifications).toHaveBeenCalled());
 
-  fireEvent.click(screen.getByRole('button', { name: 'Notifications' }));
+  await openPanel(screen.getByRole('button', { name: 'Notifications' }));
   const panel = screen.getByRole('region', { name: 'Recent alerts' });
   fireEvent.click(within(panel).getAllByRole('button', { name: 'Clear notification' })[0]);
 
@@ -132,7 +141,7 @@ test('Clear all empties the panel', async () => {
   render(<NotificationBell />);
   await waitFor(() => expect(api.listNotifications).toHaveBeenCalled());
 
-  fireEvent.click(screen.getByRole('button', { name: 'Notifications' }));
+  await openPanel(screen.getByRole('button', { name: 'Notifications' }));
   fireEvent.click(screen.getByRole('button', { name: 'Clear all' }));
 
   expect(await screen.findByText('No alerts yet.')).toBeInTheDocument();
@@ -143,8 +152,19 @@ test('view-as sessions cannot clear alerts', async () => {
   api.listNotifications.mockResolvedValue(ALERTS);
   render(<NotificationBell viewingAs />);
 
-  fireEvent.click(await screen.findByRole('button', { name: 'Notifications, 1 unread' }));
+  await openPanel(await screen.findByRole('button', { name: 'Notifications, 1 unread' }));
 
   expect(screen.queryByRole('button', { name: 'Clear all' })).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Clear notification' })).not.toBeInTheDocument();
+});
+
+test('refreshes right away when an action announces new alerts', async () => {
+  api.listNotifications.mockResolvedValue({ results: [], unread_count: 0 });
+  render(<NotificationBell />);
+  await waitFor(() => expect(api.listNotifications).toHaveBeenCalledTimes(1));
+
+  api.listNotifications.mockResolvedValue(ALERTS);
+  await act(async () => announceNotificationsChanged());
+
+  expect(await screen.findByTestId('notification-dot')).toBeInTheDocument();
 });

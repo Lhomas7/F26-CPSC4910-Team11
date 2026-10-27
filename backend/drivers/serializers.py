@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from accounts.models import SponsorDriverAlert
+
 from .models import Driver, DriverStatusChange, PointTransaction
 from .services import MAX_POINT_REASON_LENGTH
 from .services.reasons import MAX_REASON_LENGTH
@@ -100,3 +102,11 @@ class DriverStatusChangeSerializer(serializers.ModelSerializer):
         model = DriverStatusChange
         fields = ('id', 'driver', 'action', 'reason', 'changed_at')
         read_only_fields = fields
+
+
+class SponsorDriverAlertSerializer(serializers.ModelSerializer):
+    """The signed-in sponsor's point alert choices for one driver."""
+
+    class Meta:
+        model = SponsorDriverAlert
+        fields = ('on_points_added', 'on_points_removed')

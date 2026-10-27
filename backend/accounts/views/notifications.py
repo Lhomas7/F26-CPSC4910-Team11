@@ -4,12 +4,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..models import DriverNotificationPreferences, Notification
-from ..permissions import DriverAccount, DriverOrSponsor, MFAEnrolled
+from ..models import DriverNotificationPreferences, Notification, SponsorNotificationPreferences
+from ..permissions import DriverAccount, DriverOrSponsor, MFAEnrolled, SponsorAccount
 from ..serializers import (
     MarkNotificationsReadSerializer,
     NotificationPreferencesSerializer,
     NotificationSerializer,
+    SponsorNotificationPreferencesSerializer,
 )
 
 NOTIFICATION_CENTER_LIMIT = 50
@@ -27,6 +28,25 @@ class NotificationPreferencesView(APIView):
     def patch(self, request):
         preferences = DriverNotificationPreferences.for_driver(request.user.driver_profile)
         serializer = NotificationPreferencesSerializer(preferences, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
+class SponsorNotificationPreferencesView(APIView):
+    """Whether the signed-in sponsor's driver point alerts are also emailed."""
+
+    permission_classes = [IsAuthenticated, SponsorAccount, MFAEnrolled]
+
+    def get(self, request):
+        preferences = SponsorNotificationPreferences.for_sponsor(request.user.sponsor_account)
+        return Response(SponsorNotificationPreferencesSerializer(preferences).data)
+
+    def patch(self, request):
+        preferences = SponsorNotificationPreferences.for_sponsor(request.user.sponsor_account)
+        serializer = SponsorNotificationPreferencesSerializer(
+            preferences, data=request.data, partial=True
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import * as api from '../api';
 import { BellIcon } from '../components/primitives/Icons';
+import { NOTIFICATIONS_CHANGED_EVENT } from './notificationEvents';
 
 const POLL_INTERVAL_MS = 60 * 1000;
 
@@ -35,10 +36,13 @@ export default function NotificationBell({ viewingAs = false }) {
 
   const refresh = useCallback(async () => {
     try {
-      setCenter(await api.listNotifications());
+      const latest = await api.listNotifications();
+      setCenter(latest);
       setError('');
+      return latest;
     } catch (err) {
       setError(err.message || 'Could not load your alerts.');
+      return null;
     }
   }, []);
 
@@ -49,9 +53,11 @@ export default function NotificationBell({ viewingAs = false }) {
     };
     const timer = window.setInterval(poll, POLL_INTERVAL_MS);
     document.addEventListener('visibilitychange', poll);
+    window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, refresh);
     return () => {
       window.clearInterval(timer);
       document.removeEventListener('visibilitychange', poll);
+      window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, refresh);
     };
   }, [refresh]);
 
@@ -76,10 +82,12 @@ export default function NotificationBell({ viewingAs = false }) {
       setOpen(false);
       return;
     }
-    // Remember what was unread so it stays highlighted until the next open.
-    setUnreadAtOpen(new Set(center.results.filter((item) => !item.read).map((item) => item.id)));
     setOpen(true);
-    if (center.unread_count > 0 && !viewingAs) {
+    // Load the newest alerts, then remember what was unread so it stays
+    // highlighted until the next open.
+    const latest = (await refresh()) || center;
+    setUnreadAtOpen(new Set(latest.results.filter((item) => !item.read).map((item) => item.id)));
+    if (latest.unread_count > 0 && !viewingAs) {
       try {
         setCenter(await api.markNotificationsRead());
       } catch (err) {

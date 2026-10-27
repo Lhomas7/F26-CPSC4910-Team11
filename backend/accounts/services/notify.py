@@ -3,7 +3,12 @@ import logging
 from django.conf import settings
 from django.core.mail import EmailMessage
 
-from accounts.models import DriverNotificationPreferences, Notification
+from accounts.models import (
+    DriverNotificationPreferences,
+    Notification,
+    SponsorDriverAlert,
+    SponsorNotificationPreferences,
+)
 
 from .sms import send_sms
 
@@ -95,9 +100,14 @@ def notify_point_change(driver, point_change, reason, balance, sponsor_name):
         f'Good Driver account. Reason: {reason}. '
         f'Your balance is now {_points_phrase(balance)}.'
     )
-    _record(
-        driver.user, Notification.POINTS_ADDED if added else Notification.POINTS_REMOVED, message
-    )
+    try:
+        _record(
+            driver.user,
+            Notification.POINTS_ADDED if added else Notification.POINTS_REMOVED,
+            message,
+        )
+    except Exception:
+        logger.exception('Could not record point change notification.')
 
     if preferences.email_enabled and driver.user.email:
         try:
@@ -157,3 +167,48 @@ def notify_driver_dropped(driver, sponsor_name, reason, *, rejected):
             send_sms(driver.phone_number, message)
         except Exception:
             logger.exception('Could not text sponsor removal notification.')
+
+
+def notify_sponsors_of_point_change(driver, point_change, reason, balance, changed_by_user):
+    """Alert the sponsors who asked to hear when this driver gains or loses points.
+
+    Only sponsors in the driver's current organization are alerted, including
+    the sponsor who made the change. Each alert is recorded in-app and also
+    emailed to sponsors who turned email on. A failure for one sponsor is
+    logged and never stops the others.
+    """
+    added = point_change > 0
+    direction = {'on_points_added' if added else 'on_points_removed': True}
+    subscriptions = (
+        SponsorDriverAlert.objects.filter(
+            driver=driver,
+            sponsor_account__company_id=driver.sponsor_id,
+            sponsor_account__user__is_active=True,
+            **direction,
+        )
+        .select_related('sponsor_account__user')
+    )
+
+    verb = 'gained' if added else 'lost'
+    actor = changed_by_user.get_full_name() or changed_by_user.get_username()
+    message = (
+        f'{driver.name} {verb} {_points_phrase(abs(point_change))}. Reason: {reason}. '
+        f'Their balance is now {_points_phrase(balance)}. Changed by {actor}.'
+    )
+    for subscription in subscriptions:
+        sponsor_account = subscription.sponsor_account
+        user = sponsor_account.user
+        try:
+            _record(user, Notification.DRIVER_POINTS, message)
+            if (
+                user.email
+                and SponsorNotificationPreferences.for_sponsor(sponsor_account).email_enabled
+            ):
+                EmailMessage(
+                    subject=f'{driver.name} {verb} points',
+                    body=message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[user.email],
+                ).send()
+        except Exception:
+            logger.exception('Could not send a driver point alert to a sponsor.')

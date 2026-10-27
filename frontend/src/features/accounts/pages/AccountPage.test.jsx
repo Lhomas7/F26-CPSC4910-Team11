@@ -318,16 +318,17 @@ test('shows a read-only account and hides security controls during View-as', asy
   expect(api.updateProfile).not.toHaveBeenCalled();
 });
 
-test('drivers get notification settings and sponsors do not', async () => {
+test('drivers get point alert settings and sponsors get driver alert email settings', async () => {
   const { unmount } = render(<AccountPage />);
   expect(
     await screen.findByRole('heading', { name: 'Notifications', level: 2 }),
   ).toBeInTheDocument();
   unmount();
 
+  api.getSponsorNotificationPreferences.mockResolvedValue({ email_enabled: false });
   api.getProfile.mockResolvedValue({ ...profile, account_type: 'sponsor' });
   render(<AccountPage />);
-  expect(await screen.findByText('Driver One')).toBeInTheDocument();
-  expect(screen.queryByRole('heading', { name: 'Notifications' })).not.toBeInTheDocument();
+  expect(await screen.findByRole('checkbox', { name: 'Also email me' })).toBeInTheDocument();
   expect(api.getNotificationPreferences).toHaveBeenCalledTimes(1);
+  expect(api.getSponsorNotificationPreferences).toHaveBeenCalledTimes(1);
 });

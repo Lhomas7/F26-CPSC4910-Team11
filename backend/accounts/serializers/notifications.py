@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from ..models import DriverNotificationPreferences, Notification
+from ..models import DriverNotificationPreferences, Notification, SponsorNotificationPreferences
 
 # Alerts a driver cannot turn off: they are always recorded and emailed.
 ALWAYS_ON_ALERTS = (Notification.SPONSOR_DROPPED, Notification.SECURITY)
@@ -48,3 +48,23 @@ class MarkNotificationsReadSerializer(serializers.Serializer):
     ids = serializers.ListField(
         child=serializers.IntegerField(min_value=1), required=False, max_length=200
     )
+
+
+class DriverAlertSettingsSerializer(NotificationPreferencesSerializer):
+    """A read-only copy of a driver's alert settings, as their sponsor sees it."""
+
+    class Meta(NotificationPreferencesSerializer.Meta):
+        fields = (
+            'points_added_enabled',
+            'points_removed_enabled',
+            'email_enabled',
+            'sms_enabled',
+            'always_on',
+        )
+        read_only_fields = fields
+
+
+class SponsorNotificationPreferencesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SponsorNotificationPreferences
+        fields = ('email_enabled',)

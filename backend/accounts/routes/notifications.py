@@ -6,6 +6,7 @@ from ..views.notifications import (
     NotificationListView,
     NotificationPreferencesView,
     NotificationReadView,
+    SponsorNotificationPreferencesView,
 )
 
 urlpatterns = [
@@ -21,5 +22,10 @@ urlpatterns = [
         'notifications/preferences/',
         NotificationPreferencesView.as_view(),
         name='notification-preferences',
+    ),
+    path(
+        'notifications/sponsor-preferences/',
+        SponsorNotificationPreferencesView.as_view(),
+        name='sponsor-notification-preferences',
     ),
 ]

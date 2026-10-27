@@ -259,6 +259,50 @@ class DriverNotificationPreferences(models.Model):
         return preferences
 
 
+
+class SponsorDriverAlert(models.Model):
+    """A sponsor's choice to be alerted when one driver's points change.
+
+    Only sponsors in the driver's current organization are alerted, so a row
+    left behind after a driver or sponsor changes organization never leaks.
+    """
+
+    sponsor_account = models.ForeignKey(
+        SponsorAccount, on_delete=models.CASCADE, related_name='driver_alerts'
+    )
+    driver = models.ForeignKey(
+        'drivers.Driver', on_delete=models.CASCADE, related_name='sponsor_alerts'
+    )
+    on_points_added = models.BooleanField(default=False)
+    on_points_removed = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['sponsor_account', 'driver'], name='sponsor_driver_alert_unique'
+            ),
+        ]
+
+
+class SponsorNotificationPreferences(models.Model):
+    """How a sponsor's driver alerts reach them beyond the notification center.
+
+    Use SponsorNotificationPreferences.for_sponsor() rather than querying so
+    sponsors without a row get the defaults.
+    """
+
+    sponsor_account = models.OneToOneField(
+        SponsorAccount, on_delete=models.CASCADE, related_name='notification_preferences'
+    )
+    email_enabled = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @classmethod
+    def for_sponsor(cls, sponsor_account):
+        preferences, _ = cls.objects.get_or_create(sponsor_account=sponsor_account)
+        return preferences
+
 class AdminImpersonationEvent(models.Model):
     """Append-only audit record for an administrator's view-as session."""
 

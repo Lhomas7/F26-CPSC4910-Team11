@@ -1,5 +1,6 @@
 from django.db import transaction
 
+from accounts.models import SponsorDriverAlert
 from accounts.services.notify import notify_driver_dropped
 from drivers.models import Driver, DriverStatusChange
 
@@ -170,6 +171,8 @@ def _end_membership(locked_driver, action, changed_by_user, reason):
     locked_driver.sponsor = None
     locked_driver.status = 'pending'
     locked_driver.save(update_fields=['sponsor', 'status'])
+    # Sponsors of the old organization no longer follow this driver.
+    SponsorDriverAlert.objects.filter(driver=locked_driver).delete()
     transaction.on_commit(
         lambda: notify_driver_dropped(
             locked_driver,

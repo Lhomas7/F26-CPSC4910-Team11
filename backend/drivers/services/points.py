@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from django.db import transaction
 
-from accounts.services.notify import notify_point_change
+from accounts.services.notify import notify_point_change, notify_sponsors_of_point_change
 from drivers.models import Driver, PointTransaction
 
 from .reasons import MAX_REASON_LENGTH, normalize_reason
@@ -131,6 +131,7 @@ def adjust_driver_points(*, driver, changed_by_user, point_change, reason):
     )
     # Alert only once the change is committed, so a delivery failure can never
     # undo the adjustment and a rolled-back adjustment never sends an alert.
+    # robust=True logs a failing alert and still runs the next one.
     transaction.on_commit(
         lambda: notify_point_change(
             locked_driver,
@@ -138,6 +139,13 @@ def adjust_driver_points(*, driver, changed_by_user, point_change, reason):
             reason,
             resulting_balance,
             locked_driver.sponsor.name,
-        )
+        ),
+        robust=True,
+    )
+    transaction.on_commit(
+        lambda: notify_sponsors_of_point_change(
+            locked_driver, point_change, reason, resulting_balance, changed_by_user
+        ),
+        robust=True,
     )
     return PointAdjustmentResult(transaction=entry, balance=resulting_balance)

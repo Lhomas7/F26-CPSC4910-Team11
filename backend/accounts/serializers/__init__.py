@@ -26,9 +26,11 @@ from .mfa import (
     validate_code_for_method,
 )
 from .notifications import (
+    DriverAlertSettingsSerializer,
     MarkNotificationsReadSerializer,
     NotificationPreferencesSerializer,
     NotificationSerializer,
+    SponsorNotificationPreferencesSerializer,
 )
 from .profiles import (
     ChangePasswordSerializer,
@@ -52,6 +54,7 @@ __all__ = [
     'BackupCodesRegenerateSerializer',
     'ChangePasswordSerializer',
     'DeviceCheckSerializer',
+    'DriverAlertSettingsSerializer',
     'DriverRegistrationSerializer',
     'LoginAttemptSerializer',
     'LoginMFARequestCodeSerializer',
@@ -71,6 +74,7 @@ __all__ = [
     'SelfProfileSerializer',
     'SponsorCompanySerializer',
     'SponsorMFASerializer',
+    'SponsorNotificationPreferencesSerializer',
     'SponsorRegistrationSerializer',
     'validate_code_for_method',
 ]

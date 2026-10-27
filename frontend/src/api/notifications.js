@@ -19,3 +19,13 @@ export function clearNotification(id) {
 export function clearAllNotifications() {
   return request('/notifications/clear/', { method: 'POST' }).then(readJson);
 }
+
+export function getSponsorNotificationPreferences() {
+  return request('/notifications/sponsor-preferences/').then(readJson);
+}
+
+export function updateSponsorNotificationPreferences(data) {
+  return request('/notifications/sponsor-preferences/', { method: 'PATCH', body: data }).then(
+    readJson,
+  );
+}

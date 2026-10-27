@@ -14,6 +14,8 @@ from accounts.models import (
     Notification,
     SponsorAccount,
     SponsorCompany,
+    SponsorDriverAlert,
+    SponsorNotificationPreferences,
 )
 from accounts.tests.common import enroll_totp
 
@@ -923,6 +925,209 @@ class AdminSponsorReassignmentTests(RoleScopedDriverTestData):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.approved.refresh_from_db()
         self.assertEqual(self.approved.sponsor, self.company)
+
+
+@patch('accounts.services.notify.send_sms')
+class SponsorDriverAlertTests(RoleScopedDriverTestData):
+    """Sponsors choose which drivers' point changes they want to hear about."""
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.watcher_user = get_user_model().objects.create_user(
+            username='scope.watcher',
+            password='ExamplePassword123!',
+            email='watcher@example.com',
+        )
+        cls.watcher = SponsorAccount.objects.create(user=cls.watcher_user, company=cls.company)
+        enroll_totp(cls.watcher_user)
+
+    def alerts_url(self, driver):
+        return reverse('driver-alerts', kwargs={'pk': driver.pk})
+
+    def subscribe(self, sponsor_account, driver, **choices):
+        return SponsorDriverAlert.objects.create(
+            sponsor_account=sponsor_account, driver=driver, **choices
+        )
+
+    def adjust(self, amount, by=None, driver=None):
+        with self.captureOnCommitCallbacks(execute=True):
+            adjust_driver_points(
+                driver=driver or self.approved,
+                changed_by_user=by or self.sponsor_user,
+                point_change=amount,
+                reason='Clean inspection',
+            )
+
+    def watcher_alerts(self):
+        return Notification.objects.filter(
+            user=self.watcher_user, category=Notification.DRIVER_POINTS
+        )
+
+    def test_alerts_are_off_until_a_sponsor_turns_them_on(self, send_sms):
+        self.client.force_authenticate(self.watcher_user)
+
+        response = self.client.get(self.alerts_url(self.approved))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {'on_points_added': False, 'on_points_removed': False})
+        self.assertFalse(SponsorDriverAlert.objects.exists())
+
+    def test_sponsor_can_turn_alerts_on_for_one_driver(self, send_sms):
+        self.client.force_authenticate(self.watcher_user)
+
+        response = self.client.patch(
+            self.alerts_url(self.approved), {'on_points_added': True}, format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {'on_points_added': True, 'on_points_removed': False})
+        alert = SponsorDriverAlert.objects.get(sponsor_account=self.watcher, driver=self.approved)
+        self.assertTrue(alert.on_points_added)
+
+    def test_point_gain_alerts_subscribed_sponsor_in_app(self, send_sms):
+        self.subscribe(self.watcher, self.approved, on_points_added=True)
+
+        self.adjust(25)
+
+        alert = self.watcher_alerts().get()
+        self.assertIn('Avery Approved gained 25 points', alert.message)
+        self.assertIn('Reason: Clean inspection.', alert.message)
+        self.assertIn('Changed by Pat Sponsor.', alert.message)
+        # Email is off by default.
+        self.assertEqual(mail.outbox, [])
+
+    def test_each_direction_is_chosen_separately(self, send_sms):
+        self.subscribe(self.watcher, self.approved, on_points_added=True)
+
+        self.adjust(-5)
+        self.assertFalse(self.watcher_alerts().exists())
+
+        SponsorDriverAlert.objects.update(on_points_removed=True)
+        self.adjust(-5)
+        self.assertIn('lost 5 points', self.watcher_alerts().get().message)
+
+    def test_email_is_sent_when_the_sponsor_turned_it_on(self, send_sms):
+        self.subscribe(self.watcher, self.approved, on_points_added=True)
+        SponsorNotificationPreferences.objects.create(
+            sponsor_account=self.watcher, email_enabled=True
+        )
+
+        self.adjust(25)
+
+        sponsor_mail = [m for m in mail.outbox if m.to == ['watcher@example.com']]
+        self.assertEqual(len(sponsor_mail), 1)
+        self.assertIn('Avery Approved gained points', sponsor_mail[0].subject)
+
+    def test_the_sponsor_who_made_the_change_is_alerted_too(self, send_sms):
+        self.subscribe(self.watcher, self.approved, on_points_added=True)
+
+        self.adjust(25, by=self.watcher_user)
+
+        self.assertIn('Changed by scope.watcher.', self.watcher_alerts().get().message)
+
+    def test_a_failing_driver_alert_still_alerts_sponsors(self, send_sms):
+        self.subscribe(self.watcher, self.approved, on_points_added=True)
+
+        with patch('drivers.services.points.notify_point_change', side_effect=RuntimeError):
+            self.adjust(25)
+
+        self.assertTrue(self.watcher_alerts().exists())
+
+    def test_sponsors_who_did_not_subscribe_or_follow_other_drivers_hear_nothing(self, send_sms):
+        self.subscribe(self.watcher, self.pending, on_points_added=True)
+
+        self.adjust(25)
+
+        self.assertFalse(self.watcher_alerts().exists())
+
+    def test_sponsor_who_moved_organizations_is_not_alerted(self, send_sms):
+        self.subscribe(self.watcher, self.approved, on_points_added=True)
+        self.watcher.company = self.other_company
+        self.watcher.save(update_fields=['company'])
+
+        self.adjust(25)
+
+        self.assertFalse(self.watcher_alerts().exists())
+
+    def test_dropping_a_driver_removes_alerts_about_them(self, send_sms):
+        self.subscribe(self.watcher, self.approved, on_points_added=True)
+        self.client.force_authenticate(self.sponsor_user)
+
+        self.client.post(
+            reverse('driver-remove', kwargs={'pk': self.approved.pk}),
+            {'reason': 'Left the company'},
+            format='json',
+        )
+
+        self.assertFalse(SponsorDriverAlert.objects.exists())
+
+    def test_other_organizations_and_drivers_cannot_use_alerts(self, send_sms):
+        self.client.force_authenticate(self.other_sponsor_user)
+        self.assertEqual(
+            self.client.get(self.alerts_url(self.approved)).status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+        self.assertEqual(
+            self.client.patch(
+                self.alerts_url(self.approved), {'on_points_added': True}, format='json'
+            ).status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+        for user in (self.approved.user, self.admin_user):
+            self.client.force_authenticate(user)
+            self.assertEqual(
+                self.client.get(self.alerts_url(self.approved)).status_code,
+                status.HTTP_403_FORBIDDEN,
+            )
+        self.assertFalse(SponsorDriverAlert.objects.exists())
+
+
+class DriverAlertSettingsViewTests(RoleScopedDriverTestData):
+    """Sponsors can see, but not change, which alerts their drivers turned on."""
+
+    def url(self, driver):
+        return reverse('driver-alert-settings', kwargs={'pk': driver.pk})
+
+    def test_sponsor_sees_driver_settings_and_always_on_alerts(self):
+        DriverNotificationPreferences.objects.create(
+            driver=self.approved, points_removed_enabled=False, sms_enabled=True
+        )
+        self.client.force_authenticate(self.sponsor_user)
+
+        response = self.client.get(self.url(self.approved))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data,
+            {
+                'points_added_enabled': True,
+                'points_removed_enabled': False,
+                'email_enabled': True,
+                'sms_enabled': True,
+                'always_on': ['sponsor_dropped', 'security'],
+            },
+        )
+
+    def test_settings_are_read_only_for_sponsors(self):
+        self.client.force_authenticate(self.sponsor_user)
+
+        response = self.client.patch(
+            self.url(self.approved), {'points_added_enabled': False}, format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_other_organizations_drivers_and_admins_cannot_read_settings(self):
+        self.client.force_authenticate(self.other_sponsor_user)
+        self.assertEqual(
+            self.client.get(self.url(self.approved)).status_code, status.HTTP_404_NOT_FOUND
+        )
+        for user in (self.approved.user, self.admin_user):
+            self.client.force_authenticate(user)
+            self.assertEqual(
+                self.client.get(self.url(self.approved)).status_code, status.HTTP_403_FORBIDDEN
+            )
 
 class SponsorOnlyActionTests(RoleScopedDriverTestData):
     """Every sponsor action refuses every caller that is not a sponsor account."""
