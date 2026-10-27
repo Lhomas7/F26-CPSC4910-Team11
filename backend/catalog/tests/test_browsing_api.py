@@ -5,7 +5,9 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.test import APIClient, APITestCase
 
 from accounts.middleware import (
-    IMPERSONATION_ROLE_KEY, IMPERSONATION_STARTED_KEY, IMPERSONATION_TARGET_KEY,
+    IMPERSONATION_ROLE_KEY,
+    IMPERSONATION_STARTED_KEY,
+    IMPERSONATION_TARGET_KEY,
 )
 from accounts.models import MFASettings, Notification, SponsorAccount, SponsorCompany
 from catalog.models import CatalogProduct

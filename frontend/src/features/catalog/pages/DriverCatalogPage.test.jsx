@@ -236,7 +236,6 @@ test('all four availability/affordability combinations remain independently repr
   rows.forEach((row, i) => {
     expect(within(cards[i]).getByText(row.is_available ? 'Available' : 'Unavailable')).toBeInTheDocument();
     expect(within(cards[i]).getByText(row.can_afford ? 'Within your balance' : 'Need 1,700 more points')).toBeInTheDocument();
-    if (!row.can_afford) expect(cards[i]).toHaveClass('is-unaffordable');
-    else expect(cards[i]).not.toHaveClass('is-unaffordable');
+    expect(cards[i].classList.contains('is-unaffordable')).toBe(!row.can_afford);
   });
 });

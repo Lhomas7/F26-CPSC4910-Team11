@@ -240,7 +240,7 @@ test('late old refresh cannot undo PATCH but a newer server read can replace it'
   await act(async () => { finishRefresh(response()); });
   expect(screen.getByText('Unavailable')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Refresh catalog' }));
-  await waitFor(() => expect(screen.getByText('Available')).toBeInTheDocument());
+  expect(await screen.findByText('Available')).toBeInTheDocument();
   expect(screen.queryByText('Travel Mug is now unavailable.')).not.toBeInTheDocument();
 });
 

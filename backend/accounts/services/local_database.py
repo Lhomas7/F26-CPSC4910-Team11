@@ -1,9 +1,9 @@
 """SQLite archive operations; no Django configuration or credentials required."""
 
-from datetime import datetime, timezone
-from pathlib import Path
 import os
 import sqlite3
+from datetime import UTC, datetime
+from pathlib import Path
 from uuid import uuid4
 
 
@@ -31,7 +31,7 @@ def inspect_database(path):
 def backup_database(source, directory, label='backup'):
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
+    timestamp = datetime.now(UTC).strftime('%Y%m%dT%H%M%S%fZ')
     destination = directory / f'{label}-{timestamp}-{uuid4().hex[:12]}.sqlite3'
     destination.touch(exist_ok=False)
     try:

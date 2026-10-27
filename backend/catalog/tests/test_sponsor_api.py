@@ -7,10 +7,12 @@ from rest_framework import status
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.test import APIClient, APITestCase
 
-from accounts.models import MFASettings, SponsorAccount, SponsorCompany
 from accounts.middleware import (
-    IMPERSONATION_ROLE_KEY, IMPERSONATION_STARTED_KEY, IMPERSONATION_TARGET_KEY,
+    IMPERSONATION_ROLE_KEY,
+    IMPERSONATION_STARTED_KEY,
+    IMPERSONATION_TARGET_KEY,
 )
+from accounts.models import MFASettings, SponsorAccount, SponsorCompany
 from catalog.models import CatalogProduct
 from catalog.services import create_catalog_product, update_product_availability
 from drivers.models import Driver

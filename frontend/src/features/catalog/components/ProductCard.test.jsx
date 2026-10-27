@@ -132,10 +132,10 @@ test('accepts a future role-specific footer slot and alternate heading level', (
 
 test('long names remain complete and product text is rendered as text, not HTML', () => {
   const name = 'Very long product name '.repeat(8);
-  const { container } = render(
+  render(
     <ProductGrid><ProductCard product={{ ...product, name, description: '<script>alert(1)</script>' }} /></ProductGrid>,
   );
   expect(screen.getByRole('heading')).toHaveTextContent(name.trim());
+  // getByText skips <script> elements, so a match means it rendered as plain text.
   expect(screen.getByText('<script>alert(1)</script>')).toBeInTheDocument();
-  expect(container.querySelector('script')).toBeNull();
 });

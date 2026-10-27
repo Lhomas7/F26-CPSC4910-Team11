@@ -13,8 +13,8 @@ from accounts.middleware import (
 )
 from accounts.models import MFASettings, SponsorAccount, SponsorCompany
 from accounts.permissions import MFAEnrolled
-from catalog.services import driver_catalog_scope, sponsor_catalog_scope
 from catalog.models import CatalogProduct
+from catalog.services import driver_catalog_scope, sponsor_catalog_scope
 from drivers.models import Driver
 
 
@@ -151,7 +151,7 @@ class CatalogAccessTests(TestCase):
                 }
                 resolved = []
 
-                def response_for(effective_request):
+                def response_for(effective_request, resolved=resolved, resolver=resolver):
                     resolved.append(resolver(effective_request.user))
                     return JsonResponse({})
 

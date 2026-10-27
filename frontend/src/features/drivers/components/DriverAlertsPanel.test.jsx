@@ -64,10 +64,13 @@ test("shows the driver's own alert settings read-only", async () => {
 
   const section = screen.getByRole('region', { name: "Jamie Rivera's alert settings" });
   expect(await within(section).findByText('Driver gets: Points added')).toBeInTheDocument();
-  const row = (label) => within(section).getByText(`Driver gets: ${label}`).parentElement;
-  expect(row('Points added')).toHaveTextContent('On');
-  expect(row('Points removed')).toHaveTextContent('Off');
-  expect(row('Dropped by or added to a sponsor')).toHaveTextContent('Always on');
+  const terms = within(section).getAllByRole('term');
+  const values = within(section).getAllByRole('definition');
+  const value = (label) =>
+    values[terms.findIndex((term) => term.textContent === `Driver gets: ${label}`)];
+  expect(value('Points added')).toHaveTextContent('On');
+  expect(value('Points removed')).toHaveTextContent('Off');
+  expect(value('Dropped by or added to a sponsor')).toHaveTextContent('Always on');
   expect(within(section).queryByRole('checkbox')).not.toBeInTheDocument();
 });
 

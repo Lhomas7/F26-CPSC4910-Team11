@@ -52,8 +52,7 @@ test.each([
   expect(screen.getByText('999,999,999,999,000 points')).toBeInTheDocument();
   expect(screen.getByText(message)).toBeInTheDocument();
   expect(screen.queryByText(/We can’t confirm this cost/)).not.toBeInTheDocument();
-  if (affordable) expect(screen.getByRole('listitem')).not.toHaveClass('is-unaffordable');
-  else expect(screen.getByRole('listitem')).toHaveClass('is-unaffordable');
+  expect(screen.getByRole('listitem').classList.contains('is-unaffordable')).toBe(!affordable);
 });
 
 test.each([
@@ -100,8 +99,9 @@ test('Sponsor malformed configured cost is not shown as unconfigured or free', (
 });
 
 test('invalid Sponsor timestamps do not render Invalid Date', () => {
-  const { container } = render(<SponsorProductFooter product={{ updated_at: 'invalid' }} />);
-  expect(container.querySelector('time')).toBeNull();
+  render(<SponsorProductFooter product={{ updated_at: 'invalid' }} />);
+  expect(screen.queryByText(/^Updated/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Invalid Date/)).not.toBeInTheDocument();
 });
 
 test('Show more remains usable on an unavailable, unaffordable card', () => {

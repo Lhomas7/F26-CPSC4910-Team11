@@ -1,6 +1,6 @@
 import hashlib
 
-from django.contrib.auth import get_user_model, login
+from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -21,6 +21,7 @@ from ..services.registration_verification import (
     create_registration_code,
     verify_registration_code,
 )
+from .authentication import complete_login
 
 REGISTRATION_CODE_RESEND_SECONDS = 30
 INVALID_REGISTRATION_CODE_MESSAGE = 'Invalid or expired verification code.'
@@ -130,5 +131,8 @@ class SponsorRegistrationView(AnonymousAPIView):
 
         # Sponsors must complete MFA onboarding before the account is usable, so
         # establish a session right away and let the frontend show the setup wall.
-        login(request, user)
-        return Response(get_public_user(user), status=status.HTTP_201_CREATED)
+        # complete_login is the same sign-in path as the login form, so the new
+        # session is audited and asks "Is this your device?".
+        response = complete_login(request, user)
+        response.status_code = status.HTTP_201_CREATED
+        return response

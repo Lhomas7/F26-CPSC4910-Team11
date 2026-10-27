@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { setProductAvailability } from '../../../api/catalog';
 import AvailabilityControl from './AvailabilityControl';
@@ -75,8 +75,7 @@ test.each([401, 403, 409])('access/session failure %s is escalated to the page',
   setProductAvailability.mockRejectedValue(error);
   render(<Harness onAccessError={onAccessError} />);
   fireEvent.click(screen.getByRole('button', { name: 'Mark unavailable: Travel Mug' }));
-  await act(async () => {});
-  expect(onAccessError).toHaveBeenCalledWith(error);
+  await waitFor(() => expect(onAccessError).toHaveBeenCalledWith(error));
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 });
 
