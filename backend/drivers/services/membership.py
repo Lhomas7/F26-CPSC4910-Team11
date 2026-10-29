@@ -1,7 +1,7 @@
 from django.db import transaction
 
 from accounts.models import SponsorDriverAlert
-from accounts.services.notify import notify_driver_dropped
+from accounts.services.notify import notify_driver_dropped, notify_sponsors_of_application
 from drivers.models import Driver, DriverStatusChange
 
 from .reasons import normalize_reason
@@ -74,6 +74,10 @@ def link_driver_to_sponsor(*, username, changed_by_user):
     driver.sponsor_id = sponsor_account.company_id
     driver.status = 'pending'
     driver.save(update_fields=['sponsor', 'status'])
+    # The sponsor who linked the driver already knows; their colleagues do not.
+    transaction.on_commit(
+        lambda: notify_sponsors_of_application(driver, exclude_user=changed_by_user)
+    )
     return driver
 
 
@@ -155,6 +159,7 @@ def reassign_driver_sponsor(*, driver, new_sponsor, changed_by_user):
         locked_driver.sponsor_id = new_sponsor_id
         locked_driver.status = 'pending'
         locked_driver.save(update_fields=['sponsor', 'status'])
+        transaction.on_commit(lambda: notify_sponsors_of_application(locked_driver))
     return locked_driver
 
 

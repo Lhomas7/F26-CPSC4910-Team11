@@ -1339,3 +1339,91 @@ class PersonalDataAccessTests(RoleScopedDriverTestData):
                 ).status_code,
                 status.HTTP_403_FORBIDDEN,
             )
+
+
+class DriverApplicationNotificationTests(RoleScopedDriverTestData):
+    """Sponsors hear about a driver waiting for approval, so none is missed."""
+
+    def setUp(self):
+        User = get_user_model()
+        self.colleague = User.objects.create_user(
+            username='scope.colleague', password='ExamplePassword123!', email='colleague@example.com'
+        )
+        self.colleague_account = SponsorAccount.objects.create(
+            user=self.colleague, company=self.company
+        )
+        self.inactive = User.objects.create_user(
+            username='scope.inactive', password='ExamplePassword123!', is_active=False
+        )
+        SponsorAccount.objects.create(user=self.inactive, company=self.company)
+        applicant_user = User.objects.create_user(
+            username='scope.applicant', password='ExamplePassword123!'
+        )
+        self.applicant = Driver.objects.create(user=applicant_user, name='Dana Applicant')
+
+    def applications(self, user):
+        return Notification.objects.filter(user=user, category=Notification.DRIVER_APPLICATION)
+
+    def link(self):
+        self.client.force_authenticate(self.sponsor_user)
+        with self.captureOnCommitCallbacks(execute=True):
+            return self.client.post(
+                reverse('driver-link'), {'username': self.applicant.user.username}, format='json'
+            )
+
+    def test_colleagues_are_alerted_when_a_driver_is_linked(self):
+        self.assertEqual(self.link().status_code, status.HTTP_200_OK)
+
+        alert = self.applications(self.colleague).get()
+        self.assertIn('Dana Applicant', alert.message)
+        self.assertIn('Scope Freight', alert.message)
+        self.assertFalse(alert.read)
+
+    def test_the_sponsor_who_linked_them_is_not_alerted_about_their_own_action(self):
+        self.link()
+
+        self.assertFalse(self.applications(self.sponsor_user).exists())
+
+    def test_other_companies_and_inactive_accounts_are_not_alerted(self):
+        self.link()
+
+        self.assertFalse(self.applications(self.other_sponsor_user).exists())
+        self.assertFalse(self.applications(self.inactive).exists())
+
+    def test_email_is_sent_only_to_sponsors_who_turned_it_on(self):
+        self.link()
+        self.assertEqual(mail.outbox, [])
+
+        preferences = SponsorNotificationPreferences.for_sponsor(self.colleague_account)
+        preferences.email_enabled = True
+        preferences.save()
+        self.applicant.sponsor = None
+        self.applicant.save(update_fields=['sponsor'])
+        self.link()
+
+        self.assertEqual([message.to for message in mail.outbox], [['colleague@example.com']])
+        self.assertIn('Dana Applicant', mail.outbox[0].body)
+
+    def test_an_administrator_assigning_a_driver_alerts_every_sponsor_there(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            reassign_driver_sponsor(
+                driver=self.applicant, new_sponsor=self.company, changed_by_user=self.admin_user
+            )
+
+        self.assertEqual(self.applications(self.sponsor_user).count(), 1)
+        self.assertEqual(self.applications(self.colleague).count(), 1)
+        self.assertFalse(self.applications(self.other_sponsor_user).exists())
+
+    def test_nothing_is_sent_when_no_application_is_created(self):
+        self.applicant.sponsor = self.company
+        self.applicant.save(update_fields=['sponsor'])
+
+        with self.captureOnCommitCallbacks(execute=True):
+            reassign_driver_sponsor(
+                driver=self.applicant, new_sponsor=self.company, changed_by_user=self.admin_user
+            )
+            reassign_driver_sponsor(
+                driver=self.pending, new_sponsor=None, changed_by_user=self.admin_user
+            )
+
+        self.assertFalse(Notification.objects.filter(category=Notification.DRIVER_APPLICATION).exists())

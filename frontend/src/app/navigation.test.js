@@ -6,7 +6,7 @@ test('each account type gets its own sidebar', () => {
   expect(labels(null)).toEqual(['Home', 'About']);
   expect(labels({ account_type: 'driver' })).toEqual(['Home', 'Points', 'Catalog', 'About']);
   expect(labels({ account_type: 'sponsor' })).toEqual(['Home', 'Points', 'Drivers', 'Catalog', 'About']);
-  expect(labels({ account_type: 'admin' })).toEqual(['Home', 'Users', 'About']);
+  expect(labels({ account_type: 'admin' })).toEqual(['Home', 'Users', 'Audit log', 'Invoices', 'About']);
 });
 
 test('viewing as a sponsor includes Catalog while administrator navigation does not', () => {

@@ -210,12 +210,14 @@ class Notification(models.Model):
     SPONSOR_DROPPED = 'sponsor_dropped'
     SECURITY = 'security'
     DRIVER_POINTS = 'driver_points'
+    DRIVER_APPLICATION = 'driver_application'
     CATEGORY_CHOICES = [
         (POINTS_ADDED, 'Points added'),
         (POINTS_REMOVED, 'Points removed'),
         (SPONSOR_DROPPED, 'Dropped from sponsor'),
         (SECURITY, 'Account security'),
         (DRIVER_POINTS, "A driver's points changed"),
+        (DRIVER_APPLICATION, 'A driver applied to your company'),
     ]
 
     user = models.ForeignKey(

@@ -6,6 +6,7 @@ from django.core.mail import EmailMessage
 from accounts.models import (
     DriverNotificationPreferences,
     Notification,
+    SponsorAccount,
     SponsorDriverAlert,
     SponsorNotificationPreferences,
 )
@@ -212,3 +213,43 @@ def notify_sponsors_of_point_change(driver, point_change, reason, balance, chang
                 ).send()
         except Exception:
             logger.exception('Could not send a driver point alert to a sponsor.')
+
+
+def notify_sponsors_of_application(driver, *, exclude_user=None):
+    """Tell a company's sponsors that a driver is waiting for their approval.
+
+    Every active sponsor in the driver's organization gets an in-app alert, so an
+    application is never missed; sponsors who turned on email also get an email.
+    ``exclude_user`` skips the sponsor who made the change themselves. A failure
+    for one sponsor is logged and never stops the others.
+    """
+    company = driver.sponsor
+    if company is None:
+        return
+
+    sponsor_accounts = SponsorAccount.objects.filter(
+        company=company, user__is_active=True
+    ).select_related('user')
+    if exclude_user is not None:
+        sponsor_accounts = sponsor_accounts.exclude(user=exclude_user)
+
+    message = (
+        f'{driver.name} has applied to join {company.name} and is waiting for your '
+        'review. Open Drivers to approve or decline the application.'
+    )
+    for sponsor_account in sponsor_accounts:
+        user = sponsor_account.user
+        try:
+            _record(user, Notification.DRIVER_APPLICATION, message)
+            if (
+                user.email
+                and SponsorNotificationPreferences.for_sponsor(sponsor_account).email_enabled
+            ):
+                EmailMessage(
+                    subject=f'New driver application to {company.name}',
+                    body=message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[user.email],
+                ).send()
+        except Exception:
+            logger.exception('Could not send a driver application alert to a sponsor.')

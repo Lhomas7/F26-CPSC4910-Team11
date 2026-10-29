@@ -8,6 +8,8 @@ export const NAV_ITEMS = [
   { to: '/drivers', label: 'Drivers', icon: 'drivers', roles: ['sponsor'] },
   { to: '/catalog', label: 'Catalog', icon: 'catalog', roles: ['driver', 'sponsor'] },
   { to: '/users', label: 'Users', icon: 'users', roles: ['admin'] },
+  { to: '/audit-log', label: 'Audit log', icon: 'audit', roles: ['admin'] },
+  { to: '/invoices', label: 'Invoices', icon: 'invoices', roles: ['admin'] },
   {
     to: '/about',
     label: 'About',
@@ -23,6 +25,8 @@ export const PAGE_ROLES = {
   points: ['driver', 'sponsor'],
   drivers: ['sponsor'],
   users: ['admin'],
+  auditLog: ['admin'],
+  invoices: ['admin'],
 };
 
 /** The role the navigation should use for this user ('guest' when signed out). */
