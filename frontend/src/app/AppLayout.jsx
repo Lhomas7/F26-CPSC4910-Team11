@@ -11,10 +11,12 @@ import {
   ChevronDownIcon,
   HomeIcon,
   InfoIcon,
+  MoonIcon,
   PointsIcon,
   ReportsIcon,
   SignInIcon,
   SignOutIcon,
+  SunIcon,
   UserIcon,
   UsersIcon,
   ViewingAsIcon,
@@ -26,6 +28,7 @@ import ActiveViewAsIndicator from './ActiveViewAsIndicator';
 import { navItemsFor } from './navigation';
 import NotificationBell from './NotificationBell';
 import { PageHeaderTargetProvider } from './PageHeader';
+import { getTheme, saveTheme } from './theme';
 
 const NAV_ICONS = {
   home: HomeIcon,
@@ -36,6 +39,25 @@ const NAV_ICONS = {
   reports: ReportsIcon,
   about: InfoIcon,
 };
+
+function ThemeToggle() {
+  const [theme, setTheme] = useState(getTheme);
+  const nextTheme = theme === 'dark' ? 'light' : 'dark';
+  return (
+    <button
+      className="theme-toggle"
+      type="button"
+      aria-label={`Switch to ${nextTheme} mode`}
+      title={`Switch to ${nextTheme} mode`}
+      onClick={() => {
+        saveTheme(nextTheme);
+        setTheme(nextTheme);
+      }}
+    >
+      {theme === 'dark' ? <SunIcon size={18} /> : <MoonIcon size={18} />}
+    </button>
+  );
+}
 
 function AccountMenu({ user, onSignOut }) {
   const [open, setOpen] = useState(false);
@@ -303,6 +325,7 @@ export function AppLayout() {
         )}
         <header className="app-topbar">
           <div className="app-topbar-page" ref={setPageHeaderTarget} />
+          <ThemeToggle />
         </header>
         {(notice === 'view-as-returned' || notice === 'view-as-ended') && (
           <div className="banner banner-warning view-as-ended-notice">

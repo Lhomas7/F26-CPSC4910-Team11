@@ -6,6 +6,7 @@
      53.75rem  tablet / half screen (sidebar becomes a top bar)
      42rem     phone */
 :root {
+  color-scheme: light;
   --app-bar-height: 4rem;
 
   /* Surfaces and text */
@@ -49,32 +50,31 @@
   --warning-line: #d9ae55;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #141715;
-    --surface: #1c201d;
-    --surface-2: #222723;
-    --line: #323833;
-    --line-soft: #2a2f2b;
-    --ink: #e8ebe7;
-    --ink-2: #aab1ab;
-    --ink-3: #7f8680;
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #141715;
+  --surface: #1c201d;
+  --surface-2: #222723;
+  --line: #323833;
+  --line-soft: #2a2f2b;
+  --ink: #e8ebe7;
+  --ink-2: #aab1ab;
+  --ink-3: #7f8680;
 
-    --accent: #4fb48d;
-    --accent-strong: #6cc9a4;
-    --accent-soft: #1d3a2f;
-    --on-accent: #0e1a15;
-    --road: #0e100f;
-    --stripe: #e2b52c;
+  --accent: #4fb48d;
+  --accent-strong: #6cc9a4;
+  --accent-soft: #1d3a2f;
+  --on-accent: #0e1a15;
+  --road: #0e100f;
+  --stripe: #e2b52c;
 
-    --danger: #e5766e;
-    --danger-ink: #e5766e;
-    --danger-soft: #3b2220;
-    --danger-line: #7c3c37;
-    --on-danger: #1d0d0b;
-    --success-line: #2f6a52;
-    --warning-ink: #f3d49a;
-    --warning-soft: #3a2f1a;
-    --warning-line: #6d5526;
-  }
+  --danger: #e5766e;
+  --danger-ink: #e5766e;
+  --danger-soft: #3b2220;
+  --danger-line: #7c3c37;
+  --on-danger: #1d0d0b;
+  --success-line: #2f6a52;
+  --warning-ink: #f3d49a;
+  --warning-soft: #3a2f1a;
+  --warning-line: #6d5526;
 }

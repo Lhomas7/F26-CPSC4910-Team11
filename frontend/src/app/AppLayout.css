@@ -302,10 +302,8 @@
   font-weight: 700;
 }
 
-@media (prefers-color-scheme: dark) {
-  .mfa-required-banner {
-    border-color: var(--danger-line);
-  }
+:root[data-theme='dark'] .mfa-required-banner {
+  border-color: var(--danger-line);
 }
 
 .app-topbar {
@@ -324,6 +322,26 @@
 .app-topbar-page {
   flex: 1;
   min-width: 0;
+}
+
+.theme-toggle {
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  color: var(--ink-2);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 2.25rem;
+  justify-content: center;
+  width: 2.25rem;
+}
+
+.theme-toggle:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .page-header {
