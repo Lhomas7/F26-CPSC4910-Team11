@@ -23,6 +23,7 @@ import { WelcomePage } from '../features/home';
 import { PrivacyPage, TermsPage } from '../features/legal';
 import { PlaygroundPage } from '../features/playground';
 import { PointsPage } from '../features/points';
+import { SalesReportsPage } from '../features/reports';
 import { AppLayout } from './AppLayout';
 import { PAGE_ROLES } from './navigation';
 
@@ -104,6 +105,14 @@ export function AppRoutes() {
           element={
             <RequireAuth roles={PAGE_ROLES.users}>
               <AdminUsersPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/reports"
+          element={
+            <RequireAuth roles={PAGE_ROLES.reports}>
+              <SalesReportsPage />
             </RequireAuth>
           }
         />

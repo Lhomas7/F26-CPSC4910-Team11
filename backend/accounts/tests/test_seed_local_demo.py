@@ -1,3 +1,4 @@
+from decimal import Decimal
 from io import StringIO
 from unittest.mock import patch
 
@@ -8,6 +9,7 @@ from django.test import TestCase, override_settings
 
 from about_page.models import AboutPageRelease
 from drivers.models import Driver, PointTransaction
+from reports.models import CompletedSale
 
 from ..models import MFASettings, SponsorCompany
 
@@ -33,6 +35,11 @@ class LocalDemoSeedTests(TestCase):
         self.assertIsNone(Driver.objects.get(user__username='unlinked.driver').sponsor_id)
         self.assertFalse(MFASettings.objects.exists())
         self.assertTrue(get_user_model().objects.get(username='demo.admin').is_staff)
+        self.assertEqual(CompletedSale.objects.count(), 3)
+        self.assertEqual(
+            sum((sale.project_share_usd for sale in CompletedSale.objects.all()), start=0),
+            Decimal('0.8000'),
+        )
 
     def test_rerun_preserves_password_profile_mfa_and_history(self):
         self.seed()
@@ -54,6 +61,7 @@ class LocalDemoSeedTests(TestCase):
         self.assertTrue(user.mfa_settings.totp_enabled)
         self.assertEqual(driver.name, 'Edited Driver')
         self.assertEqual(PointTransaction.objects.count(), 2)
+        self.assertEqual(CompletedSale.objects.count(), 3)
 
     def test_partial_existing_demo_account_is_preserved(self):
         user = get_user_model().objects.create_user(

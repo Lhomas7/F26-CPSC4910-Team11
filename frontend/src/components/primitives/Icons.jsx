@@ -237,6 +237,17 @@ export function CatalogIcon(props) {
   );
 }
 
+export function ReportsIcon(props) {
+  return (
+    <SvgIcon {...props}>
+      <g stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+        <path d="m4 7 6-4 6 6 5-4" />
+      </g>
+    </SvgIcon>
+  );
+}
+
 export function PlusIcon(props) {
   return (
     <SvgIcon {...props}>

@@ -80,6 +80,7 @@ INSTALLED_APPS = [
     'about_page',
     'drivers',
     'catalog',
+    'reports',
 ]
 
 MIDDLEWARE = [
