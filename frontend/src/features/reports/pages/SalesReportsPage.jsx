@@ -286,8 +286,9 @@ function SalesReportsSession({ user }) {
               <article className="stat reports-summary">
                 <span className="stat-label">Gross sales</span>
                 <strong className="stat-value">{money(report.summary.gross_sales_usd, 2)}</strong>
+                <small className="stat-note">Across the entire scope</small>
               </article>
-              <article className="stat reports-summary">
+              <article className="stat stat-highlight reports-summary">
                 <span className="stat-label">Project share ({rate}%)</span>
                 <strong className="stat-value">{money(report.summary.project_share_usd, 4)}</strong>
                 <small className="stat-note">Exact {rate}% share, including fractional cents</small>
