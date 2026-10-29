@@ -1,6 +1,7 @@
 -- Additional class-development demo records. Review, run, then COMMIT separately.
 -- No existing records are updated. Repeated runs skip matching fixture records.
--- Adds up to 90 sales, 12 products, and 9 point transactions.
+-- Adds up to 90 sales, 24 products, and 9 point transactions.
+-- Requires the reports and catalog migrations on Team11_DB before running.
 USE Team11_DB;
 SELECT DATABASE() AS target_database;
 START TRANSACTION;
@@ -49,7 +50,9 @@ INSERT INTO catalog_catalogproduct (
     is_available, created_at, updated_at
 )
 SELECT sponsor.id, product.name, product.description, '', product.price,
-       product.available, UTC_TIMESTAMP(6), UTC_TIMESTAMP(6)
+       CASE WHEN product.name = '[Demo S6] Winter jacket' AND MOD(sponsor.id, 2) = 0
+            THEN 0 ELSE product.available END,
+       UTC_TIMESTAMP(6), UTC_TIMESTAMP(6)
 FROM accounts_sponsorcompany AS sponsor
 CROSS JOIN (
     SELECT '[Demo S6] Travel mug' AS name,
@@ -59,6 +62,12 @@ CROSS JOIN (
            'A warm jacket. This reward intentionally costs more than the sample balance.', 349.95, 1
     UNION ALL SELECT '[Demo S6] Safety handbook',
            'A zero-point reward for checking the free-product presentation.', 0.00, 1
+    UNION ALL SELECT '[Demo S6] Insulated lunch bag',
+           'Keeps a meal cool during a long shift.', 18.50, 1
+    UNION ALL SELECT '[Demo S6] Roadside safety kit',
+           'A compact kit with a flashlight and reflective supplies.', 74.99, 1
+    UNION ALL SELECT '[Demo S6] Weekend getaway voucher',
+           'A high-value reward for long-term safe driving.', 899.00, 0
 ) AS product
 WHERE sponsor.id IN (1,2,3,4)
 AND NOT EXISTS (
@@ -99,6 +108,14 @@ SELECT COUNT(*) AS demo_sales, SUM(gross_amount_usd) AS demo_gross_usd,
        SUM(project_share_usd <> gross_amount_usd * 0.01) AS incorrect_share_rows
 FROM reports_completedsale
 WHERE reference LIKE 'S6-DEMO-V2-D%';
+
+SELECT sponsor.name AS sponsor_name, COUNT(*) AS demo_products,
+       SUM(product.is_available = 0) AS unavailable_products
+FROM catalog_catalogproduct AS product
+JOIN accounts_sponsorcompany AS sponsor ON sponsor.id = product.sponsor_id
+WHERE product.name LIKE '[Demo S6] %'
+GROUP BY sponsor.id, sponsor.name
+ORDER BY sponsor.name;
 
 SELECT driver.name, sponsor.name AS sponsor_name,
        SUM(points.point_change) AS current_point_balance
