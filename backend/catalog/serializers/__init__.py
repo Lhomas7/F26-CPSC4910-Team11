@@ -6,6 +6,8 @@ from .products import (
 )
 
 __all__ = [
-    'CatalogBrowseProductSerializer', 'CatalogProductSerializer',
-    'ProductAvailabilitySerializer', 'ProductCreateSerializer',
+    'CatalogBrowseProductSerializer',
+    'CatalogProductSerializer',
+    'ProductAvailabilitySerializer',
+    'ProductCreateSerializer',
 ]

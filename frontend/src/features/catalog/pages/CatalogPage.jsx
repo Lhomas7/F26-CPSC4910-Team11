@@ -22,14 +22,9 @@ export default function CatalogPage() {
   // unexpected role if this feature is rendered on its own.
   return (
     <>
-      <PageHeader
-        title="Catalog"
-        subtitle="Your sponsor’s reward catalog"
-      />
+      <PageHeader title="Catalog" subtitle="Your sponsor’s reward catalog" />
       <StatePanel title="Catalog access is unavailable">
-        <p>
-          Only Driver and Sponsor accounts can browse a reward catalog.
-        </p>
+        <p>Only Driver and Sponsor accounts can browse a reward catalog.</p>
       </StatePanel>
     </>
   );

@@ -52,7 +52,8 @@ def end_impersonation(request, reason, action='invalidate', target=None):
     if role not in ('driver', 'sponsor'):
         start = AdminImpersonationEvent.objects.filter(
             admin=admin,
-            target_id=target_id, action='start',
+            target_id=target_id,
+            action='start',
         ).first()
         role = start.target_role if start else get_account_type(target) if target else ''
     AdminImpersonationEvent.objects.create(
@@ -155,7 +156,8 @@ class AdminImpersonationMiddleware:
             end_impersonation(request, 'view_as_admin_session_ended')
             logout(request)
             return JsonResponse(
-                {'code': 'session_expired', 'detail': SESSION_EXPIRED_MESSAGE}, status=401,
+                {'code': 'session_expired', 'detail': SESSION_EXPIRED_MESSAGE},
+                status=401,
             )
         if target_id and request.real_user.is_authenticated:
             admin_mfa = get_mfa_status(request.real_user)
@@ -163,7 +165,8 @@ class AdminImpersonationMiddleware:
                 end_impersonation(request, 'view_as_admin_ineligible')
                 logout(request)
                 return JsonResponse(
-                    {'code': 'session_expired', 'detail': SESSION_EXPIRED_MESSAGE}, status=401,
+                    {'code': 'session_expired', 'detail': SESSION_EXPIRED_MESSAGE},
+                    status=401,
                 )
             if admin_mfa['required'] and not admin_mfa['enrolled']:
                 end_impersonation(request, 'view_as_admin_mfa_required')
@@ -177,9 +180,13 @@ class AdminImpersonationMiddleware:
                 started = None
             expired = not started or timezone.now() >= started + IMPERSONATION_DURATION
             target = get_user_model().objects.filter(pk=target_id).first()
-            ineligible = view_as_eligibility(target) if target else {
-                'code': 'view_as_target_deleted',
-            }
+            ineligible = (
+                view_as_eligibility(target)
+                if target
+                else {
+                    'code': 'view_as_target_deleted',
+                }
+            )
 
             if expired or ineligible:
                 end_impersonation(
@@ -207,8 +214,16 @@ class AdminImpersonationMiddleware:
         # Keep this guard until the client acknowledges the administrator return;
         # concurrent requests must not silently regain administrator privileges.
         ended = request.session.get(IMPERSONATION_ENDED_KEY)
-        if ended and request.path.startswith('/api/') and request.path not in (
-            '/api/me/', self.stop_path, '/api/logout/', '/api/csrf/',
+        if (
+            ended
+            and request.path.startswith('/api/')
+            and request.path
+            not in (
+                '/api/me/',
+                self.stop_path,
+                '/api/logout/',
+                '/api/csrf/',
+            )
         ):
             return JsonResponse(ended, status=409)
         return self.get_response(request)

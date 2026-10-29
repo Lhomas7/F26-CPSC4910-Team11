@@ -10,6 +10,7 @@ export const NAV_ITEMS = [
   { to: '/users', label: 'Users', icon: 'users', roles: ['admin'] },
   { to: '/audit-log', label: 'Audit log', icon: 'audit', roles: ['admin'] },
   { to: '/invoices', label: 'Invoices', icon: 'invoices', roles: ['admin'] },
+  { to: '/reports', label: 'Reports', icon: 'reports', roles: ['admin'] },
   {
     to: '/about',
     label: 'About',
@@ -27,6 +28,7 @@ export const PAGE_ROLES = {
   users: ['admin'],
   auditLog: ['admin'],
   invoices: ['admin'],
+  reports: ['admin'],
 };
 
 /** The role the navigation should use for this user ('guest' when signed out). */

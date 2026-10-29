@@ -34,7 +34,8 @@ def update_product_availability(*, user, product_id, data):
     # Scope before lookup: another organization's ID looks just like a missing
     # ID. Lock the owned row so concurrent availability writes are serialized.
     product = get_object_or_404(
-        scope.restrict(CatalogProduct.objects.select_for_update()), pk=product_id,
+        scope.restrict(CatalogProduct.objects.select_for_update()),
+        pk=product_id,
     )
     serializer = ProductAvailabilitySerializer(data=data)
     serializer.is_valid(raise_exception=True)

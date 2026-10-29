@@ -7,3 +7,4 @@ export * from './adminUsers';
 export * from './catalog';
 export * from './notifications';
 export * from './adminReports';
+export * from './reports';

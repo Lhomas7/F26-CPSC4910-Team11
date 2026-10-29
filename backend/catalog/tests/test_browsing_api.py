@@ -28,23 +28,37 @@ class CatalogBrowseApiTests(APITestCase):
         MFASettings.objects.create(user=cls.sponsor, totp_enabled=True)
         cls.driver_user = User.objects.create_user(username='browse.driver')
         cls.driver = Driver.objects.create(
-            user=cls.driver_user, name='Browse Driver', sponsor=cls.company, status='approved',
+            user=cls.driver_user,
+            name='Browse Driver',
+            sponsor=cls.company,
+            status='approved',
         )
         cls.admin = User.objects.create_user(username='browse.admin', is_staff=True)
         MFASettings.objects.create(user=cls.admin, totp_enabled=True)
         cls.first = CatalogProduct.objects.create(
-            sponsor=cls.company, name='A Mug', description='Reusable', price_usd='12.50',
+            sponsor=cls.company,
+            name='A Mug',
+            description='Reusable',
+            price_usd='12.50',
             image_url='https://images.example.com/mug.png',
         )
         cls.unavailable = CatalogProduct.objects.create(
-            sponsor=cls.company, name='B Jacket', price_usd='40.00', is_available=False,
+            sponsor=cls.company,
+            name='B Jacket',
+            price_usd='40.00',
+            is_available=False,
         )
         cls.foreign = CatalogProduct.objects.create(
-            sponsor=cls.other_company, name='Foreign Reward', price_usd='1.00',
+            sponsor=cls.other_company,
+            name='Foreign Reward',
+            price_usd='1.00',
         )
         PointTransaction.objects.create(
-            driver=cls.driver, sponsor=cls.company, changed_by_user=cls.sponsor,
-            point_change=250, reason='Existing balance',
+            driver=cls.driver,
+            sponsor=cls.company,
+            changed_by_user=cls.sponsor,
+            point_change=250,
+            reason='Existing balance',
         )
 
     def setUp(self):
@@ -54,8 +68,12 @@ class CatalogBrowseApiTests(APITestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['count'], 2)
-        self.assertEqual([row['id'] for row in response.data['results']], [self.first.pk, self.unavailable.pk])
-        self.assertEqual(response.data['sponsor'], {'id': self.company.pk, 'name': self.company.name})
+        self.assertEqual(
+            [row['id'] for row in response.data['results']], [self.first.pk, self.unavailable.pk]
+        )
+        self.assertEqual(
+            response.data['sponsor'], {'id': self.company.pk, 'name': self.company.name}
+        )
         self.assertEqual(response.data['point_balance'], 250)
         self.assertEqual(response.data['results'][0]['description'], 'Reusable')
         self.assertEqual(response.data['results'][0]['image_url'], self.first.image_url)
@@ -66,7 +84,9 @@ class CatalogBrowseApiTests(APITestCase):
     def test_default_pricing_and_zero_cost(self):
         CatalogProduct.objects.filter(pk=self.first.pk).update(price_usd='0.00')
         response = self.client.get(self.url)
-        self.assertEqual(response.data['pricing'], {'status': 'configured', 'points_per_dollar': 100})
+        self.assertEqual(
+            response.data['pricing'], {'status': 'configured', 'points_per_dollar': 100}
+        )
         free, expensive = response.data['results']
         self.assertEqual(free['point_cost'], 0)
         self.assertIs(free['can_afford'], True)
@@ -82,11 +102,15 @@ class CatalogBrowseApiTests(APITestCase):
         self.assertEqual(response.data['results'][0]['point_cost'], 624)
         self.assertEqual(response.data['point_balance'], 250)
         self.assertEqual(PointTransaction.objects.get(driver=self.driver).point_change, 250)
-        self.assertEqual(SponsorCompany.objects.get(pk=self.other_company.pk).points_per_dollar, 100)
+        self.assertEqual(
+            SponsorCompany.objects.get(pk=self.other_company.pk).points_per_dollar, 100
+        )
 
     def test_affordability_at_parity_and_one_point_short_is_independent_of_availability(self):
         CatalogProduct.objects.filter(pk=self.first.pk).update(price_usd='2.50', is_available=False)
-        CatalogProduct.objects.filter(pk=self.unavailable.pk).update(price_usd='2.51', is_available=True)
+        CatalogProduct.objects.filter(pk=self.unavailable.pk).update(
+            price_usd='2.51', is_available=True
+        )
         equal, short = self.client.get(self.url).data['results']
         self.assertIs(equal['can_afford'], True)
         self.assertIs(short['can_afford'], False)
@@ -125,7 +149,9 @@ class CatalogBrowseApiTests(APITestCase):
             ({'sponsor': None}, 'sponsor_required'),
         ):
             with self.subTest(changes=changes):
-                Driver.objects.filter(pk=self.driver.pk).update(status='approved', sponsor=self.company)
+                Driver.objects.filter(pk=self.driver.pk).update(
+                    status='approved', sponsor=self.company
+                )
                 Driver.objects.filter(pk=self.driver.pk).update(**changes)
                 self.client.force_authenticate(get_user_model().objects.get(pk=self.driver_user.pk))
                 response = self.client.get(self.url)
@@ -177,10 +203,12 @@ class CatalogBrowseApiTests(APITestCase):
         self.assertEqual(self.client.get(self.url, {'page': 999}).status_code, 404)
 
     def test_page_sizes_are_bounded_and_default_is_25(self):
-        CatalogProduct.objects.bulk_create([
-            CatalogProduct(sponsor=self.company, name=f'Reward {number:03}', price_usd='1.00')
-            for number in range(105)
-        ])
+        CatalogProduct.objects.bulk_create(
+            [
+                CatalogProduct(sponsor=self.company, name=f'Reward {number:03}', price_usd='1.00')
+                for number in range(105)
+            ]
+        )
         self.assertEqual(len(self.client.get(self.url).data['results']), 25)
         response = self.client.get(self.url, {'page_size': 10000})
         self.assertEqual(response.data['count'], 107)

@@ -32,12 +32,16 @@ class AdminPasswordResetTests(APITestCase):
     def setUpTestData(cls):
         User = get_user_model()
         cls.requester = User.objects.create_user(
-            username='reset.requester', email='requester@example.com', password=PASSWORD,
+            username='reset.requester',
+            email='requester@example.com',
+            password=PASSWORD,
             is_staff=True,
         )
         enroll_totp(cls.requester)
         cls.target = User.objects.create_user(
-            username='reset.target', email='target@example.com', password=PASSWORD,
+            username='reset.target',
+            email='target@example.com',
+            password=PASSWORD,
             is_staff=True,
         )
         cls.target_mfa = enroll_totp(cls.target)
@@ -217,7 +221,9 @@ class AdminPasswordResetTests(APITestCase):
         uid, token = self.fresh_link()
         self.assertEqual(self.confirm(uid, token).status_code, status.HTTP_200_OK)
 
-        again = self.confirm(uid, token, password='AnotherSecure55!', password_confirm='AnotherSecure55!')
+        again = self.confirm(
+            uid, token, password='AnotherSecure55!', password_confirm='AnotherSecure55!'
+        )
 
         self.assertEqual(again.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue(self.target_password_works(NEW_PASSWORD))

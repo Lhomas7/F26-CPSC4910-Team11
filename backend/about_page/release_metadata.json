@@ -26,5 +26,19 @@
     "release_date": "2026-10-09",
     "product_name": "Good Driver Incentive Program",
     "product_description": "Points and Driver management, security improvements, role-specific dashboards, UI architecture, and Administrator View-As refinements. Demonstrated October 8 and finalized October 9, 2026."
+  },
+  {
+    "team_number": 11,
+    "version_number": "0.5.0",
+    "release_date": "2026-10-22",
+    "product_name": "Good Driver Incentive Program",
+    "product_description": "Sponsor and Driver reward catalogs, point notifications, account-security improvements, and repeatable local backend setup."
+  },
+  {
+    "team_number": 11,
+    "version_number": "0.6.0",
+    "release_date": "2026-10-29",
+    "product_name": "Good Driver Incentive Program",
+    "product_description": "Administrator sales reports and completed-sale audit records, notification and device-check improvements, and a manual light/dark mode toggle."
   }
 ]

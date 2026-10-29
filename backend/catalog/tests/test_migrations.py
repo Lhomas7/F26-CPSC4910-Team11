@@ -19,7 +19,9 @@ class CatalogMigrationTests(TransactionTestCase):
             executor = MigrationExecutor(connection)
             executor.migrate(baseline)
             apps = executor.loader.project_state(baseline).apps
-            sponsor = apps.get_model('accounts', 'SponsorCompany').objects.create(name='Existing Sponsor')
+            sponsor = apps.get_model('accounts', 'SponsorCompany').objects.create(
+                name='Existing Sponsor'
+            )
 
             target = [('catalog', '0001_initial')]
             executor = MigrationExecutor(connection)
@@ -30,12 +32,16 @@ class CatalogMigrationTests(TransactionTestCase):
             self.assertEqual(Sponsor.objects.get(pk=sponsor.pk).name, 'Existing Sponsor')
             self.assertFalse(Product.objects.exists())
             product = Product.objects.create(
-                sponsor_id=sponsor.pk, name='Migration Reward', price_usd='12.50',
+                sponsor_id=sponsor.pk,
+                name='Migration Reward',
+                price_usd='12.50',
             )
             self.assertTrue(product.is_available)
             self.assertEqual(Product.objects.get(pk=product.pk).sponsor_id, sponsor.pk)
             with connection.cursor() as cursor:
-                constraints = connection.introspection.get_constraints(cursor, Product._meta.db_table)
+                constraints = connection.introspection.get_constraints(
+                    cursor, Product._meta.db_table
+                )
             self.assertIn('catalog_product_price_nonnegative', constraints)
             self.assertIn('catalog_product_name_nonempty', constraints)
             self.assertIn('catalog_sponsor_available_idx', constraints)

@@ -46,14 +46,7 @@ export function confirmPasswordReset({ uid, token, password, passwordConfirm }) 
   }).then(readJson);
 }
 
-export function confirmAdminPasswordReset({
-  uid,
-  token,
-  method,
-  code,
-  password,
-  passwordConfirm,
-}) {
+export function confirmAdminPasswordReset({ uid, token, method, code, password, passwordConfirm }) {
   return request('/admin-password-reset/confirm/', {
     method: 'POST',
     body: { uid, token, method, code, password, password_confirm: passwordConfirm },

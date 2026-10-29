@@ -1,8 +1,40 @@
 export function CheckIcon(props) {
   return (
     <SvgIcon {...props}>
-      <path d="m5 12 4 4L19 6" stroke="currentColor" strokeWidth="2"
-        strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="m5 12 4 4L19 6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </SvgIcon>
+  );
+}
+
+export function SunIcon(props) {
+  return (
+    <SvgIcon {...props}>
+      <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" />
+      <path
+        d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="1.8"
+      />
+    </SvgIcon>
+  );
+}
+
+export function MoonIcon(props) {
+  return (
+    <SvgIcon {...props}>
+      <path
+        d="M20.2 15.1A8.5 8.5 0 0 1 8.9 3.8 8.5 8.5 0 1 0 20.2 15.1Z"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
     </SvgIcon>
   );
 }
@@ -254,6 +286,12 @@ export function InvoiceIcon(props) {
       <g stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
         <path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z" />
         <path d="M9 8h6M9 12h6" />
+export function ReportsIcon(props) {
+  return (
+    <SvgIcon {...props}>
+      <g stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+        <path d="m4 7 6-4 6 6 5-4" />
       </g>
     </SvgIcon>
   );

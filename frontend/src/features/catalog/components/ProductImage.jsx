@@ -38,8 +38,21 @@ function ImageContent({ src, name, emptyText, failedText }) {
   );
 }
 
-export default function ProductImage({ src, name, emptyText = 'No image added', failedText = 'Image didn’t load' }) {
+export default function ProductImage({
+  src,
+  name,
+  emptyText = 'No image added',
+  failedText = 'Image didn’t load',
+}) {
   // A replacement URL gets a fresh error state; one failed image never affects
   // another card. Images are loaded by the browser, not fetched by our server.
-  return <ImageContent key={src || ''} src={src} name={name} emptyText={emptyText} failedText={failedText} />;
+  return (
+    <ImageContent
+      key={src || ''}
+      src={src}
+      name={name}
+      emptyText={emptyText}
+      failedText={failedText}
+    />
+  );
 }

@@ -63,7 +63,9 @@ test('signed-out visitors are redirected to sign in', () => {
 
 test.each(['admin', 'unknown'])('%s cannot open catalog as their own role', (role) => {
   renderCatalog({ account_type: role });
-  expect(screen.getByRole('heading', { name: "You don't have access to this page" })).toBeInTheDocument();
+  expect(
+    screen.getByRole('heading', { name: "You don't have access to this page" }),
+  ).toBeInTheDocument();
 });
 
 test('waits for authentication before rendering the catalog', () => {
@@ -78,7 +80,9 @@ test.each(['driver', 'sponsor'])('View-As uses the effective %s role', (role) =>
 });
 
 test('catalog is linked for Drivers and Sponsors only', () => {
-  expect(navItemsFor({ account_type: 'sponsor' }).some((item) => item.to === '/catalog')).toBe(true);
+  expect(navItemsFor({ account_type: 'sponsor' }).some((item) => item.to === '/catalog')).toBe(
+    true,
+  );
   expect(navItemsFor({ account_type: 'driver' }).some((item) => item.to === '/catalog')).toBe(true);
   for (const user of [null, { account_type: 'admin' }]) {
     expect(navItemsFor(user).some((item) => item.to === '/catalog')).toBe(false);
@@ -87,12 +91,18 @@ test('catalog is linked for Drivers and Sponsors only', () => {
 
 test.each(['driver', 'admin'])('%s cannot open the Add Product route', (role) => {
   renderCatalog({ account_type: role }, false, '/catalog/new');
-  expect(screen.getByRole('heading', { name: "You don't have access to this page" })).toBeInTheDocument();
+  expect(
+    screen.getByRole('heading', { name: "You don't have access to this page" }),
+  ).toBeInTheDocument();
   expect(screen.queryByLabelText('Product name')).not.toBeInTheDocument();
 });
 
 test('Sponsor View-As can open Add Product without automatically posting', () => {
-  renderCatalog({ account_type: 'sponsor', impersonation: { active: true, admin: { id: 1 } } }, false, '/catalog/new');
+  renderCatalog(
+    { account_type: 'sponsor', impersonation: { active: true, admin: { id: 1 } } },
+    false,
+    '/catalog/new',
+  );
   expect(screen.getByRole('heading', { level: 1, name: 'Add product' })).toBeInTheDocument();
   expect(createProduct).not.toHaveBeenCalled();
 });

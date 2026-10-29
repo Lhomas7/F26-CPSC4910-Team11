@@ -32,6 +32,19 @@ function getSignOutButton() {
   return screen.getByRole('menuitem', { name: 'Sign out' });
 }
 
+test('theme toggle applies and remembers the selected mode', () => {
+  window.localStorage.setItem('gdip-theme', 'light');
+  renderLayout();
+
+  userEvent.click(screen.getByRole('button', { name: 'Switch to dark mode' }));
+  expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
+  expect(window.localStorage.getItem('gdip-theme')).toBe('dark');
+  expect(screen.getByRole('button', { name: 'Switch to light mode' })).toBeInTheDocument();
+
+  window.localStorage.removeItem('gdip-theme');
+  document.documentElement.removeAttribute('data-theme');
+});
+
 test('Sign out asks for confirmation before signing out', () => {
   const { auth } = renderLayout();
 

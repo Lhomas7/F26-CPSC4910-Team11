@@ -17,11 +17,14 @@ export default function useCatalogPage(page, onRecovered) {
     }
     recovered.current = null;
     try {
-      return { ...await getCatalog(page), page, requestedPage: page, recovered: false };
+      return { ...(await getCatalog(page)), page, requestedPage: page, recovered: false };
     } catch (error) {
       if (error.status !== 404 || page === 1) throw error;
       const data = {
-        ...await getCatalog(1), page: 1, requestedPage: page, recovered: true,
+        ...(await getCatalog(1)),
+        page: 1,
+        requestedPage: page,
+        recovered: true,
       };
       if (version === requestVersion.current) recovered.current = data;
       return data;
@@ -30,12 +33,21 @@ export default function useCatalogPage(page, onRecovered) {
   const state = useApiRequest(request);
 
   useEffect(() => {
-    if (state.status === 'ready' && state.data?.recovered &&
-        state.data.requestedPage === page && page !== 1) {
+    if (
+      state.status === 'ready' &&
+      state.data?.recovered &&
+      state.data.requestedPage === page &&
+      page !== 1
+    ) {
       onRecovered();
     }
   }, [state.status, state.data, page, onRecovered]);
 
-  useEffect(() => () => { requestVersion.current += 1; }, []);
+  useEffect(
+    () => () => {
+      requestVersion.current += 1;
+    },
+    [],
+  );
   return state;
 }

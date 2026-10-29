@@ -15,9 +15,9 @@ class StrictInputSerializer(serializers.Serializer):
         if isinstance(data, Mapping):
             unknown = data.keys() - self.fields.keys()
             if unknown:
-                raise serializers.ValidationError({
-                    field: 'This field is not accepted.' for field in sorted(unknown)
-                })
+                raise serializers.ValidationError(
+                    {field: 'This field is not accepted.' for field in sorted(unknown)}
+                )
         return super().to_internal_value(data)
 
 
@@ -41,7 +41,10 @@ class ProductCreateSerializer(StrictInputSerializer):
     name = ProductTextField(max_length=200)
     description = ProductTextField(max_length=5000, required=False, allow_blank=True, default='')
     image_url = serializers.URLField(
-        max_length=2048, required=False, allow_blank=True, default='',
+        max_length=2048,
+        required=False,
+        allow_blank=True,
+        default='',
         validators=[URLValidator(schemes=['https'])],
     )
     price_usd = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0)
@@ -71,8 +74,14 @@ class CatalogProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = CatalogProduct
         fields = (
-            'id', 'name', 'description', 'image_url', 'price_usd',
-            'is_available', 'created_at', 'updated_at',
+            'id',
+            'name',
+            'description',
+            'image_url',
+            'price_usd',
+            'is_available',
+            'created_at',
+            'updated_at',
         )
         read_only_fields = fields
 

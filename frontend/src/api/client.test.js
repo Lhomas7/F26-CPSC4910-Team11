@@ -1,4 +1,8 @@
-import { API_ACTIVITY_EVENT, SESSION_EXPIRED_EVENT, VIEW_AS_ENDED_EVENT } from '../auth/sessionEvents';
+import {
+  API_ACTIVITY_EVENT,
+  SESSION_EXPIRED_EVENT,
+  VIEW_AS_ENDED_EVENT,
+} from '../auth/sessionEvents';
 import { ApiError, NetworkError, checkHealth, isOutageError, readJson, request } from './client';
 
 function jsonResponse(status, data) {
@@ -42,9 +46,13 @@ test('a terminated View-As response announces the identity change', async () => 
   const ended = jest.fn();
   window.addEventListener(VIEW_AS_ENDED_EVENT, ended);
   try {
-    global.fetch = jest.fn().mockResolvedValue(jsonResponse(409, {
-      active: false, code: 'view_as_expired', detail: 'View-As ended.',
-    }));
+    global.fetch = jest.fn().mockResolvedValue(
+      jsonResponse(409, {
+        active: false,
+        code: 'view_as_expired',
+        detail: 'View-As ended.',
+      }),
+    );
     const response = await request('/points/');
     expect(response.status).toBe(409);
     expect(ended).toHaveBeenCalledTimes(1);

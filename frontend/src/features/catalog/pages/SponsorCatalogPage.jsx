@@ -21,7 +21,12 @@ export default function SponsorCatalogPage({ identity }) {
   const noticeRef = useRef(null);
   const [createdNotice, setCreatedNotice] = useState(() => {
     const notice = location.state?.catalogCreated;
-    return notice && notice.identity === identity && Number.isSafeInteger(notice.id) && typeof notice.name === 'string' ? notice : null;
+    return notice &&
+      notice.identity === identity &&
+      Number.isSafeInteger(notice.id) &&
+      typeof notice.name === 'string'
+      ? notice
+      : null;
   });
   useEffect(() => {
     if (!location.state?.catalogCreated) return;
@@ -29,9 +34,14 @@ export default function SponsorCatalogPage({ identity }) {
     // returning from another form or account. Keep unrelated location state.
     const next = { ...location.state };
     delete next.catalogCreated;
-    navigate(location.pathname + location.search, { replace: true, state: Object.keys(next).length ? next : null });
+    navigate(location.pathname + location.search, {
+      replace: true,
+      state: Object.keys(next).length ? next : null,
+    });
   }, [location.state, location.pathname, location.search, navigate]);
-  useEffect(() => { if (createdNotice) noticeRef.current?.focus(); }, [createdNotice]);
+  useEffect(() => {
+    if (createdNotice) noticeRef.current?.focus();
+  }, [createdNotice]);
   const { page, changePage, recoverPage } = useCatalogPagination();
   const { data, status, error: loadError, reload } = useCatalogPage(page, recoverPage);
   const [accessError, setAccessError] = useState(null);
@@ -39,7 +49,9 @@ export default function SponsorCatalogPage({ identity }) {
   const active = useRef(false);
   useEffect(() => {
     active.current = true;
-    return () => { active.current = false; };
+    return () => {
+      active.current = false;
+    };
   }, []);
   const onSaved = useCallback((updated) => {
     if (!active.current) return;
@@ -59,7 +71,9 @@ export default function SponsorCatalogPage({ identity }) {
   useEffect(() => {
     // Do not leave a previous "now available" announcement behind after a
     // fresh read may have confirmed a different value from another Sponsor.
-    setAvailability((current) => current.announcement ? { ...current, announcement: '' } : current);
+    setAvailability((current) =>
+      current.announcement ? { ...current, announcement: '' } : current,
+    );
   }, [data]);
   const error = accessError || loadError;
   const busy = status === 'loading';
@@ -73,21 +87,37 @@ export default function SponsorCatalogPage({ identity }) {
       <PageHeader
         title="Catalog"
         subtitle={
-          <span className="catalog-header-subtitle" title={visible ? `${visible.sponsor.name}’s reward catalog` : undefined}>
-            {visible ? `${visible.sponsor.name}’s reward catalog` : busy ? 'Loading your catalog' : 'Your organization’s reward catalog'}
+          <span
+            className="catalog-header-subtitle"
+            title={visible ? `${visible.sponsor.name}’s reward catalog` : undefined}
+          >
+            {visible
+              ? `${visible.sponsor.name}’s reward catalog`
+              : busy
+                ? 'Loading your catalog'
+                : 'Your organization’s reward catalog'}
           </span>
         }
       />
       <main className="catalog-content" aria-busy={busy}>
         {createdNotice && !denied && (
-          <div className="banner banner-success catalog-created-notice" role="status" ref={noticeRef} tabIndex={-1}>
+          <div
+            className="banner banner-success catalog-created-notice"
+            role="status"
+            ref={noticeRef}
+            tabIndex={-1}
+          >
             <div>
               <strong>“{createdNotice.name}” was added.</strong>
               <p>Products are listed alphabetically, so it may be on a later page.</p>
             </div>
             <div className="catalog-toolbar-actions">
-              <Link className="button" to="/catalog/new">Add another product</Link>
-              <button className="button" type="button" onClick={() => setCreatedNotice(null)}>Dismiss</button>
+              <Link className="button" to="/catalog/new">
+                Add another product
+              </Link>
+              <button className="button" type="button" onClick={() => setCreatedNotice(null)}>
+                Dismiss
+              </button>
             </div>
           </div>
         )}
@@ -96,57 +126,95 @@ export default function SponsorCatalogPage({ identity }) {
         </p>
         {!denied && (visible || busy) && (
           <p className="banner">
-            {visible?.pricing?.status === 'configured' ? '' : 'Point pricing isn’t configured yet. '}
+            {visible?.pricing?.status === 'configured'
+              ? ''
+              : 'Point pricing isn’t configured yet. '}
             Product prices are shown in US dollars. Reward redemption is not available.
           </p>
         )}
         {visible?.recovered && (
-          <p className="banner" role="status">That page doesn&apos;t exist. Showing page 1.</p>
+          <p className="banner" role="status">
+            That page doesn&apos;t exist. Showing page 1.
+          </p>
         )}
-        {error && (
-          visible ? (
+        {error &&
+          (visible ? (
             <div className="banner banner-error catalog-refresh-error" role="alert">
               <div>
                 <strong>Catalog couldn&apos;t be refreshed</strong>
-                <p>{error.message || 'Try again in a moment.'} Previously loaded products are still shown.</p>
+                <p>
+                  {error.message || 'Try again in a moment.'} Previously loaded products are still
+                  shown.
+                </p>
               </div>
-              <button className="button" type="button" onClick={reload}>Try again</button>
+              <button className="button" type="button" onClick={reload}>
+                Try again
+              </button>
             </div>
           ) : (
-            <StatePanel tone="error" title={denied ? 'Catalog access is unavailable' : 'Catalog couldn’t be loaded'}>
+            <StatePanel
+              tone="error"
+              title={denied ? 'Catalog access is unavailable' : 'Catalog couldn’t be loaded'}
+            >
               <p>{error.message || 'Try again in a moment.'}</p>
-              {!denied && <button className="button" type="button" onClick={reload}>Try again</button>}
+              {!denied && (
+                <button className="button" type="button" onClick={reload}>
+                  Try again
+                </button>
+              )}
             </StatePanel>
-          )
-        )}
+          ))}
         {!visible && busy && <CatalogSkeleton />}
         {visible && (
           <>
             <div className="catalog-toolbar">
-              <p className="catalog-count">{visible.count} {visible.count === 1 ? 'product' : 'products'}</p>
+              <p className="catalog-count">
+                {visible.count} {visible.count === 1 ? 'product' : 'products'}
+              </p>
               <div className="catalog-toolbar-actions">
                 <button className="button" type="button" disabled={busy} onClick={reload}>
                   {busy ? 'Refreshing…' : 'Refresh catalog'}
                 </button>
-                <Link className="button button-primary" to="/catalog/new"><PlusIcon size={16} />Add product</Link>
+                <Link className="button button-primary" to="/catalog/new">
+                  <PlusIcon size={16} />
+                  Add product
+                </Link>
               </div>
             </div>
-            {busy && <p className="sr-only" role="status">Loading catalog page</p>}
+            {busy && (
+              <p className="sr-only" role="status">
+                Loading catalog page
+              </p>
+            )}
             {visible.results.length ? (
               <section aria-labelledby="catalog-products-heading">
-                <h2 className="sr-only" id="catalog-products-heading">Products</h2>
+                <h2 className="sr-only" id="catalog-products-heading">
+                  Products
+                </h2>
                 <ProductGrid>
                   {visible.results.map((record) => {
-                    const product = withConfirmedAvailability(record, availability.confirmed[record.id]);
+                    const product = withConfirmedAvailability(
+                      record,
+                      availability.confirmed[record.id],
+                    );
                     return (
-                      <ProductCard key={product.id} product={product} pricing={visible.pricing} footer={
-                        <SponsorProductFooter product={product}>
-                        <AvailabilityControl
-                          product={product} catalogVersion={data} disabled={busy}
-                          onSaved={onSaved} onAccessError={onAccessError} onRefresh={reload}
-                        />
-                        </SponsorProductFooter>
-                      } />
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        pricing={visible.pricing}
+                        footer={
+                          <SponsorProductFooter product={product}>
+                            <AvailabilityControl
+                              product={product}
+                              catalogVersion={data}
+                              disabled={busy}
+                              onSaved={onSaved}
+                              onAccessError={onAccessError}
+                              onRefresh={reload}
+                            />
+                          </SponsorProductFooter>
+                        }
+                      />
                     );
                   })}
                 </ProductGrid>
@@ -154,7 +222,10 @@ export default function SponsorCatalogPage({ identity }) {
             ) : (
               <StatePanel title="No products yet">
                 <p>Products added by your organization will appear here.</p>
-                <Link className="button button-primary" to="/catalog/new"><PlusIcon size={16} />Add product</Link>
+                <Link className="button button-primary" to="/catalog/new">
+                  <PlusIcon size={16} />
+                  Add product
+                </Link>
               </StatePanel>
             )}
             <CatalogPagination

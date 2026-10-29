@@ -180,15 +180,12 @@ def notify_sponsors_of_point_change(driver, point_change, reason, balance, chang
     """
     added = point_change > 0
     direction = {'on_points_added' if added else 'on_points_removed': True}
-    subscriptions = (
-        SponsorDriverAlert.objects.filter(
-            driver=driver,
-            sponsor_account__company_id=driver.sponsor_id,
-            sponsor_account__user__is_active=True,
-            **direction,
-        )
-        .select_related('sponsor_account__user')
-    )
+    subscriptions = SponsorDriverAlert.objects.filter(
+        driver=driver,
+        sponsor_account__company_id=driver.sponsor_id,
+        sponsor_account__user__is_active=True,
+        **direction,
+    ).select_related('sponsor_account__user')
 
     verb = 'gained' if added else 'lost'
     actor = changed_by_user.get_full_name() or changed_by_user.get_username()

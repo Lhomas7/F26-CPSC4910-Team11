@@ -1,6 +1,10 @@
 const updatedFormat = new Intl.DateTimeFormat('en-US', {
-  month: 'numeric', day: 'numeric', year: 'numeric',
-  hour: 'numeric', minute: '2-digit', hour12: true,
+  month: 'numeric',
+  day: 'numeric',
+  year: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+  hour12: true,
 });
 
 export default function SponsorProductFooter({ product, children }) {

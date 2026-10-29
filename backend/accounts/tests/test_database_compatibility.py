@@ -26,13 +26,19 @@ class DatabaseContractTests(TestCase):
         SponsorAccount.objects.create(user=cls.sponsor, company=cls.company)
         user = User.objects.create_user(username='compat.driver', email='Known.Driver@example.com')
         cls.driver = Driver.objects.create(
-            user=user, name='Compatibility Driver', sponsor=cls.company, status='approved',
+            user=user,
+            name='Compatibility Driver',
+            sponsor=cls.company,
+            status='approved',
         )
 
     def entry(self, change, reason='Compatibility entry'):
         return PointTransaction.objects.create(
-            driver=self.driver, sponsor=self.company, changed_by_user=self.sponsor,
-            point_change=change, reason=reason,
+            driver=self.driver,
+            sponsor=self.company,
+            changed_by_user=self.sponsor,
+            point_change=change,
+            reason=reason,
         )
 
     def test_zero_point_constraint_is_enforced_in_database(self):
@@ -45,8 +51,10 @@ class DatabaseContractTests(TestCase):
             with self.captureOnCommitCallbacks(execute=True):
                 with self.assertRaises(RuntimeError), transaction.atomic():
                     adjust_driver_points(
-                        driver=self.driver, changed_by_user=self.sponsor,
-                        point_change=-25, reason='Rolled back adjustment',
+                        driver=self.driver,
+                        changed_by_user=self.sponsor,
+                        point_change=-25,
+                        reason='Rolled back adjustment',
                     )
                     raise RuntimeError('Rollback this operation')
             notify.assert_not_called()
@@ -65,6 +73,7 @@ class DatabaseContractTests(TestCase):
     def test_registration_rejects_case_variant_identity_values(self):
         serializer = RegistrationSerializer()
         from rest_framework.exceptions import ValidationError
+
         with self.assertRaises(ValidationError):
             serializer.validate_username('COMPAT.DRIVER')
         with self.assertRaises(ValidationError):
@@ -72,9 +81,15 @@ class DatabaseContractTests(TestCase):
 
     def test_ledger_indexes_exist_on_current_engine(self):
         with connection.cursor() as cursor:
-            constraints = connection.introspection.get_constraints(cursor, PointTransaction._meta.db_table)
-        self.assertEqual(constraints['point_tx_driver_time_idx']['columns'], ['driver_id', 'changed_at'])
-        self.assertEqual(constraints['point_tx_sponsor_time_idx']['columns'], ['sponsor_id', 'changed_at'])
+            constraints = connection.introspection.get_constraints(
+                cursor, PointTransaction._meta.db_table
+            )
+        self.assertEqual(
+            constraints['point_tx_driver_time_idx']['columns'], ['driver_id', 'changed_at']
+        )
+        self.assertEqual(
+            constraints['point_tx_sponsor_time_idx']['columns'], ['sponsor_id', 'changed_at']
+        )
 
 
 class ConcurrentPointDeductionTests(TransactionTestCase):
@@ -85,8 +100,16 @@ class ConcurrentPointDeductionTests(TransactionTestCase):
         sponsor = User.objects.create_user(username='concurrent.sponsor')
         SponsorAccount.objects.create(user=sponsor, company=company)
         user = User.objects.create_user(username='concurrent.driver')
-        driver = Driver.objects.create(user=user, name='Concurrent Driver', sponsor=company, status='approved')
-        PointTransaction.objects.create(driver=driver, sponsor=company, changed_by_user=sponsor, point_change=100, reason='Initial balance')
+        driver = Driver.objects.create(
+            user=user, name='Concurrent Driver', sponsor=company, status='approved'
+        )
+        PointTransaction.objects.create(
+            driver=driver,
+            sponsor=company,
+            changed_by_user=sponsor,
+            point_change=100,
+            reason='Initial balance',
+        )
         barrier = Barrier(2)
 
         def deduct():
@@ -99,15 +122,22 @@ class ConcurrentPointDeductionTests(TransactionTestCase):
                 actor = User.objects.get(pk=sponsor.pk)
                 barrier.wait(timeout=10)
                 try:
-                    adjust_driver_points(driver=driver.pk, changed_by_user=actor,
-                                         point_change=-75, reason='Concurrent deduction')
+                    adjust_driver_points(
+                        driver=driver.pk,
+                        changed_by_user=actor,
+                        point_change=-75,
+                        reason='Concurrent deduction',
+                    )
                     return 'accepted'
                 except PointAdjustmentError as error:
                     return error.code
             finally:
                 connection.close()
 
-        with patch('drivers.services.points.notify_point_change'), ThreadPoolExecutor(max_workers=2) as pool:
+        with (
+            patch('drivers.services.points.notify_point_change'),
+            ThreadPoolExecutor(max_workers=2) as pool,
+        ):
             futures = [pool.submit(deduct) for _ in range(2)]
             outcomes = [future.result(timeout=20) for future in futures]
         self.assertCountEqual(outcomes, ['accepted', 'insufficient_points'])

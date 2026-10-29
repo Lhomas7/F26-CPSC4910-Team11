@@ -31,12 +31,16 @@ class CatalogAccessTests(TestCase):
         MFASettings.objects.create(user=cls.sponsor, totp_enabled=True)
         cls.driver_user = User.objects.create_user(username='catalog.driver')
         cls.driver = Driver.objects.create(
-            user=cls.driver_user, name='Catalog Driver', sponsor=cls.company,
+            user=cls.driver_user,
+            name='Catalog Driver',
+            sponsor=cls.company,
             status='approved',
         )
         cls.other_user = User.objects.create_user(username='catalog.other')
         cls.other_driver = Driver.objects.create(
-            user=cls.other_user, name='Other Driver', sponsor=cls.other_company,
+            user=cls.other_user,
+            name='Other Driver',
+            sponsor=cls.other_company,
             status='approved',
         )
         cls.admin = User.objects.create_user(username='catalog.admin', is_staff=True)
@@ -55,10 +59,14 @@ class CatalogAccessTests(TestCase):
 
     def test_scopes_exclude_other_organizations_before_lookup(self):
         own_product = CatalogProduct.objects.create(
-            sponsor=self.company, name='Own reward', price_usd='12.50',
+            sponsor=self.company,
+            name='Own reward',
+            price_usd='12.50',
         )
         other_product = CatalogProduct.objects.create(
-            sponsor=self.other_company, name='Other reward', price_usd='15.00',
+            sponsor=self.other_company,
+            name='Other reward',
+            price_usd='15.00',
         )
         for scope in (sponsor_catalog_scope(self.sponsor), driver_catalog_scope(self.driver_user)):
             with self.subTest(scope=scope):
@@ -99,7 +107,8 @@ class CatalogAccessTests(TestCase):
 
     def test_inactive_accounts_are_refused(self):
         for resolver, user in (
-            (sponsor_catalog_scope, self.sponsor), (driver_catalog_scope, self.driver_user),
+            (sponsor_catalog_scope, self.sponsor),
+            (driver_catalog_scope, self.driver_user),
         ):
             user.is_active = False
             with self.subTest(user=user):

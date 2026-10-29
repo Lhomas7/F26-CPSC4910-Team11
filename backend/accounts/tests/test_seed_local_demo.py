@@ -1,3 +1,4 @@
+from decimal import Decimal
 from io import StringIO
 from unittest.mock import patch
 
@@ -5,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase, override_settings
+from reports.models import CompletedSale
 
 from about_page.models import AboutPageRelease
 from drivers.models import Driver, PointTransaction
@@ -33,6 +35,11 @@ class LocalDemoSeedTests(TestCase):
         self.assertIsNone(Driver.objects.get(user__username='unlinked.driver').sponsor_id)
         self.assertFalse(MFASettings.objects.exists())
         self.assertTrue(get_user_model().objects.get(username='demo.admin').is_staff)
+        self.assertEqual(CompletedSale.objects.count(), 3)
+        self.assertEqual(
+            sum((sale.project_share_usd for sale in CompletedSale.objects.all()), start=0),
+            Decimal('0.8000'),
+        )
 
     def test_rerun_preserves_password_profile_mfa_and_history(self):
         self.seed()
@@ -54,13 +61,17 @@ class LocalDemoSeedTests(TestCase):
         self.assertTrue(user.mfa_settings.totp_enabled)
         self.assertEqual(driver.name, 'Edited Driver')
         self.assertEqual(PointTransaction.objects.count(), 2)
+        self.assertEqual(CompletedSale.objects.count(), 3)
 
     def test_partial_existing_demo_account_is_preserved(self):
         user = get_user_model().objects.create_user(
-            username='pat.sponsor', email='pat.sponsor@example.com', password=self.password,
+            username='pat.sponsor',
+            email='pat.sponsor@example.com',
+            password=self.password,
         )
         company = SponsorCompany.objects.create(name='Other Demo Organization')
         from ..models import SponsorAccount
+
         SponsorAccount.objects.create(user=user, company=company)
 
         output = self.seed()
@@ -98,7 +109,9 @@ class LocalDemoSeedTests(TestCase):
         self.seed(with_about=True)
 
         self.assertEqual(AboutPageRelease.objects.filter(version_number='Local demo').count(), 1)
-        self.assertEqual(AboutPageRelease.objects.exclude(version_number='Local demo').count(), len(before))
+        self.assertEqual(
+            AboutPageRelease.objects.exclude(version_number='Local demo').count(), len(before)
+        )
 
     def test_missing_noninteractive_password_stops_without_creating_records(self):
         with patch.dict('os.environ', {'GDIP_DEMO_PASSWORD': ''}):

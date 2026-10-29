@@ -35,6 +35,13 @@
   transition: transform 120ms ease;
 }
 
+.select-menu-trigger > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .select-menu-trigger[aria-expanded='true'] .select-menu-chevron {
   transform: rotate(180deg);
 }
@@ -45,11 +52,12 @@
   border-radius: 0.55rem;
   box-shadow: 0 0.65rem 1.5rem rgb(0 0 0 / 18%);
   left: 0;
-  min-width: 100%;
   padding: 0.35rem;
   position: absolute;
   top: calc(100% + 0.35rem);
-  width: max-content;
+  width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
   z-index: 20;
 }
 
@@ -65,7 +73,7 @@
   color: var(--ink);
   font: inherit;
   font-size: 0.78rem;
-  min-width: 14rem;
+  min-width: 0;
   padding: 0.45rem 0.55rem;
   width: 100%;
 }

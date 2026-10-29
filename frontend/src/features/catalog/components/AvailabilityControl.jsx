@@ -3,20 +3,31 @@ import { useEffect, useRef, useState } from 'react';
 import { setProductAvailability } from '../../../api/catalog';
 import './AvailabilityControl.css';
 
-export default function AvailabilityControl({ product, catalogVersion, disabled, onSaved, onAccessError, onRefresh }) {
+export default function AvailabilityControl({
+  product,
+  catalogVersion,
+  disabled,
+  onSaved,
+  onAccessError,
+  onRefresh,
+}) {
   const [state, setState] = useState({ phase: 'idle' });
   const inFlight = useRef(false);
   const mounted = useRef(false);
 
   useEffect(() => {
     mounted.current = true;
-    return () => { mounted.current = false; };
+    return () => {
+      mounted.current = false;
+    };
   }, []);
 
   useEffect(() => {
     // A fresh catalog read verifies the row again, including after a 404 or
     // uncertain failure. It must not clear a request that is still in flight.
-    setState((current) => ['saving', 'idle'].includes(current.phase) ? current : { phase: 'idle' });
+    setState((current) =>
+      ['saving', 'idle'].includes(current.phase) ? current : { phase: 'idle' },
+    );
   }, [catalogVersion]);
 
   const save = async (requestedValue) => {
@@ -35,7 +46,8 @@ export default function AvailabilityControl({ product, catalogVersion, disabled,
       } else if (mounted.current) {
         setState({
           phase: error.status === 404 ? 'gone' : 'error',
-          message: error.message, requestedValue,
+          message: error.message,
+          requestedValue,
         });
       }
     } finally {
@@ -64,11 +76,13 @@ export default function AvailabilityControl({ product, catalogVersion, disabled,
           <strong>Couldn&apos;t update availability.</strong>
           <p>{state.message || 'Try again in a moment.'}</p>
           <p>
-            Last confirmed status: {product.is_available ? 'Available' : 'Unavailable'}.
-            {' '}Refresh the catalog to verify the current value.
+            Last confirmed status: {product.is_available ? 'Available' : 'Unavailable'}. Refresh the
+            catalog to verify the current value.
           </p>
           <button
-            className="button" type="button" disabled={disabled}
+            className="button"
+            type="button"
+            disabled={disabled}
             aria-label={`Retry availability update for ${product.name}`}
             onClick={() => save(state.requestedValue)}
           >
@@ -77,9 +91,13 @@ export default function AvailabilityControl({ product, catalogVersion, disabled,
         </div>
       )}
       <button
-        className="button" type="button" disabled={disabled || saving}
+        className="button"
+        type="button"
+        disabled={disabled || saving}
         aria-busy={saving || undefined}
-        aria-label={saving ? `Saving availability for ${product.name}` : `${action}: ${product.name}`}
+        aria-label={
+          saving ? `Saving availability for ${product.name}` : `${action}: ${product.name}`
+        }
         onClick={() => save(!product.is_available)}
       >
         {saving ? 'Saving…' : action}
