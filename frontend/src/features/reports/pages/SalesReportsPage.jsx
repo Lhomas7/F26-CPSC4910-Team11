@@ -37,6 +37,11 @@ function ReportSkeleton() {
 
 export default function SalesReportsPage() {
   const { user } = useAuth();
+  const identity = JSON.stringify([user?.id, user?.username, user?.account_type, user?.impersonation]);
+  return <SalesReportsSession key={identity} user={user} />;
+}
+
+function SalesReportsSession({ user }) {
   const [groupBy, setGroupBy] = useState('sponsor');
   const [sponsorId, setSponsorId] = useState('all');
   const [driverId, setDriverId] = useState('all');
@@ -45,6 +50,7 @@ export default function SalesReportsPage() {
   const [reportError, setReportError] = useState('');
   const [page, setPage] = useState(1);
   const [submitted, setSubmitted] = useState(null);
+  const [accessDenied, setAccessDenied] = useState(false);
   const latest = useRef(0);
   const resultsHeading = useRef(null);
   const failedRequest = useRef(null);
@@ -54,10 +60,11 @@ export default function SalesReportsPage() {
   const {
     data: options,
     status: optionsStatus,
+    error: optionsError,
     reload: reloadOptions,
   } = useApiRequest(
     useCallback(() => api.getSalesReportOptions(sponsorId), [sponsorId]),
-    { skip: user?.account_type !== 'admin' },
+    { skip: user?.account_type !== 'admin' || accessDenied },
   );
 
   useEffect(() => {
@@ -87,7 +94,7 @@ export default function SalesReportsPage() {
   );
 
   const resetReport = () => {
-    setReportError('');
+    // Editing draft selections must not erase a failed submitted request.
   };
 
   const changeGroup = (value) => {
@@ -103,6 +110,7 @@ export default function SalesReportsPage() {
   };
 
   const runReport = async (nextPage = 1, scope = null, moveFocus = true) => {
+    if (accessDenied || user?.account_type !== 'admin') return;
     const requestId = ++latest.current;
     const pending = scope || {
       groupBy, sponsorId, driverId,
@@ -125,9 +133,17 @@ export default function SalesReportsPage() {
       setSubmitted(pending);
       setPage(nextPage);
       setReportStatus('ready');
-      if (moveFocus) window.setTimeout(() => resultsHeading.current?.focus(), 0);
+      if (moveFocus) window.setTimeout(() => {
+        if (requestId === latest.current) resultsHeading.current?.focus();
+      }, 0);
     } catch (error) {
       if (requestId !== latest.current) return;
+      if ([401, 403, 409].includes(error.status)) {
+        setReport(null);
+        setSubmitted(null);
+        setAccessDenied(true);
+        return;
+      }
       setReportError(error.message || 'The sales report could not be loaded.');
       setReportStatus('error');
     }
@@ -143,7 +159,7 @@ export default function SalesReportsPage() {
   const selectionsChanged = submitted && (submitted.groupBy !== groupBy || submitted.sponsorId !== sponsorId || submitted.driverId !== driverId);
   const rate = report ? Number(report.summary.project_share_rate_percent).toLocaleString('en-US') : '1';
 
-  if (user?.account_type !== 'admin' || optionsStatus === 'forbidden') {
+  if (user?.account_type !== 'admin' || accessDenied || [401, 403, 409].includes(optionsError?.status)) {
     return (
       <main className="reports-page">
         <PageHeader title="Sales reports" subtitle="Administrator sales reporting" />

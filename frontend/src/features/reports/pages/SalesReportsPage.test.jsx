@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 import * as api from '../../../api';
@@ -126,5 +126,57 @@ test('does not load report data for a non-admin', () => {
   expect(screen.getByRole('heading', { name: /don't have access/i })).toBeInTheDocument();
   expect(api.getSalesReportOptions).not.toHaveBeenCalled();
   expect(api.getSalesReport).not.toHaveBeenCalled();
+});
+
+test('pagination keeps the submitted scope after draft filters change', async () => {
+  api.getSalesReport.mockResolvedValue({ ...sponsorReport, count: 51, next: '/page2' });
+  renderPage();
+  fireEvent.click(await screen.findByRole('button', { name: 'Run report' }));
+  await screen.findByRole('table');
+  fireEvent.click(screen.getByRole('button', { name: 'Report type' }));
+  fireEvent.click(screen.getByRole('option', { name: 'Sales by driver' }));
+  expect(screen.getByText(/Selections changed/)).toBeInTheDocument();
+  expect(within(screen.getByRole('table')).getByText('Alpha Logistics')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  await waitFor(() => expect(api.getSalesReport).toHaveBeenLastCalledWith({
+    groupBy: 'sponsor', sponsorId: 'all', driverId: 'all', page: 2,
+  }));
+});
+
+test('retry keeps the failed scope after draft selections change', async () => {
+  api.getSalesReport.mockRejectedValueOnce(new Error('Unavailable'));
+  renderPage();
+  fireEvent.click(await screen.findByRole('button', { name: 'Run report' }));
+  await screen.findByRole('heading', { name: "Sales report couldn't be loaded" });
+  fireEvent.click(screen.getByRole('button', { name: 'Report type' }));
+  fireEvent.click(screen.getByRole('option', { name: 'Sales by driver' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+  await screen.findByRole('table');
+  expect(api.getSalesReport).toHaveBeenLastCalledWith({
+    groupBy: 'sponsor', sponsorId: 'all', driverId: 'all', page: 1,
+  });
+});
+
+test('access denial removes previously displayed financial data', async () => {
+  api.getSalesReport.mockResolvedValueOnce(sponsorReport)
+    .mockRejectedValueOnce(Object.assign(new Error('Denied'), { status: 403 }));
+  renderPage();
+  fireEvent.click(await screen.findByRole('button', { name: 'Run report' }));
+  await screen.findByRole('table');
+  fireEvent.click(screen.getByRole('button', { name: 'Run report' }));
+  await screen.findByRole('heading', { name: /don't have access/i });
+  expect(screen.queryByText('$140.00')).not.toBeInTheDocument();
+});
+
+test('an identity change discards an outstanding report response', async () => {
+  let resolve;
+  api.getSalesReport.mockReturnValueOnce(new Promise((done) => { resolve = done; }));
+  const view = renderPage();
+  fireEvent.click(await screen.findByRole('button', { name: 'Run report' }));
+  useAuth.mockReturnValue({ user: { id: 99, account_type: 'admin' } });
+  view.rerender(<MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><SalesReportsPage /></MemoryRouter>);
+  await act(async () => resolve(sponsorReport));
+  expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  expect(screen.queryByText('$140.00')).not.toBeInTheDocument();
 });
 
