@@ -8,6 +8,20 @@ from django.db import models
 PROJECT_SHARE_RATE = Decimal('0.01')
 
 
+class CompletedSaleQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise ValidationError('Completed sales are immutable audit records.')
+
+    def delete(self):
+        raise ValidationError('Completed sales are immutable audit records.')
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        raise ValidationError('Completed sales are immutable audit records.')
+
+    def bulk_create(self, objs, **kwargs):
+        raise ValidationError('Record completed sales individually so validation and fee calculation run.')
+
+
 class CompletedSale(models.Model):
     """Immutable reporting fact for one sale completed through the application.
 
@@ -15,6 +29,8 @@ class CompletedSale(models.Model):
     snapshots. Reports must not rebuild historical money from catalog prices or
     a Driver's current organization relationship.
     """
+
+    objects = CompletedSaleQuerySet.as_manager()
 
     sponsor = models.ForeignKey(
         'accounts.SponsorCompany',
@@ -70,7 +86,7 @@ class CompletedSale(models.Model):
             self.reference = self.reference.strip()
         if not self.reference:
             raise ValidationError({'reference': 'Enter a sale reference.'})
-        if self.driver_id and self.sponsor_id and self.driver.sponsor_id != self.sponsor_id:
+        if self._state.adding and self.driver_id and self.sponsor_id and self.driver.sponsor_id != self.sponsor_id:
             raise ValidationError(
                 {'driver': 'The Driver must belong to the sale sponsor when the sale is recorded.'}
             )

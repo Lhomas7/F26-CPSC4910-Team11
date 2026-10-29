@@ -78,3 +78,24 @@ class CompletedSaleTests(TestCase):
         with self.assertRaisesMessage(ValidationError, 'immutable'):
             sale.delete()
 
+    def test_queryset_writes_cannot_bypass_audit_guards(self):
+        sale = self.sale()
+        sale.save()
+        with self.assertRaises(ValidationError):
+            CompletedSale.objects.filter(pk=sale.pk).update(gross_amount_usd=Decimal('0.00'))
+        with self.assertRaises(ValidationError):
+            CompletedSale.objects.filter(pk=sale.pk).delete()
+        with self.assertRaises(ValidationError):
+            CompletedSale.objects.bulk_create([self.sale(reference='BULK')])
+
+    def test_historical_sale_survives_driver_transfer(self):
+        sale = self.sale()
+        sale.save()
+        other = SponsorCompany.objects.create(name='Transferred Sponsor')
+        self.driver.sponsor = other
+        self.driver.save()
+        sale.refresh_from_db()
+        sale.save()
+        self.assertEqual(sale.sponsor_id, self.sponsor.pk)
+        self.assertEqual(sale.project_share_usd, Decimal('0.2495'))
+

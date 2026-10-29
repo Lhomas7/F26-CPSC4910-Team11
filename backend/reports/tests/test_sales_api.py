@@ -156,6 +156,18 @@ class SalesReportApiTests(APITestCase):
         self.assertEqual(response.data['summary']['gross_sales_usd'], '0.00')
         self.assertEqual(response.data['summary']['project_share_usd'], '0.0000')
 
+    def test_transferred_driver_remains_selectable_for_historical_sponsor(self):
+        self.driver_a.sponsor = self.beta
+        self.driver_a.save()
+        self.authenticate_admin()
+        options = self.client.get(reverse('reports:sales-options'), {'sponsor_id': self.alpha.pk})
+        self.assertIn(self.driver_a.pk, [row['id'] for row in options.data['drivers']])
+        response = self.client.get(reverse('reports:sales'), {
+            'group_by': 'driver', 'sponsor_id': self.alpha.pk, 'driver_id': self.driver_a.pk,
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['summary']['gross_sales_usd'], '34.95')
+
     def test_rejects_unknown_or_malformed_query_parameters(self):
         self.authenticate_admin()
         responses = (
