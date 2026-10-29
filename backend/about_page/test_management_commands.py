@@ -26,8 +26,8 @@ class SeedAboutPageCommandTests(TestCase):
         self.assertEqual(release.team_number, 11)
         self.assertEqual(release.product_name, 'Good Driver Incentive Program')
         self.assertEqual(release.release_date.isoformat(), '2026-10-09')
-        self.assertEqual(AboutPageRelease.objects.count(), 4)
-        self.assertIn('created 4', output.getvalue())
+        self.assertEqual(AboutPageRelease.objects.count(), 6)
+        self.assertIn('created 6', output.getvalue())
 
     def test_updates_existing_release_without_duplicating_it(self):
         call_command('seed_about_page', stdout=StringIO())
@@ -42,7 +42,7 @@ class SeedAboutPageCommandTests(TestCase):
         self.assertEqual(release.product_name, 'Outdated name')
         call_command('seed_about_page', update=True, stdout=output)
 
-        self.assertEqual(AboutPageRelease.objects.count(), 4)
+        self.assertEqual(AboutPageRelease.objects.count(), 6)
         release.refresh_from_db()
         self.assertEqual(release.product_name, 'Good Driver Incentive Program')
         self.assertIn('updated 1', output.getvalue())
@@ -64,7 +64,7 @@ class SeedAboutPageCommandTests(TestCase):
         call_command('seed_about_page', stdout=StringIO())
         legacy.refresh_from_db()
         self.assertEqual(legacy.product_name, 'Legacy product')
-        self.assertEqual(AboutPageRelease.objects.first().version_number, '0.4.0')
+        self.assertEqual(AboutPageRelease.objects.first().version_number, '0.6.0')
 
     @override_settings(DEBUG=False)
     def test_protected_environment_requires_explicit_acknowledgment(self):
@@ -72,7 +72,7 @@ class SeedAboutPageCommandTests(TestCase):
             call_command('seed_about_page', stdout=StringIO())
         self.assertFalse(AboutPageRelease.objects.exists())
         call_command('seed_about_page', allow_shared_db=True, stdout=StringIO())
-        self.assertEqual(AboutPageRelease.objects.count(), 4)
+        self.assertEqual(AboutPageRelease.objects.count(), 6)
 
     def test_invalid_metadata_writes_nothing(self):
         valid = dict(

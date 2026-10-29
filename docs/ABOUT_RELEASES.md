@@ -2,8 +2,7 @@
 
 The checked-in `backend/about_page/release_metadata.json` is the source for
 reviewed, published release metadata imported into the About database. It
-currently contains versions `0.1.0` through `0.4.0`; Sprint 5 is not yet a
-published final release.
+currently contains versions `0.1.0` through `0.6.0`.
 
 Git tags and GitHub Releases preserve repository snapshots. This metadata
 controls the information shown by `/api/about/`; it does not create tags,
@@ -88,6 +87,8 @@ The catalog uses the demo/completion dates verified for this repository:
 - `0.2.0`: September 24, 2026.
 - `0.3.0`: October 1, 2026.
 - `0.4.0`: October 9, 2026, with the October 8 demo recorded in its description.
+- `0.5.0`: October 22, 2026.
+- `0.6.0`: October 29, 2026.
 
 For each future accepted release, add a new exact version to the metadata file
 in the release PR, review it with the team, and run the import against the
