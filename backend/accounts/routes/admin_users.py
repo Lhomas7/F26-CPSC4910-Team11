@@ -11,8 +11,11 @@ from ..views.admin_users import (
     AdminSponsorDetailView,
     AdminUserListView,
 )
+from ..views.reports import AdminAuditLogView, AdminInvoiceView
 
 urlpatterns = [
+    path('admin/audit-log/', AdminAuditLogView.as_view(), name='admin-audit-log'),
+    path('admin/invoices/', AdminInvoiceView.as_view(), name='admin-invoice'),
     path(
         'admin/impersonation/<int:user_id>/',
         AdminImpersonationStartView.as_view(),

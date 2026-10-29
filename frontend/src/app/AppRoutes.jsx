@@ -19,6 +19,7 @@ import {
 } from '../features/authentication';
 import { DriverDetailPage, DriverListPage } from '../features/drivers';
 import { AddProductPage, CatalogPage } from '../features/catalog';
+import { AuditLogPage, InvoicePage } from '../features/admin-reports';
 import { WelcomePage } from '../features/home';
 import { PrivacyPage, TermsPage } from '../features/legal';
 import { PlaygroundPage } from '../features/playground';
@@ -97,6 +98,22 @@ export function AppRoutes() {
           element={
             <RequireAuth>
               <AccountPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/audit-log"
+          element={
+            <RequireAuth roles={PAGE_ROLES.auditLog}>
+              <AuditLogPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/invoices"
+          element={
+            <RequireAuth roles={PAGE_ROLES.invoices}>
+              <InvoicePage />
             </RequireAuth>
           }
         />

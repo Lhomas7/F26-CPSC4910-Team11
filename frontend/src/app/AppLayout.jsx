@@ -6,11 +6,13 @@ import BrandMark from '../components/branding/BrandMark';
 import ConfirmDialog from '../components/feedback/ConfirmDialog';
 import {
   AccountIcon,
+  AuditIcon,
   CatalogIcon,
-  DriversIcon,
   ChevronDownIcon,
+  DriversIcon,
   HomeIcon,
   InfoIcon,
+  InvoiceIcon,
   MoonIcon,
   PointsIcon,
   ReportsIcon,
@@ -36,6 +38,8 @@ const NAV_ICONS = {
   drivers: DriversIcon,
   catalog: CatalogIcon,
   users: UsersIcon,
+  audit: AuditIcon,
+  invoices: InvoiceIcon,
   reports: ReportsIcon,
   about: InfoIcon,
 };
