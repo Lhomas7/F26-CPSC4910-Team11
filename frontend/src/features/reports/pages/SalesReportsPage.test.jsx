@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 import * as api from '../../../api';
@@ -92,7 +92,8 @@ test('loads selected sponsor drivers and runs one-driver scope', async () => {
   fireEvent.click(screen.getByRole('option', { name: 'Sales by driver' }));
   fireEvent.click(screen.getByRole('button', { name: 'Sponsor organization' }));
   fireEvent.click(screen.getByRole('option', { name: 'Alpha Logistics' }));
-  fireEvent.click(await screen.findByRole('button', { name: 'Driver' }));
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Driver' })).toBeEnabled());
+  fireEvent.click(screen.getByRole('button', { name: 'Driver' }));
   fireEvent.click(screen.getByRole('option', { name: /Alice Driver/ }));
   fireEvent.click(screen.getByRole('button', { name: 'Run report' }));
   const table = await screen.findByRole('table');

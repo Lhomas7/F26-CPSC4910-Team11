@@ -3,6 +3,8 @@
 }
 
 .reports-content {
+  display: grid;
+  gap: 1rem;
   max-width: 74rem;
   padding: 1.5rem 1.75rem 3rem;
 }
@@ -31,8 +33,15 @@
   align-items: end;
   display: grid;
   gap: 0.75rem;
-  grid-template-columns: repeat(3, minmax(9rem, 1fr)) auto;
+  grid-template-columns: repeat(auto-fit, minmax(min(9rem, 100%), 1fr));
 }
+
+.reports-filter-grid > label { min-width: 0; }
+.reports-results { display: grid; gap: .75rem; }
+.reports-results h2 { font-size: 1rem; margin: 0; }
+.reports-scope { font-size: .85rem; margin: 0; overflow-wrap: anywhere; }
+.reports-scope-note { color: var(--ink-2); font-size: .74rem; line-height: 1.4; margin: 0; }
+.reports-summary strong, .reports-table-card td { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 
 .reports-filter-grid > label > span {
   color: var(--ink-2);

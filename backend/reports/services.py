@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from decimal import Decimal
 
-from django.db.models import Count, Sum
+from django.db.models import Count, Q, Sum
 from django.db.models.functions import Coalesce
 from rest_framework.exceptions import ValidationError
 
@@ -49,7 +49,9 @@ def parse_sales_report_scope(params):
         raise ValidationError({'driver_id': 'Choose a sponsor before choosing one Driver.'})
     if driver_id and group_by != GROUP_DRIVER:
         raise ValidationError({'driver_id': 'Driver scope is only available for sales by Driver.'})
-    if driver_id and not Driver.objects.filter(pk=driver_id, sponsor_id=sponsor_id).exists():
+    if driver_id and not Driver.objects.filter(pk=driver_id).filter(
+        Q(sponsor_id=sponsor_id) | Q(completed_sales__sponsor_id=sponsor_id),
+    ).exists():
         raise ValidationError({'driver_id': 'Choose a Driver from the selected sponsor.'})
 
     return SalesReportScope(group_by, sponsor_id, driver_id)
@@ -104,7 +106,7 @@ def report_options(sponsor_id=None):
         if not SponsorCompany.objects.filter(pk=sponsor_id).exists():
             raise ValidationError({'sponsor_id': 'Choose an existing sponsor organization.'})
         drivers = Driver.objects.filter(
-            sponsor_id=sponsor_id,
-        ).select_related('user').order_by('name', 'id')
+            Q(sponsor_id=sponsor_id) | Q(completed_sales__sponsor_id=sponsor_id),
+        ).distinct().select_related('user').order_by('name', 'id')
     return sponsors, drivers
 

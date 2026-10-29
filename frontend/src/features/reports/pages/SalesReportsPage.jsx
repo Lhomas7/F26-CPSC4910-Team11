@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import * as api from '../../../api';
 import { useAuth } from '../../../auth/AuthContext';
@@ -44,6 +44,12 @@ export default function SalesReportsPage() {
   const [reportStatus, setReportStatus] = useState('idle');
   const [reportError, setReportError] = useState('');
   const [page, setPage] = useState(1);
+  const [submitted, setSubmitted] = useState(null);
+  const latest = useRef(0);
+  const resultsHeading = useRef(null);
+  const failedRequest = useRef(null);
+
+  useEffect(() => () => { latest.current += 1; }, []);
 
   const {
     data: options,
@@ -81,10 +87,7 @@ export default function SalesReportsPage() {
   );
 
   const resetReport = () => {
-    setReport(null);
-    setReportStatus('idle');
     setReportError('');
-    setPage(1);
   };
 
   const changeGroup = (value) => {
@@ -99,28 +102,51 @@ export default function SalesReportsPage() {
     resetReport();
   };
 
-  const runReport = async (nextPage = 1) => {
+  const runReport = async (nextPage = 1, scope = null, moveFocus = true) => {
+    const requestId = ++latest.current;
+    const pending = scope || {
+      groupBy, sponsorId, driverId,
+      sponsorName: sponsorOptions.find((item) => item.value === sponsorId)?.label || 'All organizations',
+      driverName: driverOptions.find((item) => item.value === driverId)?.label || 'All Drivers',
+      driverUsername: driverOptions.find((item) => item.value === driverId)?.meta || '',
+    };
+    failedRequest.current = { scope: pending, page: nextPage };
     setReportStatus('loading');
     setReportError('');
     try {
       const result = await api.getSalesReport({
-        groupBy,
-        sponsorId,
-        driverId,
+        groupBy: pending.groupBy,
+        sponsorId: pending.sponsorId,
+        driverId: pending.driverId,
         page: nextPage,
       });
+      if (requestId !== latest.current) return;
       setReport(result);
+      setSubmitted(pending);
       setPage(nextPage);
       setReportStatus('ready');
+      if (moveFocus) window.setTimeout(() => resultsHeading.current?.focus(), 0);
     } catch (error) {
+      if (requestId !== latest.current) return;
       setReportError(error.message || 'The sales report could not be loaded.');
       setReportStatus('error');
     }
   };
 
+  const resultGroup = report?.scope?.group_by || submitted?.groupBy || groupBy;
+  const scopeText = submitted ? [
+    resultGroup === 'driver' ? 'Sales by Driver' : 'Sales by sponsor',
+    submitted.sponsorId === 'all' ? 'All organizations' : submitted.sponsorName,
+    ...(resultGroup === 'driver' && submitted.sponsorId !== 'all'
+      ? [submitted.driverId === 'all' ? 'All Drivers' : `${submitted.driverName} ${submitted.driverUsername}`] : []),
+  ].join(' · ') : '';
+  const selectionsChanged = submitted && (submitted.groupBy !== groupBy || submitted.sponsorId !== sponsorId || submitted.driverId !== driverId);
+  const rate = report ? Number(report.summary.project_share_rate_percent).toLocaleString('en-US') : '1';
+
   if (user?.account_type !== 'admin' || optionsStatus === 'forbidden') {
     return (
       <main className="reports-page">
+        <PageHeader title="Sales reports" subtitle="Administrator sales reporting" />
         <StatePanel headingLevel={1} title="You don't have access to this page">
           <p>Only administrators can run organization-wide sales reports.</p>
         </StatePanel>
@@ -132,10 +158,11 @@ export default function SalesReportsPage() {
     <div className="reports-page">
       <PageHeader title="Sales reports" subtitle="Audit completed sales and the project's 1% share" />
       <main className="reports-content">
-        {optionsStatus === 'loading' && (
+        <p className="sr-only" role="status" aria-live="polite">{reportStatus === 'loading' ? 'Running sales report' : reportStatus === 'ready' ? `Report ready. ${report?.count || 0} grouped rows.` : reportError}</p>
+        {optionsStatus === 'loading' && !options && (
           <Skeleton className="reports-controls-skeleton" aria-label="Loading report filters" />
         )}
-        {optionsStatus === 'error' && (
+        {optionsStatus === 'error' && !options && (
           <StatePanel tone="error" title="Report filters couldn't be loaded">
             <p>Check the server connection and try again.</p>
             <button className="button button-primary" type="button" onClick={reloadOptions}>
@@ -143,7 +170,7 @@ export default function SalesReportsPage() {
             </button>
           </StatePanel>
         )}
-        {optionsStatus === 'ready' && (
+        {options && (
           <section className="card reports-controls" aria-labelledby="report-scope-heading">
             <div>
               <h2 id="report-scope-heading">Report scope</h2>
@@ -174,6 +201,7 @@ export default function SalesReportsPage() {
                   <span>Driver</span>
                   <SelectMenu
                     label="Driver"
+                    disabled={optionsStatus !== 'ready' || !options.drivers.length}
                     value={driverId}
                     options={driverOptions}
                     onChange={(value) => {
@@ -184,6 +212,12 @@ export default function SalesReportsPage() {
                   />
                 </label>
               )}
+              {groupBy === 'driver' && sponsorId !== 'all' && optionsStatus !== 'ready' && (
+                <p className="reports-scope-note">{optionsStatus === 'loading' ? 'Loading Drivers…' : 'Drivers could not be loaded. You can still report on all Drivers.'}
+                  {optionsStatus === 'error' && <button className="button" type="button" onClick={reloadOptions}>Retry Driver options</button>}
+                </p>
+              )}
+              {groupBy === 'driver' && sponsorId !== 'all' && optionsStatus === 'ready' && !options.drivers.length && <p className="reports-scope-note">No individual Drivers are available. Reports can still include historical sales.</p>}
               <button
                 className="button button-primary reports-run"
                 type="button"
@@ -205,26 +239,32 @@ export default function SalesReportsPage() {
         {reportStatus === 'error' && (
           <StatePanel className="reports-state" tone="error" title="Sales report couldn't be loaded">
             <p>{reportError}</p>
-            <button className="button button-primary" type="button" onClick={() => runReport(page)}>
+            {report && <p>These are the previous results from the scope named below.</p>}
+            <button className="button button-primary" type="button" onClick={() => runReport(failedRequest.current.page, failedRequest.current.scope, false)}>
               Try again
             </button>
           </StatePanel>
         )}
-        {reportStatus === 'ready' && report && (
-          <section aria-labelledby="sales-results-heading">
-            <h2 className="sr-only" id="sales-results-heading">Sales report results</h2>
+        {report && reportStatus !== 'loading' && (
+          <section className="reports-results" aria-labelledby="sales-results-heading">
+            <h2 ref={resultsHeading} tabIndex={-1} id="sales-results-heading">Results</h2>
+            <p className="reports-scope">{scopeText}</p>
+            {resultGroup === 'driver' && <p className="reports-scope-note">Grouped by Driver and the organization recorded on each sale.</p>}
+            {selectionsChanged && <p className="banner banner-warning">Selections changed. Run report to update these results.</p>}
             <div className="reports-summary-grid">
-              <article className="card reports-summary">
-                <span>Completed sales</span>
-                <strong>{report.summary.sale_count.toLocaleString('en-US')}</strong>
+              <article className="stat reports-summary">
+                <span className="stat-label">Completed sales</span>
+                <strong className="stat-value">{report.summary.sale_count.toLocaleString('en-US')}</strong>
+                <small className="stat-note">Across the entire scope</small>
               </article>
-              <article className="card reports-summary">
-                <span>Gross sales</span>
-                <strong>{money(report.summary.gross_sales_usd, 2)}</strong>
+              <article className="stat reports-summary">
+                <span className="stat-label">Gross sales</span>
+                <strong className="stat-value">{money(report.summary.gross_sales_usd, 2)}</strong>
               </article>
-              <article className="card reports-summary">
-                <span>Project share (1%)</span>
-                <strong>{money(report.summary.project_share_usd, 4)}</strong>
+              <article className="stat reports-summary">
+                <span className="stat-label">Project share ({rate}%)</span>
+                <strong className="stat-value">{money(report.summary.project_share_usd, 4)}</strong>
+                <small className="stat-note">Exact {rate}% share, including fractional cents</small>
               </article>
             </div>
             {report.results.length === 0 ? (
@@ -233,11 +273,12 @@ export default function SalesReportsPage() {
               </StatePanel>
             ) : (
               <div className="card reports-table-card">
-                <table>
+                <table role="table">
+                  <caption className="sr-only">{scopeText}</caption>
                   <thead>
                     <tr>
-                      <th>{groupBy === 'sponsor' ? 'Sponsor organization' : 'Driver'}</th>
-                      {groupBy === 'driver' && <th>Sponsor organization</th>}
+                      <th>{resultGroup === 'sponsor' ? 'Sponsor organization' : 'Driver'}</th>
+                      {resultGroup === 'driver' && <th>Organization on sale</th>}
                       <th>Completed sales</th>
                       <th>Gross sales</th>
                       <th>Project share (1%)</th>
@@ -245,12 +286,12 @@ export default function SalesReportsPage() {
                   </thead>
                   <tbody>
                     {report.results.map((row) => (
-                      <tr key={`${groupBy}-${groupBy === 'sponsor' ? row.sponsor.id : row.driver.id}`}>
-                        <td data-label={groupBy === 'sponsor' ? 'Sponsor organization' : 'Driver'}>
-                          <strong>{groupBy === 'sponsor' ? row.sponsor.name : row.driver.name}</strong>
-                          {groupBy === 'driver' && <small>@{row.driver.username}</small>}
+                      <tr key={`${row.sponsor.id}-${row.driver?.id || 'sponsor'}`}>
+                        <td data-label={resultGroup === 'sponsor' ? 'Sponsor organization' : 'Driver'}>
+                          <strong>{resultGroup === 'sponsor' ? row.sponsor.name : row.driver.name}</strong>
+                          {resultGroup === 'driver' && <small>@{row.driver.username}</small>}
                         </td>
-                        {groupBy === 'driver' && (
+                        {resultGroup === 'driver' && (
                           <td data-label="Sponsor organization">{row.sponsor.name}</td>
                         )}
                         <td data-label="Completed sales">{row.sale_count.toLocaleString('en-US')}</td>
@@ -264,11 +305,11 @@ export default function SalesReportsPage() {
             )}
             {report.count > 50 && (
               <nav className="reports-pagination" aria-label="Sales report pages">
-                <button className="button" type="button" disabled={!report.previous} onClick={() => runReport(page - 1)}>
+                <button className="button" type="button" disabled={!report.previous} onClick={() => runReport(page - 1, submitted, false)}>
                   Previous
                 </button>
                 <span>Page {page} of {Math.ceil(report.count / 50)}</span>
-                <button className="button" type="button" disabled={!report.next} onClick={() => runReport(page + 1)}>
+                <button className="button" type="button" disabled={!report.next} onClick={() => runReport(page + 1, submitted, false)}>
                   Next
                 </button>
               </nav>

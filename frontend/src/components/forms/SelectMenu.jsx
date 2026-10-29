@@ -12,6 +12,7 @@ export default function SelectMenu({
   searchable = false,
   searchPlaceholder = 'Search options',
   emptyText = 'No matching options',
+  disabled = false,
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -59,6 +60,7 @@ export default function SelectMenu({
   }, [open]);
 
   const moveSelection = (offset) => {
+    if (!options.length || disabled) return;
     const nextIndex = (selectedIndex + offset + options.length) % options.length;
     onChange(options[nextIndex].value);
     setOpen(true);
@@ -84,6 +86,7 @@ export default function SelectMenu({
         aria-label={label}
         className="select-menu-trigger"
         type="button"
+        disabled={disabled}
         onClick={() => {
           setOpen((current) => !current);
           setSearch('');
