@@ -12,6 +12,7 @@ import {
   HomeIcon,
   InfoIcon,
   PointsIcon,
+  ReportsIcon,
   SignInIcon,
   SignOutIcon,
   UserIcon,
@@ -32,6 +33,7 @@ const NAV_ICONS = {
   drivers: DriversIcon,
   catalog: CatalogIcon,
   users: UsersIcon,
+  reports: ReportsIcon,
   about: InfoIcon,
 };
 

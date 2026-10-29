@@ -2,6 +2,7 @@
 
 import os
 from datetime import date
+from decimal import Decimal
 from getpass import getpass
 from pathlib import Path
 
@@ -12,10 +13,12 @@ from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand, CommandError
 from django.db import connection, transaction
 from django.db.migrations.executor import MigrationExecutor
+from django.utils import timezone
 
 from about_page.models import AboutPageRelease
 from accounts.models import SponsorAccount, SponsorCompany
 from drivers.models import Driver, PointTransaction
+from reports.models import CompletedSale
 
 ACCOUNTS = (
     ('demo.admin', 'Demo', 'Administrator', 'admin'),
@@ -116,8 +119,24 @@ class Command(BaseCommand):
                         driver=driver, sponsor=company, reason=reason,
                         defaults={'point_change': amount, 'changed_by_user': sponsor},
                     )
+                for reference, gross_amount in (
+                    ('LOCAL-DEMO-SALE-001', Decimal('24.95')),
+                    ('LOCAL-DEMO-SALE-002', Decimal('15.00')),
+                    ('LOCAL-DEMO-SALE-003', Decimal('40.05')),
+                ):
+                    CompletedSale.objects.get_or_create(
+                        reference=reference,
+                        defaults={
+                            'driver': driver,
+                            'sponsor': company,
+                            'gross_amount_usd': gross_amount,
+                            'completed_at': timezone.now(),
+                        },
+                    )
             else:
-                self.stdout.write('Skipped sample points: existing demo membership/status has changed.')
+                self.stdout.write(
+                    'Skipped sample points and sales: existing demo membership/status has changed.'
+                )
 
             if options['with_about']:
                 AboutPageRelease.objects.get_or_create(
