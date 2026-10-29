@@ -13,6 +13,16 @@ const GROUP_OPTIONS = [
   { value: 'sponsor', label: 'Sales by sponsor' },
   { value: 'driver', label: 'Sales by driver' },
 ];
+const PAGE_SIZE = 50;
+
+function ReportCell({ label, children }) {
+  return (
+    <td role="cell">
+      <span className="reports-cell-label" aria-hidden="true">{label}</span>
+      <span className="reports-cell-value">{children}</span>
+    </td>
+  );
+}
 
 const money = (value, digits) =>
   new Intl.NumberFormat('en-US', {
@@ -163,7 +173,7 @@ function SalesReportsSession({ user }) {
     return (
       <main className="reports-page">
         <PageHeader title="Sales reports" subtitle="Administrator sales reporting" />
-        <StatePanel headingLevel={1} title="You don't have access to this page">
+        <StatePanel headingLevel={2} title="You don't have access to this page">
           <p>Only administrators can run organization-wide sales reports.</p>
         </StatePanel>
       </main>
@@ -291,40 +301,41 @@ function SalesReportsSession({ user }) {
               <div className="card reports-table-card">
                 <table role="table">
                   <caption className="sr-only">{scopeText}</caption>
-                  <thead>
-                    <tr>
-                      <th>{resultGroup === 'sponsor' ? 'Sponsor organization' : 'Driver'}</th>
-                      {resultGroup === 'driver' && <th>Organization on sale</th>}
-                      <th>Completed sales</th>
-                      <th>Gross sales</th>
-                      <th>Project share (1%)</th>
+                  <thead role="rowgroup">
+                    <tr role="row">
+                      <th scope="col" role="columnheader">{resultGroup === 'sponsor' ? 'Sponsor organization' : 'Driver'}</th>
+                      {resultGroup === 'driver' && <th scope="col" role="columnheader">Organization on sale</th>}
+                      <th scope="col" role="columnheader">Completed sales</th>
+                      <th scope="col" role="columnheader">Gross sales</th>
+                      <th scope="col" role="columnheader">Project share ({rate}%)</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody role="rowgroup">
                     {report.results.map((row) => (
-                      <tr key={`${row.sponsor.id}-${row.driver?.id || 'sponsor'}`}>
-                        <td data-label={resultGroup === 'sponsor' ? 'Sponsor organization' : 'Driver'}>
+                      <tr role="row" key={`${row.sponsor.id}-${row.driver?.id || 'sponsor'}`}>
+                        <ReportCell label={resultGroup === 'sponsor' ? 'Sponsor organization' : 'Driver'}>
                           <strong>{resultGroup === 'sponsor' ? row.sponsor.name : row.driver.name}</strong>
                           {resultGroup === 'driver' && <small>@{row.driver.username}</small>}
-                        </td>
+                        </ReportCell>
                         {resultGroup === 'driver' && (
-                          <td data-label="Sponsor organization">{row.sponsor.name}</td>
+                          <ReportCell label="Organization on sale">{row.sponsor.name}</ReportCell>
                         )}
-                        <td data-label="Completed sales">{row.sale_count.toLocaleString('en-US')}</td>
-                        <td data-label="Gross sales">{money(row.gross_sales_usd, 2)}</td>
-                        <td data-label="Project share (1%)">{money(row.project_share_usd, 4)}</td>
+                        <ReportCell label="Completed sales">{row.sale_count.toLocaleString('en-US')}</ReportCell>
+                        <ReportCell label="Gross sales">{money(row.gross_sales_usd, 2)}</ReportCell>
+                        <ReportCell label={`Project share (${rate}%)`}>{money(row.project_share_usd, 4)}</ReportCell>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             )}
-            {report.count > 50 && (
+            {report.count > PAGE_SIZE && (
               <nav className="reports-pagination" aria-label="Sales report pages">
+                <span className="reports-pagination-range">Showing {((page - 1) * PAGE_SIZE + 1).toLocaleString('en-US')}–{Math.min((page - 1) * PAGE_SIZE + report.results.length, report.count).toLocaleString('en-US')} of {report.count.toLocaleString('en-US')} grouped rows</span>
                 <button className="button" type="button" disabled={!report.previous} onClick={() => runReport(page - 1, submitted, false)}>
                   Previous
                 </button>
-                <span>Page {page} of {Math.ceil(report.count / 50)}</span>
+                <span>Page {page} of {Math.ceil(report.count / PAGE_SIZE)}</span>
                 <button className="button" type="button" disabled={!report.next} onClick={() => runReport(page + 1, submitted, false)}>
                   Next
                 </button>
