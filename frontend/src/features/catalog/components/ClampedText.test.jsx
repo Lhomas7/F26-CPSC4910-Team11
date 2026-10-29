@@ -41,10 +41,15 @@ test('expands and collapses only measured overflowing text with product-specific
   render(<ClampedText text="A long description." productName="Mug" />);
   const button = screen.getByRole('button', { name: 'Show more of the description for Mug' });
   expect(button).toHaveAttribute('aria-expanded', 'false');
-  expect(screen.getByText('A long description.')).toHaveAttribute('id', button.getAttribute('aria-controls'));
+  expect(screen.getByText('A long description.')).toHaveAttribute(
+    'id',
+    button.getAttribute('aria-controls'),
+  );
   fireEvent.click(button);
   expect(screen.getByText('A long description.')).not.toHaveClass('is-clamped');
-  expect(screen.getByRole('button', { name: 'Show less of the description for Mug' })).toHaveAttribute('aria-expanded', 'true');
+  expect(
+    screen.getByRole('button', { name: 'Show less of the description for Mug' }),
+  ).toHaveAttribute('aria-expanded', 'true');
   fireEvent.click(button);
   expect(screen.getByText('A long description.')).toHaveClass('is-clamped');
 });
@@ -74,7 +79,10 @@ test('a new description starts collapsed instead of inheriting another card stat
   const { rerender } = render(<ClampedText text="First description." productName="Mug" />);
   fireEvent.click(screen.getByRole('button'));
   rerender(<ClampedText text="Replacement description." productName="Jacket" />);
-  expect(screen.getByRole('button', { name: /Show more.*Jacket/ })).toHaveAttribute('aria-expanded', 'false');
+  expect(screen.getByRole('button', { name: /Show more.*Jacket/ })).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  );
 });
 
 test('disconnects measurements when the card unmounts', () => {

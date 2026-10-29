@@ -98,4 +98,3 @@ class CompletedSaleTests(TestCase):
         sale.save()
         self.assertEqual(sale.sponsor_id, self.sponsor.pk)
         self.assertEqual(sale.project_share_usd, Decimal('0.2495'))
-

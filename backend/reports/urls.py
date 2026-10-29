@@ -8,4 +8,3 @@ urlpatterns = [
     path('reports/sales/options/', SalesReportOptionsView.as_view(), name='sales-options'),
     path('reports/sales/', SalesReportView.as_view(), name='sales'),
 ]
-

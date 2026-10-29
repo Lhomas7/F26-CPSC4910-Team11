@@ -14,11 +14,11 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import connection, transaction
 from django.db.migrations.executor import MigrationExecutor
 from django.utils import timezone
+from reports.models import CompletedSale
 
 from about_page.models import AboutPageRelease
 from accounts.models import SponsorAccount, SponsorCompany
 from drivers.models import Driver, PointTransaction
-from reports.models import CompletedSale
 
 ACCOUNTS = (
     ('demo.admin', 'Demo', 'Administrator', 'admin'),
@@ -39,13 +39,23 @@ class Command(BaseCommand):
     requires_system_checks = []
 
     def add_arguments(self, parser):
-        parser.add_argument('--noinput', action='store_true', help='Read a new-account password from GDIP_DEMO_PASSWORD instead of prompting.')
-        parser.add_argument('--with-about', action='store_true', help='Add a separate Local demo About release if absent.')
+        parser.add_argument(
+            '--noinput',
+            action='store_true',
+            help='Read a new-account password from GDIP_DEMO_PASSWORD instead of prompting.',
+        )
+        parser.add_argument(
+            '--with-about',
+            action='store_true',
+            help='Add a separate Local demo About release if absent.',
+        )
 
     def handle(self, *args, **options):
         # Check the engine and environment before any database query or write.
         if connection.vendor != 'sqlite' or not settings.DEBUG:
-            raise CommandError('Demo seeding requires SQLite and DJANGO_DEBUG=true. Shared/production environments are refused.')
+            raise CommandError(
+                'Demo seeding requires SQLite and DJANGO_DEBUG=true. Shared/production environments are refused.'
+            )
         name = str(connection.settings_dict['NAME'])
         memory = name == ':memory:' or (name.startswith('file:') and 'mode=memory' in name)
         if not memory and not Path(name).is_file():
@@ -55,9 +65,10 @@ class Command(BaseCommand):
             raise CommandError('Apply pending migrations before seeding demo data.')
 
         User = get_user_model()
-        existing = {user.username: user for user in User.objects.filter(
-            username__in=[row[0] for row in ACCOUNTS]
-        )}
+        existing = {
+            user.username: user
+            for user in User.objects.filter(username__in=[row[0] for row in ACCOUNTS])
+        }
         # Never promote or commandeer an account just because its username matches.
         for username, _first, _last, role in ACCOUNTS:
             user = existing.get(username)
@@ -67,11 +78,25 @@ class Command(BaseCommand):
             sponsor = hasattr(user, 'sponsor_account')
             correct_role = (
                 (role == 'admin' and user.is_staff and not driver and not sponsor)
-                or (role == 'sponsor' and sponsor and not driver and not user.is_staff and not user.is_superuser)
-                or (role in ('approved', 'pending', 'unlinked') and driver and not sponsor and not user.is_staff and not user.is_superuser)
+                or (
+                    role == 'sponsor'
+                    and sponsor
+                    and not driver
+                    and not user.is_staff
+                    and not user.is_superuser
+                )
+                or (
+                    role in ('approved', 'pending', 'unlinked')
+                    and driver
+                    and not sponsor
+                    and not user.is_staff
+                    and not user.is_superuser
+                )
             )
             if user.email != demo_email(username) or not correct_role:
-                raise CommandError(f'Existing account {username} does not match the demo identity. Nothing was seeded.')
+                raise CommandError(
+                    f'Existing account {username} does not match the demo identity. Nothing was seeded.'
+                )
 
         missing = [row for row in ACCOUNTS if row[0] not in existing]
         password = None
@@ -79,44 +104,66 @@ class Command(BaseCommand):
             password = os.environ.get('GDIP_DEMO_PASSWORD')
             if not password:
                 if options['noinput']:
-                    raise CommandError('Set GDIP_DEMO_PASSWORD for new demo accounts or omit --noinput for a private prompt.')
+                    raise CommandError(
+                        'Set GDIP_DEMO_PASSWORD for new demo accounts or omit --noinput for a private prompt.'
+                    )
                 password = getpass('Password for newly created local demo accounts: ')
                 if password != getpass('Confirm local demo password: '):
                     raise CommandError('Passwords do not match. Nothing was seeded.')
             for username, first, last, _role in missing:
                 try:
-                    validate_password(password, User(username=username, first_name=first, last_name=last, email=demo_email(username)))
+                    validate_password(
+                        password,
+                        User(
+                            username=username,
+                            first_name=first,
+                            last_name=last,
+                            email=demo_email(username),
+                        ),
+                    )
                 except ValidationError:
-                    raise CommandError('Demo password does not meet the application password policy. Choose another password; nothing was seeded.') from None
+                    raise CommandError(
+                        'Demo password does not meet the application password policy. Choose another password; nothing was seeded.'
+                    ) from None
 
         with transaction.atomic():
             company, _ = SponsorCompany.objects.get_or_create(name=COMPANY)
             users = dict(existing)
             for username, first, last, role in missing:
                 user = User.objects.create_user(
-                    username=username, email=demo_email(username),
-                    first_name=first, last_name=last,
-                    password=password, is_staff=role == 'admin',
+                    username=username,
+                    email=demo_email(username),
+                    first_name=first,
+                    last_name=last,
+                    password=password,
+                    is_staff=role == 'admin',
                 )
                 users[username] = user
                 if role == 'sponsor':
                     SponsorAccount.objects.create(user=user, company=company)
                 elif role != 'admin':
                     Driver.objects.create(
-                        user=user, name=f'{first} {last}',
+                        user=user,
+                        name=f'{first} {last}',
                         sponsor=None if role == 'unlinked' else company,
                         status='approved' if role == 'approved' else 'pending',
                     )
 
             driver = users['jamie.rivera'].driver_profile
             sponsor = users['pat.sponsor']
-            if driver.sponsor_id == company.pk and driver.status == 'approved' and sponsor.sponsor_account.company_id == company.pk:
+            if (
+                driver.sponsor_id == company.pk
+                and driver.status == 'approved'
+                and sponsor.sponsor_account.company_id == company.pk
+            ):
                 for amount, reason in (
                     (100, '[Local demo v1] Safe driving award'),
                     (-15, '[Local demo v1] Training correction'),
                 ):
                     PointTransaction.objects.get_or_create(
-                        driver=driver, sponsor=company, reason=reason,
+                        driver=driver,
+                        sponsor=company,
+                        reason=reason,
                         defaults={'point_change': amount, 'changed_by_user': sponsor},
                     )
                 for reference, gross_amount in (
@@ -142,13 +189,18 @@ class Command(BaseCommand):
                 AboutPageRelease.objects.get_or_create(
                     version_number='Local demo',
                     defaults={
-                        'team_number': 11, 'release_date': date.today(),
+                        'team_number': 11,
+                        'release_date': date.today(),
                         'product_name': 'Good Driver Incentive Program',
                         'product_description': 'Local demonstration data for account, driver, and points workflows.',
                     },
                 )
 
-        self.stdout.write(f'Created {len(missing)} local demo accounts; preserved {len(existing)} existing accounts.')
+        self.stdout.write(
+            f'Created {len(missing)} local demo accounts; preserved {len(existing)} existing accounts.'
+        )
         for username, _first, _last, role in ACCOUNTS:
             self.stdout.write(f'  {username}: {role}')
-        self.stdout.write('Passwords and MFA enrollment were preserved for existing accounts. Enroll Administrator and Sponsor MFA through the UI.')
+        self.stdout.write(
+            'Passwords and MFA enrollment were preserved for existing accounts. Enroll Administrator and Sponsor MFA through the UI.'
+        )

@@ -16,7 +16,9 @@ class LocalDatabaseCommandGuardsTests(SimpleTestCase):
         self.settings.enable()
         self.addCleanup(self.settings.disable)
         self.database = SimpleNamespace(
-            vendor='sqlite', settings_dict={'NAME': str(base / 'db.sqlite3')}, close=Mock(),
+            vendor='sqlite',
+            settings_dict={'NAME': str(base / 'db.sqlite3')},
+            close=Mock(),
         )
         patcher = patch('accounts.management.commands.local_database.connection', self.database)
         patcher.start()
@@ -24,14 +26,29 @@ class LocalDatabaseCommandGuardsTests(SimpleTestCase):
 
     def test_restore_requires_stopped_server_and_target_confirmation(self):
         with patch('accounts.management.commands.local_database.restore_database') as restore:
-            for options in ({}, {'server_stopped': True}, {'server_stopped': True, 'confirm': 'wrong.sqlite3'}):
-                with self.subTest(options=options), self.assertRaisesMessage(CommandError, 'Stop Django'):
-                    call_command('local_database', 'restore', archive='example.sqlite3', stdout=StringIO(), **options)
+            for options in (
+                {},
+                {'server_stopped': True},
+                {'server_stopped': True, 'confirm': 'wrong.sqlite3'},
+            ):
+                with (
+                    self.subTest(options=options),
+                    self.assertRaisesMessage(CommandError, 'Stop Django'),
+                ):
+                    call_command(
+                        'local_database',
+                        'restore',
+                        archive='example.sqlite3',
+                        stdout=StringIO(),
+                        **options,
+                    )
             restore.assert_not_called()
 
     def test_archive_path_cannot_escape_backup_directory(self):
         with self.assertRaisesMessage(CommandError, 'only an archive filename'):
-            call_command('local_database', 'restore', archive='../outside.sqlite3', stdout=StringIO())
+            call_command(
+                'local_database', 'restore', archive='../outside.sqlite3', stdout=StringIO()
+            )
 
     def test_shared_database_is_refused(self):
         self.database.vendor = 'mysql'

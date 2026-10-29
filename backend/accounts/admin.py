@@ -42,7 +42,15 @@ class LoginAttemptAdmin(admin.ModelAdmin):
 
 @admin.register(AdminImpersonationEvent)
 class AdminImpersonationEventAdmin(admin.ModelAdmin):
-    list_display = ('admin', 'action', 'reason', 'target', 'target_role', 'ip_address', 'created_at')
+    list_display = (
+        'admin',
+        'action',
+        'reason',
+        'target',
+        'target_role',
+        'ip_address',
+        'created_at',
+    )
     list_filter = ('action', 'reason', 'target_role')
     search_fields = ('admin__username', 'target__username')
     date_hierarchy = 'created_at'

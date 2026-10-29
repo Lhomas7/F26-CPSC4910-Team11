@@ -38,7 +38,9 @@ class SalesReportOptionsView(AdminReportView):
     def get(self, request):
         unknown = request.query_params.keys() - {'sponsor_id'}
         if unknown:
-            raise ValidationError({key: 'This query parameter is not supported.' for key in sorted(unknown)})
+            raise ValidationError(
+                {key: 'This query parameter is not supported.' for key in sorted(unknown)}
+            )
         raw_sponsor_id = request.query_params.get('sponsor_id')
         sponsor_id = None
         if raw_sponsor_id not in (None, ''):
@@ -49,27 +51,35 @@ class SalesReportOptionsView(AdminReportView):
             if sponsor_id < 1:
                 raise ValidationError({'sponsor_id': 'Enter a positive integer.'})
         sponsors, drivers = report_options(sponsor_id)
-        return Response({
-            'sponsors': list(sponsors),
-            'drivers': [
-                {
-                    'id': driver.pk,
-                    'name': driver.name,
-                    'username': driver.user.get_username(),
-                }
-                for driver in drivers
-            ],
-        })
+        return Response(
+            {
+                'sponsors': list(sponsors),
+                'drivers': [
+                    {
+                        'id': driver.pk,
+                        'name': driver.name,
+                        'username': driver.user.get_username(),
+                    }
+                    for driver in drivers
+                ],
+            }
+        )
 
 
 @method_decorator(never_cache, name='dispatch')
 class SalesReportView(AdminReportView):
     def get(self, request):
         unknown = request.query_params.keys() - {
-            'group_by', 'sponsor_id', 'driver_id', 'page', 'page_size',
+            'group_by',
+            'sponsor_id',
+            'driver_id',
+            'page',
+            'page_size',
         }
         if unknown:
-            raise ValidationError({key: 'This query parameter is not supported.' for key in sorted(unknown)})
+            raise ValidationError(
+                {key: 'This query parameter is not supported.' for key in sorted(unknown)}
+            )
         scope = parse_sales_report_scope(request.query_params)
         summary = sales_report_summary(scope)
         rows = sales_report_queryset(scope)
@@ -88,32 +98,35 @@ class SalesReportView(AdminReportView):
                     'name': row['sponsor__name'],
                 }
             else:
-                result.update({
-                    'driver': {
-                        'id': row['driver_id'],
-                        'name': row['driver__name'],
-                        'username': row['driver__user__username'],
-                    },
-                    'sponsor': {
-                        'id': row['sponsor_id'],
-                        'name': row['sponsor__name'],
-                    },
-                })
+                result.update(
+                    {
+                        'driver': {
+                            'id': row['driver_id'],
+                            'name': row['driver__name'],
+                            'username': row['driver__user__username'],
+                        },
+                        'sponsor': {
+                            'id': row['sponsor_id'],
+                            'name': row['sponsor__name'],
+                        },
+                    }
+                )
             results.append(result)
 
         response = paginator.get_paginated_response(results)
-        response.data.update({
-            'scope': {
-                'group_by': scope.group_by,
-                'sponsor_id': scope.sponsor_id,
-                'driver_id': scope.driver_id,
-            },
-            'summary': {
-                'sale_count': summary['sale_count'],
-                'gross_sales_usd': _money(summary['gross_sales_usd'], 2),
-                'project_share_usd': _money(summary['project_share_usd'], 4),
-                'project_share_rate_percent': '1.00',
-            },
-        })
+        response.data.update(
+            {
+                'scope': {
+                    'group_by': scope.group_by,
+                    'sponsor_id': scope.sponsor_id,
+                    'driver_id': scope.driver_id,
+                },
+                'summary': {
+                    'sale_count': summary['sale_count'],
+                    'gross_sales_usd': _money(summary['gross_sales_usd'], 2),
+                    'project_share_usd': _money(summary['project_share_usd'], 4),
+                    'project_share_rate_percent': '1.00',
+                },
+            }
+        )
         return response
-

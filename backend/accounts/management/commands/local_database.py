@@ -16,9 +16,14 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('action', choices=('backup', 'list', 'inspect', 'restore'))
-        parser.add_argument('--archive', help='A backup filename from backend/.local-backups, without directory components.')
+        parser.add_argument(
+            '--archive',
+            help='A backup filename from backend/.local-backups, without directory components.',
+        )
         parser.add_argument('--server-stopped', action='store_true')
-        parser.add_argument('--confirm', help='For restore, type the target database filename exactly.')
+        parser.add_argument(
+            '--confirm', help='For restore, type the target database filename exactly.'
+        )
 
     def handle(self, *args, **options):
         if connection.vendor != 'sqlite' or not settings.DEBUG:
@@ -26,8 +31,14 @@ class Command(BaseCommand):
         base = Path(settings.BASE_DIR).resolve()
         target = Path(connection.settings_dict['NAME']).resolve()
         directory = (base / '.local-backups').resolve()
-        if not target.is_relative_to(base) or target.suffix != '.sqlite3' or not directory.is_relative_to(base):
-            raise CommandError('Database and backup directory must remain inside backend; in-memory databases are unsupported.')
+        if (
+            not target.is_relative_to(base)
+            or target.suffix != '.sqlite3'
+            or not directory.is_relative_to(base)
+        ):
+            raise CommandError(
+                'Database and backup directory must remain inside backend; in-memory databases are unsupported.'
+            )
         archive = None
         if options['archive']:
             name = options['archive']
@@ -52,12 +63,16 @@ class Command(BaseCommand):
                 if not archive:
                     raise CommandError('Restore requires --archive with a listed backup filename.')
                 if not options['server_stopped'] or options['confirm'] != target.name:
-                    raise CommandError(f'Stop Django and all database clients, then supply --server-stopped --confirm {target.name}.')
+                    raise CommandError(
+                        f'Stop Django and all database clients, then supply --server-stopped --confirm {target.name}.'
+                    )
                 connection.close()
                 preserved = restore_database(archive, target, directory)
                 self.stdout.write(f'Restored: {target.name}')
                 if preserved:
                     self.stdout.write(f'Previous database preserved: {preserved.name}')
-                self.stdout.write('Keep the matching encryption keys. Review doctor and migrate --plan before restarting.')
+                self.stdout.write(
+                    'Keep the matching encryption keys. Review doctor and migrate --plan before restarting.'
+                )
         except (OSError, ValueError, sqlite3.Error) as error:
             raise CommandError(f'Local database operation failed: {error}') from None

@@ -750,7 +750,8 @@ class AdminImpersonationTests(APITestCase):
         for _ in range(2):
             response = self.client.patch(
                 reverse('accounts:admin-driver-detail', args=[self.driver_user.id]),
-                {'is_active': True}, format='json',
+                {'is_active': True},
+                format='json',
             )
             self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
             self.assertEqual(response.json()['code'], 'view_as_inactive_target')

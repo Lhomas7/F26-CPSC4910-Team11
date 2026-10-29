@@ -30,8 +30,10 @@ export function AuthProvider({ children }) {
       try {
         const user = await api.stopAdminImpersonation();
         setState((current) => ({
-          ...current, loading: false,
-          user: keepSession(current.user, user), notice: 'view-as-ended',
+          ...current,
+          loading: false,
+          user: keepSession(current.user, user),
+          notice: 'view-as-ended',
         }));
       } catch {
         setState({ loading: false, user: null, notice: 'expired' });

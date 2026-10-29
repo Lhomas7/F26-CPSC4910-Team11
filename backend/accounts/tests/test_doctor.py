@@ -12,7 +12,8 @@ class EnvironmentDoctorTests(SimpleTestCase):
         self.output = StringIO()
         self.database = MagicMock()
         self.database.settings_dict = {
-            'ENGINE': 'django.db.backends.sqlite3', 'NAME': ':memory:',
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
         }
         module = 'accounts.management.commands.doctor'
         self.connections = patch(f'{module}.connections', {'default': self.database})
@@ -34,6 +35,7 @@ class EnvironmentDoctorTests(SimpleTestCase):
         self.database.cursor.assert_not_called()
         self.assertIn('not checked', self.output.getvalue())
         from django.conf import settings
+
         self.assertNotIn(settings.TOTP_ENCRYPTION_KEY, self.output.getvalue())
         self.assertNotIn(settings.FIELD_ENCRYPTION_KEY, self.output.getvalue())
 
@@ -72,7 +74,10 @@ class EnvironmentDoctorTests(SimpleTestCase):
             call_command('doctor', stdout=self.output)
         self.assertNotIn('invalid-key', self.output.getvalue())
 
-    @patch('accounts.management.commands.doctor.dotenv_values', return_value={'DB_PASSWORD': 'file-secret'})
+    @patch(
+        'accounts.management.commands.doctor.dotenv_values',
+        return_value={'DB_PASSWORD': 'file-secret'},
+    )
     @patch.dict('os.environ', {'DB_PASSWORD': 'process-secret'})
     def test_env_override_report_names_the_variable_without_its_values(self, dotenv):
         self.file.stop()

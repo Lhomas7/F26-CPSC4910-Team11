@@ -24,4 +24,3 @@ export function getSalesReport({ groupBy, sponsorId = 'all', driverId = 'all', p
   });
   return request(`/reports/sales/?${query}`).then(readJson);
 }
-

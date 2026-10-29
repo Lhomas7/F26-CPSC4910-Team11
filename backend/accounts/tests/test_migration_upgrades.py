@@ -24,10 +24,13 @@ class Sprint5MigrationUpgradeTests(TransactionTestCase):
             apps = executor.loader.project_state(baseline).apps
             user = apps.get_model('auth', 'User').objects.create(username='migration.driver')
             driver = apps.get_model('drivers', 'Driver').objects.create(
-                user_id=user.pk, name='Migration Driver', phone_number='+18645550111',
+                user_id=user.pk,
+                name='Migration Driver',
+                phone_number='+18645550111',
             )
             mfa = apps.get_model('accounts', 'MFASettings').objects.create(
-                user_id=user.pk, phone_number='+18645550222',
+                user_id=user.pk,
+                phone_number='+18645550222',
             )
 
             executor = MigrationExecutor(connection)
@@ -48,7 +51,9 @@ class Sprint5MigrationUpgradeTests(TransactionTestCase):
                 apps.get_model('drivers', 'Driver').objects.get(pk=driver.pk).phone_number,
                 '+18645550111',
             )
-            expected_pending = '+18645550333' if branch == '0011_driver_notification_preferences' else None
+            expected_pending = (
+                '+18645550333' if branch == '0011_driver_notification_preferences' else None
+            )
             self.assertEqual(upgraded.pending_phone_number, expected_pending)
             with connection.cursor() as cursor:
                 cursor.execute(
@@ -81,7 +86,10 @@ class NotificationCenterMigrationTests(TransactionTestCase):
         isolated = original.copy(alias='default')
         isolated.settings_dict['NAME'] = ':memory:'
         connections['default'] = isolated
-        before = [('accounts', '0014_sponsor_catalog_rate'), ('drivers', '0009_encrypt_driver_phone_number')]
+        before = [
+            ('accounts', '0014_sponsor_catalog_rate'),
+            ('drivers', '0009_encrypt_driver_phone_number'),
+        ]
         after = [('accounts', '0015_notification')]
         try:
             executor = MigrationExecutor(connection)
@@ -96,7 +104,9 @@ class NotificationCenterMigrationTests(TransactionTestCase):
                 'Your balance is now 5 points.',
             )
             DriverNotification.objects.create(
-                driver_id=driver.pk, message='Your Good Driver password was reset.', read=True,
+                driver_id=driver.pk,
+                message='Your Good Driver password was reset.',
+                read=True,
             )
 
             executor = MigrationExecutor(connection)

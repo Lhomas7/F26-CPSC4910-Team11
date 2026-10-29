@@ -4,7 +4,6 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 
-
 PROJECT_SHARE_RATE = Decimal('0.01')
 
 
@@ -19,7 +18,9 @@ class CompletedSaleQuerySet(models.QuerySet):
         raise ValidationError('Completed sales are immutable audit records.')
 
     def bulk_create(self, objs, **kwargs):
-        raise ValidationError('Record completed sales individually so validation and fee calculation run.')
+        raise ValidationError(
+            'Record completed sales individually so validation and fee calculation run.'
+        )
 
 
 class CompletedSale(models.Model):
@@ -86,7 +87,12 @@ class CompletedSale(models.Model):
             self.reference = self.reference.strip()
         if not self.reference:
             raise ValidationError({'reference': 'Enter a sale reference.'})
-        if self._state.adding and self.driver_id and self.sponsor_id and self.driver.sponsor_id != self.sponsor_id:
+        if (
+            self._state.adding
+            and self.driver_id
+            and self.sponsor_id
+            and self.driver.sponsor_id != self.sponsor_id
+        ):
             raise ValidationError(
                 {'driver': 'The Driver must belong to the sale sponsor when the sale is recorded.'}
             )
@@ -96,14 +102,19 @@ class CompletedSale(models.Model):
         # only ModelForms and callers that remember to invoke full_clean().
         self.clean()
         if self.pk:
-            original = type(self).objects.filter(pk=self.pk).values(
-                'sponsor_id',
-                'driver_id',
-                'reference',
-                'gross_amount_usd',
-                'project_share_usd',
-                'completed_at',
-            ).first()
+            original = (
+                type(self)
+                .objects.filter(pk=self.pk)
+                .values(
+                    'sponsor_id',
+                    'driver_id',
+                    'reference',
+                    'gross_amount_usd',
+                    'project_share_usd',
+                    'completed_at',
+                )
+                .first()
+            )
             if original:
                 current = {
                     'sponsor_id': self.sponsor_id,
@@ -124,4 +135,3 @@ class CompletedSale(models.Model):
 
     def __str__(self):
         return self.reference
-

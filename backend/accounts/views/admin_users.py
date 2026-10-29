@@ -91,7 +91,11 @@ class AdminImpersonationStopView(APIView):
         target_id = request.session.get(IMPERSONATION_TARGET_KEY)
         # Acknowledge a session already ended by middleware. This also makes
         # returning safe when expiration races the user's stop request.
-        if admin.is_authenticated and admin.is_staff and request.session.get(IMPERSONATION_ENDED_KEY):
+        if (
+            admin.is_authenticated
+            and admin.is_staff
+            and request.session.get(IMPERSONATION_ENDED_KEY)
+        ):
             request.session.pop(IMPERSONATION_ENDED_KEY, None)
             return Response(get_public_user(admin))
         if not admin.is_authenticated or not admin.is_staff or not target_id:

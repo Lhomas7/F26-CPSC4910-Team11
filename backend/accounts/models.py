@@ -38,7 +38,8 @@ class SponsorCompany(models.Model):
     # Organization-wide catalog pricing, not a cash value for a Driver's balance.
     # Bound the rate so even the maximum product price remains a safe JS integer.
     points_per_dollar = models.PositiveIntegerField(
-        default=100, validators=[MinValueValidator(1), MaxValueValidator(100000)],
+        default=100,
+        validators=[MinValueValidator(1), MaxValueValidator(100000)],
     )
     driver_mfa_required = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -259,8 +260,6 @@ class DriverNotificationPreferences(models.Model):
         return preferences
 
 
-
-
 class PasswordHistory(models.Model):
     """Hashes of a user's recent passwords, newest first, so they cannot be reused.
 
@@ -276,6 +275,7 @@ class PasswordHistory(models.Model):
 
     class Meta:
         ordering = ['-created_at', '-id']
+
 
 class SponsorDriverAlert(models.Model):
     """A sponsor's choice to be alerted when one driver's points change.
@@ -319,6 +319,7 @@ class SponsorNotificationPreferences(models.Model):
     def for_sponsor(cls, sponsor_account):
         preferences, _ = cls.objects.get_or_create(sponsor_account=sponsor_account)
         return preferences
+
 
 class AdminImpersonationEvent(models.Model):
     """Append-only audit record for an administrator's view-as session."""

@@ -11,8 +11,12 @@
 
 /* Page background recedes in both themes; never dim the entire card or its
    interactive description control to indicate insufficient points. */
-.catalog-product-card.is-unaffordable { background: var(--bg); }
-.catalog-product-card.is-unaffordable .catalog-product-price { color: var(--ink-2); }
+.catalog-product-card.is-unaffordable {
+  background: var(--bg);
+}
+.catalog-product-card.is-unaffordable .catalog-product-price {
+  color: var(--ink-2);
+}
 
 .catalog-product-body {
   display: grid;

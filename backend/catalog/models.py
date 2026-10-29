@@ -15,18 +15,22 @@ class CatalogProduct(models.Model):
     )
     name = models.CharField(max_length=200)
     description = models.TextField(
-        blank=True, max_length=5000, validators=[MaxLengthValidator(5000)],
+        blank=True,
+        max_length=5000,
+        validators=[MaxLengthValidator(5000)],
     )
     # Only store the URL: Django does not fetch or proxy external product images.
     # HTTPS avoids mixed-content images on the deployed HTTPS application.
     image_url = models.URLField(
-        max_length=2048, blank=True,
+        max_length=2048,
+        blank=True,
         validators=[URLValidator(schemes=['https'])],
     )
     # Keep money exact. Point cost is derived at read time from the sponsor's
     # current conversion rate rather than stored as a second, stale price.
     price_usd = models.DecimalField(
-        max_digits=12, decimal_places=2,
+        max_digits=12,
+        decimal_places=2,
         validators=[MinValueValidator(Decimal('0.00'))],
     )
     # Manual availability is not a claim about a future provider's live stock.

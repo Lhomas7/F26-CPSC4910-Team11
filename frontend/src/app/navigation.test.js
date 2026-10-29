@@ -5,7 +5,13 @@ const labels = (user) => navItemsFor(user).map((item) => item.label);
 test('each account type gets its own sidebar', () => {
   expect(labels(null)).toEqual(['Home', 'About']);
   expect(labels({ account_type: 'driver' })).toEqual(['Home', 'Points', 'Catalog', 'About']);
-  expect(labels({ account_type: 'sponsor' })).toEqual(['Home', 'Points', 'Drivers', 'Catalog', 'About']);
+  expect(labels({ account_type: 'sponsor' })).toEqual([
+    'Home',
+    'Points',
+    'Drivers',
+    'Catalog',
+    'About',
+  ]);
   expect(labels({ account_type: 'admin' })).toEqual(['Home', 'Users', 'Reports', 'About']);
 });
 

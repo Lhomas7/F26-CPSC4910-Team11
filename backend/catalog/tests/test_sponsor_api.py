@@ -30,7 +30,8 @@ class SponsorCatalogApiTests(APITestCase):
         cls.colleague = User.objects.create_user(username='api.catalog.colleague')
         cls.outsider = User.objects.create_user(username='api.catalog.outsider')
         for user, company in (
-            (cls.sponsor, cls.company), (cls.colleague, cls.company),
+            (cls.sponsor, cls.company),
+            (cls.colleague, cls.company),
             (cls.outsider, cls.other_company),
         ):
             SponsorAccount.objects.create(user=user, company=company)
@@ -38,19 +39,27 @@ class SponsorCatalogApiTests(APITestCase):
         cls.admin = User.objects.create_user(username='api.catalog.admin', is_staff=True)
         MFASettings.objects.create(user=cls.admin, totp_enabled=True)
         cls.driver = User.objects.create_user(username='api.catalog.driver')
-        Driver.objects.create(user=cls.driver, name='API Driver', sponsor=cls.company, status='approved')
+        Driver.objects.create(
+            user=cls.driver, name='API Driver', sponsor=cls.company, status='approved'
+        )
         cls.product = CatalogProduct.objects.create(
-            sponsor=cls.company, name='Travel Mug', description='Reusable mug',
-            price_usd=Decimal('12.50'), image_url='https://images.example.com/mug.png',
+            sponsor=cls.company,
+            name='Travel Mug',
+            description='Reusable mug',
+            price_usd=Decimal('12.50'),
+            image_url='https://images.example.com/mug.png',
         )
 
     def setUp(self):
         self.client.force_authenticate(self.sponsor)
 
     def availability_url(self, product_id=None):
-        return reverse('catalog:sponsor-product-availability', kwargs={
-            'product_id': self.product.pk if product_id is None else product_id,
-        })
+        return reverse(
+            'catalog:sponsor-product-availability',
+            kwargs={
+                'product_id': self.product.pk if product_id is None else product_id,
+            },
+        )
 
     def payload(self, **overrides):
         data = {'name': 'Safety Jacket', 'price_usd': '49.95'}
@@ -71,17 +80,28 @@ class SponsorCatalogApiTests(APITestCase):
         self.assertIn('no-store', response['Cache-Control'])
 
     def test_create_normalizes_unicode_name_and_preserves_description_paragraphs(self):
-        response = self.client.post(self.url, self.payload(
-            name='  Ｔｒａｖｅｌ\t  Mug  ', description='  First line.\r\n\r\nSecond line.  ',
-        ), format='json')
+        response = self.client.post(
+            self.url,
+            self.payload(
+                name='  Ｔｒａｖｅｌ\t  Mug  ',
+                description='  First line.\r\n\r\nSecond line.  ',
+            ),
+            format='json',
+        )
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data['name'], 'Travel Mug')
         self.assertEqual(response.data['description'], 'First line.\n\nSecond line.')
 
     def test_optional_image_and_explicit_unavailable_state(self):
-        response = self.client.post(self.url, self.payload(
-            image_url='https://images.example.com/jacket.webp', is_available=False, price_usd='0.00',
-        ), format='json')
+        response = self.client.post(
+            self.url,
+            self.payload(
+                image_url='https://images.example.com/jacket.webp',
+                is_available=False,
+                price_usd='0.00',
+            ),
+            format='json',
+        )
         self.assertEqual(response.status_code, 201)
         self.assertFalse(response.data['is_available'])
         self.assertEqual(response.data['price_usd'], '0.00')
@@ -90,7 +110,9 @@ class SponsorCatalogApiTests(APITestCase):
         before = CatalogProduct.objects.count()
         for field in ('sponsor', 'sponsor_id', 'company_id', 'id', 'point_cost', 'provider_id'):
             with self.subTest(field=field):
-                response = self.client.post(self.url, self.payload(**{field: self.other_company.pk}), format='json')
+                response = self.client.post(
+                    self.url, self.payload(**{field: self.other_company.pk}), format='json'
+                )
                 self.assertEqual(response.status_code, 400)
                 self.assertIn(field, response.data)
         self.assertEqual(CatalogProduct.objects.count(), before)
@@ -98,13 +120,25 @@ class SponsorCatalogApiTests(APITestCase):
     def test_invalid_products_do_not_create_rows(self):
         before = CatalogProduct.objects.count()
         invalid = (
-            ('name', ''), ('name', ' \t\n '), ('name', 123), ('name', 'x' * 201),
-            ('name', 'Bad\x00Name'), ('price_usd', '-0.01'), ('price_usd', '1.234'),
-            ('price_usd', '10000000000.00'), ('price_usd', None), ('price_usd', 'NaN'),
-            ('description', 'x' * 5001), ('description', 'Bad\x00Description'),
-            ('image_url', 'http://images.example.com/x.png'), ('image_url', 'javascript:alert(1)'),
-            ('image_url', '/media/x.png'), ('image_url', 'not-a-url'),
-            ('is_available', 'false'), ('is_available', 1), ('is_available', None),
+            ('name', ''),
+            ('name', ' \t\n '),
+            ('name', 123),
+            ('name', 'x' * 201),
+            ('name', 'Bad\x00Name'),
+            ('price_usd', '-0.01'),
+            ('price_usd', '1.234'),
+            ('price_usd', '10000000000.00'),
+            ('price_usd', None),
+            ('price_usd', 'NaN'),
+            ('description', 'x' * 5001),
+            ('description', 'Bad\x00Description'),
+            ('image_url', 'http://images.example.com/x.png'),
+            ('image_url', 'javascript:alert(1)'),
+            ('image_url', '/media/x.png'),
+            ('image_url', 'not-a-url'),
+            ('is_available', 'false'),
+            ('is_available', 1),
+            ('is_available', None),
         )
         for field, value in invalid:
             with self.subTest(field=field, value=value):
@@ -120,14 +154,26 @@ class SponsorCatalogApiTests(APITestCase):
                 self.assertEqual(response.status_code, 400)
 
     def test_availability_can_be_disabled_and_reenabled_without_changing_details(self):
-        original = (self.product.name, self.product.description, self.product.image_url, self.product.price_usd)
+        original = (
+            self.product.name,
+            self.product.description,
+            self.product.image_url,
+            self.product.price_usd,
+        )
         for available in (False, True):
-            response = self.client.patch(self.availability_url(), {'is_available': available}, format='json')
+            response = self.client.patch(
+                self.availability_url(), {'is_available': available}, format='json'
+            )
             self.assertEqual(response.status_code, 200)
             self.product.refresh_from_db()
             self.assertEqual(self.product.is_available, available)
             self.assertEqual(
-                (self.product.name, self.product.description, self.product.image_url, self.product.price_usd),
+                (
+                    self.product.name,
+                    self.product.description,
+                    self.product.image_url,
+                    self.product.price_usd,
+                ),
                 original,
             )
             self.assertIn('no-store', response['Cache-Control'])
@@ -140,10 +186,15 @@ class SponsorCatalogApiTests(APITestCase):
         self.assertEqual(self.product.updated_at, updated_at)
 
     def test_availability_rejects_missing_boolean_and_arbitrary_edits(self):
-        for payload in ({}, {'is_available': 'false'}, {'is_available': 0}, {'is_available': None},
-                        {'is_available': False, 'name': 'Changed'},
-                        {'is_available': False, 'sponsor_id': self.other_company.pk},
-                        {'is_available': False, 'price_usd': '0.00'}):
+        for payload in (
+            {},
+            {'is_available': 'false'},
+            {'is_available': 0},
+            {'is_available': None},
+            {'is_available': False, 'name': 'Changed'},
+            {'is_available': False, 'sponsor_id': self.other_company.pk},
+            {'is_available': False, 'price_usd': '0.00'},
+        ):
             with self.subTest(payload=payload):
                 response = self.client.patch(self.availability_url(), payload, format='json')
                 self.assertEqual(response.status_code, 400)
@@ -154,14 +205,18 @@ class SponsorCatalogApiTests(APITestCase):
     def test_other_organization_and_missing_ids_both_return_404(self):
         self.client.force_authenticate(self.outsider)
         for product_id in (self.product.pk, self.product.pk + 10000):
-            response = self.client.patch(self.availability_url(product_id), {'is_available': False}, format='json')
+            response = self.client.patch(
+                self.availability_url(product_id), {'is_available': False}, format='json'
+            )
             self.assertEqual(response.status_code, 404)
         self.product.refresh_from_db()
         self.assertTrue(self.product.is_available)
 
     def test_sponsors_share_their_organization_catalog_not_a_personal_catalog(self):
         self.client.force_authenticate(self.colleague)
-        response = self.client.patch(self.availability_url(), {'is_available': False}, format='json')
+        response = self.client.patch(
+            self.availability_url(), {'is_available': False}, format='json'
+        )
         self.assertEqual(response.status_code, 200)
         self.product.refresh_from_db()
         self.assertFalse(self.product.is_available)
@@ -172,8 +227,16 @@ class SponsorCatalogApiTests(APITestCase):
         for user in (self.driver, self.admin, None, inactive):
             self.client.force_authenticate(user)
             with self.subTest(user=user):
-                self.assertIn(self.client.post(self.url, self.payload(), format='json').status_code, (401, 403))
-                self.assertIn(self.client.patch(self.availability_url(), {'is_available': False}, format='json').status_code, (401, 403))
+                self.assertIn(
+                    self.client.post(self.url, self.payload(), format='json').status_code,
+                    (401, 403),
+                )
+                self.assertIn(
+                    self.client.patch(
+                        self.availability_url(), {'is_available': False}, format='json'
+                    ).status_code,
+                    (401, 403),
+                )
         self.assertEqual(CatalogProduct.objects.count(), 1)
         self.product.refresh_from_db()
         self.assertTrue(self.product.is_available)
@@ -182,17 +245,29 @@ class SponsorCatalogApiTests(APITestCase):
         MFASettings.objects.filter(user=self.sponsor).delete()
         self.client.force_authenticate(get_user_model().objects.get(pk=self.sponsor.pk))
         self.assertEqual(self.client.post(self.url, self.payload(), format='json').status_code, 403)
-        self.assertEqual(self.client.patch(self.availability_url(), {'is_available': False}, format='json').status_code, 403)
+        self.assertEqual(
+            self.client.patch(
+                self.availability_url(), {'is_available': False}, format='json'
+            ).status_code,
+            403,
+        )
 
     def test_staff_with_sponsor_relationship_cannot_mutate(self):
         SponsorAccount.objects.create(user=self.admin, company=self.company)
         self.client.force_authenticate(self.admin)
         self.assertEqual(self.client.post(self.url, self.payload(), format='json').status_code, 403)
-        self.assertEqual(self.client.patch(self.availability_url(), {'is_available': False}, format='json').status_code, 403)
+        self.assertEqual(
+            self.client.patch(
+                self.availability_url(), {'is_available': False}, format='json'
+            ).status_code,
+            403,
+        )
 
     def test_unsupported_methods_are_not_product_edit_or_delete_endpoints(self):
         self.assertEqual(self.client.get(self.url).status_code, 405)
-        self.assertEqual(self.client.put(self.availability_url(), {}, format='json').status_code, 405)
+        self.assertEqual(
+            self.client.put(self.availability_url(), {}, format='json').status_code, 405
+        )
         self.assertEqual(self.client.delete(self.availability_url()).status_code, 405)
 
     def test_services_enforce_authorization_and_validation_outside_http_views(self):
@@ -240,4 +315,9 @@ class SponsorCatalogApiTests(APITestCase):
     def test_admin_viewing_as_driver_has_no_sponsor_mutation_privileges(self):
         client = self.view_as_client(self.driver, 'driver')
         self.assertEqual(client.post(self.url, self.payload(), format='json').status_code, 403)
-        self.assertEqual(client.patch(self.availability_url(), {'is_available': False}, format='json').status_code, 403)
+        self.assertEqual(
+            client.patch(
+                self.availability_url(), {'is_available': False}, format='json'
+            ).status_code,
+            403,
+        )

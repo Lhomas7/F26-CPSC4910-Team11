@@ -26,7 +26,11 @@ class Command(BaseCommand):
         failures = []
         self.stdout.write('Backend environment doctor (read-only)')
         self.stdout.write(f'Database alias: {options["database"]}')
-        self.stdout.write('Database mode: SQLite (isolated/local)' if local else 'Database mode: MySQL (potentially shared)')
+        self.stdout.write(
+            'Database mode: SQLite (isolated/local)'
+            if local
+            else 'Database mode: MySQL (potentially shared)'
+        )
         self.stdout.write(f'Database name: {config["NAME"]}')
         if not local:
             self.stdout.write(f'Database host: {config.get("HOST") or "not configured"}')
@@ -40,14 +44,25 @@ class Command(BaseCommand):
             matched = settings.FRONTEND_URL in origins
             self.stdout.write(f'Frontend allowed by {label}: {matched}')
             if not matched:
-                self.stdout.write(f'WARNING: configure the frontend origin in the {label} origin list.')
+                self.stdout.write(
+                    f'WARNING: configure the frontend origin in the {label} origin list.'
+                )
 
         console_email = settings.EMAIL_BACKEND == 'django.core.mail.backends.console.EmailBackend'
-        self.stdout.write(f'Email delivery: {"console" if console_email else "non-console backend"}')
-        live_sms = all(os.environ.get(key) for key in (
-            'TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_FROM_NUMBER',
-        ))
-        self.stdout.write(f'SMS delivery: {"Twilio (external)" if live_sms else "console fallback"}')
+        self.stdout.write(
+            f'Email delivery: {"console" if console_email else "non-console backend"}'
+        )
+        live_sms = all(
+            os.environ.get(key)
+            for key in (
+                'TWILIO_ACCOUNT_SID',
+                'TWILIO_AUTH_TOKEN',
+                'TWILIO_FROM_NUMBER',
+            )
+        )
+        self.stdout.write(
+            f'SMS delivery: {"Twilio (external)" if live_sms else "console fallback"}'
+        )
         if settings.DEBUG and (not console_email or live_sms):
             self.stdout.write('WARNING: local authentication tests may send real email or SMS.')
 
@@ -66,23 +81,32 @@ class Command(BaseCommand):
         if env_path.is_file():
             file_values = dotenv_values(env_path)
             differing = sorted(
-                name for name, value in file_values.items()
+                name
+                for name, value in file_values.items()
                 if value is not None and name in os.environ and os.environ[name] != value
             )
             if differing:
                 self.stdout.write('WARNING: effective environment differs from backend/.env for:')
                 for name in differing:
                     self.stdout.write(f'  {name} (values hidden)')
-                self.stdout.write('Inherited process variables or runtime secrets may override .env. Check a fresh terminal.')
+                self.stdout.write(
+                    'Inherited process variables or runtime secrets may override .env. Check a fresh terminal.'
+                )
 
         if not options['check_database']:
-            self.stdout.write('Database connectivity and applied migrations: not checked. Use --check-database.')
+            self.stdout.write(
+                'Database connectivity and applied migrations: not checked. Use --check-database.'
+            )
         else:
             try:
                 name = str(config['NAME'])
-                memory_database = name == ':memory:' or (name.startswith('file:') and 'mode=memory' in name)
+                memory_database = name == ':memory:' or (
+                    name.startswith('file:') and 'mode=memory' in name
+                )
                 if local and not memory_database and not Path(name).is_file():
-                    raise CommandError('SQLite database does not exist; diagnostics will not create it.')
+                    raise CommandError(
+                        'SQLite database does not exist; diagnostics will not create it.'
+                    )
                 # Neither the query nor MigrationLoader applies migrations or seeds data.
                 with database.cursor() as cursor:
                     cursor.execute('SELECT 1')
@@ -92,20 +116,25 @@ class Command(BaseCommand):
                 loader.check_consistent_history(database)
                 conflicts = loader.detect_conflicts()
                 if conflicts:
-                    failures.append('Conflicting migration leaves; review showmigrations and the migration audit guide.')
+                    failures.append(
+                        'Conflicting migration leaves; review showmigrations and the migration audit guide.'
+                    )
                 pending = [
-                    key for key in loader.graph.nodes
-                    if key not in loader.applied_migrations
+                    key for key in loader.graph.nodes if key not in loader.applied_migrations
                 ]
                 self.stdout.write(f'Unapplied migrations: {len(pending)}')
                 for app, name in sorted(pending):
                     self.stdout.write(f'  {app}.{name}')
                 if pending:
-                    self.stdout.write('Review migrate --plan before applying changes to this database.')
+                    self.stdout.write(
+                        'Review migrate --plan before applying changes to this database.'
+                    )
             except CommandError:
                 raise
             except Exception:
                 # Driver exceptions can contain credentials or complete connection strings.
-                failures.append('Database or migration inspection failed. Check connectivity, credentials, and migration history privately.')
+                failures.append(
+                    'Database or migration inspection failed. Check connectivity, credentials, and migration history privately.'
+                )
         if failures:
             raise CommandError(' '.join(failures))

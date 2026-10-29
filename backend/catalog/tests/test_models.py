@@ -60,8 +60,13 @@ class CatalogProductTests(TestCase):
 
     def test_image_urls_are_optional_https_references_not_uploads(self):
         self.product(image_url='https://images.example.com/reward.webp').full_clean()
-        for url in ('http://images.example.com/reward.png', 'javascript:alert(1)',
-                    'data:image/png;base64,abc', '/media/reward.png', 'not a url'):
+        for url in (
+            'http://images.example.com/reward.png',
+            'javascript:alert(1)',
+            'data:image/png;base64,abc',
+            '/media/reward.png',
+            'not a url',
+        ):
             with self.subTest(url=url):
                 with self.assertRaises(ValidationError) as error:
                     self.product(image_url=url).full_clean()

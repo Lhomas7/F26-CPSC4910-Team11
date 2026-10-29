@@ -11,14 +11,20 @@ export default function useCatalogPagination() {
   const [params, setParams] = useSearchParams();
   const rawPage = params.get('page');
   const page = readPage(rawPage);
-  const changePage = useCallback((value, replace = false) => {
-    setParams((current) => {
-      const next = new URLSearchParams(current);
-      if (value === 1) next.delete('page');
-      else next.set('page', String(value));
-      return next;
-    }, { replace });
-  }, [setParams]);
+  const changePage = useCallback(
+    (value, replace = false) => {
+      setParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          if (value === 1) next.delete('page');
+          else next.set('page', String(value));
+          return next;
+        },
+        { replace },
+      );
+    },
+    [setParams],
+  );
   const recoverPage = useCallback(() => changePage(1, true), [changePage]);
   useEffect(() => {
     if (rawPage !== null && rawPage !== String(page)) changePage(page, true);

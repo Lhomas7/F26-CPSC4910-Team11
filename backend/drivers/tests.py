@@ -783,7 +783,6 @@ class DriverRemovalTests(RoleScopedDriverTestData):
         self.assertEqual(self.pending.sponsor, self.company)
 
 
-
 @patch('accounts.services.notify.send_sms')
 class DriverRemovalNotificationTests(RoleScopedDriverTestData):
     """Being dropped or rejected is a required notice the driver cannot turn off."""
@@ -1129,6 +1128,7 @@ class DriverAlertSettingsViewTests(RoleScopedDriverTestData):
                 self.client.get(self.url(self.approved)).status_code, status.HTTP_403_FORBIDDEN
             )
 
+
 class SponsorOnlyActionTests(RoleScopedDriverTestData):
     """Every sponsor action refuses every caller that is not a sponsor account."""
 
@@ -1335,7 +1335,9 @@ class PersonalDataAccessTests(RoleScopedDriverTestData):
             )
             self.assertEqual(
                 self.client.get(
-                    reverse('accounts:admin-driver-detail', kwargs={'user_id': self.approved.user_id})
+                    reverse(
+                        'accounts:admin-driver-detail', kwargs={'user_id': self.approved.user_id}
+                    )
                 ).status_code,
                 status.HTTP_403_FORBIDDEN,
             )

@@ -6,10 +6,10 @@ from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase, override_settings
+from reports.models import CompletedSale
 
 from about_page.models import AboutPageRelease
 from drivers.models import Driver, PointTransaction
-from reports.models import CompletedSale
 
 from ..models import MFASettings, SponsorCompany
 
@@ -65,10 +65,13 @@ class LocalDemoSeedTests(TestCase):
 
     def test_partial_existing_demo_account_is_preserved(self):
         user = get_user_model().objects.create_user(
-            username='pat.sponsor', email='pat.sponsor@example.com', password=self.password,
+            username='pat.sponsor',
+            email='pat.sponsor@example.com',
+            password=self.password,
         )
         company = SponsorCompany.objects.create(name='Other Demo Organization')
         from ..models import SponsorAccount
+
         SponsorAccount.objects.create(user=user, company=company)
 
         output = self.seed()
@@ -106,7 +109,9 @@ class LocalDemoSeedTests(TestCase):
         self.seed(with_about=True)
 
         self.assertEqual(AboutPageRelease.objects.filter(version_number='Local demo').count(), 1)
-        self.assertEqual(AboutPageRelease.objects.exclude(version_number='Local demo').count(), len(before))
+        self.assertEqual(
+            AboutPageRelease.objects.exclude(version_number='Local demo').count(), len(before)
+        )
 
     def test_missing_noninteractive_password_stops_without_creating_records(self):
         with patch.dict('os.environ', {'GDIP_DEMO_PASSWORD': ''}):

@@ -11,29 +11,52 @@ jest.mock('../../../auth/AuthContext');
 
 const user = { id: 1, username: 'driver.one', account_type: 'driver', company: 'First Freight' };
 const product = {
-  id: 1, name: 'Travel Mug', description: 'A reusable mug.', image_url: '', price_usd: '24.95',
-  point_cost: 2495, can_afford: true, is_available: true, updated_at: '2026-10-21T12:00:00Z',
+  id: 1,
+  name: 'Travel Mug',
+  description: 'A reusable mug.',
+  image_url: '',
+  price_usd: '24.95',
+  point_cost: 2495,
+  can_afford: true,
+  is_available: true,
+  updated_at: '2026-10-21T12:00:00Z',
 };
 const response = (overrides = {}) => ({
-  count: 1, next: null, previous: null, results: [product],
-  sponsor: { id: 1, name: 'First Freight' }, point_balance: 3200,
-  pricing: { status: 'configured', points_per_dollar: 100 }, ...overrides,
+  count: 1,
+  next: null,
+  previous: null,
+  results: [product],
+  sponsor: { id: 1, name: 'First Freight' },
+  point_balance: 3200,
+  pricing: { status: 'configured', points_per_dollar: 100 },
+  ...overrides,
 });
 
 function RouteTools() {
   const location = useLocation();
   const navigate = useNavigate();
-  return <>
-    <output aria-label="Current location">{location.pathname}{location.search}</output>
-    <button onClick={() => navigate(-1)}>Browser back</button>
-    <button onClick={() => navigate('/catalog?page=2')}>Open page two</button>
-  </>;
+  return (
+    <>
+      <output aria-label="Current location">
+        {location.pathname}
+        {location.search}
+      </output>
+      <button onClick={() => navigate(-1)}>Browser back</button>
+      <button onClick={() => navigate('/catalog?page=2')}>Open page two</button>
+    </>
+  );
 }
 
 function renderPage(entry = '/catalog') {
-  const ui = () => <MemoryRouter initialEntries={[entry]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-    <CatalogPage /><RouteTools />
-  </MemoryRouter>;
+  const ui = () => (
+    <MemoryRouter
+      initialEntries={[entry]}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
+      <CatalogPage />
+      <RouteTools />
+    </MemoryRouter>
+  );
   return { ...render(ui()), ui };
 }
 
@@ -49,13 +72,17 @@ test('loads real Driver catalog, balance, rate and points without Sponsor or pur
   expect(screen.getByRole('heading', { name: 'Catalog', level: 1 })).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: 'Rewards', level: 2 })).toBeInTheDocument();
   expect(screen.getByText('First Freight’s reward catalog')).toBeInTheDocument();
-  expect(within(screen.getByRole('region', { name: 'Your point balance' })).getByText('3,200')).toBeInTheDocument();
+  expect(
+    within(screen.getByRole('region', { name: 'Your point balance' })).getByText('3,200'),
+  ).toBeInTheDocument();
   expect(screen.getByText('Catalog rate: 100 points per $1')).toBeInTheDocument();
   expect(screen.getByText('2,495 points')).toBeInTheDocument();
   expect(screen.getByText('Within your balance')).toBeInTheDocument();
   expect(screen.queryByText('$24.95')).not.toBeInTheDocument();
   expect(screen.queryByText(/Updated/)).not.toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: /Mark |Add |Redeem|Buy|Checkout/ })).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole('button', { name: /Mark |Add |Redeem|Buy|Checkout/ }),
+  ).not.toBeInTheDocument();
   expect(screen.queryByRole('link', { name: /Add product/ })).not.toBeInTheDocument();
   expect(screen.getByText(/Redeeming rewards isn’t available yet/)).toBeInTheDocument();
   expect(getCatalog).toHaveBeenCalledWith(1);
@@ -74,15 +101,19 @@ test('empty catalog is successful and preserves organization and zero balance', 
   renderPage();
   expect(await screen.findByRole('heading', { name: 'No rewards yet' })).toBeInTheDocument();
   expect(screen.getByText('0 products')).toBeInTheDocument();
-  expect(within(screen.getByRole('region', { name: 'Your point balance' })).getByText('0')).toBeInTheDocument();
+  expect(
+    within(screen.getByRole('region', { name: 'Your point balance' })).getByText('0'),
+  ).toBeInTheDocument();
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 });
 
 test('unconfigured pricing uses one neutral notice and no affordability verdict', async () => {
-  getCatalog.mockResolvedValue(response({
-    pricing: { status: 'unconfigured', points_per_dollar: null },
-    results: [{ ...product, point_cost: null, can_afford: null }],
-  }));
+  getCatalog.mockResolvedValue(
+    response({
+      pricing: { status: 'unconfigured', points_per_dollar: null },
+      results: [{ ...product, point_cost: null, can_afford: null }],
+    }),
+  );
   renderPage();
   await screen.findByRole('heading', { name: product.name });
   expect(screen.getByText('Point cost: Not configured')).toBeInTheDocument();
@@ -101,7 +132,9 @@ test('initial error can be retried without masquerading as an empty catalog', as
 });
 
 test('refresh failure retains only same-account data with stale balance feedback, then clears on success', async () => {
-  getCatalog.mockResolvedValueOnce(response()).mockRejectedValueOnce(new Error('Offline'))
+  getCatalog
+    .mockResolvedValueOnce(response())
+    .mockRejectedValueOnce(new Error('Offline'))
     .mockResolvedValueOnce(response({ point_balance: 4000 }));
   renderPage();
   await screen.findByRole('heading', { name: product.name });
@@ -116,7 +149,8 @@ test('refresh failure retains only same-account data with stale balance feedback
 });
 
 test.each([
-  ['driver_not_approved', 'Your approval is pending'], ['sponsor_required', 'No sponsor linked'],
+  ['driver_not_approved', 'Your approval is pending'],
+  ['sponsor_required', 'No sponsor linked'],
 ])('access code %s shows guidance instead of an empty catalog', async (code, title) => {
   getCatalog.mockRejectedValue(new ApiError('Denied', 403, { code }));
   renderPage();
@@ -127,25 +161,38 @@ test.each([
   expect(screen.queryByRole('region', { name: 'Your point balance' })).not.toBeInTheDocument();
 });
 
-test.each([401, 403, 409])('denial %s clears balance/products and never revives them on query changes', async (status) => {
-  getCatalog.mockResolvedValueOnce(response()).mockRejectedValueOnce(new ApiError('Session unavailable', status))
-    .mockReturnValue(new Promise(() => {}));
-  renderPage();
-  await screen.findByRole('heading', { name: product.name });
-  fireEvent.click(screen.getByRole('button', { name: 'Refresh catalog' }));
-  await screen.findByRole('heading', { name: 'Catalog access is unavailable' });
-  expect(screen.queryByRole('heading', { name: product.name })).not.toBeInTheDocument();
-  expect(screen.queryByRole('region', { name: 'Your point balance' })).not.toBeInTheDocument();
-  expect(screen.queryByText('First Freight’s reward catalog')).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: 'Open page two' }));
-  expect(screen.queryByText('3,200')).not.toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: 'Catalog access is unavailable' })).toBeInTheDocument();
-});
+test.each([401, 403, 409])(
+  'denial %s clears balance/products and never revives them on query changes',
+  async (status) => {
+    getCatalog
+      .mockResolvedValueOnce(response())
+      .mockRejectedValueOnce(new ApiError('Session unavailable', status))
+      .mockReturnValue(new Promise(() => {}));
+    renderPage();
+    await screen.findByRole('heading', { name: product.name });
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh catalog' }));
+    await screen.findByRole('heading', { name: 'Catalog access is unavailable' });
+    expect(screen.queryByRole('heading', { name: product.name })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Your point balance' })).not.toBeInTheDocument();
+    expect(screen.queryByText('First Freight’s reward catalog')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Open page two' }));
+    expect(screen.queryByText('3,200')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Catalog access is unavailable' }),
+    ).toBeInTheDocument();
+  },
+);
 
 test('pagination uses the URL, labels previous content while loading, and supports Back', async () => {
   let finish;
-  getCatalog.mockResolvedValueOnce(response({ count: 26, next: 'https://example.test/?page=2' }))
-    .mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }))
+  getCatalog
+    .mockResolvedValueOnce(response({ count: 26, next: 'https://example.test/?page=2' }))
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    )
     .mockResolvedValueOnce(response({ count: 26, next: '?page=2' }));
   renderPage();
   await screen.findByRole('heading', { name: product.name });
@@ -153,7 +200,15 @@ test('pagination uses the URL, labels previous content while loading, and suppor
   expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
   expect(screen.getByText('May be out of date')).toBeInTheDocument();
-  await act(async () => finish(response({ count: 26, previous: '?page=1', results: [{ ...product, id: 2, name: 'Jacket' }] })));
+  await act(async () =>
+    finish(
+      response({
+        count: 26,
+        previous: '?page=1',
+        results: [{ ...product, id: 2, name: 'Jacket' }],
+      }),
+    ),
+  );
   expect(screen.getByLabelText('Current location')).toHaveTextContent('/catalog?page=2');
   expect(screen.getByText('Page 2 of 2')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
@@ -162,10 +217,14 @@ test('pagination uses the URL, labels previous content while loading, and suppor
 });
 
 test('out-of-range page recovers once to page one without following response URLs', async () => {
-  getCatalog.mockRejectedValueOnce(new ApiError('Invalid page', 404)).mockResolvedValueOnce(response());
+  getCatalog
+    .mockRejectedValueOnce(new ApiError('Invalid page', 404))
+    .mockResolvedValueOnce(response());
   renderPage('/catalog?page=99');
   await screen.findByRole('heading', { name: product.name });
-  await waitFor(() => expect(screen.getByLabelText('Current location')).toHaveTextContent(/^\/catalog$/));
+  await waitFor(() =>
+    expect(screen.getByLabelText('Current location')).toHaveTextContent(/^\/catalog$/),
+  );
   expect(screen.getByText(/Showing page 1/)).toBeInTheDocument();
   expect(getCatalog.mock.calls.map(([page]) => page)).toEqual([99, 1]);
 });
@@ -177,36 +236,58 @@ test('failed recovery is a real error without a loop', async () => {
   expect(getCatalog.mock.calls.map(([page]) => page)).toEqual([99, 1]);
 });
 
-test.each(['-1', '1.5', '0', 'banana', '9007199254740992'])('normalizes invalid page %s', async (value) => {
-  getCatalog.mockResolvedValue(response());
-  renderPage(`/catalog?page=${value}`);
-  await screen.findByRole('heading', { name: product.name });
-  expect(screen.getByLabelText('Current location')).toHaveTextContent(/^\/catalog$/);
-  expect(getCatalog.mock.calls.every(([page]) => page === 1)).toBe(true);
-});
+test.each(['-1', '1.5', '0', 'banana', '9007199254740992'])(
+  'normalizes invalid page %s',
+  async (value) => {
+    getCatalog.mockResolvedValue(response());
+    renderPage(`/catalog?page=${value}`);
+    await screen.findByRole('heading', { name: product.name });
+    expect(screen.getByLabelText('Current location')).toHaveTextContent(/^\/catalog$/);
+    expect(getCatalog.mock.calls.every(([page]) => page === 1)).toBe(true);
+  },
+);
 
 test.each([
-  { id: 2, username: 'driver.two' }, { company: 'Other Freight' },
+  { id: 2, username: 'driver.two' },
+  { company: 'Other Freight' },
   { impersonation: { active: true, admin: { id: 8 }, expires_at: '2026-10-21T20:00:00Z' } },
-])('identity change clears both balance and cards and ignores late responses: %j', async (changed) => {
-  let oldRequest;
-  let newRequest;
-  getCatalog.mockResolvedValueOnce(response())
-    .mockImplementationOnce(() => new Promise((resolve) => { oldRequest = resolve; }))
-    .mockImplementationOnce(() => new Promise((resolve) => { newRequest = resolve; }));
-  const { rerender, ui } = renderPage();
-  await screen.findByRole('heading', { name: product.name });
-  fireEvent.click(screen.getByRole('button', { name: 'Refresh catalog' }));
-  useAuth.mockReturnValue({ user: { ...user, ...changed } });
-  rerender(ui());
-  expect(screen.queryByText('3,200')).not.toBeInTheDocument();
-  expect(screen.queryByRole('heading', { name: product.name })).not.toBeInTheDocument();
-  await act(async () => oldRequest(response()));
-  expect(screen.queryByText('3,200')).not.toBeInTheDocument();
-  await act(async () => newRequest(response({ point_balance: 9000, results: [{ ...product, id: 2, name: 'New reward' }] })));
-  expect(screen.getByText('9,000')).toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: 'New reward' })).toBeInTheDocument();
-});
+])(
+  'identity change clears both balance and cards and ignores late responses: %j',
+  async (changed) => {
+    let oldRequest;
+    let newRequest;
+    getCatalog
+      .mockResolvedValueOnce(response())
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            oldRequest = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            newRequest = resolve;
+          }),
+      );
+    const { rerender, ui } = renderPage();
+    await screen.findByRole('heading', { name: product.name });
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh catalog' }));
+    useAuth.mockReturnValue({ user: { ...user, ...changed } });
+    rerender(ui());
+    expect(screen.queryByText('3,200')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: product.name })).not.toBeInTheDocument();
+    await act(async () => oldRequest(response()));
+    expect(screen.queryByText('3,200')).not.toBeInTheDocument();
+    await act(async () =>
+      newRequest(
+        response({ point_balance: 9000, results: [{ ...product, id: 2, name: 'New reward' }] }),
+      ),
+    );
+    expect(screen.getByText('9,000')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'New reward' })).toBeInTheDocument();
+  },
+);
 
 test('malformed individual cost stays unknown without gray styling', async () => {
   getCatalog.mockResolvedValue(response({ results: [{ ...product, point_cost: null }] }));
@@ -225,17 +306,27 @@ test('long organization names retain full accessible text and a title in the con
 });
 
 test('all four availability/affordability combinations remain independently represented on the page', async () => {
-  const rows = [true, false].flatMap((available, i) => [true, false].map((affordable, j) => ({
-    ...product, id: i * 2 + j + 1, name: `Reward ${i}-${j}`,
-    is_available: available, point_cost: affordable ? 2495 : 4900, can_afford: affordable,
-  })));
+  const rows = [true, false].flatMap((available, i) =>
+    [true, false].map((affordable, j) => ({
+      ...product,
+      id: i * 2 + j + 1,
+      name: `Reward ${i}-${j}`,
+      is_available: available,
+      point_cost: affordable ? 2495 : 4900,
+      can_afford: affordable,
+    })),
+  );
   getCatalog.mockResolvedValue(response({ count: 4, results: rows }));
   renderPage();
   await screen.findByRole('heading', { name: 'Reward 0-0' });
   const cards = within(screen.getByRole('list', { name: 'Rewards' })).getAllByRole('listitem');
   rows.forEach((row, i) => {
-    expect(within(cards[i]).getByText(row.is_available ? 'Available' : 'Unavailable')).toBeInTheDocument();
-    expect(within(cards[i]).getByText(row.can_afford ? 'Within your balance' : 'Need 1,700 more points')).toBeInTheDocument();
+    expect(
+      within(cards[i]).getByText(row.is_available ? 'Available' : 'Unavailable'),
+    ).toBeInTheDocument();
+    expect(
+      within(cards[i]).getByText(row.can_afford ? 'Within your balance' : 'Need 1,700 more points'),
+    ).toBeInTheDocument();
     expect(cards[i].classList.contains('is-unaffordable')).toBe(!row.can_afford);
   });
 });

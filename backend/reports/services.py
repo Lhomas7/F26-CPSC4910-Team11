@@ -10,7 +10,6 @@ from drivers.models import Driver
 
 from .models import CompletedSale
 
-
 GROUP_SPONSOR = 'sponsor'
 GROUP_DRIVER = 'driver'
 GROUP_CHOICES = (GROUP_SPONSOR, GROUP_DRIVER)
@@ -49,9 +48,14 @@ def parse_sales_report_scope(params):
         raise ValidationError({'driver_id': 'Choose a sponsor before choosing one Driver.'})
     if driver_id and group_by != GROUP_DRIVER:
         raise ValidationError({'driver_id': 'Driver scope is only available for sales by Driver.'})
-    if driver_id and not Driver.objects.filter(pk=driver_id).filter(
-        Q(sponsor_id=sponsor_id) | Q(completed_sales__sponsor_id=sponsor_id),
-    ).exists():
+    if (
+        driver_id
+        and not Driver.objects.filter(pk=driver_id)
+        .filter(
+            Q(sponsor_id=sponsor_id) | Q(completed_sales__sponsor_id=sponsor_id),
+        )
+        .exists()
+    ):
         raise ValidationError({'driver_id': 'Choose a Driver from the selected sponsor.'})
 
     return SalesReportScope(group_by, sponsor_id, driver_id)
@@ -65,25 +69,34 @@ def sales_report_queryset(scope):
         sales = sales.filter(driver_id=scope.driver_id)
 
     if scope.group_by == GROUP_SPONSOR:
-        return sales.values(
-            'sponsor_id', 'sponsor__name',
-        ).annotate(
+        return (
+            sales.values(
+                'sponsor_id',
+                'sponsor__name',
+            )
+            .annotate(
+                sale_count=Count('id'),
+                gross_sales_usd=Sum('gross_amount_usd'),
+                project_share_usd=Sum('project_share_usd'),
+            )
+            .order_by('sponsor__name', 'sponsor_id')
+        )
+
+    return (
+        sales.values(
+            'driver_id',
+            'driver__name',
+            'driver__user__username',
+            'sponsor_id',
+            'sponsor__name',
+        )
+        .annotate(
             sale_count=Count('id'),
             gross_sales_usd=Sum('gross_amount_usd'),
             project_share_usd=Sum('project_share_usd'),
-        ).order_by('sponsor__name', 'sponsor_id')
-
-    return sales.values(
-        'driver_id',
-        'driver__name',
-        'driver__user__username',
-        'sponsor_id',
-        'sponsor__name',
-    ).annotate(
-        sale_count=Count('id'),
-        gross_sales_usd=Sum('gross_amount_usd'),
-        project_share_usd=Sum('project_share_usd'),
-    ).order_by('sponsor__name', 'driver__name', 'driver_id')
+        )
+        .order_by('sponsor__name', 'driver__name', 'driver_id')
+    )
 
 
 def sales_report_summary(scope):
@@ -105,8 +118,12 @@ def report_options(sponsor_id=None):
     if sponsor_id is not None:
         if not SponsorCompany.objects.filter(pk=sponsor_id).exists():
             raise ValidationError({'sponsor_id': 'Choose an existing sponsor organization.'})
-        drivers = Driver.objects.filter(
-            Q(sponsor_id=sponsor_id) | Q(completed_sales__sponsor_id=sponsor_id),
-        ).distinct().select_related('user').order_by('name', 'id')
+        drivers = (
+            Driver.objects.filter(
+                Q(sponsor_id=sponsor_id) | Q(completed_sales__sponsor_id=sponsor_id),
+            )
+            .distinct()
+            .select_related('user')
+            .order_by('name', 'id')
+        )
     return sponsors, drivers
-

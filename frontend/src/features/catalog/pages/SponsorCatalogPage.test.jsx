@@ -10,16 +10,27 @@ jest.mock('../../../auth/AuthContext');
 
 const user = { id: 1, username: 'sponsor.one', account_type: 'sponsor', company: 'First Freight' };
 const product = {
-  id: 1, name: 'Travel Mug', description: 'A reusable mug.', price_usd: '12.50',
-  image_url: '', is_available: true, updated_at: '2026-10-21T12:00:00Z',
-  point_cost: null, can_afford: null,
+  id: 1,
+  name: 'Travel Mug',
+  description: 'A reusable mug.',
+  price_usd: '12.50',
+  image_url: '',
+  is_available: true,
+  updated_at: '2026-10-21T12:00:00Z',
+  point_cost: null,
+  can_afford: null,
 };
 
 function response(overrides = {}) {
   return {
-    count: 1, next: null, previous: null, results: [product],
-    sponsor: { id: 1, name: 'First Freight' }, point_balance: null,
-    pricing: { status: 'unconfigured', points_per_dollar: null }, ...overrides,
+    count: 1,
+    next: null,
+    previous: null,
+    results: [product],
+    sponsor: { id: 1, name: 'First Freight' },
+    point_balance: null,
+    pricing: { status: 'unconfigured', points_per_dollar: null },
+    ...overrides,
   };
 }
 
@@ -28,15 +39,23 @@ function RouteTools() {
   const navigate = useNavigate();
   return (
     <>
-      <output aria-label="Current location">{location.pathname}{location.search}</output>
-      <button type="button" onClick={() => navigate(-1)}>Browser back</button>
+      <output aria-label="Current location">
+        {location.pathname}
+        {location.search}
+      </output>
+      <button type="button" onClick={() => navigate(-1)}>
+        Browser back
+      </button>
     </>
   );
 }
 
 function renderPage(entry = '/catalog') {
   const ui = () => (
-    <MemoryRouter initialEntries={[entry]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <MemoryRouter
+      initialEntries={[entry]}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
       <CatalogPage />
       <RouteTools />
     </MemoryRouter>
@@ -72,10 +91,12 @@ test('shows loading placeholders instead of invented products', () => {
 });
 
 test('configured Sponsor pricing shows calculated points without an unconfigured notice', async () => {
-  getCatalog.mockResolvedValue(response({
-    pricing: { status: 'configured', points_per_dollar: 100 },
-    results: [{ ...product, point_cost: 1250 }],
-  }));
+  getCatalog.mockResolvedValue(
+    response({
+      pricing: { status: 'configured', points_per_dollar: 100 },
+      results: [{ ...product, point_cost: 1250 }],
+    }),
+  );
   renderPage();
   expect(await screen.findByText('Point cost: 1,250 points')).toBeInTheDocument();
   expect(screen.getByText('$12.50')).toBeInTheDocument();
@@ -111,33 +132,51 @@ test('initial failure shows retry and is never represented as empty', async () =
 });
 
 test('transient refresh failure preserves products and retry restores the page', async () => {
-  getCatalog.mockResolvedValueOnce(response())
+  getCatalog
+    .mockResolvedValueOnce(response())
     .mockRejectedValueOnce(new Error('Server unavailable'))
     .mockResolvedValueOnce(response());
   renderPage();
   await screen.findByRole('heading', { name: product.name });
   fireEvent.click(screen.getByRole('button', { name: 'Refresh catalog' }));
-  expect(await screen.findByRole('alert')).toHaveTextContent('Previously loaded products are still shown.');
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Previously loaded products are still shown.',
+  );
   expect(screen.getByRole('heading', { name: product.name })).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
   await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
 });
 
-test.each([401, 403, 409])('access/session error %s removes loaded organization data', async (status) => {
-  getCatalog.mockResolvedValueOnce(response()).mockRejectedValueOnce(Object.assign(new Error('Session unavailable'), { status }));
-  renderPage();
-  await screen.findByRole('heading', { name: product.name });
-  fireEvent.click(screen.getByRole('button', { name: 'Refresh catalog' }));
-  expect(await screen.findByRole('heading', { name: 'Catalog access is unavailable' })).toBeInTheDocument();
-  expect(screen.queryByRole('heading', { name: product.name })).not.toBeInTheDocument();
-  expect(screen.queryByText('First Freight’s reward catalog')).not.toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
-});
+test.each([401, 403, 409])(
+  'access/session error %s removes loaded organization data',
+  async (status) => {
+    getCatalog
+      .mockResolvedValueOnce(response())
+      .mockRejectedValueOnce(Object.assign(new Error('Session unavailable'), { status }));
+    renderPage();
+    await screen.findByRole('heading', { name: product.name });
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh catalog' }));
+    expect(
+      await screen.findByRole('heading', { name: 'Catalog access is unavailable' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: product.name })).not.toBeInTheDocument();
+    expect(screen.queryByText('First Freight’s reward catalog')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
+  },
+);
 
 test('pagination uses the URL and browser Back returns to the prior page', async () => {
-  getCatalog.mockImplementation((page) => Promise.resolve(page === 1
-    ? response({ count: 26, next: 'http://test/api/catalog/?page=2' })
-    : response({ count: 26, results: [{ ...product, id: 2, name: 'Page Two Reward' }], previous: 'http://test/api/catalog/' })));
+  getCatalog.mockImplementation((page) =>
+    Promise.resolve(
+      page === 1
+        ? response({ count: 26, next: 'http://test/api/catalog/?page=2' })
+        : response({
+            count: 26,
+            results: [{ ...product, id: 2, name: 'Page Two Reward' }],
+            previous: 'http://test/api/catalog/',
+          }),
+    ),
+  );
   renderPage();
   await screen.findByRole('heading', { name: product.name });
   expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled();
@@ -152,7 +191,8 @@ test('pagination uses the URL and browser Back returns to the prior page', async
 });
 
 test('page changes disable controls while retaining correctly labeled prior-page content', async () => {
-  getCatalog.mockResolvedValueOnce(response({ count: 26, next: 'http://test/?page=2' }))
+  getCatalog
+    .mockResolvedValueOnce(response({ count: 26, next: 'http://test/?page=2' }))
     .mockReturnValueOnce(new Promise(() => {}));
   renderPage();
   await screen.findByRole('heading', { name: product.name });
@@ -163,11 +203,14 @@ test('page changes disable controls while retaining correctly labeled prior-page
 });
 
 test('out-of-range page recovers to page 1 exactly once and fixes the URL', async () => {
-  getCatalog.mockRejectedValueOnce(Object.assign(new Error('Invalid page'), { status: 404 }))
+  getCatalog
+    .mockRejectedValueOnce(Object.assign(new Error('Invalid page'), { status: 404 }))
     .mockResolvedValueOnce(response());
   renderPage('/catalog?page=99');
   expect(await screen.findByRole('heading', { name: product.name })).toBeInTheDocument();
-  await waitFor(() => expect(screen.getByLabelText('Current location')).toHaveTextContent(/^\/catalog$/));
+  await waitFor(() =>
+    expect(screen.getByLabelText('Current location')).toHaveTextContent(/^\/catalog$/),
+  );
   expect(screen.getByText(/That page doesn.t exist. Showing page 1./)).toBeInTheDocument();
   expect(getCatalog.mock.calls.map(([page]) => page)).toEqual([99, 1]);
 });
@@ -195,9 +238,20 @@ test.each([
 ])('identity/organization/View-As change clears stale cards immediately', async (changed) => {
   let finishOldRequest;
   let finishNewRequest;
-  getCatalog.mockResolvedValueOnce(response())
-    .mockImplementationOnce(() => new Promise((resolve) => { finishOldRequest = resolve; }))
-    .mockImplementationOnce(() => new Promise((resolve) => { finishNewRequest = resolve; }));
+  getCatalog
+    .mockResolvedValueOnce(response())
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishOldRequest = resolve;
+        }),
+    )
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishNewRequest = resolve;
+        }),
+    );
   const { rerender, ui } = renderPage();
   await screen.findByRole('heading', { name: product.name });
   fireEvent.click(screen.getByRole('button', { name: 'Refresh catalog' }));
@@ -205,10 +259,17 @@ test.each([
   rerender(ui());
   expect(screen.queryByRole('heading', { name: product.name })).not.toBeInTheDocument();
   expect(screen.getByRole('status', { name: 'Loading catalog' })).toBeInTheDocument();
-  await act(async () => { finishOldRequest(response()); });
+  await act(async () => {
+    finishOldRequest(response());
+  });
   expect(screen.queryByRole('heading', { name: product.name })).not.toBeInTheDocument();
   await act(async () => {
-    finishNewRequest(response({ sponsor: { id: 2, name: 'New Company' }, results: [{ ...product, id: 2, name: 'New Reward' }] }));
+    finishNewRequest(
+      response({
+        sponsor: { id: 2, name: 'New Company' },
+        results: [{ ...product, id: 2, name: 'New Reward' }],
+      }),
+    );
   });
   expect(screen.getByRole('heading', { name: 'New Reward' })).toBeInTheDocument();
 });
@@ -229,33 +290,59 @@ test('confirmed availability updates the badge and timestamp in place without a 
 test('late old refresh cannot undo PATCH but a newer server read can replace it', async () => {
   let finishRefresh;
   let finishPatch;
-  getCatalog.mockResolvedValueOnce(response())
-    .mockImplementationOnce(() => new Promise((resolve) => { finishRefresh = resolve; }))
-    .mockResolvedValueOnce(response({ results: [{ ...product, updated_at: '2026-10-21T14:00:00Z' }] }));
-  setProductAvailability.mockImplementationOnce(() => new Promise((resolve) => { finishPatch = resolve; }));
+  getCatalog
+    .mockResolvedValueOnce(response())
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishRefresh = resolve;
+        }),
+    )
+    .mockResolvedValueOnce(
+      response({ results: [{ ...product, updated_at: '2026-10-21T14:00:00Z' }] }),
+    );
+  setProductAvailability.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finishPatch = resolve;
+      }),
+  );
   renderPage();
   fireEvent.click(await screen.findByRole('button', { name: 'Mark unavailable: Travel Mug' }));
   fireEvent.click(screen.getByRole('button', { name: 'Refresh catalog' }));
-  await act(async () => { finishPatch({ ...product, is_available: false, updated_at: '2026-10-21T13:00:00Z' }); });
-  await act(async () => { finishRefresh(response()); });
+  await act(async () => {
+    finishPatch({ ...product, is_available: false, updated_at: '2026-10-21T13:00:00Z' });
+  });
+  await act(async () => {
+    finishRefresh(response());
+  });
   expect(screen.getByText('Unavailable')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Refresh catalog' }));
   expect(await screen.findByText('Available')).toBeInTheDocument();
   expect(screen.queryByText('Travel Mug is now unavailable.')).not.toBeInTheDocument();
 });
 
-test.each([401, 403, 409])('availability access error %s removes organization data immediately', async (status) => {
-  getCatalog.mockResolvedValue(response());
-  setProductAvailability.mockRejectedValue(Object.assign(new Error('Access revoked'), { status }));
-  renderPage();
-  fireEvent.click(await screen.findByRole('button', { name: 'Mark unavailable: Travel Mug' }));
-  expect(await screen.findByRole('heading', { name: 'Catalog access is unavailable' })).toBeInTheDocument();
-  expect(screen.queryByRole('heading', { name: product.name })).not.toBeInTheDocument();
-  expect(screen.queryByText('First Freight’s reward catalog')).not.toBeInTheDocument();
-});
+test.each([401, 403, 409])(
+  'availability access error %s removes organization data immediately',
+  async (status) => {
+    getCatalog.mockResolvedValue(response());
+    setProductAvailability.mockRejectedValue(
+      Object.assign(new Error('Access revoked'), { status }),
+    );
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: 'Mark unavailable: Travel Mug' }));
+    expect(
+      await screen.findByRole('heading', { name: 'Catalog access is unavailable' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: product.name })).not.toBeInTheDocument();
+    expect(screen.queryByText('First Freight’s reward catalog')).not.toBeInTheDocument();
+  },
+);
 
 test('404 refresh recovery removes missing products rather than retrying their mutation', async () => {
-  getCatalog.mockResolvedValueOnce(response()).mockResolvedValueOnce(response({ count: 0, results: [] }));
+  getCatalog
+    .mockResolvedValueOnce(response())
+    .mockResolvedValueOnce(response({ count: 0, results: [] }));
   setProductAvailability.mockRejectedValue(Object.assign(new Error('Missing'), { status: 404 }));
   renderPage();
   fireEvent.click(await screen.findByRole('button', { name: 'Mark unavailable: Travel Mug' }));
@@ -268,16 +355,26 @@ test('404 refresh recovery removes missing products rather than retrying their m
 
 test('a late mutation from a previous identity cannot alter the replacement catalog', async () => {
   let finishPatch;
-  getCatalog.mockResolvedValueOnce(response()).mockResolvedValueOnce(response({
-    sponsor: { id: 2, name: 'Second Freight' }, results: [{ ...product, id: 2, name: 'Second Reward' }],
-  }));
-  setProductAvailability.mockImplementationOnce(() => new Promise((resolve) => { finishPatch = resolve; }));
+  getCatalog.mockResolvedValueOnce(response()).mockResolvedValueOnce(
+    response({
+      sponsor: { id: 2, name: 'Second Freight' },
+      results: [{ ...product, id: 2, name: 'Second Reward' }],
+    }),
+  );
+  setProductAvailability.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finishPatch = resolve;
+      }),
+  );
   const { rerender, ui } = renderPage();
   fireEvent.click(await screen.findByRole('button', { name: 'Mark unavailable: Travel Mug' }));
   useAuth.mockReturnValue({ user: { ...user, id: 2, company: 'Second Freight' } });
   rerender(ui());
   await screen.findByRole('heading', { name: 'Second Reward' });
-  await act(async () => { finishPatch({ ...product, is_available: false, updated_at: '2026-10-21T13:00:00Z' }); });
+  await act(async () => {
+    finishPatch({ ...product, is_available: false, updated_at: '2026-10-21T13:00:00Z' });
+  });
   expect(screen.getByText('Available')).toBeInTheDocument();
   expect(screen.queryByText('Travel Mug is now unavailable.')).not.toBeInTheDocument();
   expect(screen.queryByRole('heading', { name: 'Travel Mug' })).not.toBeInTheDocument();

@@ -25,6 +25,8 @@ class SponsorProductAvailabilityView(APIView):
 
     def patch(self, request, product_id):
         product = update_product_availability(
-            user=request.user, product_id=product_id, data=request.data,
+            user=request.user,
+            product_id=product_id,
+            data=request.data,
         )
         return Response(CatalogProductSerializer(product).data)
