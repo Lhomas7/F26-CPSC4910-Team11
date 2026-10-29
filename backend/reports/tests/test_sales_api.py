@@ -179,3 +179,49 @@ class SalesReportApiTests(APITestCase):
         for response in responses:
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_both_endpoints_require_admin_mfa_enrollment(self):
+        unenrolled = User.objects.create_user(username='unenrolled.admin', is_staff=True)
+        self.client.force_authenticate(unenrolled)
+        for endpoint in ('sales', 'sales-options'):
+            with self.subTest(endpoint=endpoint):
+                response = self.client.get(reverse(f'reports:{endpoint}'),
+                                           {'group_by': 'sponsor'} if endpoint == 'sales' else {})
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_pagination_preserves_whole_scope_totals(self):
+        self.authenticate_admin()
+        first = self.client.get(reverse('reports:sales'), {
+            'group_by': 'driver', 'page_size': 1,
+        })
+        second = self.client.get(reverse('reports:sales'), {
+            'group_by': 'driver', 'page_size': 1, 'page': 2,
+        })
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(first.data['count'], 3)
+        self.assertEqual(len(first.data['results']), 1)
+        self.assertNotEqual(first.data['results'], second.data['results'])
+        self.assertEqual(first.data['summary'], second.data['summary'])
+        self.assertEqual(first.data['summary']['gross_sales_usd'], '140.00')
+        self.assertEqual(first.data['summary']['project_share_usd'], '1.4000')
+        invalid = self.client.get(reverse('reports:sales'), {
+            'group_by': 'driver', 'page_size': 1, 'page': 999,
+        })
+        self.assertEqual(invalid.status_code, 404)
+
+    def test_one_driver_is_grouped_separately_for_each_sale_sponsor(self):
+        self.driver_a.sponsor = self.beta
+        self.driver_a.save()
+        CompletedSale.objects.create(
+            sponsor=self.beta, driver=self.driver_a, reference='TRANSFER-SALE',
+            gross_amount_usd=Decimal('0.01'), completed_at=timezone.now(),
+        )
+        self.authenticate_admin()
+        response = self.client.get(reverse('reports:sales'), {'group_by': 'driver'})
+        rows = [row for row in response.data['results'] if row['driver']['id'] == self.driver_a.pk]
+        self.assertEqual(len(rows), 2)
+        self.assertEqual({row['sponsor']['id'] for row in rows}, {self.alpha.pk, self.beta.pk})
+        self.assertEqual({row['project_share_usd'] for row in rows}, {'0.3495', '0.0001'})
+        options = self.client.get(reverse('reports:sales-options'), {'sponsor_id': self.alpha.pk})
+        self.assertEqual([row['id'] for row in options.data['drivers']].count(self.driver_a.pk), 1)
+
