@@ -26,6 +26,11 @@ load_dotenv(BASE_DIR / '.env')
 # AWS_SECRETS_MANAGER_SECRET_ID is set. No-op for local development.
 load_aws_secrets()
 
+# External reward provider is optional until a vendor is selected. Credentials
+# are read server-side only and must never be sent to the React application.
+PRODUCT_PROVIDER_BASE_URL = os.environ.get('PRODUCT_PROVIDER_BASE_URL', '')
+PRODUCT_PROVIDER_API_KEY = os.environ.get('PRODUCT_PROVIDER_API_KEY', '')
+
 
 def env_bool(name, default=False):
     value = os.environ.get(name)

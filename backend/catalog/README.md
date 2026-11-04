@@ -24,8 +24,9 @@ controls and read-only Driver browsing are implemented in the frontend. See
 ## Product contract
 
 `CatalogProduct` belongs to one `SponsorCompany` through the `sponsor` foreign
-key. Products are manually entered for Sprint 5; no external shopping provider
-is integrated yet.
+key. Products are manually entered today; Sprint 7 adds optional provider
+identity fields and an HTTP client foundation. No vendor-specific import or
+synchronization flow is connected to the catalog endpoints yet.
 
 | Field | Contract |
 | --- | --- |
@@ -34,6 +35,8 @@ is integrated yet.
 | `image_url` | Optional HTTPS URL, at most 2,048 characters; no upload, fetch, or proxy |
 | `price_usd` | Required nonnegative USD amount, up to 10 whole-number digits and 2 decimal places |
 | `is_available` | Manual availability, default true; not provider inventory verification |
+| `provider`, `external_product_id` | Both absent for manual products; both required for imported products; unique per Sponsor |
+| `last_synced_at` | Optional timestamp reserved for successful provider synchronization |
 | `created_at`, `updated_at` | Server-maintained timestamps |
 
 Missing or failed images will use a frontend fallback. HTTPS references prevent
@@ -67,6 +70,16 @@ The additive migration is `catalog.0001_initial`. Apply it through the normal
 project migration workflow after reviewing the target environment. The tests
 apply it only to disposable SQLite databases; no shared database was migrated
 as part of this change.
+
+`catalog.0002_catalogproduct_external_product_id_and_more` adds the optional
+provider identity and synchronization fields, plus a paired-identity check and
+Sponsor-scoped uniqueness constraint. Existing manual products retain null
+provider fields. The `ProductProviderClient` in `providers.py` reads its HTTPS
+origin and API key from `PRODUCT_PROVIDER_BASE_URL` and
+`PRODUCT_PROVIDER_API_KEY`; both can be blank while the catalog remains manual.
+It bounds response size and time, rejects redirects and non-JSON responses,
+and converts network failures to `ProductProviderError`. The provider's API
+paths, response schema, and import mapping remain to be selected and built.
 
 `accounts.0014_sponsor_catalog_rate` adds the rate and its constraint, supplying
 100 for existing organizations without changing existing product prices. Review
