@@ -608,6 +608,7 @@ See [`docs/PROJECT_TODO.md`](docs/PROJECT_TODO.md) for the detailed engineering,
 
 - [Local offline development with SQLite and demonstration accounts](docs/LOCAL_OFFLINE_DEVELOPMENT.md)
 - [Engineering backlog and project TODO](docs/PROJECT_TODO.md)
+- [Future sprint story candidates and accessibility roadmap](docs/FUTURE_SPRINT_STORIES.md)
 - [Linting, formatting, and local quality checks](docs/LINTING.md)
 - [Account input validation and normalization](docs/ACCOUNT_INPUT_VALIDATION.md)
 - [Session security: device check, timeouts, and sign-out](docs/SESSION_SECURITY.md)
