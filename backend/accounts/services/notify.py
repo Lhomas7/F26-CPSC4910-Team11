@@ -209,3 +209,25 @@ def notify_sponsors_of_point_change(driver, point_change, reason, balance, chang
                 ).send()
         except Exception:
             logger.exception('Could not send a driver point alert to a sponsor.')
+
+
+
+def notify_sponsors_of_new_driver_application(driver):
+    """Notify every active sponsor account in the organization of a new application."""
+    from accounts.models import SponsorAccount
+
+    if driver.sponsor_id is None:
+        return
+    message = (
+        f'{driver.name} has applied to join your Good Driver program. '
+        'Review the application in your driver directory.'
+    )
+    sponsor_accounts = SponsorAccount.objects.filter(
+        company_id=driver.sponsor_id,
+        user__is_active=True,
+    ).select_related('user')
+    for sponsor_account in sponsor_accounts:
+        try:
+            _record(sponsor_account.user, Notification.DRIVER_APPLICATION, message)
+        except Exception:
+            logger.exception('Could not record a new driver application notification.')

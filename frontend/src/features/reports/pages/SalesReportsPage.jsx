@@ -62,6 +62,7 @@ function SalesReportsSession({ user }) {
   const [groupBy, setGroupBy] = useState('sponsor');
   const [sponsorId, setSponsorId] = useState('all');
   const [driverId, setDriverId] = useState('all');
+  const [reportView, setReportView] = useState('detailed');
   const [report, setReport] = useState(null);
   const [reportStatus, setReportStatus] = useState('idle');
   const [reportError, setReportError] = useState('');
@@ -343,6 +344,24 @@ function SalesReportsSession({ user }) {
               Results
             </h2>
             <p className="reports-scope">{scopeText}</p>
+            <div className="reports-view-toggle" role="group" aria-label="Report detail level">
+              <button
+                className={`button ${reportView === 'summary' ? 'button-primary' : ''}`}
+                type="button"
+                aria-pressed={reportView === 'summary'}
+                onClick={() => setReportView('summary')}
+              >
+                Summary view
+              </button>
+              <button
+                className={`button ${reportView === 'detailed' ? 'button-primary' : ''}`}
+                type="button"
+                aria-pressed={reportView === 'detailed'}
+                onClick={() => setReportView('detailed')}
+              >
+                Detailed view
+              </button>
+            </div>
             {resultGroup === 'driver' && (
               <p className="reports-scope-note">
                 Grouped by Driver and the organization recorded on each sale.
@@ -372,7 +391,7 @@ function SalesReportsSession({ user }) {
                 <small className="stat-note">Exact {rate}% share, including fractional cents</small>
               </article>
             </div>
-            {report.results.length === 0 ? (
+            {reportView === 'summary' ? null : report.results.length === 0 ? (
               <StatePanel className="reports-state" title="No completed sales in this scope">
                 <p>Try a broader sponsor or Driver selection.</p>
               </StatePanel>
@@ -428,7 +447,7 @@ function SalesReportsSession({ user }) {
                 </table>
               </div>
             )}
-            {report.count > PAGE_SIZE && (
+            {reportView === 'detailed' && report.count > PAGE_SIZE && (
               <nav className="reports-pagination" aria-label="Sales report pages">
                 <span className="reports-pagination-range">
                   Showing {((page - 1) * PAGE_SIZE + 1).toLocaleString('en-US')}–
