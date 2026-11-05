@@ -14,7 +14,7 @@ export default function DriverProductFooter({ product, cart }) {
         <button
           className="button button-danger-outline"
           type="button"
-          disabled={busy || cart.viewingAs}
+          disabled={busy || cart.viewingAs || Boolean(cart.pendingAttempt)}
           aria-label={`Remove ${product.name} from cart`}
           onClick={() => cart.remove(product.id)}
         >
@@ -27,7 +27,7 @@ export default function DriverProductFooter({ product, cart }) {
     <button
       className="button button-primary"
       type="button"
-      disabled={busy || cart.viewingAs || !product.is_available}
+      disabled={busy || cart.viewingAs || Boolean(cart.pendingAttempt) || !product.is_available}
       aria-label={`Add ${product.name} to cart`}
       onClick={() => cart.add(product.id)}
     >

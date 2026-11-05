@@ -221,7 +221,7 @@ function DriverCart({ enabled, user, children }) {
   if (!enabled) return children;
   const viewingAs = Boolean(user.impersonation?.active);
   return (
-    <CartProvider key={sessionIdentity(user)} viewingAs={viewingAs}>
+    <CartProvider key={sessionIdentity(user)} viewingAs={viewingAs} ownerId={user.id} organization={user.company || ''}>
       {children}
     </CartProvider>
   );

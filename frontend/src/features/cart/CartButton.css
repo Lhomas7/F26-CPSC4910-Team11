@@ -26,6 +26,10 @@
   transform: translateY(-2px);
 }
 
+.cart-button[hidden] {
+  display: none;
+}
+
 .cart-button:focus-visible {
   outline: 3px solid var(--ink);
   outline-offset: 3px;

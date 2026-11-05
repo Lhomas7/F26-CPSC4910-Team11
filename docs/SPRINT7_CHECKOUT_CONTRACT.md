@@ -61,9 +61,12 @@ English error message or from a failed later retry.
 
 ## Integration status
 
-The old cart frontend does not yet obtain/send a review token. It receives a
-409 instead of completing checkout until Group 7 wires this contract. Its
-uncertain-failure copy and request-key persistence are also Group 7 work.
+Group 7 connects the cart frontend to review tokens, itemized receipts, exact-key
+lookup, and recovery. A pending key and original organization are stored per
+Driver in sessionStorage; review tokens stay in memory. Closing the drawer
+retains its pending attempt or latest receipt. Uncertain outcomes block further
+cart changes; a retry never silently adopts a new review. The original token
+can authorize a retry only while held in memory and within its ten-minute window.
 No migration is needed for these API changes. SQLite tests cover review drift,
 token rejection, replay, snapshot lookup, and ownership. Live MySQL locking
 behavior and full browser checkout remain final integration checks. External

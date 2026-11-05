@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 
-import { addToCart, checkout, getCart, removeFromCart } from 'api/cart';
+import { addToCart, checkout, getCart, removeFromCart, reviewCart } from 'api/cart';
 import { getCatalog } from 'api/catalog';
 import { ApiError } from 'api/client';
 import { useAuth } from 'auth/AuthContext';
@@ -344,8 +344,8 @@ const cartWith = (products) => ({
 function CheckoutTrigger() {
   const cart = useCart();
   return (
-    <button data-testid="cart-checkout" type="button" onClick={cart.checkout}>
-      Buy
+    <button data-testid="cart-checkout" type="button" onClick={cart.review ? cart.checkout : cart.beginReview}>
+      {cart.review ? 'Confirm buy' : 'Review buy'}
     </button>
   );
 }
@@ -367,6 +367,7 @@ describe('cart actions', () => {
     addToCart.mockReset();
     removeFromCart.mockReset();
     checkout.mockReset();
+    reviewCart.mockImplementation(async () => ({ ...await getCart(), review_token: 'test-token' }));
   });
 
   test('a driver adds a reward to the cart and removes it again', async () => {
@@ -409,6 +410,7 @@ describe('cart actions', () => {
     renderWithCart();
     await screen.findByText('In cart');
     fireEvent.click(screen.getByTestId('cart-checkout'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm buy' }));
     expect(
       await within(screen.getByRole('region', { name: 'Your point balance' })).findByText('705'),
     ).toBeInTheDocument();

@@ -1,223 +1,141 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 
 import Modal from 'components/feedback/Modal';
 import ProductImage from 'features/catalog/components/ProductImage';
 import { useCart } from './CartContext';
 import './CartDrawer.css';
+import './CartViews.css';
 
 const numbers = new Intl.NumberFormat('en-US');
+const localTime = new Intl.DateTimeFormat('en-US', {
+  year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true,
+});
+const validPoints = (value) => Number.isSafeInteger(value) && value >= 0;
+const points = (value) => validPoints(value) ? `${numbers.format(value)} ${value === 1 ? 'point' : 'points'}` : 'Unavailable';
 
-function points(value) {
-  return `${numbers.format(value)} ${value === 1 ? 'point' : 'points'}`;
+function Lines({ rows }) {
+  return <ul className="cart-lines">{rows.map((row, index) =>
+    <li className="cart-line" key={`${row.name}-${index}`}>
+      <span className="cart-line-name">{row.name}</span>
+      <span className="cart-line-cost">{points(row.unit_points)}</span>
+    </li>)}</ul>;
 }
 
-function accessMessage(error) {
-  const code = error?.data?.code;
-  if (code === 'driver_not_approved') {
-    return 'Your sponsor must approve your Driver account before you can use a cart.';
-  }
-  if (code === 'sponsor_required') {
-    return 'You need to be linked to a sponsor before you can use a cart.';
-  }
-  return error?.message || 'Your cart couldn’t be loaded. Try again in a moment.';
+function Totals({ total, balance, receipt = false }) {
+  const short = validPoints(balance) && validPoints(total) && total > balance;
+  return <dl className="cart-totals">
+    <div className="cart-total-main"><dt>{receipt ? 'Points spent' : 'Total'}</dt><dd>{points(total)}</dd></div>
+    <div><dt>{receipt ? 'Balance after this purchase' : 'Current balance'}</dt><dd>{points(balance)}</dd></div>
+    {!receipt && validPoints(total) && validPoints(balance) && <div>
+      <dt>{short ? 'Short by' : 'Expected balance after purchase'}</dt>
+      <dd>{points(short ? total - balance : balance - total)}</dd>
+    </div>}
+  </dl>;
 }
 
-function CartItem({ item, busy, readOnly, onRemove }) {
-  const { product } = item;
-  return (
-    <li className="cart-item">
-      <div className="cart-item-image">
-        <ProductImage src={product.image_url} name={product.name} emptyText="" failedText="" />
-      </div>
-      <div className="cart-item-body">
-        <strong className="cart-item-name">{product.name}</strong>
-        <span className="cart-item-cost">
-          {Number.isSafeInteger(product.point_cost)
-            ? points(product.point_cost)
-            : 'Point cost unavailable'}
-        </span>
-        {!product.is_available && (
-          <span className="badge badge-dot badge-neutral">Unavailable</span>
-        )}
-      </div>
-      <button
-        className="button button-danger-outline cart-item-remove"
-        type="button"
-        disabled={busy || readOnly}
-        aria-label={`Remove ${product.name} from cart`}
-        onClick={() => onRemove(product.id)}
-      >
-        {busy ? 'Removing…' : 'Remove'}
-      </button>
-    </li>
-  );
+function blockers(cart, viewingAs, changing) {
+  if (viewingAs) return 'You’re viewing as this driver, so the cart is read-only.';
+  if (changing) return 'Wait for the cart update to finish.';
+  if (!cart?.results.length) return 'Your cart is empty.';
+  if (!validPoints(cart.total_points) || !validPoints(cart.point_balance) ||
+      cart.results.some((item) => !validPoints(item.product.point_cost))) return 'A point cost is unavailable. Refresh before buying.';
+  const reasons = [];
+  if (cart.total_points > cart.point_balance) reasons.push(`You need ${points(cart.total_points - cart.point_balance)} more`);
+  if (cart.results.some((item) => !item.product.is_available)) reasons.push('Remove unavailable rewards before buying');
+  return reasons.join('. ');
 }
 
 export default function CartDrawer({ onClose }) {
-  const {
-    cart,
-    status,
-    error,
-    actionError,
-    clearActionError,
-    pendingIds,
-    viewingAs,
-    reload,
-    remove,
-    checkout,
-    checkingOut,
-    lastPurchase,
-    clearLastPurchase,
-  } = useCart();
-  const [confirming, setConfirming] = useState(false);
-
-  // Refresh on open so prices and availability changed elsewhere are current.
-  useEffect(() => {
-    reload();
-    return () => {
-      clearActionError();
-      clearLastPurchase();
-    };
-  }, [reload, clearActionError, clearLastPurchase]);
-
-  const items = cart?.results ?? [];
-  const shortfall = cart ? cart.total_points - cart.point_balance : 0;
-  const hasUnavailable = items.some((item) => !item.product.is_available);
-  const canCheckOut =
-    items.length > 0 && shortfall <= 0 && !hasUnavailable && !viewingAs && !checkingOut;
-
-  const confirmPurchase = async () => {
-    await checkout();
-    setConfirming(false);
-  };
-
+  const state = useCart();
+  const { cart, review, reviewStatus, reviewNotice, status, error, actionError, pendingAttempt,
+    checkingOut, checkoutPhase, lastPurchase, viewingAs, pendingIds, reload, beginReview,
+    clearReview, checkout, checkPurchaseStatus, canRetry, clearLastPurchase, remove } = state;
+  const heading = useRef(null);
+  useEffect(() => { reload(); }, [reload]);
+  const reviewing = reviewStatus !== 'idle';
+  const pending = pendingAttempt && !(checkingOut && checkoutPhase === 'submitting');
+  const title = pending ? 'Purchase not confirmed' : lastPurchase ? 'Purchase complete' : reviewing ? 'Review your purchase' : `Your cart (${cart?.item_count ?? 0})`;
+  useEffect(() => { heading.current?.focus(); }, [title]);
   let body;
-  if (!cart && status === 'loading') {
-    body = <p role="status">Loading your cart…</p>;
-  } else if (!cart && error) {
-    body = (
-      <div className="cart-drawer-state">
-        <p>{accessMessage(error)}</p>
-        {![401, 403].includes(error.status) && (
-          <button className="button" type="button" onClick={reload}>
-            Try again
-          </button>
-        )}
+
+  if (pending) {
+    body = <div className="cart-view">
+      <div className="cart-pending-panel" role="alert">
+        <h3>This purchase hasn’t been confirmed</h3>
+        <p>We can’t tell whether this purchase went through. Your points may or may not have been spent.</p>
+        <p>Check your point balance on Points or Home before buying anything else.</p>
+        <span className="cart-pending-meta">Started {localTime.format(new Date(pendingAttempt.startedAt))}{pendingAttempt.organization ? ` · ${pendingAttempt.organization}` : ''}</span>
       </div>
-    );
-  } else if (!items.length && lastPurchase) {
-    body = (
-      <div className="cart-drawer-state" role="status">
-        <p className="banner banner-success">
-          Purchase complete: {points(lastPurchase.points_spent)} spent. Your new balance is{' '}
-          {points(lastPurchase.point_balance)}.
-        </p>
-        <p>
-          You bought {lastPurchase.items.length}{' '}
-          {lastPurchase.items.length === 1 ? 'reward' : 'rewards'}: {lastPurchase.items.join(', ')}.
-        </p>
+      <div className="cart-actions-row">
+        {canRetry && <button className="button button-primary" disabled={checkingOut} onClick={checkout}>
+          {checkingOut && checkoutPhase === 'retrying' ? 'Retrying…' : 'Retry purchase'}
+        </button>}
+        <button className="button" disabled={checkingOut || viewingAs} onClick={checkPurchaseStatus}>
+          {checkingOut && checkoutPhase === 'lookup' ? 'Checking…' : 'Check purchase status'}
+        </button>
       </div>
-    );
-  } else if (!items.length) {
-    body = (
-      <div className="cart-drawer-state">
-        <p>Your cart is empty.</p>
-        <p>Use Add to cart on a reward in the catalog to save it here.</p>
+      <p className="cart-blocked-reason">{canRetry
+        ? 'Retry purchase may finish the original purchase using the same request. Check purchase status only reads its result.'
+        : 'The original review is no longer available. Checking status buys nothing and does not cancel the attempt.'}</p>
+      <p className="cart-view-lead">Until this is settled you can’t change your cart or start another purchase.</p>
+    </div>;
+  } else if (lastPurchase) {
+    body = <div className="cart-view">
+      <p className="banner banner-success" role="status">{lastPurchase.points_spent === 0 ? 'Purchase complete. No points were deducted.' : 'Purchase complete.'}</p>
+      {lastPurchase.replayed && <p className="banner">This purchase was already completed. These are the original purchase details.</p>}
+      <h3 className="cart-view-heading">What you bought</h3>
+      <Lines rows={lastPurchase.line_items} />
+      <Totals receipt total={lastPurchase.points_spent} balance={lastPurchase.point_balance} />
+      <p className="cart-view-lead">Completed <time dateTime={lastPurchase.completed_at}>{localTime.format(new Date(lastPurchase.completed_at))}</time></p>
+      <div><span className="cart-reference-label">Reference</span><code className="cart-reference" tabIndex={0}>{lastPurchase.reference}</code></div>
+      <button className="button button-primary" onClick={() => { clearLastPurchase(); clearReview(); onClose(); }}>Keep shopping</button>
+      {lastPurchase.points_spent > 0 && <Link to="/points" onClick={onClose}>See point history</Link>}
+    </div>;
+  } else if (reviewing) {
+    const blocked = blockers(review, viewingAs, pendingIds.size);
+    body = <div className="cart-view">
+      {reviewStatus === 'loading' ? <p role="status">Checking current prices and availability…</p> : review ? <>
+        {reviewNotice && <p className="banner banner-warning" role="alert">{reviewNotice}</p>}
+        <p className="cart-view-lead">Confirming spends the points below and empties your cart.</p>
+        <Lines rows={review.results.map(({ product }) => ({ name: product.name, unit_points: product.point_cost }))} />
+        <Totals total={review.total_points} balance={review.point_balance} />
+      </> : <p>No points were spent. {reviewStatus === 'denied' ? 'Sign in with an eligible Driver account to continue.' : 'The review could not be loaded.'}</p>}
+      <div className="cart-actions-row">
+        {review && <button className="button button-primary" disabled={Boolean(blocked) || checkingOut} onClick={checkout}>{checkingOut ? 'Purchasing…' : 'Confirm purchase'}</button>}
+        {reviewStatus === 'error' && <button className="button button-primary" onClick={beginReview}>Try again</button>}
+        <button className="button" data-autofocus disabled={checkingOut} onClick={clearReview}>Back to cart</button>
       </div>
-    );
+      {review && blocked && <p className="cart-blocked-reason">{blocked}</p>}
+    </div>;
+  } else if (!cart) {
+    body = status === 'loading' ? <p role="status">Loading your cart…</p> : <div className="cart-drawer-state">
+      <p>{error?.data?.code === 'driver_not_approved' ? 'Your sponsor must approve your Driver account before you can use a cart.' : error?.data?.code === 'sponsor_required' ? 'You need to be linked to a sponsor before you can use a cart.' : error?.message || 'Your cart couldn’t be loaded.'}</p>
+      {![401, 403].includes(error?.status) && <button className="button" onClick={reload}>Try again</button>}
+    </div>;
+  } else if (!cart.results.length) {
+    body = <div className="cart-drawer-state"><p>Your cart is empty.</p><p>Use Add to cart on a reward in the catalog to save it here.</p></div>;
   } else {
-    body = (
-      <>
-        <ul className="cart-items" aria-label="Rewards in your cart">
-          {items.map((item) => (
-            <CartItem
-              key={item.id}
-              item={item}
-              busy={pendingIds.has(item.product.id)}
-              readOnly={viewingAs}
-              onRemove={remove}
-            />
-          ))}
-        </ul>
-        <dl className="cart-summary">
-          <div>
-            <dt>Total</dt>
-            <dd>{points(cart.total_points)}</dd>
-          </div>
-          <div>
-            <dt>Your balance</dt>
-            <dd>{points(cart.point_balance)}</dd>
-          </div>
-        </dl>
-        {shortfall > 0 && (
-          <p className="banner banner-warning">
-            You need {points(shortfall)} more to buy everything in your cart.
-          </p>
-        )}
-        {hasUnavailable && (
-          <p className="banner">Unavailable rewards can’t be purchased. You can remove them.</p>
-        )}
-        {confirming ? (
-          <div className="cart-checkout-confirm" role="group" aria-label="Confirm purchase">
-            <p>
-              Spend {points(cart.total_points)} on {items.length}{' '}
-              {items.length === 1 ? 'reward' : 'rewards'}? Your balance will be{' '}
-              {points(cart.point_balance - cart.total_points)}.
-            </p>
-            <div className="cart-checkout-actions">
-              <button
-                className="button button-primary"
-                type="button"
-                disabled={!canCheckOut}
-                onClick={confirmPurchase}
-              >
-                {checkingOut ? 'Purchasing…' : 'Confirm purchase'}
-              </button>
-              <button
-                className="button"
-                type="button"
-                disabled={checkingOut}
-                onClick={() => setConfirming(false)}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button
-            className="button button-primary button-full-width"
-            type="button"
-            disabled={!canCheckOut}
-            onClick={() => setConfirming(true)}
-          >
-            Check out
-          </button>
-        )}
-      </>
-    );
+    const blocked = blockers(cart, viewingAs, pendingIds.size);
+    body = <div className="cart-view">
+      <ul className="cart-items" aria-label="Rewards in your cart">{cart.results.map(({ product }) => <li className="cart-item" key={product.id}>
+        <div className="cart-item-image"><ProductImage src={product.image_url} name={product.name} emptyText="" failedText="" /></div>
+        <div className="cart-item-body"><strong className="cart-item-name">{product.name}</strong><span className="cart-item-cost">{points(product.point_cost)}</span>
+          {!product.is_available && <span className="badge badge-dot badge-neutral">Unavailable</span>}</div>
+        <button className="button button-danger-outline cart-item-remove" disabled={viewingAs || pendingIds.has(product.id)} aria-label={`Remove ${product.name} from cart`} onClick={() => remove(product.id)}>{pendingIds.has(product.id) ? 'Removing…' : 'Remove'}</button>
+      </li>)}</ul>
+      <Totals total={cart.total_points} balance={cart.point_balance} />
+      {error && <p className="banner banner-warning" role="alert">Cart could not be refreshed. Previously loaded information is shown.</p>}
+      {viewingAs && <p className="banner">You’re viewing as this driver, so the cart is read-only.</p>}
+      <button className="button button-primary" disabled={Boolean(blocked) || status === 'loading' || Boolean(error)} onClick={beginReview}>Check out</button>
+      {blocked && !viewingAs && <p className="cart-blocked-reason">{blocked}</p>}
+    </div>;
   }
 
-  return (
-    <Modal
-      title={cart ? `Your cart (${cart.item_count})` : 'Your cart'}
-      className="cart-drawer"
-      backdropClassName="cart-drawer-backdrop"
-      onClose={onClose}
-      actions={
-        <button className="button" type="button" data-autofocus onClick={onClose}>
-          Close
-        </button>
-      }
-    >
-      {viewingAs && (
-        <p className="banner">You’re viewing as this driver, so the cart is read-only.</p>
-      )}
-      {actionError && (
-        <p className="banner banner-error" role="alert">
-          {actionError}
-        </p>
-      )}
-      {body}
-    </Modal>
-  );
+  return <Modal title={title} className="cart-drawer" backdropClassName="cart-drawer-backdrop" onClose={onClose}
+    actions={<button className="button" data-autofocus onClick={onClose}>Close</button>}>
+    <span className="sr-only" ref={heading} tabIndex={-1}>{title}</span>
+    {actionError && <p className="banner banner-error" role="alert">{actionError}</p>}
+    {body}
+  </Modal>;
 }

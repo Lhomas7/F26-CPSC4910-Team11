@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import PageHeader from 'app/PageHeader';
 import StatePanel from 'components/feedback/StatePanel';
+import { useCart } from 'features/cart/CartContext';
 import CatalogAccessPanel from '../components/CatalogAccessPanel';
 import CatalogPagination from '../components/CatalogPagination';
 import CatalogSkeleton from '../components/CatalogSkeleton';
@@ -15,6 +16,7 @@ import '../Catalog.css';
 const numbers = new Intl.NumberFormat('en-US');
 
 export default function DriverCatalogPage() {
+  const cart = useCart();
   const { page, changePage, recoverPage } = useCatalogPagination();
   const { data, setData, status, error: loadError, reload } = useCatalogPage(page, recoverPage);
   const [accessError, setAccessError] = useState(null);
@@ -55,6 +57,10 @@ export default function DriverCatalogPage() {
         }
       />
       <main className="catalog-content" aria-busy={busy}>
+        {cart?.pendingAttempt && <div className="banner catalog-pending-notice" role="status">
+          <div><strong>A purchase needs your attention</strong><p>Your cart is read-only until its outcome is resolved.</p></div>
+          <button className="button" onClick={() => cart.setOpen(true)}>Open cart</button>
+        </div>}
         {visible && (
           <p className="banner">
             {configured

@@ -10,8 +10,10 @@ test('a cart read started before checkout cannot restore old balance and items',
   api.getCart.mockReturnValue(new Promise((resolve) => { finishRead = resolve; }));
   const emptyCart = { results: [], item_count: 0, total_points: 0, point_balance: 750 };
   api.checkout.mockResolvedValue({ ...emptyCart, purchase: { points_spent: 1250 } });
+  api.reviewCart.mockResolvedValue({ ...emptyCart, review_token: 'test-review' });
   const wrapper = ({ children }) => <CartProvider>{children}</CartProvider>;
   const { result } = renderHook(() => useCart(), { wrapper });
+  await act(async () => { await result.current.beginReview(); });
   await act(async () => { await result.current.checkout(); });
   await act(async () => {
     finishRead({ results: [{ product: { id: 1 } }], item_count: 1, total_points: 1250, point_balance: 2000 });
