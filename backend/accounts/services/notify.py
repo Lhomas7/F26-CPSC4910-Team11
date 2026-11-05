@@ -231,3 +231,37 @@ def notify_sponsors_of_new_driver_application(driver):
             _record(sponsor_account.user, Notification.DRIVER_APPLICATION, message)
         except Exception:
             logger.exception('Could not record a new driver application notification.')
+
+
+def notify_drivers_of_new_product(product):
+    """Tell the sponsor's approved drivers a new reward is in their catalog.
+
+    In-app only: a busy catalog would otherwise flood inboxes and phones.
+    Drivers without a preferences row get the default, which is on.
+    """
+    from drivers.models import Driver
+
+    sponsor_name = product.sponsor.name
+    prefix = f'New reward in the {sponsor_name} catalog: '
+    name = product.name
+    limit = Notification._meta.get_field('message').max_length
+    if len(prefix) + len(name) > limit:
+        name = name[: limit - len(prefix) - 1] + '…'
+    message = prefix + name
+
+    drivers = (
+        Driver.objects.filter(
+            sponsor_id=product.sponsor_id,
+            status='approved',
+            user__is_active=True,
+        )
+        .exclude(notification_preferences__new_products_enabled=False)
+        .values_list('user_id', flat=True)
+    )
+    try:
+        Notification.objects.bulk_create(
+            Notification(user_id=user_id, category=Notification.CATALOG_PRODUCT, message=message)
+            for user_id in drivers
+        )
+    except Exception:
+        logger.exception('Could not record new reward notifications.')

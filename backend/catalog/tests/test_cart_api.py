@@ -1,0 +1,193 @@
+from django.contrib.auth import get_user_model
+from django.urls import reverse
+from django.utils import timezone
+from rest_framework.test import APIClient, APITestCase
+
+from accounts.middleware import (
+    IMPERSONATION_ROLE_KEY,
+    IMPERSONATION_STARTED_KEY,
+    IMPERSONATION_TARGET_KEY,
+)
+from accounts.models import MFASettings, SponsorAccount, SponsorCompany
+from catalog.models import CartItem, CatalogProduct
+from drivers.models import Driver, PointTransaction
+from drivers.services.membership import reassign_driver_sponsor, remove_driver_from_sponsor
+
+
+class DriverCartApiTests(APITestCase):
+    cart_url = reverse('catalog:cart')
+    items_url = reverse('catalog:cart-items')
+
+    @classmethod
+    def setUpTestData(cls):
+        User = get_user_model()
+        cls.company = SponsorCompany.objects.create(name='Cart Sponsor', points_per_dollar=100)
+        cls.other_company = SponsorCompany.objects.create(name='Other Cart Sponsor')
+        cls.sponsor = User.objects.create_user(username='cart.sponsor')
+        SponsorAccount.objects.create(user=cls.sponsor, company=cls.company)
+        MFASettings.objects.create(user=cls.sponsor, totp_enabled=True)
+        cls.admin = User.objects.create_user(username='cart.admin', is_staff=True)
+        MFASettings.objects.create(user=cls.admin, totp_enabled=True)
+        cls.driver_user = User.objects.create_user(username='cart.driver')
+        cls.driver = Driver.objects.create(
+            user=cls.driver_user, name='Cart Driver', sponsor=cls.company, status='approved'
+        )
+        cls.mug = CatalogProduct.objects.create(sponsor=cls.company, name='Mug', price_usd='12.50')
+        cls.jacket = CatalogProduct.objects.create(
+            sponsor=cls.company, name='Jacket', price_usd='40.00'
+        )
+        cls.unavailable = CatalogProduct.objects.create(
+            sponsor=cls.company, name='Hat', price_usd='5.00', is_available=False
+        )
+        cls.foreign = CatalogProduct.objects.create(
+            sponsor=cls.other_company, name='Foreign Reward', price_usd='1.00'
+        )
+        PointTransaction.objects.create(
+            driver=cls.driver,
+            sponsor=cls.company,
+            changed_by_user=cls.sponsor,
+            point_change=3000,
+            reason='Safe driving',
+        )
+
+    def setUp(self):
+        self.client.force_authenticate(self.driver_user)
+
+    def item_url(self, product_id):
+        return reverse('catalog:cart-item', kwargs={'product_id': product_id})
+
+    def add(self, product):
+        return self.client.post(self.items_url, {'product_id': product.pk}, format='json')
+
+    def test_empty_cart(self):
+        response = self.client.get(self.cart_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['results'], [])
+        self.assertEqual(response.data['item_count'], 0)
+        self.assertEqual(response.data['total_points'], 0)
+        self.assertEqual(response.data['point_balance'], 3000)
+        self.assertIn('no-store', response['Cache-Control'])
+
+    def test_add_list_and_remove(self):
+        response = self.add(self.mug)
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['item_count'], 1)
+        self.add(self.jacket)
+
+        response = self.client.get(self.cart_url)
+        self.assertEqual(response.data['item_count'], 2)
+        # 12.50 * 100 + 40.00 * 100
+        self.assertEqual(response.data['total_points'], 5250)
+        product = response.data['results'][0]['product']
+        self.assertEqual(product['name'], 'Jacket')  # Newest first.
+        self.assertEqual(product['point_cost'], 4000)
+        self.assertFalse(product['can_afford'])
+        self.assertTrue(product['in_cart'])
+
+        response = self.client.delete(self.item_url(self.jacket.pk))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['item_count'], 1)
+        self.assertFalse(CartItem.objects.filter(product=self.jacket).exists())
+
+    def test_adding_twice_keeps_one_item(self):
+        self.assertEqual(self.add(self.mug).status_code, 201)
+        response = self.add(self.mug)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['item_count'], 1)
+        self.assertEqual(CartItem.objects.filter(driver=self.driver).count(), 1)
+
+    def test_unavailable_product_cannot_be_added(self):
+        response = self.add(self.unavailable)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('product_id', response.data)
+        self.assertFalse(CartItem.objects.exists())
+
+    def test_item_that_becomes_unavailable_stays_flagged(self):
+        self.add(self.mug)
+        CatalogProduct.objects.filter(pk=self.mug.pk).update(is_available=False)
+        response = self.client.get(self.cart_url)
+        self.assertEqual(response.data['item_count'], 1)
+        self.assertFalse(response.data['results'][0]['product']['is_available'])
+        self.assertEqual(self.client.delete(self.item_url(self.mug.pk)).status_code, 200)
+
+    def test_other_sponsor_and_missing_products_look_the_same(self):
+        self.assertEqual(self.add(self.foreign).status_code, 404)
+        response = self.client.post(self.items_url, {'product_id': 999999}, format='json')
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(self.client.delete(self.item_url(self.mug.pk)).status_code, 404)
+
+    def test_input_is_strict(self):
+        for payload in ({}, {'product_id': 'x'}, {'product_id': self.mug.pk, 'driver': 1}):
+            with self.subTest(payload=payload):
+                response = self.client.post(self.items_url, payload, format='json')
+                self.assertEqual(response.status_code, 400)
+
+    def refresh_login(self):
+        # Reload so the cached driver profile reflects the updated row.
+        self.client.force_authenticate(get_user_model().objects.get(pk=self.driver_user.pk))
+
+    def test_pending_and_unassigned_drivers_are_refused_with_codes(self):
+        Driver.objects.filter(pk=self.driver.pk).update(status='pending')
+        self.refresh_login()
+        response = self.client.get(self.cart_url)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data['code'], 'driver_not_approved')
+        Driver.objects.filter(pk=self.driver.pk).update(sponsor=None)
+        self.refresh_login()
+        response = self.client.get(self.cart_url)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data['code'], 'sponsor_required')
+
+    def test_sponsors_admins_and_anonymous_users_are_refused(self):
+        for user in (self.sponsor, self.admin):
+            with self.subTest(user=user.username):
+                self.client.force_authenticate(user)
+                self.assertEqual(self.client.get(self.cart_url).status_code, 403)
+                self.assertEqual(self.add(self.mug).status_code, 403)
+        self.client.force_authenticate(None)
+        self.assertIn(self.client.get(self.cart_url).status_code, (401, 403))
+
+    def test_view_as_can_read_but_not_change_the_cart(self):
+        CartItem.objects.create(driver=self.driver, product=self.mug)
+        client = APIClient()
+        client.force_login(self.admin)
+        session = client.session
+        session[IMPERSONATION_TARGET_KEY] = self.driver_user.pk
+        session[IMPERSONATION_STARTED_KEY] = timezone.now().isoformat()
+        session[IMPERSONATION_ROLE_KEY] = 'driver'
+        session.save()
+        self.assertEqual(client.get(self.cart_url).data['item_count'], 1)
+        response = client.post(self.items_url, {'product_id': self.jacket.pk}, format='json')
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(client.delete(self.item_url(self.mug.pk)).status_code, 403)
+        self.assertEqual(CartItem.objects.filter(driver=self.driver).count(), 1)
+
+    def test_leaving_sponsor_empties_the_cart(self):
+        CartItem.objects.create(driver=self.driver, product=self.mug)
+        remove_driver_from_sponsor(
+            driver=self.driver, changed_by_user=self.sponsor, reason='Left the company'
+        )
+        self.assertFalse(CartItem.objects.filter(driver=self.driver).exists())
+
+    def test_admin_reassignment_empties_the_cart(self):
+        CartItem.objects.create(driver=self.driver, product=self.mug)
+        reassign_driver_sponsor(
+            driver=self.driver, new_sponsor=self.other_company, changed_by_user=self.admin
+        )
+        self.assertFalse(CartItem.objects.filter(driver=self.driver).exists())
+
+    def test_stale_rows_from_another_sponsor_never_show(self):
+        CartItem.objects.create(driver=self.driver, product=self.foreign)
+        self.assertEqual(self.client.get(self.cart_url).data['item_count'], 0)
+
+    def test_catalog_marks_products_in_cart(self):
+        self.add(self.mug)
+        response = self.client.get(reverse('catalog:browse'))
+        in_cart = {p['id']: p['in_cart'] for p in response.data['results']}
+        self.assertTrue(in_cart[self.mug.pk])
+        self.assertFalse(in_cart[self.jacket.pk])
+
+    def test_sponsor_catalog_has_no_cart_state(self):
+        self.client.force_authenticate(self.sponsor)
+        response = self.client.get(reverse('catalog:browse'))
+        self.assertTrue(all(p['in_cart'] is None for p in response.data['results']))

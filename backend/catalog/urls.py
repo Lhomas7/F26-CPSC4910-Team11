@@ -1,11 +1,21 @@
 from django.urls import path
 
-from .views import CatalogBrowseView, SponsorProductAvailabilityView, SponsorProductCreateView
+from .views import (
+    CartItemsView,
+    CartItemView,
+    CartView,
+    CatalogBrowseView,
+    SponsorProductAvailabilityView,
+    SponsorProductCreateView,
+)
 
 app_name = 'catalog'
 
 urlpatterns = [
     path('catalog/', CatalogBrowseView.as_view(), name='browse'),
+    path('cart/', CartView.as_view(), name='cart'),
+    path('cart/items/', CartItemsView.as_view(), name='cart-items'),
+    path('cart/items/<int:product_id>/', CartItemView.as_view(), name='cart-item'),
     path(
         'sponsor/catalog/products/',
         SponsorProductCreateView.as_view(),

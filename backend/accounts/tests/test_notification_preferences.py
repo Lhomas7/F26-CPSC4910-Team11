@@ -51,6 +51,7 @@ class NotificationPreferencesViewTests(APITestCase):
             {
                 'points_added_enabled': True,
                 'points_removed_enabled': True,
+                'new_products_enabled': True,
                 'email_enabled': True,
                 'sms_enabled': False,
                 'sms_available': True,
