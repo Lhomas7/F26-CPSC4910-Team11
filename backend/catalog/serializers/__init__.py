@@ -1,3 +1,4 @@
+from .cart import CartAddSerializer, CartItemSerializer
 from .products import (
     CatalogBrowseProductSerializer,
     CatalogProductSerializer,
@@ -6,6 +7,8 @@ from .products import (
 )
 
 __all__ = [
+    'CartAddSerializer',
+    'CartItemSerializer',
     'CatalogBrowseProductSerializer',
     'CatalogProductSerializer',
     'ProductAvailabilitySerializer',

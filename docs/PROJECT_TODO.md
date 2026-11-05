@@ -40,6 +40,10 @@
 
 ## How to use this document
 
+Draft product stories for future planning live in
+[FUTURE_SPRINT_STORIES.md](FUTURE_SPRINT_STORIES.md), including the visual
+accessibility and appearance roadmap. Assign accepted stories in Azure DevOps.
+
 | Priority | Meaning                                    | Expected handling                                          |
 | -------- | ------------------------------------------ | ---------------------------------------------------------- |
 | **P0**   | Release, security, or team-process blocker | Schedule before or at the start of the next feature sprint |

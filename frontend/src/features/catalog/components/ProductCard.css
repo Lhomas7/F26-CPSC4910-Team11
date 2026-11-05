@@ -44,3 +44,11 @@
   font-size: 0.68rem;
   overflow-wrap: anywhere;
 }
+
+.catalog-cart-action {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: space-between;
+}

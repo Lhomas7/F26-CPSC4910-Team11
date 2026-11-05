@@ -87,3 +87,35 @@ class CatalogProduct(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class CartItem(models.Model):
+    """A reward a driver is considering. Each reward is in a cart at most once.
+
+    Rows are deleted when the driver leaves their sponsor; reads also filter by
+    the driver's current sponsor so a stale row can never surface.
+    """
+
+    driver = models.ForeignKey(
+        'drivers.Driver',
+        on_delete=models.CASCADE,
+        related_name='cart_items',
+    )
+    product = models.ForeignKey(
+        CatalogProduct,
+        on_delete=models.CASCADE,
+        related_name='cart_items',
+    )
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('-added_at', '-id')
+        constraints = [
+            models.UniqueConstraint(
+                fields=('driver', 'product'),
+                name='catalog_cart_driver_product_unique',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.driver} - {self.product}'

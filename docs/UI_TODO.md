@@ -5,6 +5,11 @@ tracks refinements that should be completed in small, reviewable groups rather
 than folded into one large change. Items that affect interaction patterns
 should be mocked or agreed upon before implementation.
 
+For future product stories covering high contrast, color-vision-friendly
+palettes, text sizing, reduced motion, and accessible appearance preferences,
+see [FUTURE_SPRINT_STORIES.md](FUTURE_SPRINT_STORIES.md). Keep the story definitions
+there and link implementation refinements from this checklist.
+
 ## Working Rules
 
 - Keep each group independently committable and testable.

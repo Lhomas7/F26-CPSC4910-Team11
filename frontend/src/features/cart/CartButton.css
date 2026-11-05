@@ -1,0 +1,70 @@
+/* A floating button in the lower-right corner, below dialogs (z-index 100). */
+.cart-button-shell {
+  bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  position: fixed;
+  right: calc(1.25rem + env(safe-area-inset-right, 0px));
+  z-index: 40;
+}
+
+.cart-button {
+  align-items: center;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  box-shadow: 0 0.5rem 1.25rem rgb(0 0 0 / 22%);
+  color: var(--surface);
+  cursor: pointer;
+  display: inline-flex;
+  height: 3.25rem;
+  justify-content: center;
+  position: relative;
+  transition: transform 120ms ease;
+  width: 3.25rem;
+}
+
+.cart-button:hover {
+  transform: translateY(-2px);
+}
+
+.cart-button:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.cart-count {
+  background: var(--danger);
+  border: 2px solid var(--surface);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+  min-width: 1.35rem;
+  padding: 0.15rem 0.3rem;
+  position: absolute;
+  right: -0.3rem;
+  text-align: center;
+  top: -0.3rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cart-button {
+    transition: none;
+  }
+
+  .cart-button:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 42rem) {
+  .cart-button-shell {
+    bottom: calc(0.85rem + env(safe-area-inset-bottom, 0px));
+    right: calc(0.85rem + env(safe-area-inset-right, 0px));
+  }
+
+  .cart-button {
+    height: 3rem;
+    width: 3rem;
+  }
+}

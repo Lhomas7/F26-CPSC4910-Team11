@@ -1,7 +1,11 @@
 from django.db import transaction
 
 from accounts.models import SponsorDriverAlert
-from accounts.services.notify import notify_driver_dropped
+from accounts.services.notify import (
+    notify_driver_dropped,
+    notify_sponsors_of_new_driver_application,
+)
+from catalog.services.cart import clear_cart
 from drivers.models import Driver, DriverStatusChange
 
 from .reasons import normalize_reason
@@ -74,6 +78,9 @@ def link_driver_to_sponsor(*, username, changed_by_user):
     driver.sponsor_id = sponsor_account.company_id
     driver.status = 'pending'
     driver.save(update_fields=['sponsor', 'status'])
+    transaction.on_commit(
+        lambda: notify_sponsors_of_new_driver_application(driver), robust=True
+    )
     return driver
 
 
@@ -173,6 +180,8 @@ def _end_membership(locked_driver, action, changed_by_user, reason):
     locked_driver.save(update_fields=['sponsor', 'status'])
     # Sponsors of the old organization no longer follow this driver.
     SponsorDriverAlert.objects.filter(driver=locked_driver).delete()
+    # Cart rewards belong to the old organization's catalog.
+    clear_cart(locked_driver)
     transaction.on_commit(
         lambda: notify_driver_dropped(
             locked_driver,

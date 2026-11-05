@@ -105,6 +105,7 @@ class CatalogBrowseProductSerializer(CatalogProductSerializer):
     # pricing from a free reward or an actually unaffordable one.
     point_cost = serializers.SerializerMethodField()
     can_afford = serializers.SerializerMethodField()
+    in_cart = serializers.SerializerMethodField()
 
     def get_point_cost(self, obj):
         rate = self.context.get('points_per_dollar')
@@ -117,6 +118,11 @@ class CatalogBrowseProductSerializer(CatalogProductSerializer):
         # within a Driver's balance. Sponsors have no spending balance.
         return balance >= cost if balance is not None and cost is not None else None
 
+    def get_in_cart(self, obj):
+        # Sponsors have no cart, so they get null rather than a misleading false.
+        cart_ids = self.context.get('cart_product_ids')
+        return obj.pk in cart_ids if cart_ids is not None else None
+
     class Meta(CatalogProductSerializer.Meta):
-        fields = (*CatalogProductSerializer.Meta.fields, 'point_cost', 'can_afford')
+        fields = (*CatalogProductSerializer.Meta.fields, 'point_cost', 'can_afford', 'in_cart')
         read_only_fields = fields

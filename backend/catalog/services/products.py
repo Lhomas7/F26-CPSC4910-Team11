@@ -3,6 +3,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
 
+from accounts.services.notify import notify_drivers_of_new_product
 from catalog.models import CatalogProduct
 from catalog.serializers import ProductAvailabilitySerializer, ProductCreateSerializer
 
@@ -25,6 +26,9 @@ def create_catalog_product(*, user, data):
     product = CatalogProduct(sponsor_id=scope.company_id, **serializer.validated_data)
     _validate_model(product)
     product.save()
+    if product.is_available:
+        # Alert drivers only once the product is committed and visible to them.
+        transaction.on_commit(lambda: notify_drivers_of_new_product(product), robust=True)
     return product
 
 

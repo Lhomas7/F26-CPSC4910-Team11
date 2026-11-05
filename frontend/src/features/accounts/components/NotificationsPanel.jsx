@@ -8,6 +8,10 @@ const ALERT_OPTIONS = [
   { field: 'points_removed_enabled', label: 'When points are removed' },
 ];
 
+const CATALOG_OPTIONS = [
+  { field: 'new_products_enabled', label: 'When my sponsor adds a new reward' },
+];
+
 const CHANNEL_OPTIONS = [
   { field: 'email_enabled', label: 'Email alerts' },
   { field: 'sms_enabled', label: 'Text message alerts' },
@@ -16,6 +20,7 @@ const CHANNEL_OPTIONS = [
 const SAVED_TEXT = {
   points_added_enabled: ['Points-added alerts are on.', 'Points-added alerts are off.'],
   points_removed_enabled: ['Points-removed alerts are on.', 'Points-removed alerts are off.'],
+  new_products_enabled: ['New-reward alerts are on.', 'New-reward alerts are off.'],
   email_enabled: ['Alerts will be emailed to you.', 'Alerts will no longer be emailed.'],
   sms_enabled: ['Alerts will be texted to you.', 'Alerts will no longer be texted.'],
 };
@@ -69,13 +74,20 @@ export default function NotificationsPanel({ phoneNumber }) {
       <div className="account-card-header">
         <div>
           <h2 id="notifications-heading">Notifications</h2>
-          <p>Choose which point alerts you get and how they reach you.</p>
+          <p>Choose which alerts you get and how point alerts reach you.</p>
         </div>
       </div>
       <div className="notification-settings">
         <fieldset>
           <legend>Point alerts</legend>
           {ALERT_OPTIONS.map((option) => checkbox(option))}
+        </fieldset>
+        <fieldset>
+          <legend>Catalog alerts</legend>
+          {CATALOG_OPTIONS.map((option) => checkbox(option))}
+          <p className="notification-hint">
+            New-reward alerts appear in your notification bell only.
+          </p>
         </fieldset>
         <fieldset>
           <legend>Send alerts by</legend>

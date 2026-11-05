@@ -1,12 +1,15 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 
+import { addToCart, checkout, getCart, removeFromCart } from '../../../api/cart';
 import { getCatalog } from '../../../api/catalog';
 import { ApiError } from '../../../api/client';
 import { useAuth } from '../../../auth/AuthContext';
+import { CartProvider, useCart } from '../../cart/CartContext';
 import CatalogPage from './CatalogPage';
 
 jest.mock('../../../api/catalog');
+jest.mock('../../../api/cart');
 jest.mock('../../../auth/AuthContext');
 
 const user = { id: 1, username: 'driver.one', account_type: 'driver', company: 'First Freight' };
@@ -65,7 +68,7 @@ beforeEach(() => {
   getCatalog.mockReset();
 });
 
-test('loads real Driver catalog, balance, rate and points without Sponsor or purchase actions', async () => {
+test('loads real Driver catalog, balance, rate and points without Sponsor actions', async () => {
   getCatalog.mockResolvedValue(response());
   renderPage();
   expect(await screen.findByRole('heading', { name: product.name, level: 3 })).toBeInTheDocument();
@@ -84,7 +87,7 @@ test('loads real Driver catalog, balance, rate and points without Sponsor or pur
     screen.queryByRole('button', { name: /Mark |Add |Redeem|Buy|Checkout/ }),
   ).not.toBeInTheDocument();
   expect(screen.queryByRole('link', { name: /Add product/ })).not.toBeInTheDocument();
-  expect(screen.getByText(/Redeeming rewards isn’t available yet/)).toBeInTheDocument();
+  expect(screen.getByText(/Add rewards to your cart/)).toBeInTheDocument();
   expect(getCatalog).toHaveBeenCalledWith(1);
 });
 
@@ -117,7 +120,7 @@ test('unconfigured pricing uses one neutral notice and no affordability verdict'
   renderPage();
   await screen.findByRole('heading', { name: product.name });
   expect(screen.getByText('Point cost: Not configured')).toBeInTheDocument();
-  expect(screen.getAllByText(/Redeeming rewards isn’t available yet/)).toHaveLength(1);
+  expect(screen.getAllByText(/Point pricing is not configured/)).toHaveLength(2);
   expect(screen.queryByText(/Within your balance|Need .* more/)).not.toBeInTheDocument();
 });
 
@@ -328,5 +331,93 @@ test('all four availability/affordability combinations remain independently repr
       within(cards[i]).getByText(row.can_afford ? 'Within your balance' : 'Need 1,700 more points'),
     ).toBeInTheDocument();
     expect(cards[i].classList.contains('is-unaffordable')).toBe(!row.can_afford);
+  });
+});
+
+const cartWith = (products) => ({
+  results: products.map((p) => ({ id: p.id, product: p, added_at: '2026-11-05T12:00:00Z' })),
+  item_count: products.length,
+  total_points: products.reduce((sum, p) => sum + p.point_cost, 0),
+  point_balance: 3200,
+});
+
+function CheckoutTrigger() {
+  const cart = useCart();
+  return (
+    <button data-testid="cart-checkout" type="button" onClick={cart.checkout}>
+      Buy
+    </button>
+  );
+}
+
+function renderWithCart(props = {}) {
+  return render(
+    <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <CartProvider {...props}>
+        <CatalogPage />
+        <CheckoutTrigger />
+      </CartProvider>
+    </MemoryRouter>,
+  );
+}
+
+describe('cart actions', () => {
+  beforeEach(() => {
+    getCart.mockReset().mockResolvedValue(cartWith([]));
+    addToCart.mockReset();
+    removeFromCart.mockReset();
+    checkout.mockReset();
+  });
+
+  test('a driver adds a reward to the cart and removes it again', async () => {
+    getCatalog.mockResolvedValue(response());
+    addToCart.mockResolvedValue(cartWith([product]));
+    removeFromCart.mockResolvedValue(cartWith([]));
+    renderWithCart();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Add Travel Mug to cart' }));
+    expect(addToCart).toHaveBeenCalledWith(product.id);
+    expect(await screen.findByText('In cart')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Travel Mug from cart' }));
+    expect(removeFromCart).toHaveBeenCalledWith(product.id);
+    expect(await screen.findByRole('button', { name: 'Add Travel Mug to cart' })).toBeEnabled();
+  });
+
+  test('rewards already in the cart start as In cart', async () => {
+    getCatalog.mockResolvedValue(response({ results: [{ ...product, in_cart: true }] }));
+    getCart.mockReturnValue(new Promise(() => {}));
+    renderWithCart();
+    expect(await screen.findByText('In cart')).toBeInTheDocument();
+  });
+
+  test('unavailable rewards cannot be added', async () => {
+    getCatalog.mockResolvedValue(response({ results: [{ ...product, is_available: false }] }));
+    renderWithCart();
+    expect(await screen.findByRole('button', { name: 'Add Travel Mug to cart' })).toBeDisabled();
+  });
+
+  test('the catalog reloads its balance after a purchase', async () => {
+    getCatalog
+      .mockResolvedValueOnce(response({ results: [{ ...product, in_cart: true }] }))
+      .mockResolvedValue(response({ point_balance: 705 }));
+    getCart.mockResolvedValue(cartWith([product]));
+    checkout.mockResolvedValue({
+      ...cartWith([]),
+      purchase: { items: ['Travel Mug'], points_spent: 2495, point_balance: 705 },
+    });
+    renderWithCart();
+    await screen.findByText('In cart');
+    fireEvent.click(screen.getByTestId('cart-checkout'));
+    expect(
+      await within(screen.getByRole('region', { name: 'Your point balance' })).findByText('705'),
+    ).toBeInTheDocument();
+    expect(getCatalog).toHaveBeenCalledTimes(2);
+  });
+
+  test('View-As cannot change the cart', async () => {
+    getCatalog.mockResolvedValue(response());
+    renderWithCart({ viewingAs: true });
+    expect(await screen.findByRole('button', { name: 'Add Travel Mug to cart' })).toBeDisabled();
   });
 });

@@ -654,6 +654,37 @@ class DriverLinkTests(RoleScopedDriverTestData):
         self.assertEqual(response.data['username'], 'Available.Driver')
         self.assertEqual(response.data['status'], 'pending')
 
+    def test_new_application_notifies_sponsor_accounts_in_the_company(self):
+        from accounts.models import Notification
+
+        teammate = get_user_model().objects.create_user(
+            username='scope.sponsor.teammate',
+            password='ExamplePassword123!',
+        )
+        SponsorAccount.objects.create(user=teammate, company=self.company)
+        applicant_user = get_user_model().objects.create_user(
+            username='new.applicant',
+            password='ExamplePassword123!',
+        )
+        applicant = Driver.objects.create(user=applicant_user, name='New Applicant')
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.link(applicant.user.username)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for sponsor_user in (self.sponsor_user, teammate):
+            notification = Notification.objects.get(
+                user=sponsor_user,
+                category=Notification.DRIVER_APPLICATION,
+            )
+            self.assertIn('New Applicant', notification.message)
+        self.assertFalse(
+            Notification.objects.filter(
+                user=self.other_sponsor_user,
+                category=Notification.DRIVER_APPLICATION,
+            ).exists()
+        )
+
     def test_does_not_reset_driver_already_linked_to_same_company(self):
         response = self.link(self.approved.user.username)
 
@@ -1102,6 +1133,7 @@ class DriverAlertSettingsViewTests(RoleScopedDriverTestData):
             {
                 'points_added_enabled': True,
                 'points_removed_enabled': False,
+                'new_products_enabled': True,
                 'email_enabled': True,
                 'sms_enabled': True,
                 'always_on': ['sponsor_dropped', 'security'],

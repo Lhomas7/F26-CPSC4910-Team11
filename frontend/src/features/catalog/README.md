@@ -9,7 +9,9 @@ can reach it through an eligible Driver/Sponsor View-As session, not as their
 own account type. Server-side catalog permissions remain mandatory.
 
 The sidebar includes Catalog for Drivers and Sponsors. Both views use real API
-data; there are no fake products or purchase controls. Sponsor availability controls and the
+data; there are no fake products. Drivers can add rewards to the cart (see
+`features/cart`) and check out, which spends their points and empties the cart.
+There is no order history yet. Sponsor availability controls and the
 Add Product workflow at `/catalog/new` are connected to the existing API.
 Sponsors can also search and import Fake Store API sample products at
 `/catalog/import`. No external ordering or inventory verification is implied.
@@ -40,7 +42,10 @@ application or sponsor-selection flow.
 `pages/DriverCatalogPage.jsx` renders the sponsor heading, a single neutral
 redemption/pricing notice, a constrained shared-stat balance tile and rate note,
 Rewards grid, and shared pagination. Driver cards show points, not USD, with no
-management controls or update footer. There is no purchase or quantity action.
+management controls or update footer. Inside the driver `CartProvider`,
+`DriverProductFooter` adds Add to cart, or In cart with Remove; each reward is
+in the cart at most once, and unavailable rewards cannot be added. There is no
+quantity action. The page reloads its balance after a cart checkout.
 Refresh catalog is a read-only action for obtaining a current balance and prices;
 it is a deliberate addition to the mockup's count-only toolbar.
 
