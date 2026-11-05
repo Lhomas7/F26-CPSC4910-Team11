@@ -1,7 +1,12 @@
+from datetime import timedelta
+from decimal import Decimal
+from io import StringIO
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from accounts.models import MFASettings, SponsorAccount, SponsorCompany
@@ -81,3 +86,61 @@ class ProviderImportTests(APITestCase):
         self.client.force_authenticate(None)
         self.assertIn(self.client.post(url, {}, format='json').status_code, (401, 403))
         client_class.assert_not_called()
+
+    @patch('catalog.fake_store.ProductProviderClient')
+    def test_refresh_updates_price_and_details_but_preserves_availability(self, client_class):
+        client_class.return_value.get_json.return_value = SAMPLE
+        imported = self.client.post(reverse('catalog:sponsor-provider-import', args=[7]), {}, format='json')
+        product = CatalogProduct.objects.get(pk=imported.data['id'])
+        product.is_available = False
+        product.save(update_fields=['is_available'])
+        previous_sync = product.last_synced_at
+        client_class.return_value.get_json.return_value = {
+            **SAMPLE, 'title': 'Updated Bag', 'price': 34.50,
+        }
+        url = reverse('catalog:sponsor-provider-refresh', args=[product.pk])
+        self.client.force_authenticate(self.other_sponsor)
+        self.assertEqual(self.client.post(url, {}, format='json').status_code, 404)
+        self.client.force_authenticate(self.sponsor)
+        response = self.client.post(url, {}, format='json')
+        self.assertEqual(response.status_code, 200)
+        product.refresh_from_db()
+        self.assertEqual(product.name, 'Updated Bag')
+        self.assertEqual(str(product.price_usd), '34.50')
+        self.assertFalse(product.is_available)
+        self.assertGreaterEqual(product.last_synced_at, previous_sync)
+        self.assertFalse(response.data['provider_data_stale'])
+
+    @patch('catalog.fake_store.ProductProviderClient')
+    def test_refresh_failure_preserves_last_known_product_data(self, client_class):
+        client_class.return_value.get_json.return_value = SAMPLE
+        imported = self.client.post(reverse('catalog:sponsor-provider-import', args=[7]), {}, format='json')
+        product = CatalogProduct.objects.get(pk=imported.data['id'])
+        old_time = timezone.now() - timedelta(days=2)
+        CatalogProduct.objects.filter(pk=product.pk).update(last_synced_at=old_time)
+        client_class.return_value.get_json.side_effect = ProductProviderError('upstream failed')
+        response = self.client.post(reverse('catalog:sponsor-provider-refresh', args=[product.pk]), {}, format='json')
+        self.assertEqual(response.status_code, 502)
+        product.refresh_from_db()
+        self.assertEqual(product.price_usd, Decimal('29.95'))
+        self.assertEqual(product.last_synced_at, old_time)
+
+    @patch('catalog.fake_store.ProductProviderClient')
+    def test_sync_command_refreshes_only_stale_imports(self, client_class):
+        client_class.return_value.get_json.return_value = SAMPLE
+        imported = self.client.post(reverse('catalog:sponsor-provider-import', args=[7]), {}, format='json')
+        product = CatalogProduct.objects.get(pk=imported.data['id'])
+        CatalogProduct.objects.filter(pk=product.pk).update(
+            last_synced_at=timezone.now() - timedelta(days=2)
+        )
+        manual = CatalogProduct.objects.create(
+            sponsor=self.company, name='Manual Mug', price_usd=Decimal('5.00')
+        )
+        client_class.return_value.get_json.return_value = {**SAMPLE, 'price': 39.95}
+        output = StringIO()
+        call_command('sync_catalog_products', stdout=output)
+        product.refresh_from_db()
+        manual.refresh_from_db()
+        self.assertEqual(product.price_usd, Decimal('39.95'))
+        self.assertEqual(manual.price_usd, Decimal('5.00'))
+        self.assertIn('Refreshed 1 imported products; 0 failed.', output.getvalue())

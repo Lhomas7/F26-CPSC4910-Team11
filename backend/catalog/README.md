@@ -92,6 +92,18 @@ set `inventory_verified` to false. Imported `is_available=true` means Sponsor
 listing status, not verified provider stock. Synchronization and stale-data
 policy are separate Sprint 7 work.
 
+Imported products can be refreshed by their Sponsor through an empty
+`POST /api/sponsor/catalog/products/<id>/refresh/`, or in batches with
+`python manage.py sync_catalog_products --limit 100`. The command selects
+products whose last successful sync is over 24 hours old; schedule it daily
+through the deployment environment if automatic refresh is desired. A failed
+refresh keeps the last known details and timestamp. Catalog reads expose
+`provider`, `external_product_id`, `last_synced_at`, and
+`provider_data_stale` so the UI can identify outdated provider details.
+Refresh changes the imported name, description, image, and USD price; it
+never changes Sponsor-controlled `is_available`. Fake Store API has no stock
+field, so no UI should claim inventory has been verified.
+
 `accounts.0014_sponsor_catalog_rate` adds the rate and its constraint, supplying
 100 for existing organizations without changing existing product prices. Review
 and apply it through the normal migration workflow; no shared database was

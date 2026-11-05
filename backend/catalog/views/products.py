@@ -11,7 +11,7 @@ from catalog.providers import ProductProviderError
 from catalog.serializers import CatalogProductSerializer
 from catalog.services import create_catalog_product, update_product_availability
 from catalog.services.access import sponsor_catalog_scope
-from catalog.services.provider_import import import_provider_product
+from catalog.services.provider_import import import_provider_product, refresh_provider_product
 
 
 def _provider_response(details):
@@ -57,6 +57,20 @@ class SponsorProviderImportView(APIView):
         except ProductProviderError:
             return Response({'detail': 'Product provider is unavailable.'}, status=502)
         return Response(CatalogProductSerializer(product).data, status=201)
+
+
+@method_decorator(never_cache, name='dispatch')
+class SponsorProviderRefreshView(APIView):
+    permission_classes = [IsAuthenticated, SponsorAccount, MFAEnrolled]
+
+    def post(self, request, product_id):
+        if request.data:
+            return Response({'detail': 'Refresh accepts no product fields.'}, status=400)
+        try:
+            product = refresh_provider_product(user=request.user, product_id=product_id)
+        except ProductProviderError:
+            return Response({'detail': 'Product provider is unavailable.'}, status=502)
+        return Response(CatalogProductSerializer(product).data)
 
 
 @method_decorator(never_cache, name='dispatch')
