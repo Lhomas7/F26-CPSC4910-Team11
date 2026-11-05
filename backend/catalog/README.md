@@ -87,6 +87,13 @@ unknown fields. Clients should create one UUID when the Driver confirms a
 purchase and reuse that UUID for retries. The additive migration is
 `catalog.0004_redemption_balance_after_redemption_idempotency_key_and_more`.
 
+New purchases now also require a server-issued review token from
+`POST /api/cart/review/`. Changed or expired reviews return 409 with a fresh
+review for explicit confirmation. Exact receipt recovery is available at
+`GET /api/cart/redemptions/by-key/<uuid>/`. See
+`docs/SPRINT7_CHECKOUT_CONTRACT.md` for response shapes, error codes, retry
+semantics, and the pending Group 7 frontend integration.
+
 The additive migration is `catalog.0001_initial`. Apply it through the normal
 project migration workflow after reviewing the target environment. The tests
 apply it only to disposable SQLite databases; no shared database was migrated

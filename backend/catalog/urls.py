@@ -9,6 +9,7 @@ from .views import (
     SponsorProductAvailabilityView,
     SponsorProductCreateView,
 )
+from .views.cart import CartReviewView, RedemptionLookupView
 
 app_name = 'catalog'
 
@@ -18,6 +19,8 @@ urlpatterns = [
     path('cart/items/', CartItemsView.as_view(), name='cart-items'),
     path('cart/items/<int:product_id>/', CartItemView.as_view(), name='cart-item'),
     path('cart/checkout/', CartCheckoutView.as_view(), name='cart-checkout'),
+    path('cart/review/', CartReviewView.as_view(), name='cart-review'),
+    path('cart/redemptions/by-key/<uuid:key>/', RedemptionLookupView.as_view(), name='redemption-lookup'),
     path(
         'sponsor/catalog/products/',
         SponsorProductCreateView.as_view(),

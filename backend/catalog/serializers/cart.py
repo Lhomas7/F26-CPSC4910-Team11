@@ -26,3 +26,4 @@ class CartAddSerializer(StrictInputSerializer):
 
 class CartCheckoutSerializer(StrictInputSerializer):
     idempotency_key = serializers.UUIDField(required=False)
+    review_token = serializers.CharField(max_length=20000, required=False)
