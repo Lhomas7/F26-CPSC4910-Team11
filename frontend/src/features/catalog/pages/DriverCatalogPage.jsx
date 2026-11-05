@@ -5,6 +5,7 @@ import StatePanel from '../../../components/feedback/StatePanel';
 import CatalogAccessPanel from '../components/CatalogAccessPanel';
 import CatalogPagination from '../components/CatalogPagination';
 import CatalogSkeleton from '../components/CatalogSkeleton';
+import { useDriverProductFooter, useReloadAfterPurchase } from '../components/DriverProductFooter';
 import ProductCard from '../components/ProductCard';
 import ProductGrid from '../components/ProductGrid';
 import useCatalogPage from '../hooks/useCatalogPage';
@@ -17,6 +18,8 @@ export default function DriverCatalogPage() {
   const { page, changePage, recoverPage } = useCatalogPagination();
   const { data, setData, status, error: loadError, reload } = useCatalogPage(page, recoverPage);
   const [accessError, setAccessError] = useState(null);
+  const cartFooter = useDriverProductFooter();
+  useReloadAfterPurchase(reload);
   const error = accessError || loadError;
   const denied = [401, 403, 409].includes(error?.status);
   const busy = status === 'loading' && !denied;
@@ -55,8 +58,8 @@ export default function DriverCatalogPage() {
         {visible && (
           <p className="banner">
             {configured
-              ? 'Redeeming rewards isn’t available yet. You can browse the catalog and see what each reward costs.'
-              : 'Point pricing is not configured, so point costs aren’t available yet. Redeeming rewards isn’t available yet either.'}
+              ? 'Add rewards to your cart to review and buy them with your points.'
+              : 'Point pricing is not configured, so point costs aren’t available yet. You can still add rewards to your cart to review them.'}
           </p>
         )}
         {visible?.recovered && (
@@ -133,6 +136,7 @@ export default function DriverCatalogPage() {
                       viewer="driver"
                       pricing={visible.pricing}
                       pointBalance={visible.point_balance}
+                      footer={cartFooter(product)}
                     />
                   ))}
                 </ProductGrid>

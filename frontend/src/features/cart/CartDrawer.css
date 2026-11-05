@@ -1,0 +1,123 @@
+/* The shared Modal, docked to the right edge as a full-height drawer. */
+.cart-drawer-backdrop {
+  align-items: stretch;
+  justify-content: flex-end;
+  padding: 0;
+}
+
+.modal.cart-drawer {
+  border-radius: 0.75rem 0 0 0.75rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: none;
+  max-width: 26rem;
+}
+
+.cart-drawer .modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.cart-drawer .modal-actions {
+  border-top: 1px solid var(--line);
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+}
+
+.cart-items {
+  display: grid;
+  gap: 0.6rem;
+  list-style: none;
+  margin: 0 0 0.9rem;
+  padding: 0;
+}
+
+.cart-item {
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: 4rem minmax(0, 1fr) auto;
+  padding: 0.5rem;
+}
+
+.cart-item-image .catalog-product-media {
+  border: 0;
+  border-radius: 0.4rem;
+  padding: 0.2rem;
+}
+
+.cart-item-body {
+  display: grid;
+  gap: 0.2rem;
+  justify-items: start;
+  min-width: 0;
+}
+
+.cart-item-name {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.cart-item-cost {
+  font-size: 0.82rem;
+}
+
+.cart-summary {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0 0 0.75rem;
+}
+
+.cart-summary div {
+  display: flex;
+  justify-content: space-between;
+}
+
+.cart-summary dt {
+  color: var(--ink-2);
+}
+
+.cart-summary dd {
+  color: var(--ink);
+  font-weight: 700;
+  margin: 0;
+}
+
+.cart-drawer-state {
+  padding: 1rem 0;
+}
+
+@media (max-width: 42rem) {
+  .modal.cart-drawer {
+    border-radius: 0;
+    max-width: none;
+  }
+
+  .cart-item {
+    grid-template-columns: 3rem minmax(0, 1fr);
+  }
+
+  .cart-item-remove {
+    grid-column: 1 / -1;
+  }
+}
+
+.cart-checkout-confirm {
+  border: 1px solid var(--accent);
+  border-radius: 0.6rem;
+  padding: 0.75rem;
+}
+
+.cart-checkout-confirm p {
+  color: var(--ink);
+}
+
+.cart-checkout-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}

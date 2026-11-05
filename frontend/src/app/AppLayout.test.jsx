@@ -7,6 +7,8 @@ import { AppLayout } from './AppLayout';
 
 jest.mock('../auth/AuthContext');
 jest.mock('./NotificationBell', () => () => <div data-testid="notification-bell" />);
+jest.mock('../features/cart/CartButton', () => () => <div data-testid="cart-button" />);
+jest.mock('../api/cart', () => ({ getCart: jest.fn(() => new Promise(() => {})) }));
 
 const USER = { username: 'jordan.lee', name: 'Jordan Lee', account_type: 'driver' };
 
@@ -176,4 +178,15 @@ test.each([
   renderLayout({ user: { ...USER, account_type: accountType } });
 
   expect(Boolean(screen.queryByTestId('notification-bell'))).toBe(expected);
+});
+
+test('only drivers get the cart button', () => {
+  renderLayout();
+  expect(screen.getByTestId('cart-button')).toBeInTheDocument();
+});
+
+test('sponsors do not get the cart button', () => {
+  renderLayout({ user: { ...USER, account_type: 'sponsor' } });
+  expect(screen.queryByTestId('cart-button')).not.toBeInTheDocument();
+  expect(screen.getByTestId('notification-bell')).toBeInTheDocument();
 });

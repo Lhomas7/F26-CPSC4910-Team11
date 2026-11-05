@@ -321,3 +321,15 @@ export function BellIcon(props) {
     </SvgIcon>
   );
 }
+
+export function CartIcon(props) {
+  return (
+    <SvgIcon {...props}>
+      <g stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M2.5 3.5h2.6l2.3 11.2a1.6 1.6 0 0 0 1.6 1.3h8.3a1.6 1.6 0 0 0 1.6-1.2L20.5 8H6" />
+        <circle cx="9.5" cy="20" r="1.2" />
+        <circle cx="17.5" cy="20" r="1.2" />
+      </g>
+    </SvgIcon>
+  );
+}

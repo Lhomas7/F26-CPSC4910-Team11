@@ -89,6 +89,9 @@ Drivers and Sponsors with the required MFA configuration.
 
 No cart, quantity, checkout, redemption, sorting, or external-provider inventory
 behavior is included in this review or in the Sprint 5 catalog implementation.
+Sprint 7 adds a driver cart (Add to cart / Remove, cart drawer) and a basic
+checkout that spends points and empties the cart; quantity and order history
+remain out of scope.
 
 ## Focused tests
 

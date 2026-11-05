@@ -46,8 +46,8 @@ export default function ProductCard({
       </div>
       {footer != null && (
         <div className="catalog-product-footer">
-          {/* Sponsor-only actions and timestamps are explicitly composed by
-              the caller; Driver cards have no default management footer. */}
+          {/* Actions are composed by the caller: sponsor management controls
+              and timestamps, or the driver's cart buttons. */}
           {footer}
         </div>
       )}

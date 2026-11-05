@@ -4,6 +4,7 @@ export * from './authentication';
 export * from './accounts';
 export * from './drivers';
 export * from './adminUsers';
+export * from './cart';
 export * from './catalog';
 export * from './notifications';
 export * from './reports';
