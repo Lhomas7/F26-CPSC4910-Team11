@@ -70,5 +70,6 @@ can authorize a retry only while held in memory and within its ten-minute window
 No migration is needed for these API changes. SQLite tests cover review drift,
 token rejection, replay, snapshot lookup, and ownership. Live MySQL locking
 behavior and full browser checkout remain final integration checks. External
-provider synchronization is on the separate catalog feature branch; checkout
-currently reviews the saved catalog data, not a fresh external-provider request.
+provider synchronization is integrated; checkout reviews the saved catalog data,
+not a fresh external-provider request. A provider refresh between review and
+confirmation invalidates the old review and requires explicit reconfirmation.

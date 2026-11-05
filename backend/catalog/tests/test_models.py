@@ -108,3 +108,24 @@ class CatalogProductTests(TestCase):
         fields = {field.name for field in CatalogProduct._meta.get_fields()}
         self.assertNotIn('point_cost', fields)
         self.assertNotIn('conversion_rate', fields)
+
+    def test_provider_identity_is_optional_for_manual_products_and_unique_per_sponsor(self):
+        manual = self.product()
+        manual.full_clean()
+        manual.save()
+        imported = self.product(provider='example', external_product_id='sku-1')
+        imported.full_clean()
+        imported.save()
+        with self.assertRaises(ValidationError):
+            self.product(provider='example', external_product_id='sku-1').full_clean()
+        other = SponsorCompany.objects.create(name='Other Sponsor')
+        self.product(sponsor=other, provider='example', external_product_id='sku-1').full_clean()
+
+    def test_provider_identity_must_be_complete(self):
+        for values in (
+            {'provider': 'example'},
+            {'external_product_id': 'sku-1'},
+            {'provider': '', 'external_product_id': 'sku-1'},
+        ):
+            with self.subTest(values=values), self.assertRaises(ValidationError):
+                self.product(**values).full_clean()

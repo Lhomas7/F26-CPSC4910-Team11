@@ -12,10 +12,11 @@ rounded to cents per transaction. Historical reports never recalculate money
 from mutable catalog prices, point conversion rates, or a Driver's current
 Sponsor relationship.
 
-The model is intentionally not a cart, checkout, order, or redemption workflow.
-A future completion service should create one `CompletedSale` only after the
-corresponding transaction succeeds. Until then, local demo seeding and Django
-admin can provide development records.
+The catalog checkout service now creates one `CompletedSale` in the same atomic
+transaction as point spending, redemption snapshots, and cart deletion. A failed
+report write rolls back the entire checkout. Replaying a completed request key
+does not create another sale. Local demo seeding and Django admin can also
+provide development records. No external store order or fulfillment is implied.
 
 ## API
 

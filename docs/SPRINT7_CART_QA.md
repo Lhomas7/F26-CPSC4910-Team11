@@ -42,5 +42,6 @@ balance/history/report updates. No production build or live migration was run.
 An unresolved attempt with an expired/lost review and no completed receipt
 cannot currently be conclusively cancelled. The UI preserves it and blocks new
 purchases. Backend resolution is a separate follow-up, not a fake dismissal.
-The Sponsor provider UI remains on the separate catalog branch and must be
-integrated before final end-to-end provider/redemption QA.
+The Sponsor provider UI is now integrated. Automated provider-to-report checks
+are documented in [the commerce closeout](SPRINT7_COMMERCE_CLOSEOUT.md); real
+authenticated browser and MySQL checks remain pending.

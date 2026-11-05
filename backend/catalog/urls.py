@@ -10,11 +10,21 @@ from .views import (
     SponsorProductCreateView,
 )
 from .views.cart import CartReviewView, RedemptionLookupView
+from .views.products import (
+    SponsorProviderImportView,
+    SponsorProviderProductView,
+    SponsorProviderRefreshView,
+    SponsorProviderSearchView,
+)
 
 app_name = 'catalog'
 
 urlpatterns = [
     path('catalog/', CatalogBrowseView.as_view(), name='browse'),
+    path('sponsor/catalog/provider/products/', SponsorProviderSearchView.as_view(), name='sponsor-provider-search'),
+    path('sponsor/catalog/provider/products/<int:product_id>/', SponsorProviderProductView.as_view(), name='sponsor-provider-product'),
+    path('sponsor/catalog/provider/products/<int:product_id>/import/', SponsorProviderImportView.as_view(), name='sponsor-provider-import'),
+    path('sponsor/catalog/products/<int:product_id>/refresh/', SponsorProviderRefreshView.as_view(), name='sponsor-provider-refresh'),
     path('cart/', CartView.as_view(), name='cart'),
     path('cart/items/', CartItemsView.as_view(), name='cart-items'),
     path('cart/items/<int:product_id>/', CartItemView.as_view(), name='cart-item'),

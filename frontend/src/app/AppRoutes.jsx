@@ -18,7 +18,7 @@ import {
   ResetPasswordPage,
 } from 'features/authentication';
 import { DriverDetailPage, DriverListPage } from 'features/drivers';
-import { AddProductPage, CatalogPage } from 'features/catalog';
+import { AddProductPage, CatalogPage, ImportProductPage } from 'features/catalog';
 import { WelcomePage } from 'features/home';
 import { PrivacyPage, TermsPage } from 'features/legal';
 import { PlaygroundPage } from 'features/playground';
@@ -76,6 +76,9 @@ export function AppRoutes() {
             </RequireAuth>
           }
         />
+        <Route path="/catalog/import" element={
+          <RequireAuth roles={PAGE_ROLES.catalogManage}><ImportProductPage /></RequireAuth>
+        } />
         <Route
           path="/points"
           element={

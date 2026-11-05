@@ -1,6 +1,7 @@
 from collections.abc import Mapping
 
 from django.core.validators import URLValidator
+from django.utils import timezone
 from rest_framework import serializers
 
 from accounts.input_cleaning import normalize_human_text, normalize_identifier
@@ -71,6 +72,15 @@ class ProductAvailabilitySerializer(StrictInputSerializer):
 
 
 class CatalogProductSerializer(serializers.ModelSerializer):
+    provider_data_stale = serializers.SerializerMethodField()
+
+    def get_provider_data_stale(self, obj):
+        if not obj.provider:
+            return False
+        if obj.last_synced_at is None:
+            return True
+        return (timezone.now() - obj.last_synced_at).total_seconds() > 24 * 60 * 60
+
     class Meta:
         model = CatalogProduct
         fields = (
@@ -80,6 +90,10 @@ class CatalogProductSerializer(serializers.ModelSerializer):
             'image_url',
             'price_usd',
             'is_available',
+            'provider',
+            'external_product_id',
+            'last_synced_at',
+            'provider_data_stale',
             'created_at',
             'updated_at',
         )
