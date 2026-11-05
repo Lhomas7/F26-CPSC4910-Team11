@@ -24,9 +24,8 @@ controls and read-only Driver browsing are implemented in the frontend. See
 ## Product contract
 
 `CatalogProduct` belongs to one `SponsorCompany` through the `sponsor` foreign
-key. Products are manually entered today; Sprint 7 adds optional provider
-identity fields and an HTTP client foundation. No vendor-specific import or
-synchronization flow is connected to the catalog endpoints yet.
+key. Products can be manually entered or imported from Fake Store API demo
+data. No external purchase is placed, and the provider does not report stock.
 
 | Field | Contract |
 | --- | --- |
@@ -76,10 +75,22 @@ provider identity and synchronization fields, plus a paired-identity check and
 Sponsor-scoped uniqueness constraint. Existing manual products retain null
 provider fields. The `ProductProviderClient` in `providers.py` reads its HTTPS
 origin and API key from `PRODUCT_PROVIDER_BASE_URL` and
-`PRODUCT_PROVIDER_API_KEY`; both can be blank while the catalog remains manual.
+`PRODUCT_PROVIDER_API_KEY`; the default origin is `https://fakestoreapi.com`
+and no API key is needed for this provider.
 It bounds response size and time, rejects redirects and non-JSON responses,
-and converts network failures to `ProductProviderError`. The provider's API
-paths, response schema, and import mapping remain to be selected and built.
+and converts network failures to `ProductProviderError`. The Fake Store adapter
+maps `/products` and `/products/<id>` into validated catalog fields.
+
+Sponsors can search titles at `GET /api/sponsor/catalog/provider/products/?q=...`,
+preview an item at `GET /api/sponsor/catalog/provider/products/<id>/`, and
+import it with an empty `POST /api/sponsor/catalog/provider/products/<id>/import/`.
+Import fetches fresh details, assigns Sponsor ownership on the server, and
+rejects duplicate imports within the same organization with 409. Provider
+failures return 502 without exposing upstream details. Search returns at most
+30 matches. Preview responses label the source as demo data and explicitly
+set `inventory_verified` to false. Imported `is_available=true` means Sponsor
+listing status, not verified provider stock. Synchronization and stale-data
+policy are separate Sprint 7 work.
 
 `accounts.0014_sponsor_catalog_rate` adds the rate and its constraint, supplying
 100 for existing organizations without changing existing product prices. Review

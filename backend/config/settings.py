@@ -28,7 +28,7 @@ load_aws_secrets()
 
 # External reward provider is optional until a vendor is selected. Credentials
 # are read server-side only and must never be sent to the React application.
-PRODUCT_PROVIDER_BASE_URL = os.environ.get('PRODUCT_PROVIDER_BASE_URL', '')
+PRODUCT_PROVIDER_BASE_URL = os.environ.get('PRODUCT_PROVIDER_BASE_URL', 'https://fakestoreapi.com')
 PRODUCT_PROVIDER_API_KEY = os.environ.get('PRODUCT_PROVIDER_API_KEY', '')
 
 
