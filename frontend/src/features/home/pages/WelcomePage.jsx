@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useAuth } from '../../../auth/AuthContext';
+import sessionIdentity from '../../../auth/sessionIdentity';
 import PageHeader from '../../../app/PageHeader';
 import ProgramPerks from '../../../components/branding/ProgramPerks';
 import RoadTruck from '../../../components/branding/RoadTruck';
@@ -34,7 +35,7 @@ export default function WelcomePage() {
 
       {signedIn ? (
         <main className="home-content">
-          <HomeDashboard accountType={accountType} user={user} />
+          <HomeDashboard key={sessionIdentity(user)} accountType={accountType} user={user} />
         </main>
       ) : (
         <main className="welcome-content">

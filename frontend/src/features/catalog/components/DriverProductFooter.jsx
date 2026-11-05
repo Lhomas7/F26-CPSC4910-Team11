@@ -1,6 +1,5 @@
-import { useEffect, useRef } from 'react';
-
 import { useCart } from '../../cart/CartContext';
+export { default as useReloadAfterPurchase } from '../../cart/useDriverPointsRefresh';
 
 /** Add a reward to, or remove it from, the driver's cart. */
 export default function DriverProductFooter({ product, cart }) {
@@ -41,15 +40,4 @@ export function useDriverProductFooter() {
   const cart = useCart();
   // Outside a driver's CartProvider there is no cart to act on.
   return cart ? (product) => <DriverProductFooter product={product} cart={cart} /> : () => null;
-}
-
-/** Re-run `reload` after each purchase, since checkout changes the balance. */
-export function useReloadAfterPurchase(reload) {
-  const purchaseVersion = useCart()?.purchaseVersion ?? 0;
-  const seen = useRef(purchaseVersion);
-  useEffect(() => {
-    if (purchaseVersion === seen.current) return;
-    seen.current = purchaseVersion;
-    reload();
-  }, [purchaseVersion, reload]);
 }

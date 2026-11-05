@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../auth/AuthContext';
+import sessionIdentity from '../auth/sessionIdentity';
 import BrandMark from '../components/branding/BrandMark';
 import ConfirmDialog from '../components/feedback/ConfirmDialog';
 import {
@@ -220,7 +221,7 @@ function DriverCart({ enabled, user, children }) {
   if (!enabled) return children;
   const viewingAs = Boolean(user.impersonation?.active);
   return (
-    <CartProvider key={`${user.username}:${viewingAs}`} viewingAs={viewingAs}>
+    <CartProvider key={sessionIdentity(user)} viewingAs={viewingAs}>
       {children}
     </CartProvider>
   );

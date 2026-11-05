@@ -1,7 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import * as api from '../../api';
 import { announceNotificationsChanged } from '../../app/notificationEvents';
+import useRefreshOnReturn from '../../hooks/useRefreshOnReturn';
 
 const CartContext = createContext(null);
 
@@ -21,14 +22,20 @@ export function CartProvider({ viewingAs = false, children }) {
   const [lastPurchase, setLastPurchase] = useState(null);
   // Bumped after each purchase so pages showing the balance can reload.
   const [purchaseVersion, setPurchaseVersion] = useState(0);
+  const latestRead = useRef(0);
 
   const reload = useCallback(async () => {
+    const version = ++latestRead.current;
     setStatus('loading');
     try {
-      setCart(await api.getCart());
+      const nextCart = await api.getCart();
+      if (version !== latestRead.current) return;
+      setCart(nextCart);
       setError(null);
       setStatus('ready');
     } catch (err) {
+      if (version !== latestRead.current) return;
+      if ([401, 403, 409].includes(err.status)) setCart(null);
       setError(err);
       setStatus('error');
     }
@@ -36,7 +43,9 @@ export function CartProvider({ viewingAs = false, children }) {
 
   useEffect(() => {
     reload();
+    return () => { latestRead.current += 1; };
   }, [reload]);
+  useRefreshOnReturn(() => { if (!checkingOut) reload(); });
 
   const clearActionError = useCallback(() => setActionError(''), []);
   const clearLastPurchase = useCallback(() => setLastPurchase(null), []);
@@ -47,7 +56,10 @@ export function CartProvider({ viewingAs = false, children }) {
     setActionError('');
     try {
       const { purchase, ...nextCart } = await api.checkout();
+      latestRead.current += 1;
       setCart(nextCart);
+      setError(null);
+      setStatus('ready');
       setLastPurchase(purchase);
       setPurchaseVersion((version) => version + 1);
       announceNotificationsChanged();
@@ -66,7 +78,9 @@ export function CartProvider({ viewingAs = false, children }) {
       setPendingIds((ids) => new Set(ids).add(productId));
       setActionError('');
       try {
-        setCart(await action(productId));
+        const nextCart = await action(productId);
+        latestRead.current += 1;
+        setCart(nextCart);
         setError(null);
         setStatus('ready');
       } catch (err) {
