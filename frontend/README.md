@@ -5,6 +5,10 @@ Program. The repository-level [`README.md`](../README.md) is the authoritative
 source for full-stack setup, environment configuration, database instructions,
 and the Windows/macOS launch workflow.
 
+Frontend imports use `src` as their base through `jsconfig.json`. See
+[import conventions](../docs/FRONTEND_IMPORTS.md) for shared/feature boundaries,
+relative imports, and small public export files.
+
 ## Requirements
 
 - Node.js 22 is used by CI; the development launcher requires Node.js 22+.
@@ -119,8 +123,9 @@ features/<feature>/
 └── index.js          # What other code may import from the feature
 ```
 
-`app/` and other features import a feature only through its `index.js`
-(`import { PointsPage } from '../features/points'`). A stylesheet sits beside
+`app/` imports routed feature pages through their explicit `index.js` exports
+(`import { PointsPage } from 'features/points'`). Shared cross-feature helpers
+use source-root paths as documented in the import conventions. A stylesheet sits beside
 the one file that imports it; when several files in a feature share it, it sits
 at the feature root.
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 
-import { getCatalog } from '../../../api/catalog';
-import useApiRequest from '../../../hooks/useApiRequest';
+import { getCatalog } from 'api/catalog';
+import useApiRequest from 'hooks/useApiRequest';
 
 export default function useCatalogPage(page, onRecovered) {
   const recovered = useRef(null);

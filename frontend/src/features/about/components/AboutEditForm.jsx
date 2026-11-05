@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { updateRelease } from '../../../api';
+import { updateRelease } from 'api';
 
 const FIELDS = [
   { name: 'product_name', label: 'Product name', type: 'text', maxLength: 100 },

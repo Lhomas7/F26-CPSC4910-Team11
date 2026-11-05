@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-import * as api from '../../../api';
-import useApiRequest from '../../../hooks/useApiRequest';
+import * as api from 'api';
+import useApiRequest from 'hooks/useApiRequest';
 
 export default function RegistrationSettingsPanel() {
   const [busy, setBusy] = useState(false);

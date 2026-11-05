@@ -1,12 +1,12 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 
-import { useAuth } from '../../../auth/AuthContext';
-import * as api from '../../../api';
+import { useAuth } from 'auth/AuthContext';
+import * as api from 'api';
 import DriverDetailPage from './DriverDetailPage';
 
-jest.mock('../../../auth/AuthContext');
-jest.mock('../../../api');
+jest.mock('auth/AuthContext');
+jest.mock('api');
 
 const driver = {
   id: 7,

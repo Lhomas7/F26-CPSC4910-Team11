@@ -1,12 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
-import * as api from '../../../api';
-import { useAuth } from '../../../auth/AuthContext';
+import * as api from 'api';
+import { useAuth } from 'auth/AuthContext';
 import WelcomePage from './WelcomePage';
 
-jest.mock('../../../api');
-jest.mock('../../../auth/AuthContext');
+jest.mock('api');
+jest.mock('auth/AuthContext');
 
 const recent = [
   {

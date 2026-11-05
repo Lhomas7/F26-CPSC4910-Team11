@@ -2,7 +2,7 @@ import {
   API_ACTIVITY_EVENT,
   SESSION_EXPIRED_EVENT,
   VIEW_AS_ENDED_EVENT,
-} from '../auth/sessionEvents';
+} from 'auth/sessionEvents';
 
 const DEFAULT_API_URL = 'http://localhost:8000/api';
 

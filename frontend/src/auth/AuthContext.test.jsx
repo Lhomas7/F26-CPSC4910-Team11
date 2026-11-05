@@ -1,10 +1,10 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-import * as api from '../api';
+import * as api from 'api';
 import { AuthProvider, useAuth } from './AuthContext';
 import { API_ACTIVITY_EVENT, SESSION_EXPIRED_EVENT, VIEW_AS_ENDED_EVENT } from './sessionEvents';
 
-jest.mock('../api');
+jest.mock('api');
 
 function SignedInStatus() {
   const { loading, user, signOut } = useAuth();

@@ -2,13 +2,13 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
-import { useAuth } from '../auth/AuthContext';
+import { useAuth } from 'auth/AuthContext';
 import { AppLayout } from './AppLayout';
 
-jest.mock('../auth/AuthContext');
+jest.mock('auth/AuthContext');
 jest.mock('./NotificationBell', () => () => <div data-testid="notification-bell" />);
-jest.mock('../features/cart/CartButton', () => () => <div data-testid="cart-button" />);
-jest.mock('../api/cart', () => ({ getCart: jest.fn(() => new Promise(() => {})) }));
+jest.mock('features/cart/CartButton', () => () => <div data-testid="cart-button" />);
+jest.mock('api/cart', () => ({ getCart: jest.fn(() => new Promise(() => {})) }));
 
 const USER = { username: 'jordan.lee', name: 'Jordan Lee', account_type: 'driver' };
 

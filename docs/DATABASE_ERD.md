@@ -456,3 +456,7 @@ They should be maintained separately in a future-state or planned-schema diagram
 ---
 
 _Original diagrams last fully reviewed: 2026-10-06. Catalog supplement added: 2026-10-21._
+
+For the current repository's cart, provider fields, redemption snapshots, and
+report linkage, see [the Sprint 7 commerce schema supplement](SPRINT7_COMMERCE_SCHEMA.md).
+The historical scope/exclusion list above does not describe those newer models.

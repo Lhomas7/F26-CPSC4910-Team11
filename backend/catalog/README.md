@@ -24,8 +24,8 @@ controls and read-only Driver browsing are implemented in the frontend. See
 ## Product contract
 
 `CatalogProduct` belongs to one `SponsorCompany` through the `sponsor` foreign
-key. Products are manually entered for Sprint 5; no external shopping provider
-is integrated yet.
+key. Products can be manually entered or imported from Fake Store API demo
+data. No external purchase is placed, and the provider does not report stock.
 
 | Field | Contract |
 | --- | --- |
@@ -34,6 +34,8 @@ is integrated yet.
 | `image_url` | Optional HTTPS URL, at most 2,048 characters; no upload, fetch, or proxy |
 | `price_usd` | Required nonnegative USD amount, up to 10 whole-number digits and 2 decimal places |
 | `is_available` | Manual availability, default true; not provider inventory verification |
+| `provider`, `external_product_id` | Both absent for manual products; both required for imported products; unique per Sponsor |
+| `last_synced_at` | Optional timestamp reserved for successful provider synchronization |
 | `created_at`, `updated_at` | Server-maintained timestamps |
 
 Missing or failed images will use a frontend fallback. HTTPS references prevent
@@ -63,10 +65,75 @@ balances, creating ledger entries, or sending notifications. This rate describes
 catalog prices, not cash redemption. Cart, quantities, redemption, orders, and
 live provider stock are outside this implementation.
 
+## Internal points checkout
+
+The Driver cart added in Sprint 7 checks out through `/api/cart/checkout/`.
+Checkout locks the Driver before reading cart items, then atomically spends
+points, snapshots one `Redemption` and its `RedemptionItem` rows, creates a
+`CompletedSale` for reporting, and empties the cart. Item snapshots retain
+name, USD price, point cost, and quantity even if the catalog changes later.
+The sale's gross USD amount is the sum of the recorded item prices; its project
+share follows the reporting model's one-percent calculation. A failed checkout
+leaves points, cart, redemption records, and reports unchanged. This records
+an internal reward purchase only; it does not place an order with an external
+store or verify fulfillment. The additive migration is
+`catalog.0003_redemption_redemptionitem` on the cart branch.
+
+Checkout accepts an optional JSON `idempotency_key` UUID. Once a client
+submits a key, retrying it for the same Driver returns the original redemption
+reference, item names, points spent, and balance after checkout with
+`replayed=true`; it never spends points or sends another alert. The database
+enforces uniqueness per Driver. The response includes `redemption_id` and
+`reference`, and checkout rejects browser-supplied prices, totals, and other
+unknown fields. Clients should create one UUID when the Driver confirms a
+purchase and reuse that UUID for retries. The additive migration is
+`catalog.0004_redemption_balance_after_redemption_idempotency_key_and_more`.
+
+New purchases now also require a server-issued review token from
+`POST /api/cart/review/`. Changed or expired reviews return 409 with a fresh
+review for explicit confirmation. Exact receipt recovery is available at
+`GET /api/cart/redemptions/by-key/<uuid>/`. See
+`docs/SPRINT7_CHECKOUT_CONTRACT.md` for response shapes, error codes, retry
+semantics, and the pending Group 7 frontend integration.
+
 The additive migration is `catalog.0001_initial`. Apply it through the normal
 project migration workflow after reviewing the target environment. The tests
 apply it only to disposable SQLite databases; no shared database was migrated
 as part of this change.
+
+`catalog.0002_catalogproduct_external_product_id_and_more` adds the optional
+provider identity and synchronization fields, plus a paired-identity check and
+Sponsor-scoped uniqueness constraint. Existing manual products retain null
+provider fields. The `ProductProviderClient` in `providers.py` reads its HTTPS
+origin and API key from `PRODUCT_PROVIDER_BASE_URL` and
+`PRODUCT_PROVIDER_API_KEY`; the default origin is `https://fakestoreapi.com`
+and no API key is needed for this provider.
+It bounds response size and time, rejects redirects and non-JSON responses,
+and converts network failures to `ProductProviderError`. The Fake Store adapter
+maps `/products` and `/products/<id>` into validated catalog fields.
+
+Sponsors can search titles at `GET /api/sponsor/catalog/provider/products/?q=...`,
+preview an item at `GET /api/sponsor/catalog/provider/products/<id>/`, and
+import it with an empty `POST /api/sponsor/catalog/provider/products/<id>/import/`.
+Import fetches fresh details, assigns Sponsor ownership on the server, and
+rejects duplicate imports within the same organization with 409. Provider
+failures return 502 without exposing upstream details. Search returns at most
+30 matches. Preview responses label the source as demo data and explicitly
+set `inventory_verified` to false. Imported `is_available=true` means Sponsor
+listing status, not verified provider stock. Synchronization and stale-data
+policy are separate Sprint 7 work.
+
+Imported products can be refreshed by their Sponsor through an empty
+`POST /api/sponsor/catalog/products/<id>/refresh/`, or in batches with
+`python manage.py sync_catalog_products --limit 100`. The command selects
+products whose last successful sync is over 24 hours old; schedule it daily
+through the deployment environment if automatic refresh is desired. A failed
+refresh keeps the last known details and timestamp. Catalog reads expose
+`provider`, `external_product_id`, `last_synced_at`, and
+`provider_data_stale` so the UI can identify outdated provider details.
+Refresh changes the imported name, description, image, and USD price; it
+never changes Sponsor-controlled `is_available`. Fake Store API has no stock
+field, so no UI should claim inventory has been verified.
 
 `accounts.0014_sponsor_catalog_rate` adds the rate and its constraint, supplying
 100 for existing organizations without changing existing product prices. Review

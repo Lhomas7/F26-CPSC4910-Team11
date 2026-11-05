@@ -13,6 +13,8 @@ data; there are no fake products. Drivers can add rewards to the cart (see
 `features/cart`) and check out, which spends their points and empties the cart.
 There is no order history yet. Sponsor availability controls and the
 Add Product workflow at `/catalog/new` are connected to the existing API.
+Sponsors can also search and import Fake Store API sample products at
+`/catalog/import`. No external ordering or inventory verification is implied.
 
 `src/api/catalog.js` reads session-scoped GET `/api/catalog/` through the shared
 HTTP client. `getCatalog(page = 1)` only accepts positive safe-integer page
@@ -73,7 +75,8 @@ npm test -- --watchAll=false --runInBand --runTestsByPath src/features/catalog/p
 
 `pages/SponsorCatalogPage.jsx` renders the mockup's organization heading,
 neutral pricing notice, product grid, empty/loading/error states, and paginated
-results. Its toolbar includes Refresh catalog and Add product actions; the
+results. Its toolbar includes Refresh catalog, Add product, and Import demo
+product actions; the
 empty state also links to creation. `CatalogPagination` uses a fixed page size
 of 25 and tracks the page
 in the browser URL so refresh and Back work. It does not assume the API returns
@@ -91,7 +94,15 @@ organization, and View-As metadata. A change clears prior cards synchronously;
 late responses from the unmounted view cannot repopulate them. Access/session
 errors (401/403/409) also hide previously loaded data rather than presenting it
 as a harmless refresh failure. No search, filter, sort, or conversion controls
-are invented.
+are invented for the manual catalog grid.
+
+`ImportProductPage` searches product titles, previews current provider details,
+and imports a selected product. Import fetches fresh server-side details again;
+the preview is not a purchase quote. Imported Sponsor cards show provider sync
+time and a stale-price warning after 24 hours, with a product-specific refresh
+action. The provider does not supply stock. The existing availability control
+remains a Sponsor listing switch, and Drivers still see points as their primary
+catalog price. API and UI tests cover the search-to-import path and conflicts.
 
 The shell adds a Catalog SVG icon and a phone-only scrollable navigation strip.
 It does not change brand/topbar height or put overflow clipping around the

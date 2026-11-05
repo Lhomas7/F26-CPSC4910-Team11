@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
-import * as api from '../api';
+import * as api from 'api';
 import { API_ACTIVITY_EVENT, SESSION_EXPIRED_EVENT, VIEW_AS_ENDED_EVENT } from './sessionEvents';
 
 const AuthContext = createContext(null);

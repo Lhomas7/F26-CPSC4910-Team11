@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 
-import { currentRelease } from '../../../api';
-import PageHeader from '../../../app/PageHeader';
-import { useAuth } from '../../../auth/AuthContext';
-import RoadTruck from '../../../components/branding/RoadTruck';
-import Skeleton from '../../../components/feedback/Skeleton';
-import StatePanel from '../../../components/feedback/StatePanel';
-import useApiRequest from '../../../hooks/useApiRequest';
+import { currentRelease } from 'api';
+import PageHeader from 'app/PageHeader';
+import { useAuth } from 'auth/AuthContext';
+import RoadTruck from 'components/branding/RoadTruck';
+import Skeleton from 'components/feedback/Skeleton';
+import StatePanel from 'components/feedback/StatePanel';
+import useApiRequest from 'hooks/useApiRequest';
 import AboutEditForm from '../components/AboutEditForm';
 import './AboutPage.css';
 

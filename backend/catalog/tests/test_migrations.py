@@ -56,6 +56,18 @@ class CatalogMigrationTests(TransactionTestCase):
             Product = apps.get_model('catalog', 'CatalogProduct')
             self.assertEqual(Sponsor.objects.get(pk=sponsor.pk).points_per_dollar, 100)
             self.assertEqual(str(Product.objects.get(pk=product.pk).price_usd), '12.50')
+            # Both published Sprint 7 branches converge without renaming or
+            # replaying their historical migrations, preserving manual rewards.
+            target = [('catalog', '0005_merge_provider_redemption')]
+            executor = MigrationExecutor(connection)
+            executor.migrate(target)
+            apps = executor.loader.project_state(target).apps
+            upgraded = apps.get_model('catalog', 'CatalogProduct').objects.get(pk=product.pk)
+            self.assertEqual(str(upgraded.price_usd), '12.50')
+            self.assertIsNone(upgraded.provider)
+            self.assertFalse(apps.get_model('catalog', 'CartItem').objects.exists())
+            self.assertFalse(apps.get_model('catalog', 'Redemption').objects.exists())
+            self.assertFalse(MigrationExecutor(connection).migration_plan(target))
         finally:
             isolated.close()
             connections['default'] = original

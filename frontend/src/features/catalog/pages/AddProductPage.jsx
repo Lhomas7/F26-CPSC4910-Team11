@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { createProduct } from '../../../api/catalog';
-import { NetworkError } from '../../../api/client';
-import PageHeader from '../../../app/PageHeader';
-import { useAuth } from '../../../auth/AuthContext';
-import ConfirmDialog from '../../../components/feedback/ConfirmDialog';
-import StatePanel from '../../../components/feedback/StatePanel';
+import { createProduct } from 'api/catalog';
+import { NetworkError } from 'api/client';
+import PageHeader from 'app/PageHeader';
+import { useAuth } from 'auth/AuthContext';
+import ConfirmDialog from 'components/feedback/ConfirmDialog';
+import StatePanel from 'components/feedback/StatePanel';
 import ProductImage from '../components/ProductImage';
 import { catalogIdentity } from '../utils/identity';
 import {

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import * as api from '../../../api';
-import { validateEmail } from '../../../utils/accountValidation';
+import * as api from 'api';
+import { validateEmail } from 'utils/accountValidation';
 import '../Authentication.css';
 import '../PasswordReset.css';
 

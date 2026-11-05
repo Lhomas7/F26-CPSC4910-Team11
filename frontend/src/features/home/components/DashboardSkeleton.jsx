@@ -1,4 +1,4 @@
-import Skeleton from '../../../components/feedback/Skeleton';
+import Skeleton from 'components/feedback/Skeleton';
 
 export default function DashboardSkeleton({ type = 'card', count = 1 }) {
   if (type === 'stats')

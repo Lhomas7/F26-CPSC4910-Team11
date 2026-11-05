@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
-import PageHeader from '../../../app/PageHeader';
-import StatePanel from '../../../components/feedback/StatePanel';
-import { PlusIcon } from '../../../components/primitives/Icons';
+import PageHeader from 'app/PageHeader';
+import StatePanel from 'components/feedback/StatePanel';
+import { PlusIcon } from 'components/primitives/Icons';
 import CatalogPagination from '../components/CatalogPagination';
 import AvailabilityControl from '../components/AvailabilityControl';
 import ProductCard from '../components/ProductCard';
 import SponsorProductFooter from '../components/SponsorProductFooter';
 import ProductGrid from '../components/ProductGrid';
+import ProviderRefreshControl from '../components/ProviderRefreshControl';
 import useCatalogPage from '../hooks/useCatalogPage';
 import useCatalogPagination from '../hooks/useCatalogPagination';
 import CatalogSkeleton from '../components/CatalogSkeleton';
@@ -179,6 +180,7 @@ export default function SponsorCatalogPage({ identity }) {
                   <PlusIcon size={16} />
                   Add product
                 </Link>
+                <Link className="button" to="/catalog/import">Import demo product</Link>
               </div>
             </div>
             {busy && (
@@ -204,6 +206,8 @@ export default function SponsorCatalogPage({ identity }) {
                         pricing={visible.pricing}
                         footer={
                           <SponsorProductFooter product={product}>
+                            {product.provider === 'fake_store' &&
+                              <ProviderRefreshControl product={product} onRefresh={reload} />}
                             <AvailabilityControl
                               product={product}
                               catalogVersion={data}

@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
 import { Link } from 'react-router-dom';
 
-import { getAdminSponsorOrganizations, getAdminUsers } from '../../../api';
-import useApiRequest from '../../../hooks/useApiRequest';
+import { getAdminSponsorOrganizations, getAdminUsers } from 'api';
+import useApiRequest from 'hooks/useApiRequest';
 import DashboardCard from './DashboardCard';
 import DashboardSkeleton from './DashboardSkeleton';
 import QuickActions from './QuickActions';

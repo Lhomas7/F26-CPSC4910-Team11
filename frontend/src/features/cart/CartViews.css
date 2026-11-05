@@ -1,0 +1,244 @@
+.cart-view {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.cart-view-heading {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--ink);
+}
+
+.cart-view-lead {
+  color: var(--ink-2);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* ---- Itemisation shared by the cart list, the review and the receipt.
+   Per-reward point costs come from the cart response; the serializer
+   already nests them on every row. ------------------------------------ */
+.cart-lines {
+  display: grid;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cart-line {
+  align-items: baseline;
+  border-bottom: 1px solid var(--line-soft);
+  display: grid;
+  gap: 0.35rem 0.75rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding-bottom: 0.35rem;
+}
+
+.cart-line:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.cart-line-name {
+  color: var(--ink);
+  font-size: 0.85rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.cart-line-cost {
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ---- Totals. "Balance after this purchase" is deliberately distinct
+   from any "Current balance" shown elsewhere. --------------------------- */
+.cart-totals {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding-top: 0.6rem;
+}
+
+.cart-totals div {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.cart-totals dt {
+  color: var(--ink-2);
+  font-size: 0.82rem;
+  min-width: 0;
+}
+
+.cart-totals dd {
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.cart-totals .cart-total-main dt,
+.cart-totals .cart-total-main dd {
+  font-size: 0.95rem;
+}
+
+/* Placeholder rows while POST /api/cart/review/ is in flight. The server
+   owns the reviewed items and costs, so nothing is guessed from the cart. */
+.cart-review-skeleton {
+  height: 1.6rem;
+}
+
+.cart-review-skeleton:last-of-type {
+  width: 60%;
+}
+
+/* ---- Blocked actions state the reason instead of going quietly dead. -- */
+.cart-blocked-reason {
+  color: var(--ink-2);
+  font-size: 0.74rem;
+  line-height: 1.4;
+  margin: 0.35rem 0 0;
+}
+
+.cart-actions {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.cart-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.cart-actions-row .button {
+  flex: 1 1 10rem;
+}
+
+/* ---- Receipt --------------------------------------------------------- */
+.cart-reference {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  display: block;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+  font-size: 0.76rem;
+  margin-top: 0.2rem;
+  /* Selectable, and it must wrap rather than overflow at 320px. */
+  overflow-wrap: anywhere;
+  padding: 0.4rem 0.5rem;
+  user-select: all;
+  word-break: break-all;
+}
+
+.cart-reference-label {
+  color: var(--ink-2);
+  display: block;
+  font-size: 0.72rem;
+}
+
+/* ---- Pending attempt. The only state that blocks the rest of the cart. */
+.cart-pending-panel {
+  background: var(--warning-soft);
+  border: 1px solid var(--warning-line);
+  border-radius: 0.6rem;
+  color: var(--warning-ink);
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.85rem 0.9rem;
+}
+
+.cart-pending-panel h3 {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.cart-pending-panel p {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.cart-pending-checklist {
+  display: grid;
+  font-size: 0.82rem;
+  gap: 0.25rem;
+  line-height: 1.4;
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.cart-pending-meta {
+  color: var(--warning-ink);
+  font-size: 0.72rem;
+  opacity: 0.85;
+  overflow-wrap: anywhere;
+}
+
+/* The floating button carries the pending state when the drawer is shut. */
+.cart-button.is-pending {
+  background: var(--warning-soft);
+  border-color: var(--warning-line);
+  color: var(--warning-ink);
+}
+
+.cart-flag {
+  align-items: center;
+  background: var(--warning-ink);
+  border: 2px solid var(--surface);
+  border-radius: 999px;
+  color: var(--warning-soft);
+  display: flex;
+  font-size: 0.72rem;
+  font-weight: 800;
+  height: 1.35rem;
+  justify-content: center;
+  line-height: 1;
+  position: absolute;
+  right: -0.3rem;
+  top: -0.3rem;
+  width: 1.35rem;
+}
+
+/* Hidden while the drawer is open: it sat behind the backdrop doing nothing
+   and still took a tab stop. */
+.cart-button-shell[hidden] {
+  display: none;
+}
+
+/* The snapshot already reserves room for the floating button with
+   `.has-cart-button .app-content { padding-bottom: 5.5rem }`, which stacks on
+   top of `.catalog-content`'s own 4rem. Measured at every review width, the
+   button clears the pagination row in both themes, so this refinement adds no
+   second padding rule. */
+
+/* ---- Catalog-side notice for a pending attempt. Uses the banner slot the
+   catalog page already renders. ----------------------------------------- */
+.catalog-pending-notice {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.catalog-pending-notice p {
+  margin: 0.3rem 0 0;
+}
+
+/* ---- Review-drift notice -------------------------------------------- */
+.cart-drift {
+  display: grid;
+  gap: 0.5rem;
+}

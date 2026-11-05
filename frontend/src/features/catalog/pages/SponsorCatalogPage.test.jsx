@@ -1,12 +1,12 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 
-import { getCatalog, setProductAvailability } from '../../../api/catalog';
-import { useAuth } from '../../../auth/AuthContext';
+import { getCatalog, setProductAvailability } from 'api/catalog';
+import { useAuth } from 'auth/AuthContext';
 import CatalogPage from './CatalogPage';
 
-jest.mock('../../../api/catalog');
-jest.mock('../../../auth/AuthContext');
+jest.mock('api/catalog');
+jest.mock('auth/AuthContext');
 
 const user = { id: 1, username: 'sponsor.one', account_type: 'sponsor', company: 'First Freight' };
 const product = {

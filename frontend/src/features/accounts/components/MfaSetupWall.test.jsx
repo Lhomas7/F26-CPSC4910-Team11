@@ -1,11 +1,11 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-import { useAuth } from '../../../auth/AuthContext';
-import * as api from '../../../api';
+import { useAuth } from 'auth/AuthContext';
+import * as api from 'api';
 import MfaSetupWall from './MfaSetupWall';
 
-jest.mock('../../../auth/AuthContext');
-jest.mock('../../../api');
+jest.mock('auth/AuthContext');
+jest.mock('api');
 
 afterEach(() => jest.clearAllMocks());
 

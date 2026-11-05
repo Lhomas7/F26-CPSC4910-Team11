@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import App from './App';
+import App from 'App';
 
 beforeEach(() => {
   window.history.pushState({}, '', '/');

@@ -1,10 +1,10 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
-import * as api from '../api';
+import * as api from 'api';
 import NotificationBell from './NotificationBell';
 import { announceNotificationsChanged } from './notificationEvents';
 
-jest.mock('../api');
+jest.mock('api');
 
 afterEach(() => jest.clearAllMocks());
 

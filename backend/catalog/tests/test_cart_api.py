@@ -1,4 +1,7 @@
 from django.contrib.auth import get_user_model
+from uuid import uuid4
+from unittest.mock import patch
+from django.core import signing
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APIClient, APITestCase
@@ -15,9 +18,10 @@ from accounts.models import (
     SponsorAccount,
     SponsorCompany,
 )
-from catalog.models import CartItem, CatalogProduct
+from catalog.models import CartItem, CatalogProduct, Redemption, RedemptionItem
 from drivers.models import Driver, PointTransaction
 from drivers.services.membership import reassign_driver_sponsor, remove_driver_from_sponsor
+from reports.models import CompletedSale
 
 
 class DriverCartApiTests(APITestCase):
@@ -238,8 +242,12 @@ class CartCheckoutApiTests(APITestCase):
             CartItem.objects.create(driver=self.driver, product=product)
 
     def checkout(self, client=None):
+        client = client or self.client
+        review = client.post(reverse('catalog:cart-review'), {}, format='json')
+        if review.status_code != 200:
+            return review
         with self.captureOnCommitCallbacks(execute=True):
-            return (client or self.client).post(self.url, {}, format='json')
+            return client.post(self.url, {'review_token': review.data['review_token']}, format='json')
 
     def balance(self):
         return Driver.objects.get(pk=self.driver.pk).point_balance
@@ -252,9 +260,20 @@ class CartCheckoutApiTests(APITestCase):
         self.assertEqual(response.data['point_balance'], 750)
         self.assertEqual(response.data['purchase']['points_spent'], 5250)
         self.assertEqual(response.data['purchase']['point_balance'], 750)
+        self.assertEqual(response.data['purchase']['reference'], Redemption.objects.get(driver=self.driver).sale.reference)
+        self.assertFalse(response.data['purchase']['replayed'])
         self.assertCountEqual(response.data['purchase']['items'], ['Mug', 'Jacket'])
         self.assertEqual(self.balance(), 750)
         self.assertFalse(CartItem.objects.filter(driver=self.driver).exists())
+        redemption = Redemption.objects.get(driver=self.driver)
+        self.assertEqual(redemption.total_points, 5250)
+        self.assertEqual(redemption.sponsor, self.company)
+        self.assertCountEqual(
+            RedemptionItem.objects.filter(redemption=redemption).values_list('product_name', flat=True),
+            ['Mug', 'Jacket'],
+        )
+        self.assertEqual(redemption.sale.gross_amount_usd, 52.50)
+        self.assertEqual(str(redemption.sale.project_share_usd), '0.5250')
 
         entry = PointTransaction.objects.filter(driver=self.driver).latest('changed_at')
         self.assertEqual(entry.point_change, -5250)
@@ -286,6 +305,78 @@ class CartCheckoutApiTests(APITestCase):
                 self.assertEqual(self.balance(), 6000)
                 self.assertEqual(CartItem.objects.filter(driver=self.driver).count(), len(products))
                 self.assertFalse(Notification.objects.exists())
+                self.assertFalse(Redemption.objects.exists())
+                self.assertFalse(CompletedSale.objects.exists())
+
+    def test_repeating_the_same_checkout_key_returns_original_receipt_once(self):
+        self.fill(self.mug)
+        key = str(uuid4())
+        token = self.client.post(reverse('catalog:cart-review'), {}, format='json').data['review_token']
+        with self.captureOnCommitCallbacks(execute=True):
+            first = self.client.post(self.url, {'idempotency_key': key, 'review_token': token}, format='json')
+            second = self.client.post(self.url, {'idempotency_key': key}, format='json')
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(first.data['purchase']['reference'], second.data['purchase']['reference'])
+        self.assertTrue(second.data['purchase']['replayed'])
+        self.assertEqual(Redemption.objects.count(), 1)
+        self.assertEqual(CompletedSale.objects.count(), 1)
+        self.assertEqual(PointTransaction.objects.filter(point_change__lt=0).count(), 1)
+        self.assertEqual(Notification.objects.count(), 1)
+
+    def test_checkout_refuses_browser_supplied_prices_and_totals(self):
+        self.fill(self.mug)
+        for payload in ({'price_usd': '0.00'}, {'total_points': 0}, {'idempotency_key': 'bad'}):
+            with self.subTest(payload=payload):
+                self.assertEqual(self.client.post(self.url, payload, format='json').status_code, 400)
+        self.assertEqual(Redemption.objects.count(), 0)
+        self.assertEqual(self.balance(), 6000)
+
+    def test_changed_price_or_cart_requires_new_review_without_spending(self):
+        self.fill(self.mug)
+        token = self.client.post(reverse('catalog:cart-review'), {}, format='json').data['review_token']
+        CatalogProduct.objects.filter(pk=self.mug.pk).update(price_usd='13.00')
+        response = self.client.post(self.url, {'review_token': token}, format='json')
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.data['code'], 'review_changed')
+        self.assertEqual(response.data['review']['total_points'], 1300)
+        self.assertEqual(self.balance(), 6000)
+        self.assertFalse(Redemption.objects.exists())
+        # Even a same-total replacement is a different reviewed purchase.
+        token = response.data['review']['review_token']
+        CartItem.objects.all().delete()
+        self.fill(self.sticker)
+        CatalogProduct.objects.filter(pk=self.sticker.pk).update(price_usd='13.00')
+        self.assertEqual(self.client.post(self.url, {'review_token': token}, format='json').status_code, 409)
+
+    def test_missing_tampered_and_expired_reviews_cannot_spend_points(self):
+        self.fill(self.mug)
+        token = self.client.post(reverse('catalog:cart-review'), {}, format='json').data['review_token']
+        for payload in ({}, {'review_token': token + 'tampered'}):
+            with self.subTest(payload=payload):
+                self.assertEqual(self.client.post(self.url, payload, format='json').status_code, 409)
+        with patch('catalog.services.cart.signing.loads', side_effect=signing.SignatureExpired()):
+            self.assertEqual(self.client.post(self.url, {'review_token': token}, format='json').status_code, 409)
+        self.assertEqual(self.balance(), 6000)
+        self.assertFalse(Redemption.objects.exists())
+
+    def test_lookup_returns_snapshot_only_to_owning_driver(self):
+        self.fill(self.mug)
+        key = str(uuid4())
+        token = self.client.post(reverse('catalog:cart-review'), {}, format='json').data['review_token']
+        bought = self.client.post(self.url, {'review_token': token, 'idempotency_key': key}, format='json')
+        CatalogProduct.objects.filter(pk=self.mug.pk).update(name='Renamed Mug', price_usd='99.00')
+        url = reverse('catalog:redemption-lookup', args=[key])
+        receipt = self.client.get(url)
+        self.assertEqual(receipt.status_code, 200)
+        self.assertEqual(receipt.data['purchase']['reference'], bought.data['purchase']['reference'])
+        self.assertEqual(receipt.data['purchase']['line_items'], [{'name': 'Mug', 'unit_points': 1250, 'quantity': 1}])
+        Driver.objects.filter(pk=self.driver.pk).update(sponsor=None)
+        self.assertEqual(self.client.get(url).status_code, 200)
+        other_user = get_user_model().objects.create_user(username='lookup.other')
+        Driver.objects.create(user=other_user, name='Other', sponsor=self.company, status='approved')
+        self.client.force_authenticate(other_user)
+        self.assertEqual(self.client.get(url).status_code, 404)
 
     def test_free_cart_is_cleared_without_a_ledger_entry(self):
         self.fill(self.sticker)
@@ -294,6 +385,7 @@ class CartCheckoutApiTests(APITestCase):
         self.assertEqual(response.data['purchase']['points_spent'], 0)
         self.assertEqual(PointTransaction.objects.filter(driver=self.driver).count(), 1)
         self.assertFalse(CartItem.objects.exists())
+        self.assertEqual(Redemption.objects.get(driver=self.driver).sale.gross_amount_usd, 0)
 
     def test_points_removed_preference_suppresses_the_alert(self):
         DriverNotificationPreferences.objects.create(

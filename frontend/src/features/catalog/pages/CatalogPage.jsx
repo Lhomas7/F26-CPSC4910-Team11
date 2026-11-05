@@ -1,6 +1,6 @@
-import PageHeader from '../../../app/PageHeader';
-import { useAuth } from '../../../auth/AuthContext';
-import StatePanel from '../../../components/feedback/StatePanel';
+import PageHeader from 'app/PageHeader';
+import { useAuth } from 'auth/AuthContext';
+import StatePanel from 'components/feedback/StatePanel';
 import SponsorCatalogPage from './SponsorCatalogPage';
 import DriverCatalogPage from './DriverCatalogPage';
 import { catalogIdentity } from '../utils/identity';

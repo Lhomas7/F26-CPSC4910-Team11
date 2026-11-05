@@ -1,29 +1,29 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
-import { useAuth } from '../auth/AuthContext';
-import StatePanel from '../components/feedback/StatePanel';
-import { AboutPage } from '../features/about';
-import { AccountPage } from '../features/accounts';
+import { useAuth } from 'auth/AuthContext';
+import StatePanel from 'components/feedback/StatePanel';
+import { AboutPage } from 'features/about';
+import { AccountPage } from 'features/accounts';
 import {
   AddUserPage,
   AdminAccountPage,
   AdminUsersPage,
   DriverAccountPage,
   SponsorAccountPage,
-} from '../features/admin-users';
+} from 'features/admin-users';
 import {
   AdminResetPasswordPage,
   ForgotPasswordPage,
   LoginPage,
   ResetPasswordPage,
-} from '../features/authentication';
-import { DriverDetailPage, DriverListPage } from '../features/drivers';
-import { AddProductPage, CatalogPage } from '../features/catalog';
-import { WelcomePage } from '../features/home';
-import { PrivacyPage, TermsPage } from '../features/legal';
-import { PlaygroundPage } from '../features/playground';
-import { PointsPage } from '../features/points';
-import { SalesReportsPage } from '../features/reports';
+} from 'features/authentication';
+import { DriverDetailPage, DriverListPage } from 'features/drivers';
+import { AddProductPage, CatalogPage, ImportProductPage } from 'features/catalog';
+import { WelcomePage } from 'features/home';
+import { PrivacyPage, TermsPage } from 'features/legal';
+import { PlaygroundPage } from 'features/playground';
+import { PointsPage } from 'features/points';
+import { SalesReportsPage } from 'features/reports';
 import { AppLayout } from './AppLayout';
 import { PAGE_ROLES } from './navigation';
 
@@ -76,6 +76,9 @@ export function AppRoutes() {
             </RequireAuth>
           }
         />
+        <Route path="/catalog/import" element={
+          <RequireAuth roles={PAGE_ROLES.catalogManage}><ImportProductPage /></RequireAuth>
+        } />
         <Route
           path="/points"
           element={

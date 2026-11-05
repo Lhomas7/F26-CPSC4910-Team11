@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
-import { useAuth } from '../auth/AuthContext';
-import BrandMark from '../components/branding/BrandMark';
-import ConfirmDialog from '../components/feedback/ConfirmDialog';
+import { useAuth } from 'auth/AuthContext';
+import sessionIdentity from 'auth/sessionIdentity';
+import BrandMark from 'components/branding/BrandMark';
+import ConfirmDialog from 'components/feedback/ConfirmDialog';
 import {
   AccountIcon,
   CatalogIcon,
@@ -20,11 +21,11 @@ import {
   UserIcon,
   UsersIcon,
   ViewingAsIcon,
-} from '../components/primitives/Icons';
-import { MfaSetupWall } from '../features/accounts';
-import { DeviceCheckDialog } from '../features/authentication';
-import CartButton from '../features/cart/CartButton';
-import { CartProvider } from '../features/cart/CartContext';
+} from 'components/primitives/Icons';
+import { MfaSetupWall } from 'features/accounts';
+import { DeviceCheckDialog } from 'features/authentication';
+import CartButton from 'features/cart/CartButton';
+import { CartProvider } from 'features/cart/CartContext';
 import './AppLayout.css';
 import ActiveViewAsIndicator from './ActiveViewAsIndicator';
 import { navItemsFor } from './navigation';
@@ -220,7 +221,7 @@ function DriverCart({ enabled, user, children }) {
   if (!enabled) return children;
   const viewingAs = Boolean(user.impersonation?.active);
   return (
-    <CartProvider key={`${user.username}:${viewingAs}`} viewingAs={viewingAs}>
+    <CartProvider key={sessionIdentity(user)} viewingAs={viewingAs} ownerId={user.id} organization={user.company || ''}>
       {children}
     </CartProvider>
   );

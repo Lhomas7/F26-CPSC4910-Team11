@@ -90,6 +90,17 @@ This repository is maintained by **CPSC 4910 Team 11**.
 - Driver-to-sponsor linking
 - Driver detail viewing and approval workflow foundations
 
+### Reward catalog and points checkout
+
+- Sponsor-owned manual rewards and Fake Store API demo-product search/import
+- Provider refresh timestamps and stale-price indicators
+- Approved Driver browsing, affordability, and a shared cart
+- Server-reviewed points checkout with idempotent retries and itemized receipts
+- Completed-sale records connected to Administrator sales reports
+
+See [Sprint 7 integration and closeout](docs/SPRINT7_COMMERCE_CLOSEOUT.md) for
+verified scope, migration integration, known recovery limits, and release checks.
+
 ### Delivery and operations
 
 - Pull-request and `main`-branch CI for Django and React

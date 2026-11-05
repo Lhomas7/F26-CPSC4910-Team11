@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 
-import * as api from '../../../api';
-import useApiRequest from '../../../hooks/useApiRequest';
+import * as api from 'api';
+import useApiRequest from 'hooks/useApiRequest';
 
 function formatTime(timestamp) {
   return new Date(timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });

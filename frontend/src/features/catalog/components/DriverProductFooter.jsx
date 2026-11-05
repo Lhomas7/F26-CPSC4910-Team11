@@ -1,6 +1,5 @@
-import { useEffect, useRef } from 'react';
-
-import { useCart } from '../../cart/CartContext';
+import { useCart } from 'features/cart/CartContext';
+export { default as useReloadAfterPurchase } from 'features/cart/useDriverPointsRefresh';
 
 /** Add a reward to, or remove it from, the driver's cart. */
 export default function DriverProductFooter({ product, cart }) {
@@ -15,7 +14,7 @@ export default function DriverProductFooter({ product, cart }) {
         <button
           className="button button-danger-outline"
           type="button"
-          disabled={busy || cart.viewingAs}
+          disabled={busy || cart.viewingAs || Boolean(cart.pendingAttempt)}
           aria-label={`Remove ${product.name} from cart`}
           onClick={() => cart.remove(product.id)}
         >
@@ -28,7 +27,7 @@ export default function DriverProductFooter({ product, cart }) {
     <button
       className="button button-primary"
       type="button"
-      disabled={busy || cart.viewingAs || !product.is_available}
+      disabled={busy || cart.viewingAs || Boolean(cart.pendingAttempt) || !product.is_available}
       aria-label={`Add ${product.name} to cart`}
       onClick={() => cart.add(product.id)}
     >
@@ -41,15 +40,4 @@ export function useDriverProductFooter() {
   const cart = useCart();
   // Outside a driver's CartProvider there is no cart to act on.
   return cart ? (product) => <DriverProductFooter product={product} cart={cart} /> : () => null;
-}
-
-/** Re-run `reload` after each purchase, since checkout changes the balance. */
-export function useReloadAfterPurchase(reload) {
-  const purchaseVersion = useCart()?.purchaseVersion ?? 0;
-  const seen = useRef(purchaseVersion);
-  useEffect(() => {
-    if (purchaseVersion === seen.current) return;
-    seen.current = purchaseVersion;
-    reload();
-  }, [purchaseVersion, reload]);
 }

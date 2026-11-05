@@ -1,12 +1,12 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
-import * as api from '../../../api';
-import { useAuth } from '../../../auth/AuthContext';
+import * as api from 'api';
+import { useAuth } from 'auth/AuthContext';
 import DriverListPage from './DriverListPage';
 
-jest.mock('../../../api');
-jest.mock('../../../auth/AuthContext');
+jest.mock('api');
+jest.mock('auth/AuthContext');
 
 const drivers = [
   { id: 4, username: 'jamie.rivera', name: 'Jamie Rivera', status: 'approved', point_balance: 125 },

@@ -1,12 +1,12 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
-import { useAuth } from '../../../auth/AuthContext';
-import * as api from '../../../api';
+import { useAuth } from 'auth/AuthContext';
+import * as api from 'api';
 import AdminAccountPage from './AdminAccountPage';
 
-jest.mock('../../../auth/AuthContext');
-jest.mock('../../../api');
+jest.mock('auth/AuthContext');
+jest.mock('api');
 
 const account = {
   id: 8,

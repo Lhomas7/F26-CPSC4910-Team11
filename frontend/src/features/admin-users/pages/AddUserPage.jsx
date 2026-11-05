@@ -1,21 +1,21 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { useAuth } from '../../../auth/AuthContext';
-import * as api from '../../../api';
-import PageHeader from '../../../app/PageHeader';
-import useApiRequest from '../../../hooks/useApiRequest';
-import ConfirmPasswordDialog from '../../../components/feedback/ConfirmPasswordDialog';
-import Skeleton from '../../../components/feedback/Skeleton';
-import StatePanel from '../../../components/feedback/StatePanel';
-import PasswordInput from '../../../components/forms/PasswordInput';
-import PasswordRequirements from '../../../components/forms/PasswordRequirements';
+import { useAuth } from 'auth/AuthContext';
+import * as api from 'api';
+import PageHeader from 'app/PageHeader';
+import useApiRequest from 'hooks/useApiRequest';
+import ConfirmPasswordDialog from 'components/feedback/ConfirmPasswordDialog';
+import Skeleton from 'components/feedback/Skeleton';
+import StatePanel from 'components/feedback/StatePanel';
+import PasswordInput from 'components/forms/PasswordInput';
+import PasswordRequirements from 'components/forms/PasswordRequirements';
 import {
   validateEmail,
   validateName,
   validatePassword,
   validateUsername,
-} from '../../../utils/accountValidation';
+} from 'utils/accountValidation';
 import './AddUserPage.css';
 
 const EMPTY_FORM = {

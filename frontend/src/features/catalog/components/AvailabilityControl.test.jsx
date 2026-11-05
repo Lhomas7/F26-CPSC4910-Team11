@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-import { setProductAvailability } from '../../../api/catalog';
+import { setProductAvailability } from 'api/catalog';
 import AvailabilityControl from './AvailabilityControl';
 import ProductCard from './ProductCard';
 import ProductGrid from './ProductGrid';
 
-jest.mock('../../../api/catalog');
+jest.mock('api/catalog');
 
 const product = {
   id: 1,

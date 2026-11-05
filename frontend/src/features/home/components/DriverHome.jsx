@@ -1,9 +1,10 @@
 import { useCallback } from 'react';
 import { Link } from 'react-router-dom';
 
-import { getDrivers, getPointHistory } from '../../../api';
-import useApiRequest from '../../../hooks/useApiRequest';
-import { PointHistoryList } from '../../points';
+import { getDrivers, getPointHistory } from 'api';
+import useApiRequest from 'hooks/useApiRequest';
+import { PointHistoryList } from 'features/points';
+import useDriverPointsRefresh from 'features/cart/useDriverPointsRefresh';
 import DashboardCard from './DashboardCard';
 import DashboardSkeleton from './DashboardSkeleton';
 import QuickActions from './QuickActions';
@@ -17,6 +18,7 @@ export default function DriverHome({ user }) {
   const activity = useApiRequest(
     useCallback(() => getPointHistory({ limit: RECENT_ACTIVITY }), []),
   );
+  useDriverPointsRefresh(standing.reload, activity.reload);
   const record = standing.data?.[0];
   const linked = Boolean(record?.sponsor_name);
   const approved = linked && record?.status === 'approved';

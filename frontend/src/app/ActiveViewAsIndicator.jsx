@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import ViewedIdentitySummary from '../components/primitives/ViewedIdentitySummary';
-import { ViewingAsIcon } from '../components/primitives/Icons';
+import ViewedIdentitySummary from 'components/primitives/ViewedIdentitySummary';
+import { ViewingAsIcon } from 'components/primitives/Icons';
 import './ActiveViewAsIndicator.css';
 
 const FIVE_MINUTES = 5 * 60 * 1000;

@@ -1,5 +1,5 @@
-import Modal from '../../../components/feedback/Modal';
-import ViewedIdentitySummary from '../../../components/primitives/ViewedIdentitySummary';
+import Modal from 'components/feedback/Modal';
+import ViewedIdentitySummary from 'components/primitives/ViewedIdentitySummary';
 
 export default function ViewAsConfirmationDialog({
   account,

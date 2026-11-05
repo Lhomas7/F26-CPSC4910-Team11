@@ -1,9 +1,9 @@
 import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import * as api from '../../../api';
-import { useAuth } from '../../../auth/AuthContext';
-import useApiRequest from '../../../hooks/useApiRequest';
+import * as api from 'api';
+import { useAuth } from 'auth/AuthContext';
+import useApiRequest from 'hooks/useApiRequest';
 
 const SUBSCRIPTION_FIELDS = [
   { field: 'on_points_added', label: (name) => `${name} gains points` },

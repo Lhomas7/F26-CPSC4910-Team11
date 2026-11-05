@@ -1,14 +1,20 @@
 from dataclasses import dataclass
+from decimal import Decimal
+from uuid import uuid4
 
 from django.db import IntegrityError, transaction
 from django.db.models import QuerySet
+from django.core import signing
 from django.shortcuts import get_object_or_404
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import APIException, ValidationError
 
 from accounts.models import SponsorCompany
 from accounts.services.notify import notify_reward_purchase
-from catalog.models import CartItem, CatalogProduct
+from catalog.models import CartItem, CatalogProduct, Redemption, RedemptionItem
 from catalog.pricing import point_cost
+from reports.models import CompletedSale
+from django.utils import timezone
+from drivers.models import Driver
 
 from .access import driver_catalog_scope
 
@@ -92,6 +98,58 @@ class Purchase:
     items: list[str]
     points_spent: int
     point_balance: int
+    redemption_id: int
+    reference: str
+    line_items: list
+    completed_at: object
+    replayed: bool = False
+
+
+class ReviewChanged(APIException):
+    status_code = 409
+    default_detail = 'Your cart or pricing changed. Review it again before purchasing.'
+    default_code = 'review_changed'
+
+
+def _locked_items(scope):
+    items = list(_cart_items(scope).select_for_update(of=('self',)))
+    products = {product.pk: product for product in CatalogProduct.objects.select_for_update().filter(
+        pk__in=[item.product_id for item in items]
+    ).order_by('pk')}
+    for item in items:
+        item.product = products[item.product_id]
+    return items
+
+
+def _review_payload(driver, sponsor, items):
+    return {
+        'driver': driver.pk, 'sponsor': sponsor.pk,
+        'rate': sponsor.points_per_dollar, 'balance': driver.point_balance,
+        'items': [[item.pk, item.product_id, str(item.product.price_usd),
+                   item.product.is_available, item.product.name] for item in items],
+    }
+
+
+@transaction.atomic
+def review_cart(*, user):
+    scope = driver_catalog_scope(user)
+    driver = Driver.objects.select_for_update().get(pk=scope.driver_id)
+    sponsor = SponsorCompany.objects.select_for_update().get(pk=scope.company_id)
+    items = _locked_items(scope)
+    token = signing.dumps(_review_payload(driver, sponsor, items), salt='catalog.checkout-review', compress=True)
+    return Cart(sponsor=sponsor, point_balance=driver.point_balance, items=items), token
+
+
+def purchase_receipt(redemption, *, replayed=False):
+    rows = list(redemption.items.order_by('pk'))
+    return Purchase(
+        items=[row.product_name for row in rows],
+        points_spent=redemption.total_points, point_balance=redemption.balance_after,
+        redemption_id=redemption.pk, reference=redemption.sale.reference,
+        line_items=[{'name': row.product_name, 'unit_points': row.unit_points,
+                     'quantity': row.quantity} for row in rows],
+        completed_at=redemption.completed_at, replayed=replayed,
+    )
 
 
 def _purchase_reason(names):
@@ -104,17 +162,30 @@ def _purchase_reason(names):
 
 
 @transaction.atomic
-def checkout_cart(*, user):
+def checkout_cart(*, user, idempotency_key=None, review_token=None):
     """Buy everything in the driver's cart: spend the points and empty the cart.
 
-    A basic checkout for now: there is no order record or fulfillment step.
+    This is an internal points redemption, not external provider fulfillment.
     """
     # Imported here: drivers.services imports this module to clear carts.
     from drivers.services.points import PointAdjustmentError, spend_driver_points
 
     scope = driver_catalog_scope(user)
-    driver = user.driver_profile
-    items = list(_cart_items(scope).select_for_update(of=('self',)))
+    # Serialize checkouts for one Driver before reading their cart. Otherwise
+    # concurrent requests can both read the same items and spend twice.
+    driver = Driver.objects.select_for_update().get(pk=scope.driver_id)
+    if idempotency_key is not None:
+        existing = Redemption.objects.filter(driver=driver, idempotency_key=idempotency_key).first()
+        if existing:
+            return purchase_receipt(existing, replayed=True)
+    sponsor = SponsorCompany.objects.select_for_update().get(pk=scope.company_id)
+    items = _locked_items(scope)
+    try:
+        reviewed = signing.loads(review_token, salt='catalog.checkout-review', max_age=600)
+    except (signing.BadSignature, TypeError, ValueError):
+        raise ReviewChanged() from None
+    if reviewed != _review_payload(driver, sponsor, items):
+        raise ReviewChanged()
     if not items:
         raise ValidationError({'detail': 'Your cart is empty.'}, code='cart_empty')
     if any(not item.product.is_available for item in items):
@@ -123,8 +194,8 @@ def checkout_cart(*, user):
             code='cart_has_unavailable',
         )
 
-    sponsor = SponsorCompany.objects.get(pk=scope.company_id)
-    total = sum(point_cost(item.product.price_usd, sponsor.points_per_dollar) for item in items)
+    costs = [point_cost(item.product.price_usd, sponsor.points_per_dollar) for item in items]
+    total = sum(costs)
     names = [item.product.name for item in items]
     if total > 0:
         try:
@@ -137,8 +208,28 @@ def checkout_cart(*, user):
         # The ledger rejects zero-point entries, so free rewards leave no row.
         balance = driver.point_balance
 
+    completed_at = timezone.now()
+    sale = CompletedSale.objects.create(
+        sponsor=sponsor,
+        driver=driver,
+        reference=f'REDEMPTION-{uuid4().hex}',
+        gross_amount_usd=sum((item.product.price_usd for item in items), Decimal('0.00')),
+        completed_at=completed_at,
+    )
+    redemption = Redemption.objects.create(
+        driver=driver, sponsor=sponsor, sale=sale,
+        total_points=total, balance_after=balance, idempotency_key=idempotency_key,
+        completed_at=completed_at,
+    )
+    RedemptionItem.objects.bulk_create([
+        RedemptionItem(
+            redemption=redemption, product=item.product,
+            product_name=item.product.name, unit_price_usd=item.product.price_usd,
+            unit_points=cost, quantity=1,
+        ) for item, cost in zip(items, costs)
+    ])
     CartItem.objects.filter(pk__in=[item.pk for item in items]).delete()
     transaction.on_commit(
         lambda: notify_reward_purchase(driver, total, len(items), balance), robust=True
     )
-    return Purchase(items=names, points_spent=total, point_balance=balance)
+    return purchase_receipt(redemption)

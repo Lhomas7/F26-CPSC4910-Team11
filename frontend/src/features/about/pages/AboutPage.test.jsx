@@ -1,12 +1,12 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-import { updateRelease } from '../../../api';
-import { useAuth } from '../../../auth/AuthContext';
+import { updateRelease } from 'api';
+import { useAuth } from 'auth/AuthContext';
 import AboutPage from './AboutPage';
 
-jest.mock('../../../auth/AuthContext');
-jest.mock('../../../api', () => ({
-  ...jest.requireActual('../../../api'),
+jest.mock('auth/AuthContext');
+jest.mock('api', () => ({
+  ...jest.requireActual('api'),
   updateRelease: jest.fn(),
 }));
 

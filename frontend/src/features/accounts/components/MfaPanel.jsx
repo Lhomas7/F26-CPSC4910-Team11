@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-import * as api from '../../../api';
-import COUNTRY_CODES from '../../../data/countryCodes';
+import * as api from 'api';
+import COUNTRY_CODES from 'data/countryCodes';
 import '../Accounts.css';
 
 const METHOD_LABELS = {

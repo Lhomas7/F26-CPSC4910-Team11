@@ -1,6 +1,6 @@
 import { cloneElement } from 'react';
 
-import { ArrowRightIcon } from '../../../components/primitives/Icons';
+import { ArrowRightIcon } from 'components/primitives/Icons';
 
 export default function DashboardCard({ title, subtitle, action, children, className = '' }) {
   return (

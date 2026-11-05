@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import StatePanel from '../../../components/feedback/StatePanel';
+import StatePanel from 'components/feedback/StatePanel';
 
 export default function CatalogAccessPanel({ error }) {
   const code = error?.data?.code;

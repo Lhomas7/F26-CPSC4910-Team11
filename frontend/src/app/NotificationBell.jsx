@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import * as api from '../api';
-import { BellIcon } from '../components/primitives/Icons';
+import * as api from 'api';
+import { BellIcon } from 'components/primitives/Icons';
 import { NOTIFICATIONS_CHANGED_EVENT } from './notificationEvents';
 
 const POLL_INTERVAL_MS = 60 * 1000;
