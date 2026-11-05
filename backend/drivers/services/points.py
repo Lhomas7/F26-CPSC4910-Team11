@@ -149,3 +149,40 @@ def adjust_driver_points(*, driver, changed_by_user, point_change, reason):
         robust=True,
     )
     return PointAdjustmentResult(transaction=entry, balance=resulting_balance)
+
+
+@transaction.atomic
+def spend_driver_points(*, driver, point_cost, reason):
+    """Deduct points a driver spends on rewards, recorded with the driver as actor.
+
+    Shares the locking and balance check of adjust_driver_points. The caller
+    sends any notification, since a sponsor-change alert would be misleading.
+    """
+    point_change = _validated_point_change(-point_cost)
+    reason = _normalized_reason(reason)
+    driver_id = driver.pk if isinstance(driver, Driver) else driver
+    locked_driver = Driver.objects.select_for_update().get(pk=driver_id)
+    if locked_driver.sponsor_id is None or locked_driver.status != 'approved':
+        raise PointAdjustmentError(
+            'driver',
+            'Only approved drivers with a sponsor can spend points.',
+            code='driver_not_approved',
+        )
+
+    current_balance = locked_driver.point_balance
+    resulting_balance = current_balance + point_change
+    if resulting_balance < 0:
+        raise PointAdjustmentError(
+            'point_change',
+            f'This purchase needs {point_cost:,} points, but your balance is {current_balance:,}.',
+            code='insufficient_points',
+        )
+
+    entry = PointTransaction.objects.create(
+        driver=locked_driver,
+        sponsor_id=locked_driver.sponsor_id,
+        changed_by_user=locked_driver.user,
+        point_change=point_change,
+        reason=reason,
+    )
+    return PointAdjustmentResult(transaction=entry, balance=resulting_balance)

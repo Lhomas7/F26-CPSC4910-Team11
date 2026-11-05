@@ -740,3 +740,8 @@
   max-width: 40rem;
   padding: 1.5rem 1.75rem;
 }
+
+/* Keep the floating cart button from covering pagination or the last cards. */
+.has-cart-button .app-content {
+  padding-bottom: 5.5rem;
+}

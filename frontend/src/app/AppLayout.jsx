@@ -23,6 +23,8 @@ import {
 } from '../components/primitives/Icons';
 import { MfaSetupWall } from '../features/accounts';
 import { DeviceCheckDialog } from '../features/authentication';
+import CartButton from '../features/cart/CartButton';
+import { CartProvider } from '../features/cart/CartContext';
 import './AppLayout.css';
 import ActiveViewAsIndicator from './ActiveViewAsIndicator';
 import { navItemsFor } from './navigation';
@@ -213,6 +215,17 @@ function AccountMenu({ user, onSignOut }) {
   );
 }
 
+/** Share one cart between the header button and catalog cards for drivers. */
+function DriverCart({ enabled, user, children }) {
+  if (!enabled) return children;
+  const viewingAs = Boolean(user.impersonation?.active);
+  return (
+    <CartProvider key={`${user.username}:${viewingAs}`} viewingAs={viewingAs}>
+      {children}
+    </CartProvider>
+  );
+}
+
 export function AppLayout() {
   const { user, notice, signOut, stopImpersonation, answerDeviceCheck, clearNotice } = useAuth();
   const navigate = useNavigate();
@@ -231,6 +244,7 @@ export function AppLayout() {
     !user.mfa.enrolled;
   const showBell =
     !mfaWallNeeded && (user?.account_type === 'driver' || user?.account_type === 'sponsor');
+  const showCart = !mfaWallNeeded && user?.account_type === 'driver';
 
   // A timed-out session goes straight to sign-in, even from public pages.
   useEffect(() => {
@@ -279,84 +293,90 @@ export function AppLayout() {
   };
 
   return (
-    <div className="app-shell">
-      <p className="sr-only" aria-live="polite" aria-atomic="true">
-        {identityAnnouncement}
-      </p>
-      <a className="skip-link" href="#main-content">
-        Skip to content
-      </a>
-      <aside className="site-sidebar">
-        <div className="brand-bar">
-          <Link className="brand" to="/" aria-label="Good Driver home">
-            <BrandMark />
-            <span className="brand-name">Good Driver</span>
-          </Link>
-          {showBell && (
-            <NotificationBell key={user.username} viewingAs={Boolean(user.impersonation?.active)} />
-          )}
-        </div>
-        <nav className="site-nav" aria-label="Primary navigation">
-          {navItemsFor(user).map((item) => {
-            const Icon = NAV_ICONS[item.icon];
-            return (
-              <NavLink key={item.to} to={item.to} end={item.to === '/'}>
-                <Icon className="nav-icon" size={16} />
-                {item.label}
-              </NavLink>
-            );
-          })}
-        </nav>
-        <div className="sidebar-account">
-          <AccountMenu user={user} onSignOut={signOut} />
-        </div>
-      </aside>
-      <div className="app-main">
-        {user?.impersonation?.active && (
-          <ActiveViewAsIndicator
-            user={user}
-            busy={endingViewAs}
-            error={viewAsError}
-            onReturn={stopViewingAs}
-          />
-        )}
-        {user?.session?.device_check && (
-          <DeviceCheckDialog onAnswer={answerDeviceCheck} onSignOut={signOut} />
-        )}
-        <header className="app-topbar">
-          <div className="app-topbar-page" ref={setPageHeaderTarget} />
-          <ThemeToggle />
-        </header>
-        {(notice === 'view-as-returned' || notice === 'view-as-ended') && (
-          <div className="banner banner-warning view-as-ended-notice">
-            <span>
-              {notice === 'view-as-returned'
-                ? "You're back in your administrator account."
-                : 'Your View-as session has ended. You have returned to your administrator account.'}
-            </span>
-            <button className="button" type="button" onClick={clearNotice}>
-              Dismiss
-            </button>
-          </div>
-        )}
-        <div className="app-content" id="main-content" tabIndex="-1">
-          <PageHeaderTargetProvider target={pageHeaderTarget}>
-            {mfaWallNeeded ? (
-              <MfaSetupWall />
-            ) : (
-              <>
-                {user && user.mfa && user.mfa.required && !user.mfa.enrolled && (
-                  <div className="mfa-required-banner">
-                    Your sponsor requires two-factor authentication. Set it up to keep signing in
-                    without interruption. <Link to="/account">Set up now</Link>
-                  </div>
-                )}
-                <Outlet />
-              </>
+    <DriverCart enabled={showCart} user={user}>
+      <div className={showCart ? 'app-shell has-cart-button' : 'app-shell'}>
+        <p className="sr-only" aria-live="polite" aria-atomic="true">
+          {identityAnnouncement}
+        </p>
+        <a className="skip-link" href="#main-content">
+          Skip to content
+        </a>
+        {showCart && <CartButton />}
+        <aside className="site-sidebar">
+          <div className="brand-bar">
+            <Link className="brand" to="/" aria-label="Good Driver home">
+              <BrandMark />
+              <span className="brand-name">Good Driver</span>
+            </Link>
+            {showBell && (
+              <NotificationBell
+                key={user.username}
+                viewingAs={Boolean(user.impersonation?.active)}
+              />
             )}
-          </PageHeaderTargetProvider>
+          </div>
+          <nav className="site-nav" aria-label="Primary navigation">
+            {navItemsFor(user).map((item) => {
+              const Icon = NAV_ICONS[item.icon];
+              return (
+                <NavLink key={item.to} to={item.to} end={item.to === '/'}>
+                  <Icon className="nav-icon" size={16} />
+                  {item.label}
+                </NavLink>
+              );
+            })}
+          </nav>
+          <div className="sidebar-account">
+            <AccountMenu user={user} onSignOut={signOut} />
+          </div>
+        </aside>
+        <div className="app-main">
+          {user?.impersonation?.active && (
+            <ActiveViewAsIndicator
+              user={user}
+              busy={endingViewAs}
+              error={viewAsError}
+              onReturn={stopViewingAs}
+            />
+          )}
+          {user?.session?.device_check && (
+            <DeviceCheckDialog onAnswer={answerDeviceCheck} onSignOut={signOut} />
+          )}
+          <header className="app-topbar">
+            <div className="app-topbar-page" ref={setPageHeaderTarget} />
+            <ThemeToggle />
+          </header>
+          {(notice === 'view-as-returned' || notice === 'view-as-ended') && (
+            <div className="banner banner-warning view-as-ended-notice">
+              <span>
+                {notice === 'view-as-returned'
+                  ? "You're back in your administrator account."
+                  : 'Your View-as session has ended. You have returned to your administrator account.'}
+              </span>
+              <button className="button" type="button" onClick={clearNotice}>
+                Dismiss
+              </button>
+            </div>
+          )}
+          <div className="app-content" id="main-content" tabIndex="-1">
+            <PageHeaderTargetProvider target={pageHeaderTarget}>
+              {mfaWallNeeded ? (
+                <MfaSetupWall />
+              ) : (
+                <>
+                  {user && user.mfa && user.mfa.required && !user.mfa.enrolled && (
+                    <div className="mfa-required-banner">
+                      Your sponsor requires two-factor authentication. Set it up to keep signing in
+                      without interruption. <Link to="/account">Set up now</Link>
+                    </div>
+                  )}
+                  <Outlet />
+                </>
+              )}
+            </PageHeaderTargetProvider>
+          </div>
         </div>
       </div>
-    </div>
+    </DriverCart>
   );
 }

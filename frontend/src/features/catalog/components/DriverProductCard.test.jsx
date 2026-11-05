@@ -194,7 +194,7 @@ test('Show more remains usable on an unavailable, unaffordable card', () => {
     expect(screen.getByRole('listitem')).toHaveClass('is-unavailable', 'is-unaffordable');
     const more = screen.getByRole('button', { name: 'Show more of the description for Mug' });
     expect(more).toBeEnabled();
-    // Unavailable rewards remain browsable, but never expose purchase actions.
+    // Without a cart footer, the description toggle is the card's only control.
     expect(screen.getAllByRole('button')).toHaveLength(1);
     expect(screen.queryByRole('link')).not.toBeInTheDocument();
     expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();

@@ -18,7 +18,14 @@ const FOCUSABLE = [
  * Focus starts on the element marked `data-autofocus` (or the first control),
  * stays inside while open, and returns to the trigger on close.
  */
-export default function Modal({ title, children, actions, onClose, className = '' }) {
+export default function Modal({
+  title,
+  children,
+  actions,
+  onClose,
+  className = '',
+  backdropClassName = '',
+}) {
   const titleId = useId();
   const bodyId = useId();
   const dialogRef = useRef(null);
@@ -66,7 +73,7 @@ export default function Modal({ title, children, actions, onClose, className = '
   };
 
   return createPortal(
-    <div className="modal-backdrop" onMouseDown={closeOnBackdrop}>
+    <div className={`modal-backdrop ${backdropClassName}`.trim()} onMouseDown={closeOnBackdrop}>
       <div
         ref={dialogRef}
         className={`modal ${className}`.trim()}

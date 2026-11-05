@@ -22,6 +22,14 @@
   width: 100%;
 }
 
+/* Phone browsers count the area under their toolbars in 100vh; dynamic units
+   keep the bottom of a dialog reachable when the toolbar is showing. */
+@supports (height: 100dvh) {
+  .modal {
+    max-height: calc(100dvh - 2rem);
+  }
+}
+
 .modal:focus {
   outline: none;
 }

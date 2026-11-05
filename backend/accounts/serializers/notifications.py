@@ -16,6 +16,7 @@ class NotificationPreferencesSerializer(serializers.ModelSerializer):
         fields = (
             'points_added_enabled',
             'points_removed_enabled',
+            'new_products_enabled',
             'email_enabled',
             'sms_enabled',
             'sms_available',
@@ -57,6 +58,7 @@ class DriverAlertSettingsSerializer(NotificationPreferencesSerializer):
         fields = (
             'points_added_enabled',
             'points_removed_enabled',
+            'new_products_enabled',
             'email_enabled',
             'sms_enabled',
             'always_on',

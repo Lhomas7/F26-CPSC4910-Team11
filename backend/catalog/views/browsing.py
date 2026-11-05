@@ -46,6 +46,7 @@ class CatalogBrowseView(APIView):
                 context={
                     'points_per_dollar': rate,
                     'point_balance': listing.point_balance,
+                    'cart_product_ids': listing.cart_product_ids,
                 },
             ).data
         )
