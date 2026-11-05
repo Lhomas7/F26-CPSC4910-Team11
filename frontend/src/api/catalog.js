@@ -105,3 +105,63 @@ export function createProduct(product) {
     },
   );
 }
+
+export function searchProviderProducts(query) {
+  return request(`/sponsor/catalog/provider/products/?q=${encodeURIComponent(query.trim())}`)
+    .then(readJson)
+    .then((products) => {
+      if (!Array.isArray(products) || !products.every(isProviderProduct)) {
+        throw new ApiError('The provider returned invalid products.', 502, products);
+      }
+      return products;
+    });
+}
+
+function isProviderProduct(product) {
+  return product &&
+    typeof product.name === 'string' && Boolean(product.name.trim()) &&
+    typeof product.description === 'string' &&
+    typeof product.image_url === 'string' &&
+    typeof product.price_usd === 'string' &&
+    /^\d{1,10}(?:\.\d{1,2})?$/.test(product.price_usd) &&
+    product.provider === 'fake_store' &&
+    /^[1-9]\d*$/.test(product.external_product_id) &&
+    product.inventory_verified === false;
+}
+
+export function previewProviderProduct(externalId) {
+  if (!Number.isSafeInteger(externalId) || externalId < 1) throw new RangeError('Invalid product ID.');
+  return request(`/sponsor/catalog/provider/products/${externalId}/`)
+    .then(readJson)
+    .then((product) => {
+      if (!isProviderProduct(product) || Number(product.external_product_id) !== externalId) {
+        throw new ApiError('The provider preview was invalid.', 502, product);
+      }
+      return product;
+    });
+}
+
+export function importProviderProduct(externalId) {
+  if (!Number.isSafeInteger(externalId) || externalId < 1) throw new RangeError('Invalid product ID.');
+  return request(`/sponsor/catalog/provider/products/${externalId}/import/`, {
+    method: 'POST', body: {},
+  }).then(readJson).then((product) => {
+    if (!isProduct(product) || product.provider !== 'fake_store' ||
+        product.external_product_id !== String(externalId)) {
+      throw new ApiError('The import could not be confirmed. Check the catalog before retrying.', 502, product);
+    }
+    return product;
+  });
+}
+
+export function refreshProviderProduct(productId) {
+  if (!Number.isSafeInteger(productId) || productId < 1) throw new RangeError('Invalid product ID.');
+  return request(`/sponsor/catalog/products/${productId}/refresh/`, {
+    method: 'POST', body: {},
+  }).then(readJson).then((product) => {
+    if (!isProduct(product) || product.id !== productId || product.provider !== 'fake_store') {
+      throw new ApiError('The refresh could not be confirmed. Reload the catalog to verify it.', 502, product);
+    }
+    return product;
+  });
+}
