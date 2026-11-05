@@ -5,6 +5,8 @@ import { CartProvider, useCart } from './CartContext';
 import { saveAttempt } from './pendingAttempt';
 
 jest.mock('api');
+// Deliberately recognizable UUID fixture, never an API credential.
+const RESTORED_ATTEMPT_ID = '00000000-0000-4000-8000-000000000001';
 const cart = { results: [{ product: { id: 1, name: 'Mug', point_cost: 100, is_available: true } }], item_count: 1, total_points: 100, point_balance: 500 };
 const review = { ...cart, review_token: 'original-signed-review' };
 const receipt = { reference: 'REDEMPTION-one', line_items: [{ name: 'Mug', unit_points: 100, quantity: 1 }], points_spent: 100, point_balance: 400 };
@@ -37,7 +39,7 @@ test('uncertain checkout persists only recovery metadata and retries the same ke
 });
 
 test('a restored attempt offers read-only lookup; 404 keeps it pending and a receipt resolves it', async () => {
-  const pending = { key: 'eec65139-c1fa-4df7-834f-a86d767661bd', startedAt: '2026-11-05T12:00:00Z', organization: 'Previous Sponsor' };
+  const pending = { key: RESTORED_ATTEMPT_ID, startedAt: '2026-11-05T12:00:00Z', organization: 'Previous Sponsor' };
   saveAttempt(17, pending);
   api.lookupRedemption.mockRejectedValueOnce(Object.assign(new Error('Not found'), { status: 404 })).mockResolvedValueOnce(receipt);
   const { result } = renderHook(() => useCart(), { wrapper });
@@ -66,7 +68,7 @@ test('a retry conflict never adopts a fresh review or discards the pending attem
 });
 
 test('another effective Driver does not restore the stored attempt', async () => {
-  saveAttempt(18, { key: 'eec65139-c1fa-4df7-834f-a86d767661bd', startedAt: '2026-11-05T12:00:00Z', organization: 'Other' });
+  saveAttempt(18, { key: RESTORED_ATTEMPT_ID, startedAt: '2026-11-05T12:00:00Z', organization: 'Other' });
   const { result } = renderHook(() => useCart(), { wrapper });
   await act(async () => {});
   expect(result.current.pendingAttempt).toBeNull();

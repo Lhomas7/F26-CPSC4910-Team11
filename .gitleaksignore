@@ -1,0 +1,4 @@
+# Two non-secret UUID checkout fixtures in the original Group 7 test commit.
+# Scope these exceptions to exact historical findings; keep all rules/files scanned.
+849d84945a52b5dc199c749ac64b9d0470f4cad0:frontend/src/features/cart/CartRecovery.test.jsx:generic-api-key:40
+849d84945a52b5dc199c749ac64b9d0470f4cad0:frontend/src/features/cart/CartRecovery.test.jsx:generic-api-key:69
