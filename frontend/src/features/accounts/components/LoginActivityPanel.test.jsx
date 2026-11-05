@@ -1,9 +1,9 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 
-import * as api from '../../../api';
+import * as api from 'api';
 import LoginActivityPanel from './LoginActivityPanel';
 
-jest.mock('../../../api');
+jest.mock('api');
 
 afterEach(() => jest.clearAllMocks());
 

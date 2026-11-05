@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-import { linkDriver } from '../../../api';
-import Modal from '../../../components/feedback/Modal';
+import { linkDriver } from 'api';
+import Modal from 'components/feedback/Modal';
 
 export default function LinkDriverForm({
   company,

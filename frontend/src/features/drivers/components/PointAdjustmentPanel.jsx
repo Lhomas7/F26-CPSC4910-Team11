@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-import { adjustDriverPoints } from '../../../api';
-import { announceNotificationsChanged } from '../../../app/notificationEvents';
+import { adjustDriverPoints } from 'api';
+import { announceNotificationsChanged } from 'app/notificationEvents';
 
 const MAX_ADJUSTMENT = 1_000_000;
 const MAX_REASON_LENGTH = 500;

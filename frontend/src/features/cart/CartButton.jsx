@@ -1,4 +1,4 @@
-import { CartIcon } from '../../components/primitives/Icons';
+import { CartIcon } from 'components/primitives/Icons';
 import { useCart } from './CartContext';
 import CartDrawer from './CartDrawer';
 import './CartButton.css';

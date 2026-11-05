@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-import { getSponsorMfaSetting, sponsorMfaSettings } from '../../../api';
-import useApiRequest from '../../../hooks/useApiRequest';
+import { getSponsorMfaSetting, sponsorMfaSettings } from 'api';
+import useApiRequest from 'hooks/useApiRequest';
 
 export default function DriverMfaRequirement({ company }) {
   const [busy, setBusy] = useState(false);

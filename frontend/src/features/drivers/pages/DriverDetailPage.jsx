@@ -1,13 +1,13 @@
 import { useCallback, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
-import { approveDriver, getDriver, getPointHistory } from '../../../api';
-import PageHeader from '../../../app/PageHeader';
-import Skeleton from '../../../components/feedback/Skeleton';
-import StatePanel from '../../../components/feedback/StatePanel';
-import Avatar from '../../../components/primitives/Avatar';
-import useApiRequest from '../../../hooks/useApiRequest';
-import { PointHistoryList } from '../../points';
+import { approveDriver, getDriver, getPointHistory } from 'api';
+import PageHeader from 'app/PageHeader';
+import Skeleton from 'components/feedback/Skeleton';
+import StatePanel from 'components/feedback/StatePanel';
+import Avatar from 'components/primitives/Avatar';
+import useApiRequest from 'hooks/useApiRequest';
+import { PointHistoryList } from 'features/points';
 import DriverAlertsPanel from '../components/DriverAlertsPanel';
 import PointAdjustmentPanel from '../components/PointAdjustmentPanel';
 import RemoveDriverDialog from '../components/RemoveDriverDialog';

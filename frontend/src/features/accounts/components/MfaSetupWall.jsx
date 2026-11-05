@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { useAuth } from '../../../auth/AuthContext';
-import * as api from '../../../api';
+import { useAuth } from 'auth/AuthContext';
+import * as api from 'api';
 import MfaPanel from './MfaPanel';
 import '../Accounts.css';
 import './MfaSetupWall.css';

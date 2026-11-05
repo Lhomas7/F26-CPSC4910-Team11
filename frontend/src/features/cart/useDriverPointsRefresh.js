@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-import useRefreshOnReturn from '../../hooks/useRefreshOnReturn';
+import useRefreshOnReturn from 'hooks/useRefreshOnReturn';
 import { useCart } from './CartContext';
 
 /** Refresh point-dependent requests after checkout and when returning to the tab. */

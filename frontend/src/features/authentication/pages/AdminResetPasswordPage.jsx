@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
-import * as api from '../../../api';
-import PasswordInput from '../../../components/forms/PasswordInput';
-import PasswordRequirements from '../../../components/forms/PasswordRequirements';
-import { validatePassword } from '../../../utils/accountValidation';
+import * as api from 'api';
+import PasswordInput from 'components/forms/PasswordInput';
+import PasswordRequirements from 'components/forms/PasswordRequirements';
+import { validatePassword } from 'utils/accountValidation';
 import '../Authentication.css';
 import '../PasswordReset.css';
 

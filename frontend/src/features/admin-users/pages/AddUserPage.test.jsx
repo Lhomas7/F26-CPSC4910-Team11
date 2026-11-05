@@ -1,12 +1,12 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
-import { useAuth } from '../../../auth/AuthContext';
-import * as api from '../../../api';
+import { useAuth } from 'auth/AuthContext';
+import * as api from 'api';
 import AddUserPage from './AddUserPage';
 
-jest.mock('../../../auth/AuthContext');
-jest.mock('../../../api');
+jest.mock('auth/AuthContext');
+jest.mock('api');
 
 const organizations = [{ id: 7, name: 'Palmetto Freight' }];
 

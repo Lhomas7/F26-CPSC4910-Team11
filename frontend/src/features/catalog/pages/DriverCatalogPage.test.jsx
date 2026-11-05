@@ -1,16 +1,16 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 
-import { addToCart, checkout, getCart, removeFromCart } from '../../../api/cart';
-import { getCatalog } from '../../../api/catalog';
-import { ApiError } from '../../../api/client';
-import { useAuth } from '../../../auth/AuthContext';
-import { CartProvider, useCart } from '../../cart/CartContext';
+import { addToCart, checkout, getCart, removeFromCart } from 'api/cart';
+import { getCatalog } from 'api/catalog';
+import { ApiError } from 'api/client';
+import { useAuth } from 'auth/AuthContext';
+import { CartProvider, useCart } from 'features/cart/CartContext';
 import CatalogPage from './CatalogPage';
 
-jest.mock('../../../api/catalog');
-jest.mock('../../../api/cart');
-jest.mock('../../../auth/AuthContext');
+jest.mock('api/catalog');
+jest.mock('api/cart');
+jest.mock('auth/AuthContext');
 
 const user = { id: 1, username: 'driver.one', account_type: 'driver', company: 'First Freight' };
 const product = {

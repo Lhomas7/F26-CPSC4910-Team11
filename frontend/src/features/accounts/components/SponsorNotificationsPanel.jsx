@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-import * as api from '../../../api';
-import useApiRequest from '../../../hooks/useApiRequest';
+import * as api from 'api';
+import useApiRequest from 'hooks/useApiRequest';
 
 /** Whether a sponsor's driver point alerts are also emailed. */
 export default function SponsorNotificationsPanel() {

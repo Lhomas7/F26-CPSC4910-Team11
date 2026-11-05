@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { ImageIcon, ImageOffIcon } from '../../../components/primitives/Icons';
+import { ImageIcon, ImageOffIcon } from 'components/primitives/Icons';
 import './ProductImage.css';
 
 function isHttpsUrl(value) {

@@ -1,9 +1,9 @@
 import { act, renderHook } from '@testing-library/react';
 
-import * as api from '../../api';
+import * as api from 'api';
 import { CartProvider, useCart } from './CartContext';
 
-jest.mock('../../api');
+jest.mock('api');
 
 test('a cart read started before checkout cannot restore old balance and items', async () => {
   let finishRead;

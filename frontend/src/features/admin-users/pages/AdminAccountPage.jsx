@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
-import { useAuth } from '../../../auth/AuthContext';
-import * as api from '../../../api';
-import PageHeader from '../../../app/PageHeader';
-import useApiRequest from '../../../hooks/useApiRequest';
-import Avatar from '../../../components/primitives/Avatar';
-import ConfirmPasswordDialog from '../../../components/feedback/ConfirmPasswordDialog';
-import StatePanel from '../../../components/feedback/StatePanel';
-import PasswordInput from '../../../components/forms/PasswordInput';
-import { validateEmail, validateName, validateUsername } from '../../../utils/accountValidation';
-import { fullName } from '../../../utils/names';
+import { useAuth } from 'auth/AuthContext';
+import * as api from 'api';
+import PageHeader from 'app/PageHeader';
+import useApiRequest from 'hooks/useApiRequest';
+import Avatar from 'components/primitives/Avatar';
+import ConfirmPasswordDialog from 'components/feedback/ConfirmPasswordDialog';
+import StatePanel from 'components/feedback/StatePanel';
+import PasswordInput from 'components/forms/PasswordInput';
+import { validateEmail, validateName, validateUsername } from 'utils/accountValidation';
+import { fullName } from 'utils/names';
 import '../AdminUsers.css';
 
 function formFrom(account) {

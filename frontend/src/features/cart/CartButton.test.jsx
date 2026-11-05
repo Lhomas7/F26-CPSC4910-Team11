@@ -1,10 +1,10 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 
-import { checkout, getCart, removeFromCart } from '../../api/cart';
+import { checkout, getCart, removeFromCart } from 'api/cart';
 import CartButton from './CartButton';
 import { CartProvider } from './CartContext';
 
-jest.mock('../../api/cart');
+jest.mock('api/cart');
 
 const mug = {
   id: 1,

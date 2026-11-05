@@ -2,7 +2,7 @@ import {
   API_ACTIVITY_EVENT,
   SESSION_EXPIRED_EVENT,
   VIEW_AS_ENDED_EVENT,
-} from '../auth/sessionEvents';
+} from 'auth/sessionEvents';
 import { ApiError, NetworkError, checkHealth, isOutageError, readJson, request } from './client';
 
 function jsonResponse(status, data) {

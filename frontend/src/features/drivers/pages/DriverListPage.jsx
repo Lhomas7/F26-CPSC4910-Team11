@@ -1,15 +1,15 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
-import { getDrivers } from '../../../api';
-import PageHeader from '../../../app/PageHeader';
-import { useAuth } from '../../../auth/AuthContext';
-import Skeleton from '../../../components/feedback/Skeleton';
-import StatePanel from '../../../components/feedback/StatePanel';
-import Avatar from '../../../components/primitives/Avatar';
-import { SearchIcon } from '../../../components/primitives/Icons';
-import useApiRequest from '../../../hooks/useApiRequest';
-import { DriverMfaRequirement } from '../../sponsors';
+import { getDrivers } from 'api';
+import PageHeader from 'app/PageHeader';
+import { useAuth } from 'auth/AuthContext';
+import Skeleton from 'components/feedback/Skeleton';
+import StatePanel from 'components/feedback/StatePanel';
+import Avatar from 'components/primitives/Avatar';
+import { SearchIcon } from 'components/primitives/Icons';
+import useApiRequest from 'hooks/useApiRequest';
+import { DriverMfaRequirement } from 'features/sponsors';
 import LinkDriverForm from '../components/LinkDriverForm';
 import '../Drivers.css';
 

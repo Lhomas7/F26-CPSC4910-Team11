@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
-import Modal from '../../components/feedback/Modal';
-import ProductImage from '../catalog/components/ProductImage';
+import Modal from 'components/feedback/Modal';
+import ProductImage from 'features/catalog/components/ProductImage';
 import { useCart } from './CartContext';
 import './CartDrawer.css';
 

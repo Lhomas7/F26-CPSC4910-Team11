@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { setProductAvailability } from '../../../api/catalog';
+import { setProductAvailability } from 'api/catalog';
 import './AvailabilityControl.css';
 
 export default function AvailabilityControl({

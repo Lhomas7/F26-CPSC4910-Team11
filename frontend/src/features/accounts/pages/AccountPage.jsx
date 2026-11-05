@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { useAuth } from '../../../auth/AuthContext';
-import * as api from '../../../api';
-import PageHeader from '../../../app/PageHeader';
-import Avatar from '../../../components/primitives/Avatar';
-import Skeleton from '../../../components/feedback/Skeleton';
-import StatePanel from '../../../components/feedback/StatePanel';
-import useApiRequest from '../../../hooks/useApiRequest';
-import { validateEmail, validatePhoneNumber } from '../../../utils/accountValidation';
+import { useAuth } from 'auth/AuthContext';
+import * as api from 'api';
+import PageHeader from 'app/PageHeader';
+import Avatar from 'components/primitives/Avatar';
+import Skeleton from 'components/feedback/Skeleton';
+import StatePanel from 'components/feedback/StatePanel';
+import useApiRequest from 'hooks/useApiRequest';
+import { validateEmail, validatePhoneNumber } from 'utils/accountValidation';
 import LoginActivityPanel from '../components/LoginActivityPanel';
 import MfaPanel from '../components/MfaPanel';
 import NotificationsPanel from '../components/NotificationsPanel';

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
-import PageHeader from '../../../app/PageHeader';
-import StatePanel from '../../../components/feedback/StatePanel';
+import PageHeader from 'app/PageHeader';
+import StatePanel from 'components/feedback/StatePanel';
 import CatalogAccessPanel from '../components/CatalogAccessPanel';
 import CatalogPagination from '../components/CatalogPagination';
 import CatalogSkeleton from '../components/CatalogSkeleton';

@@ -1,8 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
-import * as api from '../../api';
-import { announceNotificationsChanged } from '../../app/notificationEvents';
-import useRefreshOnReturn from '../../hooks/useRefreshOnReturn';
+import * as api from 'api';
+import { announceNotificationsChanged } from 'app/notificationEvents';
+import useRefreshOnReturn from 'hooks/useRefreshOnReturn';
 
 const CartContext = createContext(null);
 

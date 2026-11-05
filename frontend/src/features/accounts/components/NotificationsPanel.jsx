@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-import * as api from '../../../api';
-import useApiRequest from '../../../hooks/useApiRequest';
+import * as api from 'api';
+import useApiRequest from 'hooks/useApiRequest';
 
 const ALERT_OPTIONS = [
   { field: 'points_added_enabled', label: 'When points are added' },

@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { useAuth } from '../../../auth/AuthContext';
-import * as api from '../../../api';
-import PageHeader from '../../../app/PageHeader';
-import useApiRequest from '../../../hooks/useApiRequest';
-import Skeleton from '../../../components/feedback/Skeleton';
-import StatePanel from '../../../components/feedback/StatePanel';
-import SelectMenu from '../../../components/forms/SelectMenu';
-import Avatar from '../../../components/primitives/Avatar';
+import { useAuth } from 'auth/AuthContext';
+import * as api from 'api';
+import PageHeader from 'app/PageHeader';
+import useApiRequest from 'hooks/useApiRequest';
+import Skeleton from 'components/feedback/Skeleton';
+import StatePanel from 'components/feedback/StatePanel';
+import SelectMenu from 'components/forms/SelectMenu';
+import Avatar from 'components/primitives/Avatar';
 import RegistrationSettingsPanel from '../components/RegistrationSettingsPanel';
 import './AdminUsersPage.css';
 

@@ -1,18 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
-import { getDrivers, getPointHistory } from '../../../api';
-import PageHeader from '../../../app/PageHeader';
-import { useAuth } from '../../../auth/AuthContext';
-import sessionIdentity from '../../../auth/sessionIdentity';
-import Skeleton from '../../../components/feedback/Skeleton';
-import StatePanel from '../../../components/feedback/StatePanel';
-import SelectMenu from '../../../components/forms/SelectMenu';
-import Avatar from '../../../components/primitives/Avatar';
-import { ArrowRightIcon } from '../../../components/primitives/Icons';
-import useApiRequest from '../../../hooks/useApiRequest';
+import { getDrivers, getPointHistory } from 'api';
+import PageHeader from 'app/PageHeader';
+import { useAuth } from 'auth/AuthContext';
+import sessionIdentity from 'auth/sessionIdentity';
+import { Skeleton, StatePanel } from 'components/feedback';
+import SelectMenu from 'components/forms/SelectMenu';
+import Avatar from 'components/primitives/Avatar';
+import { ArrowRightIcon } from 'components/primitives/Icons';
+import useApiRequest from 'hooks/useApiRequest';
 import PointHistoryList from '../components/PointHistoryList';
-import useDriverPointsRefresh from '../../cart/useDriverPointsRefresh';
+import useDriverPointsRefresh from 'features/cart/useDriverPointsRefresh';
 import '../Points.css';
 
 const PAGE_SIZE = 25;

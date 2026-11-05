@@ -5,6 +5,10 @@ Program. The repository-level [`README.md`](../README.md) is the authoritative
 source for full-stack setup, environment configuration, database instructions,
 and the Windows/macOS launch workflow.
 
+Frontend imports use `src` as their base through `jsconfig.json`. See
+[import conventions](../docs/FRONTEND_IMPORTS.md) for shared/feature boundaries,
+relative imports, and small public export files.
+
 ## Requirements
 
 - Node.js 22 is used by CI; the development launcher requires Node.js 22+.

@@ -1,19 +1,19 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
-import { useAuth } from '../auth/AuthContext';
-import { createProduct, getCatalog } from '../api/catalog';
+import { useAuth } from 'auth/AuthContext';
+import { createProduct, getCatalog } from 'api/catalog';
 import { AppRoutes } from './AppRoutes';
 import { navItemsFor } from './navigation';
 
-jest.mock('../auth/AuthContext');
-jest.mock('../api/catalog');
+jest.mock('auth/AuthContext');
+jest.mock('api/catalog');
 // Isolate route authorization from shell menus and unrelated dashboard requests.
 jest.mock('./AppLayout', () => {
   const { Outlet } = require('react-router-dom');
   return { AppLayout: () => <Outlet /> };
 });
-jest.mock('../features/authentication', () => ({
+jest.mock('features/authentication', () => ({
   LoginPage: () => <h1>Sign in</h1>,
   ForgotPasswordPage: () => null,
   ResetPasswordPage: () => null,

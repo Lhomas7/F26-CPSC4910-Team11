@@ -1,10 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
-import * as api from '../../../api';
+import * as api from 'api';
 import ForgotPasswordPage from './ForgotPasswordPage';
 
-jest.mock('../../../api');
+jest.mock('api');
 
 afterEach(() => jest.clearAllMocks());
 

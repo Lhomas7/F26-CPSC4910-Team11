@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import * as api from '../../../api';
-import { useAuth } from '../../../auth/AuthContext';
-import PageHeader from '../../../app/PageHeader';
-import SelectMenu from '../../../components/forms/SelectMenu';
-import StatePanel from '../../../components/feedback/StatePanel';
-import Skeleton from '../../../components/feedback/Skeleton';
-import useApiRequest from '../../../hooks/useApiRequest';
+import * as api from 'api';
+import { useAuth } from 'auth/AuthContext';
+import PageHeader from 'app/PageHeader';
+import SelectMenu from 'components/forms/SelectMenu';
+import StatePanel from 'components/feedback/StatePanel';
+import Skeleton from 'components/feedback/Skeleton';
+import useApiRequest from 'hooks/useApiRequest';
 import './SalesReportsPage.css';
 
 const GROUP_OPTIONS = [

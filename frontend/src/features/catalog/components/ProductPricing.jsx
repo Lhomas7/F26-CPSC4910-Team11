@@ -1,5 +1,5 @@
 import './ProductPricing.css';
-import { CheckIcon, InfoIcon } from '../../../components/primitives/Icons';
+import { CheckIcon, InfoIcon } from 'components/primitives/Icons';
 import { driverPricingState } from '../utils/pricing';
 
 const usdFormat = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });

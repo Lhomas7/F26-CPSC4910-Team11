@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-import { removeDriver } from '../../../api';
-import Modal from '../../../components/feedback/Modal';
+import { removeDriver } from 'api';
+import Modal from 'components/feedback/Modal';
 
 const MAX_REASON_LENGTH = 500;
 

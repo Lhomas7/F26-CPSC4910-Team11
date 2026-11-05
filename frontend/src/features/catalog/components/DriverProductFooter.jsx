@@ -1,5 +1,5 @@
-import { useCart } from '../../cart/CartContext';
-export { default as useReloadAfterPurchase } from '../../cart/useDriverPointsRefresh';
+import { useCart } from 'features/cart/CartContext';
+export { default as useReloadAfterPurchase } from 'features/cart/useDriverPointsRefresh';
 
 /** Add a reward to, or remove it from, the driver's cart. */
 export default function DriverProductFooter({ product, cart }) {

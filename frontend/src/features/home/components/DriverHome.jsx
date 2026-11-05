@@ -1,10 +1,10 @@
 import { useCallback } from 'react';
 import { Link } from 'react-router-dom';
 
-import { getDrivers, getPointHistory } from '../../../api';
-import useApiRequest from '../../../hooks/useApiRequest';
-import { PointHistoryList } from '../../points';
-import useDriverPointsRefresh from '../../cart/useDriverPointsRefresh';
+import { getDrivers, getPointHistory } from 'api';
+import useApiRequest from 'hooks/useApiRequest';
+import { PointHistoryList } from 'features/points';
+import useDriverPointsRefresh from 'features/cart/useDriverPointsRefresh';
 import DashboardCard from './DashboardCard';
 import DashboardSkeleton from './DashboardSkeleton';
 import QuickActions from './QuickActions';

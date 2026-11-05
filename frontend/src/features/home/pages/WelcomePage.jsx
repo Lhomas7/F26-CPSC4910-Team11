@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-import { useAuth } from '../../../auth/AuthContext';
-import sessionIdentity from '../../../auth/sessionIdentity';
-import PageHeader from '../../../app/PageHeader';
-import ProgramPerks from '../../../components/branding/ProgramPerks';
-import RoadTruck from '../../../components/branding/RoadTruck';
+import { useAuth } from 'auth/AuthContext';
+import sessionIdentity from 'auth/sessionIdentity';
+import PageHeader from 'app/PageHeader';
+import ProgramPerks from 'components/branding/ProgramPerks';
+import RoadTruck from 'components/branding/RoadTruck';
 import HomeDashboard from '../components/HomeDashboard';
 import './WelcomePage.css';
 

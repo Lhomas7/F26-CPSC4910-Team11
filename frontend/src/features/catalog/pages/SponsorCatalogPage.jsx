@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
-import PageHeader from '../../../app/PageHeader';
-import StatePanel from '../../../components/feedback/StatePanel';
-import { PlusIcon } from '../../../components/primitives/Icons';
+import PageHeader from 'app/PageHeader';
+import StatePanel from 'components/feedback/StatePanel';
+import { PlusIcon } from 'components/primitives/Icons';
 import CatalogPagination from '../components/CatalogPagination';
 import AvailabilityControl from '../components/AvailabilityControl';
 import ProductCard from '../components/ProductCard';

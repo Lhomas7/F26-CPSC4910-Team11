@@ -1,9 +1,9 @@
 import { useState } from 'react';
 
-import * as api from '../../../api';
-import PasswordInput from '../../../components/forms/PasswordInput';
-import PasswordRequirements from '../../../components/forms/PasswordRequirements';
-import { validatePassword } from '../../../utils/accountValidation';
+import * as api from 'api';
+import PasswordInput from 'components/forms/PasswordInput';
+import PasswordRequirements from 'components/forms/PasswordRequirements';
+import { validatePassword } from 'utils/accountValidation';
 
 function PasswordField({ id, label, autoComplete = 'new-password', ...inputProps }) {
   return (
