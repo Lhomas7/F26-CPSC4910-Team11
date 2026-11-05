@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from decimal import Decimal
+from uuid import uuid4
 
 from django.db import IntegrityError, transaction
 from django.db.models import QuerySet
@@ -7,8 +9,11 @@ from rest_framework.exceptions import ValidationError
 
 from accounts.models import SponsorCompany
 from accounts.services.notify import notify_reward_purchase
-from catalog.models import CartItem, CatalogProduct
+from catalog.models import CartItem, CatalogProduct, Redemption, RedemptionItem
 from catalog.pricing import point_cost
+from reports.models import CompletedSale
+from django.utils import timezone
+from drivers.models import Driver
 
 from .access import driver_catalog_scope
 
@@ -107,13 +112,15 @@ def _purchase_reason(names):
 def checkout_cart(*, user):
     """Buy everything in the driver's cart: spend the points and empty the cart.
 
-    A basic checkout for now: there is no order record or fulfillment step.
+    This is an internal points redemption, not external provider fulfillment.
     """
     # Imported here: drivers.services imports this module to clear carts.
     from drivers.services.points import PointAdjustmentError, spend_driver_points
 
     scope = driver_catalog_scope(user)
-    driver = user.driver_profile
+    # Serialize checkouts for one Driver before reading their cart. Otherwise
+    # concurrent requests can both read the same items and spend twice.
+    driver = Driver.objects.select_for_update().get(pk=scope.driver_id)
     items = list(_cart_items(scope).select_for_update(of=('self',)))
     if not items:
         raise ValidationError({'detail': 'Your cart is empty.'}, code='cart_empty')
@@ -124,7 +131,8 @@ def checkout_cart(*, user):
         )
 
     sponsor = SponsorCompany.objects.get(pk=scope.company_id)
-    total = sum(point_cost(item.product.price_usd, sponsor.points_per_dollar) for item in items)
+    costs = [point_cost(item.product.price_usd, sponsor.points_per_dollar) for item in items]
+    total = sum(costs)
     names = [item.product.name for item in items]
     if total > 0:
         try:
@@ -137,6 +145,25 @@ def checkout_cart(*, user):
         # The ledger rejects zero-point entries, so free rewards leave no row.
         balance = driver.point_balance
 
+    completed_at = timezone.now()
+    sale = CompletedSale.objects.create(
+        sponsor=sponsor,
+        driver=driver,
+        reference=f'REDEMPTION-{uuid4().hex}',
+        gross_amount_usd=sum((item.product.price_usd for item in items), Decimal('0.00')),
+        completed_at=completed_at,
+    )
+    redemption = Redemption.objects.create(
+        driver=driver, sponsor=sponsor, sale=sale,
+        total_points=total, completed_at=completed_at,
+    )
+    RedemptionItem.objects.bulk_create([
+        RedemptionItem(
+            redemption=redemption, product=item.product,
+            product_name=item.product.name, unit_price_usd=item.product.price_usd,
+            unit_points=cost, quantity=1,
+        ) for item, cost in zip(items, costs)
+    ])
     CartItem.objects.filter(pk__in=[item.pk for item in items]).delete()
     transaction.on_commit(
         lambda: notify_reward_purchase(driver, total, len(items), balance), robust=True

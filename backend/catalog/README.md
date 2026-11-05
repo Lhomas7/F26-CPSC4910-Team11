@@ -63,6 +63,20 @@ balances, creating ledger entries, or sending notifications. This rate describes
 catalog prices, not cash redemption. Cart, quantities, redemption, orders, and
 live provider stock are outside this implementation.
 
+## Internal points checkout
+
+The Driver cart added in Sprint 7 checks out through `/api/cart/checkout/`.
+Checkout locks the Driver before reading cart items, then atomically spends
+points, snapshots one `Redemption` and its `RedemptionItem` rows, creates a
+`CompletedSale` for reporting, and empties the cart. Item snapshots retain
+name, USD price, point cost, and quantity even if the catalog changes later.
+The sale's gross USD amount is the sum of the recorded item prices; its project
+share follows the reporting model's one-percent calculation. A failed checkout
+leaves points, cart, redemption records, and reports unchanged. This records
+an internal reward purchase only; it does not place an order with an external
+store or verify fulfillment. The additive migration is
+`catalog.0003_redemption_redemptionitem` on the cart branch.
+
 The additive migration is `catalog.0001_initial`. Apply it through the normal
 project migration workflow after reviewing the target environment. The tests
 apply it only to disposable SQLite databases; no shared database was migrated

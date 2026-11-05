@@ -15,9 +15,10 @@ from accounts.models import (
     SponsorAccount,
     SponsorCompany,
 )
-from catalog.models import CartItem, CatalogProduct
+from catalog.models import CartItem, CatalogProduct, Redemption, RedemptionItem
 from drivers.models import Driver, PointTransaction
 from drivers.services.membership import reassign_driver_sponsor, remove_driver_from_sponsor
+from reports.models import CompletedSale
 
 
 class DriverCartApiTests(APITestCase):
@@ -255,6 +256,15 @@ class CartCheckoutApiTests(APITestCase):
         self.assertCountEqual(response.data['purchase']['items'], ['Mug', 'Jacket'])
         self.assertEqual(self.balance(), 750)
         self.assertFalse(CartItem.objects.filter(driver=self.driver).exists())
+        redemption = Redemption.objects.get(driver=self.driver)
+        self.assertEqual(redemption.total_points, 5250)
+        self.assertEqual(redemption.sponsor, self.company)
+        self.assertCountEqual(
+            RedemptionItem.objects.filter(redemption=redemption).values_list('product_name', flat=True),
+            ['Mug', 'Jacket'],
+        )
+        self.assertEqual(redemption.sale.gross_amount_usd, 52.50)
+        self.assertEqual(str(redemption.sale.project_share_usd), '0.5250')
 
         entry = PointTransaction.objects.filter(driver=self.driver).latest('changed_at')
         self.assertEqual(entry.point_change, -5250)
@@ -286,6 +296,8 @@ class CartCheckoutApiTests(APITestCase):
                 self.assertEqual(self.balance(), 6000)
                 self.assertEqual(CartItem.objects.filter(driver=self.driver).count(), len(products))
                 self.assertFalse(Notification.objects.exists())
+                self.assertFalse(Redemption.objects.exists())
+                self.assertFalse(CompletedSale.objects.exists())
 
     def test_free_cart_is_cleared_without_a_ledger_entry(self):
         self.fill(self.sticker)
@@ -294,6 +306,7 @@ class CartCheckoutApiTests(APITestCase):
         self.assertEqual(response.data['purchase']['points_spent'], 0)
         self.assertEqual(PointTransaction.objects.filter(driver=self.driver).count(), 1)
         self.assertFalse(CartItem.objects.exists())
+        self.assertEqual(Redemption.objects.get(driver=self.driver).sale.gross_amount_usd, 0)
 
     def test_points_removed_preference_suppresses_the_alert(self):
         DriverNotificationPreferences.objects.create(

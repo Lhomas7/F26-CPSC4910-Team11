@@ -100,3 +100,27 @@ class CartItem(models.Model):
 
     def __str__(self):
         return f'{self.driver} - {self.product}'
+
+
+class Redemption(models.Model):
+    """One completed internal points checkout, independent of external fulfillment."""
+
+    driver = models.ForeignKey('drivers.Driver', on_delete=models.PROTECT, related_name='redemptions')
+    sponsor = models.ForeignKey('accounts.SponsorCompany', on_delete=models.PROTECT, related_name='redemptions')
+    sale = models.OneToOneField('reports.CompletedSale', on_delete=models.PROTECT, related_name='redemption')
+    total_points = models.PositiveBigIntegerField()
+    completed_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ('-completed_at', '-id')
+
+
+class RedemptionItem(models.Model):
+    """Price and identity snapshot; later catalog edits never rewrite history."""
+
+    redemption = models.ForeignKey(Redemption, on_delete=models.PROTECT, related_name='items')
+    product = models.ForeignKey(CatalogProduct, null=True, on_delete=models.SET_NULL)
+    product_name = models.CharField(max_length=200)
+    unit_price_usd = models.DecimalField(max_digits=12, decimal_places=2)
+    unit_points = models.PositiveBigIntegerField()
+    quantity = models.PositiveIntegerField(default=1)
