@@ -8,7 +8,13 @@ from accounts.middleware import (
     IMPERSONATION_STARTED_KEY,
     IMPERSONATION_TARGET_KEY,
 )
-from accounts.models import MFASettings, SponsorAccount, SponsorCompany
+from accounts.models import (
+    DriverNotificationPreferences,
+    MFASettings,
+    Notification,
+    SponsorAccount,
+    SponsorCompany,
+)
 from catalog.models import CartItem, CatalogProduct
 from drivers.models import Driver, PointTransaction
 from drivers.services.membership import reassign_driver_sponsor, remove_driver_from_sponsor
@@ -191,3 +197,124 @@ class DriverCartApiTests(APITestCase):
         self.client.force_authenticate(self.sponsor)
         response = self.client.get(reverse('catalog:browse'))
         self.assertTrue(all(p['in_cart'] is None for p in response.data['results']))
+
+
+class CartCheckoutApiTests(APITestCase):
+    url = reverse('catalog:cart-checkout')
+
+    @classmethod
+    def setUpTestData(cls):
+        User = get_user_model()
+        cls.company = SponsorCompany.objects.create(name='Checkout Sponsor', points_per_dollar=100)
+        cls.sponsor = User.objects.create_user(username='checkout.sponsor')
+        SponsorAccount.objects.create(user=cls.sponsor, company=cls.company)
+        MFASettings.objects.create(user=cls.sponsor, totp_enabled=True)
+        cls.admin = User.objects.create_user(username='checkout.admin', is_staff=True)
+        MFASettings.objects.create(user=cls.admin, totp_enabled=True)
+        cls.driver_user = User.objects.create_user(username='checkout.driver')
+        cls.driver = Driver.objects.create(
+            user=cls.driver_user, name='Checkout Driver', sponsor=cls.company, status='approved'
+        )
+        cls.mug = CatalogProduct.objects.create(sponsor=cls.company, name='Mug', price_usd='12.50')
+        cls.jacket = CatalogProduct.objects.create(
+            sponsor=cls.company, name='Jacket', price_usd='40.00'
+        )
+        cls.sticker = CatalogProduct.objects.create(
+            sponsor=cls.company, name='Sticker', price_usd='0.00'
+        )
+        PointTransaction.objects.create(
+            driver=cls.driver,
+            sponsor=cls.company,
+            changed_by_user=cls.sponsor,
+            point_change=6000,
+            reason='Safe driving',
+        )
+
+    def setUp(self):
+        self.client.force_authenticate(self.driver_user)
+
+    def fill(self, *products):
+        for product in products:
+            CartItem.objects.create(driver=self.driver, product=product)
+
+    def checkout(self, client=None):
+        with self.captureOnCommitCallbacks(execute=True):
+            return (client or self.client).post(self.url, {}, format='json')
+
+    def balance(self):
+        return Driver.objects.get(pk=self.driver.pk).point_balance
+
+    def test_checkout_spends_points_and_empties_the_cart(self):
+        self.fill(self.mug, self.jacket)
+        response = self.checkout()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['item_count'], 0)
+        self.assertEqual(response.data['point_balance'], 750)
+        self.assertEqual(response.data['purchase']['points_spent'], 5250)
+        self.assertEqual(response.data['purchase']['point_balance'], 750)
+        self.assertCountEqual(response.data['purchase']['items'], ['Mug', 'Jacket'])
+        self.assertEqual(self.balance(), 750)
+        self.assertFalse(CartItem.objects.filter(driver=self.driver).exists())
+
+        entry = PointTransaction.objects.filter(driver=self.driver).latest('changed_at')
+        self.assertEqual(entry.point_change, -5250)
+        self.assertEqual(entry.changed_by_user, self.driver_user)
+        self.assertTrue(entry.reason.startswith('Reward purchase: '))
+        alert = Notification.objects.get(user=self.driver_user)
+        self.assertEqual(alert.category, Notification.POINTS_REMOVED)
+        self.assertEqual(
+            alert.message,
+            'You spent 5,250 points on 2 rewards. Your balance is now 750 points.',
+        )
+
+    def test_failed_checkouts_change_nothing(self):
+        cases = (
+            ('empty', ()),
+            ('insufficient', (self.mug, self.jacket)),
+            ('unavailable', (self.mug,)),
+        )
+        for name, products in cases:
+            with self.subTest(name):
+                CartItem.objects.all().delete()
+                self.fill(*products)
+                if name == 'insufficient':
+                    CatalogProduct.objects.filter(pk=self.jacket.pk).update(price_usd='100.00')
+                if name == 'unavailable':
+                    CatalogProduct.objects.filter(pk=self.mug.pk).update(is_available=False)
+                response = self.checkout()
+                self.assertEqual(response.status_code, 400)
+                self.assertEqual(self.balance(), 6000)
+                self.assertEqual(CartItem.objects.filter(driver=self.driver).count(), len(products))
+                self.assertFalse(Notification.objects.exists())
+
+    def test_free_cart_is_cleared_without_a_ledger_entry(self):
+        self.fill(self.sticker)
+        response = self.checkout()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['purchase']['points_spent'], 0)
+        self.assertEqual(PointTransaction.objects.filter(driver=self.driver).count(), 1)
+        self.assertFalse(CartItem.objects.exists())
+
+    def test_points_removed_preference_suppresses_the_alert(self):
+        DriverNotificationPreferences.objects.create(
+            driver=self.driver, points_removed_enabled=False
+        )
+        self.fill(self.mug)
+        self.assertEqual(self.checkout().status_code, 200)
+        self.assertFalse(Notification.objects.exists())
+
+    def test_view_as_cannot_check_out(self):
+        self.fill(self.mug)
+        client = APIClient()
+        client.force_login(self.admin)
+        session = client.session
+        session[IMPERSONATION_TARGET_KEY] = self.driver_user.pk
+        session[IMPERSONATION_STARTED_KEY] = timezone.now().isoformat()
+        session[IMPERSONATION_ROLE_KEY] = 'driver'
+        session.save()
+        self.assertEqual(self.checkout(client).status_code, 403)
+        self.assertEqual(self.balance(), 6000)
+
+    def test_sponsors_cannot_check_out(self):
+        self.client.force_authenticate(self.sponsor)
+        self.assertEqual(self.checkout().status_code, 403)

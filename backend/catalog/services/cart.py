@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
 
 from accounts.models import SponsorCompany
+from accounts.services.notify import notify_reward_purchase
 from catalog.models import CartItem, CatalogProduct
 from catalog.pricing import point_cost
 
@@ -84,3 +85,60 @@ def remove_from_cart(*, user, product_id):
 def clear_cart(driver):
     """Empty a driver's cart, e.g. when they leave their sponsor organization."""
     CartItem.objects.filter(driver=driver).delete()
+
+
+@dataclass(frozen=True)
+class Purchase:
+    items: list[str]
+    points_spent: int
+    point_balance: int
+
+
+def _purchase_reason(names):
+    from drivers.services.points import MAX_POINT_REASON_LENGTH
+
+    reason = 'Reward purchase: ' + ', '.join(names)
+    if len(reason) > MAX_POINT_REASON_LENGTH:
+        reason = reason[: MAX_POINT_REASON_LENGTH - 1] + '…'
+    return reason
+
+
+@transaction.atomic
+def checkout_cart(*, user):
+    """Buy everything in the driver's cart: spend the points and empty the cart.
+
+    A basic checkout for now: there is no order record or fulfillment step.
+    """
+    # Imported here: drivers.services imports this module to clear carts.
+    from drivers.services.points import PointAdjustmentError, spend_driver_points
+
+    scope = driver_catalog_scope(user)
+    driver = user.driver_profile
+    items = list(_cart_items(scope).select_for_update(of=('self',)))
+    if not items:
+        raise ValidationError({'detail': 'Your cart is empty.'}, code='cart_empty')
+    if any(not item.product.is_available for item in items):
+        raise ValidationError(
+            {'detail': 'Remove unavailable rewards from your cart before checking out.'},
+            code='cart_has_unavailable',
+        )
+
+    sponsor = SponsorCompany.objects.get(pk=scope.company_id)
+    total = sum(point_cost(item.product.price_usd, sponsor.points_per_dollar) for item in items)
+    names = [item.product.name for item in items]
+    if total > 0:
+        try:
+            balance = spend_driver_points(
+                driver=driver, point_cost=total, reason=_purchase_reason(names)
+            ).balance
+        except PointAdjustmentError as error:
+            raise ValidationError({'detail': error.message}, code=error.code) from error
+    else:
+        # The ledger rejects zero-point entries, so free rewards leave no row.
+        balance = driver.point_balance
+
+    CartItem.objects.filter(pk__in=[item.pk for item in items]).delete()
+    transaction.on_commit(
+        lambda: notify_reward_purchase(driver, total, len(items), balance), robust=True
+    )
+    return Purchase(items=names, points_spent=total, point_balance=balance)

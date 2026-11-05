@@ -211,7 +211,6 @@ def notify_sponsors_of_point_change(driver, point_change, reason, balance, chang
             logger.exception('Could not send a driver point alert to a sponsor.')
 
 
-
 def notify_sponsors_of_new_driver_application(driver):
     """Notify every active sponsor account in the organization of a new application."""
     from accounts.models import SponsorAccount
@@ -265,3 +264,18 @@ def notify_drivers_of_new_product(product):
         )
     except Exception:
         logger.exception('Could not record new reward notifications.')
+
+
+def notify_reward_purchase(driver, points_spent, item_count, balance):
+    """Record an in-app alert for a driver's own reward purchase."""
+    if not DriverNotificationPreferences.for_driver(driver).points_removed_enabled:
+        return
+    rewards = 'reward' if item_count == 1 else 'rewards'
+    message = (
+        f'You spent {_points_phrase(points_spent)} on {item_count} {rewards}. '
+        f'Your balance is now {_points_phrase(balance)}.'
+    )
+    try:
+        _record(driver.user, Notification.POINTS_REMOVED, message)
+    except Exception:
+        logger.exception('Could not record a reward purchase notification.')

@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    CartCheckoutView,
     CartItemsView,
     CartItemView,
     CartView,
@@ -16,6 +17,7 @@ urlpatterns = [
     path('cart/', CartView.as_view(), name='cart'),
     path('cart/items/', CartItemsView.as_view(), name='cart-items'),
     path('cart/items/<int:product_id>/', CartItemView.as_view(), name='cart-item'),
+    path('cart/checkout/', CartCheckoutView.as_view(), name='cart-checkout'),
     path(
         'sponsor/catalog/products/',
         SponsorProductCreateView.as_view(),

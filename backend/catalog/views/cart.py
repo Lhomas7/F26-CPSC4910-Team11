@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 
 from accounts.permissions import DriverAccount, MFAEnrolled
 from catalog.serializers import CartAddSerializer, CartItemSerializer
-from catalog.services import add_to_cart, get_cart, remove_from_cart
+from catalog.services import add_to_cart, checkout_cart, get_cart, remove_from_cart
 
 
 def _cart_response(user, status_code=status.HTTP_200_OK):
@@ -74,3 +74,17 @@ class CartItemView(DriverCartView):
         self.check_not_viewing_as(request)
         remove_from_cart(user=request.user, product_id=product_id)
         return _cart_response(request.user)
+
+
+@method_decorator(never_cache, name='dispatch')
+class CartCheckoutView(DriverCartView):
+    def post(self, request):
+        self.check_not_viewing_as(request)
+        purchase = checkout_cart(user=request.user)
+        response = _cart_response(request.user)
+        response.data['purchase'] = {
+            'items': purchase.items,
+            'points_spent': purchase.points_spent,
+            'point_balance': purchase.point_balance,
+        }
+        return response
