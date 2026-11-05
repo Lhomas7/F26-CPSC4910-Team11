@@ -97,6 +97,9 @@ class Purchase:
     items: list[str]
     points_spent: int
     point_balance: int
+    redemption_id: int
+    reference: str
+    replayed: bool = False
 
 
 def _purchase_reason(names):
@@ -109,7 +112,7 @@ def _purchase_reason(names):
 
 
 @transaction.atomic
-def checkout_cart(*, user):
+def checkout_cart(*, user, idempotency_key=None):
     """Buy everything in the driver's cart: spend the points and empty the cart.
 
     This is an internal points redemption, not external provider fulfillment.
@@ -121,6 +124,17 @@ def checkout_cart(*, user):
     # Serialize checkouts for one Driver before reading their cart. Otherwise
     # concurrent requests can both read the same items and spend twice.
     driver = Driver.objects.select_for_update().get(pk=scope.driver_id)
+    if idempotency_key is not None:
+        existing = Redemption.objects.filter(driver=driver, idempotency_key=idempotency_key).first()
+        if existing:
+            return Purchase(
+                items=list(existing.items.order_by('pk').values_list('product_name', flat=True)),
+                points_spent=existing.total_points,
+                point_balance=existing.balance_after,
+                redemption_id=existing.pk,
+                reference=existing.sale.reference,
+                replayed=True,
+            )
     items = list(_cart_items(scope).select_for_update(of=('self',)))
     if not items:
         raise ValidationError({'detail': 'Your cart is empty.'}, code='cart_empty')
@@ -155,7 +169,8 @@ def checkout_cart(*, user):
     )
     redemption = Redemption.objects.create(
         driver=driver, sponsor=sponsor, sale=sale,
-        total_points=total, completed_at=completed_at,
+        total_points=total, balance_after=balance, idempotency_key=idempotency_key,
+        completed_at=completed_at,
     )
     RedemptionItem.objects.bulk_create([
         RedemptionItem(
@@ -168,4 +183,7 @@ def checkout_cart(*, user):
     transaction.on_commit(
         lambda: notify_reward_purchase(driver, total, len(items), balance), robust=True
     )
-    return Purchase(items=names, points_spent=total, point_balance=balance)
+    return Purchase(
+        items=names, points_spent=total, point_balance=balance,
+        redemption_id=redemption.pk, reference=sale.reference,
+    )

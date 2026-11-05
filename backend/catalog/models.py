@@ -109,10 +109,18 @@ class Redemption(models.Model):
     sponsor = models.ForeignKey('accounts.SponsorCompany', on_delete=models.PROTECT, related_name='redemptions')
     sale = models.OneToOneField('reports.CompletedSale', on_delete=models.PROTECT, related_name='redemption')
     total_points = models.PositiveBigIntegerField()
+    balance_after = models.PositiveBigIntegerField(null=True)
+    idempotency_key = models.UUIDField(null=True, blank=True)
     completed_at = models.DateTimeField()
 
     class Meta:
         ordering = ('-completed_at', '-id')
+        constraints = [
+            models.UniqueConstraint(
+                fields=('driver', 'idempotency_key'),
+                name='catalog_driver_redemption_key_unique',
+            ),
+        ]
 
 
 class RedemptionItem(models.Model):

@@ -22,3 +22,7 @@ class CartItemSerializer(serializers.ModelSerializer):
 
 class CartAddSerializer(StrictInputSerializer):
     product_id = serializers.IntegerField(min_value=1)
+
+
+class CartCheckoutSerializer(StrictInputSerializer):
+    idempotency_key = serializers.UUIDField(required=False)

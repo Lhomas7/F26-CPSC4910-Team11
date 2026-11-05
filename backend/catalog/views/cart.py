@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 
 from accounts.permissions import DriverAccount, MFAEnrolled
 from catalog.serializers import CartAddSerializer, CartItemSerializer
+from catalog.serializers.cart import CartCheckoutSerializer
 from catalog.services import add_to_cart, checkout_cart, get_cart, remove_from_cart
 
 
@@ -80,11 +81,19 @@ class CartItemView(DriverCartView):
 class CartCheckoutView(DriverCartView):
     def post(self, request):
         self.check_not_viewing_as(request)
-        purchase = checkout_cart(user=request.user)
+        serializer = CartCheckoutSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        purchase = checkout_cart(
+            user=request.user,
+            idempotency_key=serializer.validated_data.get('idempotency_key'),
+        )
         response = _cart_response(request.user)
         response.data['purchase'] = {
             'items': purchase.items,
             'points_spent': purchase.points_spent,
             'point_balance': purchase.point_balance,
+            'redemption_id': purchase.redemption_id,
+            'reference': purchase.reference,
+            'replayed': purchase.replayed,
         }
         return response

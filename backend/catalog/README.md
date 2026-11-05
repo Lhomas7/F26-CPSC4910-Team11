@@ -77,6 +77,16 @@ an internal reward purchase only; it does not place an order with an external
 store or verify fulfillment. The additive migration is
 `catalog.0003_redemption_redemptionitem` on the cart branch.
 
+Checkout accepts an optional JSON `idempotency_key` UUID. Once a client
+submits a key, retrying it for the same Driver returns the original redemption
+reference, item names, points spent, and balance after checkout with
+`replayed=true`; it never spends points or sends another alert. The database
+enforces uniqueness per Driver. The response includes `redemption_id` and
+`reference`, and checkout rejects browser-supplied prices, totals, and other
+unknown fields. Clients should create one UUID when the Driver confirms a
+purchase and reuse that UUID for retries. The additive migration is
+`catalog.0004_redemption_balance_after_redemption_idempotency_key_and_more`.
+
 The additive migration is `catalog.0001_initial`. Apply it through the normal
 project migration workflow after reviewing the target environment. The tests
 apply it only to disposable SQLite databases; no shared database was migrated

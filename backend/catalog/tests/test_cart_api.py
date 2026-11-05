@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from uuid import uuid4
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APIClient, APITestCase
@@ -253,6 +254,8 @@ class CartCheckoutApiTests(APITestCase):
         self.assertEqual(response.data['point_balance'], 750)
         self.assertEqual(response.data['purchase']['points_spent'], 5250)
         self.assertEqual(response.data['purchase']['point_balance'], 750)
+        self.assertEqual(response.data['purchase']['reference'], Redemption.objects.get(driver=self.driver).sale.reference)
+        self.assertFalse(response.data['purchase']['replayed'])
         self.assertCountEqual(response.data['purchase']['items'], ['Mug', 'Jacket'])
         self.assertEqual(self.balance(), 750)
         self.assertFalse(CartItem.objects.filter(driver=self.driver).exists())
@@ -298,6 +301,29 @@ class CartCheckoutApiTests(APITestCase):
                 self.assertFalse(Notification.objects.exists())
                 self.assertFalse(Redemption.objects.exists())
                 self.assertFalse(CompletedSale.objects.exists())
+
+    def test_repeating_the_same_checkout_key_returns_original_receipt_once(self):
+        self.fill(self.mug)
+        key = str(uuid4())
+        with self.captureOnCommitCallbacks(execute=True):
+            first = self.client.post(self.url, {'idempotency_key': key}, format='json')
+            second = self.client.post(self.url, {'idempotency_key': key}, format='json')
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(first.data['purchase']['reference'], second.data['purchase']['reference'])
+        self.assertTrue(second.data['purchase']['replayed'])
+        self.assertEqual(Redemption.objects.count(), 1)
+        self.assertEqual(CompletedSale.objects.count(), 1)
+        self.assertEqual(PointTransaction.objects.filter(point_change__lt=0).count(), 1)
+        self.assertEqual(Notification.objects.count(), 1)
+
+    def test_checkout_refuses_browser_supplied_prices_and_totals(self):
+        self.fill(self.mug)
+        for payload in ({'price_usd': '0.00'}, {'total_points': 0}, {'idempotency_key': 'bad'}):
+            with self.subTest(payload=payload):
+                self.assertEqual(self.client.post(self.url, payload, format='json').status_code, 400)
+        self.assertEqual(Redemption.objects.count(), 0)
+        self.assertEqual(self.balance(), 6000)
 
     def test_free_cart_is_cleared_without_a_ledger_entry(self):
         self.fill(self.sticker)
