@@ -77,7 +77,7 @@ test('the drawer lists items, totals and the shortfall, and removes items', asyn
   expect(removeFromCart).toHaveBeenCalledWith(2);
   expect(await screen.findByRole('dialog', { name: 'Your cart (1)' })).toBeInTheDocument();
   expect(screen.queryByText(/You need/)).not.toBeInTheDocument();
-  expect(document.querySelector('.cart-button')).not.toBeVisible();
+  expect(screen.getByTitle('Cart')).not.toBeVisible();
 });
 
 test('empty cart explains how to add rewards', async () => {
@@ -147,7 +147,7 @@ test('checkout asks for confirmation, spends points and empties the cart', async
   expect(within(dialog).getByText('Travel Mug')).toBeInTheDocument();
   expect(within(dialog).queryByText(/REDEMPTION/)).not.toBeInTheDocument();
   expect(checkout).toHaveBeenCalledTimes(1);
-  expect(document.querySelector('.cart-button')).not.toBeVisible();
+  expect(screen.getByTitle('Cart')).not.toBeVisible();
   fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
   const reopened = await openDrawer(0);
   expect(within(reopened).getByRole('status')).toHaveTextContent('Order submitted!');

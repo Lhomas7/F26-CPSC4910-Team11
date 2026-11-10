@@ -1,4 +1,4 @@
-import { act, fireEvent, renderHook } from '@testing-library/react';
+import { fireEvent, renderHook } from '@testing-library/react';
 
 import { useCart } from './CartContext';
 import useDriverPointsRefresh from './useDriverPointsRefresh';
@@ -15,10 +15,8 @@ test('refreshes both balance and history once per purchase and coalesces tab ret
   rerender();
   expect(balance).toHaveBeenCalledTimes(1);
   expect(history).toHaveBeenCalledTimes(1);
-  act(() => {
-    fireEvent.focus(window);
-    fireEvent(document, new Event('visibilitychange'));
-  });
+  fireEvent.focus(window);
+  fireEvent(document, new Event('visibilitychange'));
   expect(balance).toHaveBeenCalledTimes(2);
   expect(history).toHaveBeenCalledTimes(2);
   unmount();
