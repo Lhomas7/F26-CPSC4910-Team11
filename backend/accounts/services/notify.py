@@ -285,7 +285,7 @@ def notify_reward_purchase(driver, purchase):
     the points used and the new balance. Each channel fails independently.
     """
     preferences = DriverNotificationPreferences.for_driver(driver)
-    if not preferences.points_removed_enabled:
+    if not preferences.reward_purchase_enabled:
         return
 
     items = [(row['name'], _points_phrase(row['unit_points'])) for row in purchase.line_items]
@@ -294,7 +294,7 @@ def notify_reward_purchase(driver, purchase):
     try:
         _record(
             driver.user,
-            Notification.POINTS_REMOVED,
+            Notification.REWARD_PURCHASE,
             _purchase_alert(
                 [f'{name} ({price})' for name, price in items],
                 f'Points used: {points_used}. New balance: {balance}.',

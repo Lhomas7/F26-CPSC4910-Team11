@@ -1134,6 +1134,7 @@ class DriverAlertSettingsViewTests(RoleScopedDriverTestData):
                 'points_added_enabled': True,
                 'points_removed_enabled': False,
                 'new_products_enabled': True,
+                'reward_purchase_enabled': True,
                 'email_enabled': True,
                 'sms_enabled': True,
                 'always_on': ['sponsor_dropped', 'security'],

@@ -6,6 +6,7 @@ import useApiRequest from 'hooks/useApiRequest';
 const ALERT_OPTIONS = [
   { field: 'points_added_enabled', label: 'When points are added' },
   { field: 'points_removed_enabled', label: 'When points are removed' },
+  { field: 'reward_purchase_enabled', label: 'When I buy a reward' },
 ];
 
 const CATALOG_OPTIONS = [
@@ -21,6 +22,7 @@ const SAVED_TEXT = {
   points_added_enabled: ['Points-added alerts are on.', 'Points-added alerts are off.'],
   points_removed_enabled: ['Points-removed alerts are on.', 'Points-removed alerts are off.'],
   new_products_enabled: ['New-reward alerts are on.', 'New-reward alerts are off.'],
+  reward_purchase_enabled: ['Purchase confirmations are on.', 'Purchase confirmations are off.'],
   email_enabled: ['Alerts will be emailed to you.', 'Alerts will no longer be emailed.'],
   sms_enabled: ['Alerts will be texted to you.', 'Alerts will no longer be texted.'],
 };

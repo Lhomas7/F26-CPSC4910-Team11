@@ -142,7 +142,7 @@ test('checkout asks for confirmation, spends points and empties the cart', async
   fireEvent.click(await within(dialog).findByRole('button', { name: 'Confirm purchase' }));
 
   expect(
-    await within(dialog).findByText('Purchase complete.'),
+    await within(dialog).findByText('Order submitted! You used 2,495 points. Your new balance is 705 points.'),
   ).toBeInTheDocument();
   expect(within(dialog).getByText('Travel Mug')).toBeInTheDocument();
   expect(within(dialog).queryByText(/REDEMPTION/)).not.toBeInTheDocument();
@@ -150,7 +150,7 @@ test('checkout asks for confirmation, spends points and empties the cart', async
   expect(document.querySelector('.cart-button')).not.toBeVisible();
   fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
   const reopened = await openDrawer(0);
-  expect(within(reopened).getByText('Purchase complete.')).toBeInTheDocument();
+  expect(within(reopened).getByRole('status')).toHaveTextContent('Order submitted!');
 });
 
 test('an uncertain attempt survives closing the drawer and blocks a new purchase', async () => {
@@ -325,4 +325,21 @@ test('View-As cannot clear the cart', async () => {
   const dialog = await openDrawer(1);
   await within(dialog).findByRole('button', { name: 'Check out' });
   expect(within(dialog).queryByRole('button', { name: 'Clear cart' })).not.toBeInTheDocument();
+});
+
+test('a free order confirms that no points were deducted', async () => {
+  getCart.mockResolvedValue(cartWith([{ ...mug, point_cost: 0 }]));
+  checkout.mockResolvedValue({
+    ...cartWith([], 3200),
+    purchase: { items: ['Travel Mug'], points_spent: 0, point_balance: 3200,
+      line_items: [{ name: 'Travel Mug', unit_points: 0, quantity: 1 }],
+      reference: 'REDEMPTION-free', completed_at: '2026-11-05T12:00:00Z', replayed: false },
+  });
+  renderButton();
+  const dialog = await openDrawer(1);
+
+  fireEvent.click(await within(dialog).findByRole('button', { name: 'Check out' }));
+  fireEvent.click(await within(dialog).findByRole('button', { name: 'Confirm purchase' }));
+
+  expect(await within(dialog).findByRole('status')).toHaveTextContent('Order submitted! No points were deducted.');
 });

@@ -355,7 +355,7 @@ class CartCheckoutApiTests(APITestCase):
         self.assertEqual(entry.changed_by_user, self.driver_user)
         self.assertTrue(entry.reason.startswith('Reward purchase: '))
         alert = Notification.objects.get(user=self.driver_user)
-        self.assertEqual(alert.category, Notification.POINTS_REMOVED)
+        self.assertEqual(alert.category, Notification.REWARD_PURCHASE)
         self.assertEqual(
             alert.message,
             'Order confirmed. Items: Jacket (4,000 points), Mug (1,250 points). '
@@ -463,14 +463,24 @@ class CartCheckoutApiTests(APITestCase):
         self.assertFalse(CartItem.objects.exists())
         self.assertEqual(Redemption.objects.get(driver=self.driver).sale.gross_amount_usd, 0)
 
-    def test_points_removed_preference_suppresses_the_alert(self):
+    def test_purchase_alert_preference_suppresses_the_alert_and_email(self):
+        self.with_email()
         DriverNotificationPreferences.objects.create(
-            driver=self.driver, points_removed_enabled=False
+            driver=self.driver, reward_purchase_enabled=False
         )
         self.fill(self.mug)
         self.assertEqual(self.checkout().status_code, 200)
         self.assertFalse(Notification.objects.exists())
         self.assertEqual(mail.outbox, [])
+
+    def test_points_removed_preference_does_not_stop_purchase_confirmations(self):
+        DriverNotificationPreferences.objects.create(
+            driver=self.driver, points_removed_enabled=False
+        )
+        self.fill(self.mug)
+        self.assertEqual(self.checkout().status_code, 200)
+        alert = Notification.objects.get(user=self.driver_user)
+        self.assertEqual(alert.category, Notification.REWARD_PURCHASE)
 
     def with_email(self):
         get_user_model().objects.filter(pk=self.driver_user.pk).update(email='driver@example.com')

@@ -96,7 +96,9 @@ export default function CartDrawer({ onClose }) {
     </div>;
   } else if (lastPurchase) {
     body = <div className="cart-view">
-      <p className="banner banner-success" role="status">{lastPurchase.points_spent === 0 ? 'Purchase complete. No points were deducted.' : 'Purchase complete.'}</p>
+      <p className="banner banner-success" role="status">Order submitted! {lastPurchase.points_spent === 0
+        ? 'No points were deducted.'
+        : `You used ${points(lastPurchase.points_spent)}. Your new balance is ${points(lastPurchase.point_balance)}.`}</p>
       {lastPurchase.replayed && <p className="banner">This purchase was already completed. These are the original purchase details.</p>}
       <h3 className="cart-view-heading">What you bought</h3>
       <Lines rows={lastPurchase.line_items} />
