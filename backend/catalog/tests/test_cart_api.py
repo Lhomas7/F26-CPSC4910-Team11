@@ -1,7 +1,8 @@
 from django.contrib.auth import get_user_model
+from types import SimpleNamespace
 from uuid import uuid4
 from unittest.mock import patch
-from django.core import signing
+from django.core import mail, signing
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APIClient, APITestCase
@@ -18,6 +19,7 @@ from accounts.models import (
     SponsorAccount,
     SponsorCompany,
 )
+from accounts.services.notify import notify_reward_purchase
 from catalog.models import CartItem, CatalogProduct, Redemption, RedemptionItem
 from drivers.models import Driver, PointTransaction
 from drivers.services.membership import reassign_driver_sponsor, remove_driver_from_sponsor
@@ -317,7 +319,8 @@ class CartCheckoutApiTests(APITestCase):
         self.assertEqual(alert.category, Notification.POINTS_REMOVED)
         self.assertEqual(
             alert.message,
-            'You spent 5,250 points on 2 rewards. Your balance is now 750 points.',
+            'Order confirmed. Items: Jacket (4,000 points), Mug (1,250 points). '
+            'Points used: 5,250 points. New balance: 750 points.',
         )
 
     def test_failed_checkouts_change_nothing(self):
@@ -428,6 +431,61 @@ class CartCheckoutApiTests(APITestCase):
         self.fill(self.mug)
         self.assertEqual(self.checkout().status_code, 200)
         self.assertFalse(Notification.objects.exists())
+        self.assertEqual(mail.outbox, [])
+
+    def with_email(self):
+        get_user_model().objects.filter(pk=self.driver_user.pk).update(email='driver@example.com')
+        self.driver_user.refresh_from_db()
+        self.client.force_authenticate(self.driver_user)
+
+    def test_checkout_emails_an_itemized_confirmation(self):
+        self.with_email()
+        self.fill(self.mug, self.jacket)
+        self.assertEqual(self.checkout().status_code, 200)
+
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertEqual(email.to, ['driver@example.com'])
+        self.assertEqual(email.subject, 'Your Good Driver reward order is confirmed')
+        self.assertIn('Items ordered:\n  - Jacket: 4,000 points\n  - Mug: 1,250 points', email.body)
+        self.assertIn('Points used: 5,250 points\nNew balance: 750 points', email.body)
+        self.assertNotIn('REDEMPTION', email.body)
+
+    def test_free_order_email_shows_zero_points_used(self):
+        self.with_email()
+        self.fill(self.sticker)
+        self.assertEqual(self.checkout().status_code, 200)
+        self.assertIn('  - Sticker: 0 points', mail.outbox[0].body)
+        self.assertIn('Points used: 0 points\nNew balance: 6,000 points', mail.outbox[0].body)
+
+    def test_email_preference_off_keeps_only_the_in_app_alert(self):
+        self.with_email()
+        DriverNotificationPreferences.objects.create(driver=self.driver, email_enabled=False)
+        self.fill(self.mug)
+        self.assertEqual(self.checkout().status_code, 200)
+        self.assertEqual(mail.outbox, [])
+        self.assertTrue(Notification.objects.filter(user=self.driver_user).exists())
+
+    def test_long_orders_are_shortened_to_fit_the_alert(self):
+        purchase = SimpleNamespace(
+            line_items=[{'name': f'Reward number {n} ' + 'x' * 40, 'unit_points': 100} for n in range(40)],
+            points_spent=4000,
+            point_balance=2000,
+        )
+        notify_reward_purchase(self.driver, purchase)
+
+        message = Notification.objects.get(user=self.driver_user).message
+        self.assertLessEqual(len(message), 1000)
+        self.assertRegex(message, r', and \d+ more\. Points used: 4,000 points\. New balance: 2,000 points\.$')
+
+    def test_email_failure_does_not_undo_the_purchase(self):
+        self.with_email()
+        self.fill(self.mug)
+        with patch('accounts.services.notify.EmailMessage.send', side_effect=OSError('SMTP down')):
+            response = self.checkout()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.balance(), 4750)
+        self.assertTrue(Notification.objects.filter(user=self.driver_user).exists())
 
     def test_view_as_cannot_check_out(self):
         self.fill(self.mug)

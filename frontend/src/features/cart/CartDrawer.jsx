@@ -101,7 +101,6 @@ export default function CartDrawer({ onClose }) {
       <Lines rows={lastPurchase.line_items} />
       <Receipt total={lastPurchase.points_spent} balance={lastPurchase.point_balance} />
       <p className="cart-view-lead">Completed <time dateTime={lastPurchase.completed_at}>{localTime.format(new Date(lastPurchase.completed_at))}</time></p>
-      <div><span className="cart-reference-label">Reference</span><code className="cart-reference" tabIndex={0}>{lastPurchase.reference}</code></div>
       <button className="button button-primary" onClick={() => { clearLastPurchase(); clearReview(); onClose(); }}>Keep shopping</button>
       {lastPurchase.points_spent > 0 && <Link to="/points" onClick={onClose}>See point history</Link>}
     </div>;

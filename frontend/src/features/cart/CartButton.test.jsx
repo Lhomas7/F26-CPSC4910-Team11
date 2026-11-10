@@ -143,12 +143,13 @@ test('checkout asks for confirmation, spends points and empties the cart', async
   expect(
     await within(dialog).findByText('Purchase complete.'),
   ).toBeInTheDocument();
-  expect(within(dialog).getByText('REDEMPTION-test')).toBeInTheDocument();
+  expect(within(dialog).getByText('Travel Mug')).toBeInTheDocument();
+  expect(within(dialog).queryByText(/REDEMPTION/)).not.toBeInTheDocument();
   expect(checkout).toHaveBeenCalledTimes(1);
   expect(document.querySelector('.cart-button')).not.toBeVisible();
   fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
   const reopened = await openDrawer(0);
-  expect(within(reopened).getByText('REDEMPTION-test')).toBeInTheDocument();
+  expect(within(reopened).getByText('Purchase complete.')).toBeInTheDocument();
 });
 
 test('an uncertain attempt survives closing the drawer and blocks a new purchase', async () => {

@@ -266,16 +266,59 @@ def notify_drivers_of_new_product(product):
         logger.exception('Could not record new reward notifications.')
 
 
-def notify_reward_purchase(driver, points_spent, item_count, balance):
-    """Record an in-app alert for a driver's own reward purchase."""
-    if not DriverNotificationPreferences.for_driver(driver).points_removed_enabled:
+def _purchase_alert(items, totals):
+    """One-line purchase alert, listing as many items as fit in a notification."""
+    limit = Notification._meta.get_field('message').max_length
+    for shown in range(len(items), 0, -1):
+        hidden = len(items) - shown
+        listed = ', '.join(items[:shown]) + (f', and {hidden} more' if hidden else '')
+        message = f'Order confirmed. Items: {listed}. {totals}'
+        if len(message) <= limit:
+            return message
+    return f'Order confirmed. {len(items)} items. {totals}'[:limit]
+
+
+def notify_reward_purchase(driver, purchase):
+    """Confirm a driver's reward purchase in-app and, if they allow it, by email.
+
+    `purchase` is the checkout receipt: each item ordered with its point price,
+    the points used and the new balance. Each channel fails independently.
+    """
+    preferences = DriverNotificationPreferences.for_driver(driver)
+    if not preferences.points_removed_enabled:
         return
-    rewards = 'reward' if item_count == 1 else 'rewards'
-    message = (
-        f'You spent {_points_phrase(points_spent)} on {item_count} {rewards}. '
-        f'Your balance is now {_points_phrase(balance)}.'
-    )
+
+    items = [(row['name'], _points_phrase(row['unit_points'])) for row in purchase.line_items]
+    points_used = _points_phrase(purchase.points_spent)
+    balance = _points_phrase(purchase.point_balance)
     try:
-        _record(driver.user, Notification.POINTS_REMOVED, message)
+        _record(
+            driver.user,
+            Notification.POINTS_REMOVED,
+            _purchase_alert(
+                [f'{name} ({price})' for name, price in items],
+                f'Points used: {points_used}. New balance: {balance}.',
+            ),
+        )
     except Exception:
         logger.exception('Could not record a reward purchase notification.')
+
+    if preferences.email_enabled and driver.user.email:
+        lines = '\n'.join(f'  - {name}: {price}' for name, price in items)
+        body = (
+            f'Hi {driver.name},\n\n'
+            'Your Good Driver reward order was submitted.\n\n'
+            f'Items ordered:\n{lines}\n\n'
+            f'Points used: {points_used}\n'
+            f'New balance: {balance}\n\n'
+            'You can see this purchase in your point history.'
+        )
+        try:
+            EmailMessage(
+                subject='Your Good Driver reward order is confirmed',
+                body=body,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[driver.user.email],
+            ).send()
+        except Exception:
+            logger.exception('Could not email a reward purchase confirmation.')

@@ -126,28 +126,6 @@
   flex: 1 1 10rem;
 }
 
-/* ---- Receipt --------------------------------------------------------- */
-.cart-reference {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: 0.4rem;
-  display: block;
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
-  font-size: 0.76rem;
-  margin-top: 0.2rem;
-  /* Selectable, and it must wrap rather than overflow at 320px. */
-  overflow-wrap: anywhere;
-  padding: 0.4rem 0.5rem;
-  user-select: all;
-  word-break: break-all;
-}
-
-.cart-reference-label {
-  color: var(--ink-2);
-  display: block;
-  font-size: 0.72rem;
-}
-
 /* ---- Pending attempt. The only state that blocks the rest of the cart. */
 .cart-pending-panel {
   background: var(--warning-soft);
