@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
-import { getDrivers, getPointHistory } from 'api';
+import { getBehaviors, getDrivers, getPointHistory } from 'api';
 import PageHeader from 'app/PageHeader';
 import { useAuth } from 'auth/AuthContext';
 import sessionIdentity from 'auth/sessionIdentity';
@@ -10,6 +10,8 @@ import SelectMenu from 'components/forms/SelectMenu';
 import Avatar from 'components/primitives/Avatar';
 import { ArrowRightIcon } from 'components/primitives/Icons';
 import useApiRequest from 'hooks/useApiRequest';
+import BehaviorList from '../components/BehaviorList';
+import BehaviorManager from '../components/BehaviorManager';
 import PointHistoryList from '../components/PointHistoryList';
 import useDriverPointsRefresh from 'features/cart/useDriverPointsRefresh';
 import '../Points.css';
@@ -94,7 +96,7 @@ function HistoryCard({
   );
 }
 
-function DriverStanding({ record, error, loading, onRetry }) {
+function DriverStanding({ record, error, loading, onRetry, behaviors }) {
   if (error && !record)
     return (
       <section className="card points-standing">
@@ -141,6 +143,14 @@ function DriverStanding({ record, error, loading, onRetry }) {
         </div>
       </dl>
       <p className="points-standing-guidance">{guidance}</p>
+      {linked && (
+        <BehaviorList
+          behaviors={behaviors.data}
+          error={behaviors.error}
+          onRetry={behaviors.reload}
+          sponsorName={record.sponsor_name}
+        />
+      )}
     </section>
   );
 }
@@ -149,6 +159,7 @@ function DriverPoints() {
   const [limit, setLimit] = useState(PAGE_SIZE);
   const driversRequest = useApiRequest(useCallback(() => getDrivers(), []));
   const historyRequest = useApiRequest(useCallback(() => getPointHistory({ limit }), [limit]));
+  const behaviorsRequest = useApiRequest(useCallback(() => getBehaviors(), []));
   useDriverPointsRefresh(driversRequest.reload, historyRequest.reload);
   const record = driversRequest.data?.[0];
 
@@ -157,6 +168,7 @@ function DriverPoints() {
       <PageHeader title="Points" subtitle="Your balance and every change to it" />
       <main className="points-content">
         <DriverStanding
+          behaviors={behaviorsRequest}
           error={driversRequest.error}
           loading={driversRequest.status === 'loading'}
           onRetry={driversRequest.reload}
@@ -390,6 +402,8 @@ function SponsorPoints() {
             title={title}
           />
         )}
+
+        <BehaviorManager />
       </main>
     </>
   );

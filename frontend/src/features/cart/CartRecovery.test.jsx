@@ -1,4 +1,4 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 
 import * as api from 'api';
 import { CartProvider, useCart } from './CartContext';
@@ -70,6 +70,6 @@ test('a retry conflict never adopts a fresh review or discards the pending attem
 test('another effective Driver does not restore the stored attempt', async () => {
   saveAttempt(18, { key: RESTORED_ATTEMPT_ID, startedAt: '2026-11-05T12:00:00Z', organization: 'Other' });
   const { result } = renderHook(() => useCart(), { wrapper });
-  await act(async () => {});
+  await waitFor(() => expect(result.current.status).toBe('ready'));
   expect(result.current.pendingAttempt).toBeNull();
 });

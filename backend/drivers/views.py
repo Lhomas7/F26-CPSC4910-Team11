@@ -5,15 +5,15 @@ from django.views.decorators.cache import never_cache
 from rest_framework import generics, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.response import Response
 
 from accounts.models import DriverNotificationPreferences, SponsorDriverAlert
-from accounts.permissions import MFAEnrolled, SponsorAccount
+from accounts.permissions import DriverOrSponsor, MFAEnrolled, SponsorAccount
 from accounts.serializers import DriverAlertSettingsSerializer
 from accounts.services import get_account_type
 
-from .models import Driver, PointTransaction
+from .models import Driver, PointTransaction, SponsorBehavior
 from .serializers import (
     DriverRemovalRequestSerializer,
     DriverSerializer,
@@ -21,6 +21,7 @@ from .serializers import (
     PointAdjustmentRequestSerializer,
     PointHistorySerializer,
     PointTransactionSerializer,
+    SponsorBehaviorSerializer,
     SponsorDriverAlertSerializer,
 )
 from .services import (
@@ -220,3 +221,50 @@ class PointHistoryView(generics.ListAPIView):
         if limit and limit.isdigit():
             queryset = queryset[: min(int(limit), MAX_POINT_HISTORY_LIMIT)]
         return queryset
+
+
+class SponsorBehaviorMixin:
+    """Sponsors manage their own organization's example behaviors.
+
+    Drivers may read their current sponsor's list; every write is sponsor-only
+    and refused while an admin is viewing as the sponsor.
+    """
+
+    serializer_class = SponsorBehaviorSerializer
+    permission_classes = [IsAuthenticated, DriverOrSponsor, MFAEnrolled]
+
+    def get_permissions(self):
+        if self.request.method not in SAFE_METHODS:
+            return [IsAuthenticated(), SponsorAccount(), MFAEnrolled()]
+        return super().get_permissions()
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        if request.method not in SAFE_METHODS and getattr(request, 'impersonation_active', False):
+            raise PermissionDenied('Stop viewing as this user before changing point behaviors.')
+
+    def get_sponsor(self):
+        user = self.request.user
+        if get_account_type(user) == 'sponsor':
+            return user.sponsor_account.company
+        return user.driver_profile.sponsor
+
+    def get_queryset(self):
+        sponsor = self.get_sponsor()
+        if sponsor is None:
+            return SponsorBehavior.objects.none()
+        return SponsorBehavior.objects.filter(sponsor=sponsor)
+
+    def get_serializer_context(self):
+        return {**super().get_serializer_context(), 'sponsor': self.get_sponsor()}
+
+
+@method_decorator(never_cache, name='dispatch')
+class SponsorBehaviorListView(SponsorBehaviorMixin, generics.ListCreateAPIView):
+    def perform_create(self, serializer):
+        serializer.save(sponsor=self.get_sponsor())
+
+
+@method_decorator(never_cache, name='dispatch')
+class SponsorBehaviorDetailView(SponsorBehaviorMixin, generics.RetrieveUpdateDestroyAPIView):
+    http_method_names = ['get', 'patch', 'delete', 'options']

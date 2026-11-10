@@ -72,6 +72,11 @@ export function removeFromCart(productId) {
   return request(`/cart/items/${productId}/`, { method: 'DELETE' }).then(readJson).then(readCart);
 }
 
+/** Remove every item from the cart. */
+export function clearCart() {
+  return request('/cart/', { method: 'DELETE' }).then(readJson).then(readCart);
+}
+
 /** Buy everything in the cart. Returns the emptied cart plus a `purchase` summary. */
 export function checkout(attempt) {
   return request('/cart/checkout/', { method: 'POST', body: attempt }).then(readJson).then((data) => {

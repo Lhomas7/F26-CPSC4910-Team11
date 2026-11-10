@@ -19,6 +19,7 @@ const DRIVER_SETTINGS = [
   { field: 'points_added_enabled', label: 'Points added' },
   { field: 'points_removed_enabled', label: 'Points removed' },
   { field: 'new_products_enabled', label: 'New rewards (in-app only)' },
+  { field: 'reward_purchase_enabled', label: 'Reward purchases' },
   { field: 'email_enabled', label: 'Email delivery' },
   { field: 'sms_enabled', label: 'Text message delivery' },
 ];

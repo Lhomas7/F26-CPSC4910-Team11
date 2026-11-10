@@ -93,6 +93,12 @@ def clear_cart(driver):
     CartItem.objects.filter(driver=driver).delete()
 
 
+def empty_cart(*, user):
+    """Remove everything from the signed-in driver's cart. An empty cart is fine."""
+    scope = driver_catalog_scope(user)
+    CartItem.objects.filter(driver_id=scope.driver_id).delete()
+
+
 @dataclass(frozen=True)
 class Purchase:
     items: list[str]
@@ -229,7 +235,6 @@ def checkout_cart(*, user, idempotency_key=None, review_token=None):
         ) for item, cost in zip(items, costs)
     ])
     CartItem.objects.filter(pk__in=[item.pk for item in items]).delete()
-    transaction.on_commit(
-        lambda: notify_reward_purchase(driver, total, len(items), balance), robust=True
-    )
-    return purchase_receipt(redemption)
+    receipt = purchase_receipt(redemption)
+    transaction.on_commit(lambda: notify_reward_purchase(driver, receipt), robust=True)
+    return receipt

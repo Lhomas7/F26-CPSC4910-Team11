@@ -14,6 +14,7 @@ export function CartProvider({ viewingAs = false, ownerId = null, organization =
   const [error, setError] = useState(null);
   const [actionError, setActionError] = useState('');
   const [pendingIds, setPendingIds] = useState(() => new Set());
+  const [clearing, setClearing] = useState(false);
   const [open, setOpen] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
   const [checkoutPhase, setCheckoutPhase] = useState('idle');
@@ -159,6 +160,21 @@ export function CartProvider({ viewingAs = false, ownerId = null, organization =
     }
   }
 
+  async function clear() {
+    if (viewingAs || attempt.current || busy.current || pendingIds.size) return;
+    busy.current = true; setClearing(true); setActionError(''); clearReview();
+    try {
+      const data = await api.clearCart();
+      if (!alive.current) return;
+      latestRead.current += 1; setCart(data); setError(null); setStatus('ready');
+    } catch (failure) {
+      if (alive.current) setActionError(failure.message || 'Your cart could not be cleared.');
+    } finally {
+      busy.current = false;
+      if (alive.current) setClearing(false);
+    }
+  }
+
   async function change(productId, action) {
     if (viewingAs || attempt.current || busy.current || pendingIds.has(productId)) return;
     setPendingIds((ids) => new Set(ids).add(productId)); setActionError(''); clearReview();
@@ -175,7 +191,7 @@ export function CartProvider({ viewingAs = false, ownerId = null, organization =
 
   return <CartContext.Provider value={{
     cart, status, error, actionError, clearActionError, checkout, checkingOut, checkoutPhase,
-    lastPurchase, clearLastPurchase, purchaseVersion, pendingIds, viewingAs,
+    lastPurchase, clearLastPurchase, purchaseVersion, pendingIds, viewingAs, clear, clearing,
     open, setOpen, reload, review, reviewStatus, reviewNotice, beginReview, clearReview,
     pendingAttempt, checkPurchaseStatus,
     canRetry: Boolean(pendingAttempt && originalReview.current &&

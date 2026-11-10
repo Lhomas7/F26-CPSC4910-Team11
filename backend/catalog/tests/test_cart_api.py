@@ -1,7 +1,8 @@
 from django.contrib.auth import get_user_model
+from types import SimpleNamespace
 from uuid import uuid4
 from unittest.mock import patch
-from django.core import signing
+from django.core import mail, signing
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APIClient, APITestCase
@@ -18,6 +19,7 @@ from accounts.models import (
     SponsorAccount,
     SponsorCompany,
 )
+from accounts.services.notify import notify_reward_purchase
 from catalog.models import CartItem, CatalogProduct, Redemption, RedemptionItem
 from drivers.models import Driver, PointTransaction
 from drivers.services.membership import reassign_driver_sponsor, remove_driver_from_sponsor
@@ -170,7 +172,46 @@ class DriverCartApiTests(APITestCase):
         response = client.post(self.items_url, {'product_id': self.jacket.pk}, format='json')
         self.assertEqual(response.status_code, 403)
         self.assertEqual(client.delete(self.item_url(self.mug.pk)).status_code, 403)
+        self.assertEqual(client.delete(self.cart_url).status_code, 403)
         self.assertEqual(CartItem.objects.filter(driver=self.driver).count(), 1)
+
+    def test_clear_cart_removes_every_item(self):
+        self.add(self.mug)
+        self.add(self.jacket)
+
+        response = self.client.delete(self.cart_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['results'], [])
+        self.assertEqual(response.data['item_count'], 0)
+        self.assertEqual(response.data['total_points'], 0)
+        self.assertEqual(response.data['point_balance'], 3000)
+        self.assertFalse(CartItem.objects.filter(driver=self.driver).exists())
+
+    def test_clearing_an_empty_cart_is_harmless(self):
+        response = self.client.delete(self.cart_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['item_count'], 0)
+
+    def test_clear_cart_leaves_other_drivers_carts_alone(self):
+        other_user = get_user_model().objects.create_user(username='cart.other.driver')
+        other = Driver.objects.create(
+            user=other_user, name='Other Driver', sponsor=self.company, status='approved'
+        )
+        CartItem.objects.create(driver=other, product=self.mug)
+        self.add(self.jacket)
+
+        self.assertEqual(self.client.delete(self.cart_url).status_code, 200)
+        self.assertTrue(CartItem.objects.filter(driver=other, product=self.mug).exists())
+
+    def test_pending_drivers_cannot_clear_a_cart(self):
+        CartItem.objects.create(driver=self.driver, product=self.mug)
+        Driver.objects.filter(pk=self.driver.pk).update(status='pending')
+        self.refresh_login()
+        response = self.client.delete(self.cart_url)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data['code'], 'driver_not_approved')
+        self.assertTrue(CartItem.objects.filter(driver=self.driver).exists())
 
     def test_leaving_sponsor_empties_the_cart(self):
         CartItem.objects.create(driver=self.driver, product=self.mug)
@@ -196,6 +237,40 @@ class DriverCartApiTests(APITestCase):
         in_cart = {p['id']: p['in_cart'] for p in response.data['results']}
         self.assertTrue(in_cart[self.mug.pk])
         self.assertFalse(in_cart[self.jacket.pk])
+
+    def test_cart_survives_signing_out_and_back_in(self):
+        self.add(self.mug)
+        self.add(self.jacket)
+        first_session = APIClient()
+        first_session.force_login(self.driver_user)
+        self.assertEqual(first_session.get(self.cart_url).data['item_count'], 2)
+        first_session.logout()
+
+        second_session = APIClient()
+        second_session.force_login(self.driver_user)
+        response = second_session.get(self.cart_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([row['product']['name'] for row in response.data['results']], ['Jacket', 'Mug'])
+        self.assertEqual(response.data['total_points'], 5250)
+
+    def test_reward_that_goes_out_of_stock_stays_flagged_and_cannot_be_bought(self):
+        self.add(self.mug)
+        CatalogProduct.objects.filter(pk=self.mug.pk).update(is_available=False)
+
+        cart = self.client.get(self.cart_url).data
+        self.assertEqual(cart['item_count'], 1)
+        self.assertFalse(cart['results'][0]['product']['is_available'])
+
+        review = self.client.post(reverse('catalog:cart-review'), {}, format='json')
+        response = self.client.post(
+            reverse('catalog:cart-checkout'),
+            {'review_token': review.data.get('review_token', '')},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['code'], 'cart_has_unavailable')
+        self.assertEqual(Driver.objects.get(pk=self.driver.pk).point_balance, 3000)
+        self.assertTrue(CartItem.objects.filter(driver=self.driver, product=self.mug).exists())
 
     def test_sponsor_catalog_has_no_cart_state(self):
         self.client.force_authenticate(self.sponsor)
@@ -280,10 +355,11 @@ class CartCheckoutApiTests(APITestCase):
         self.assertEqual(entry.changed_by_user, self.driver_user)
         self.assertTrue(entry.reason.startswith('Reward purchase: '))
         alert = Notification.objects.get(user=self.driver_user)
-        self.assertEqual(alert.category, Notification.POINTS_REMOVED)
+        self.assertEqual(alert.category, Notification.REWARD_PURCHASE)
         self.assertEqual(
             alert.message,
-            'You spent 5,250 points on 2 rewards. Your balance is now 750 points.',
+            'Order confirmed. Items: Jacket (4,000 points), Mug (1,250 points). '
+            'Points used: 5,250 points. New balance: 750 points.',
         )
 
     def test_failed_checkouts_change_nothing(self):
@@ -387,13 +463,78 @@ class CartCheckoutApiTests(APITestCase):
         self.assertFalse(CartItem.objects.exists())
         self.assertEqual(Redemption.objects.get(driver=self.driver).sale.gross_amount_usd, 0)
 
-    def test_points_removed_preference_suppresses_the_alert(self):
+    def test_purchase_alert_preference_suppresses_the_alert_and_email(self):
+        self.with_email()
+        DriverNotificationPreferences.objects.create(
+            driver=self.driver, reward_purchase_enabled=False
+        )
+        self.fill(self.mug)
+        self.assertEqual(self.checkout().status_code, 200)
+        self.assertFalse(Notification.objects.exists())
+        self.assertEqual(mail.outbox, [])
+
+    def test_points_removed_preference_does_not_stop_purchase_confirmations(self):
         DriverNotificationPreferences.objects.create(
             driver=self.driver, points_removed_enabled=False
         )
         self.fill(self.mug)
         self.assertEqual(self.checkout().status_code, 200)
-        self.assertFalse(Notification.objects.exists())
+        alert = Notification.objects.get(user=self.driver_user)
+        self.assertEqual(alert.category, Notification.REWARD_PURCHASE)
+
+    def with_email(self):
+        get_user_model().objects.filter(pk=self.driver_user.pk).update(email='driver@example.com')
+        self.driver_user.refresh_from_db()
+        self.client.force_authenticate(self.driver_user)
+
+    def test_checkout_emails_an_itemized_confirmation(self):
+        self.with_email()
+        self.fill(self.mug, self.jacket)
+        self.assertEqual(self.checkout().status_code, 200)
+
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertEqual(email.to, ['driver@example.com'])
+        self.assertEqual(email.subject, 'Your Good Driver reward order is confirmed')
+        self.assertIn('Items ordered:\n  - Jacket: 4,000 points\n  - Mug: 1,250 points', email.body)
+        self.assertIn('Points used: 5,250 points\nNew balance: 750 points', email.body)
+        self.assertNotIn('REDEMPTION', email.body)
+
+    def test_free_order_email_shows_zero_points_used(self):
+        self.with_email()
+        self.fill(self.sticker)
+        self.assertEqual(self.checkout().status_code, 200)
+        self.assertIn('  - Sticker: 0 points', mail.outbox[0].body)
+        self.assertIn('Points used: 0 points\nNew balance: 6,000 points', mail.outbox[0].body)
+
+    def test_email_preference_off_keeps_only_the_in_app_alert(self):
+        self.with_email()
+        DriverNotificationPreferences.objects.create(driver=self.driver, email_enabled=False)
+        self.fill(self.mug)
+        self.assertEqual(self.checkout().status_code, 200)
+        self.assertEqual(mail.outbox, [])
+        self.assertTrue(Notification.objects.filter(user=self.driver_user).exists())
+
+    def test_long_orders_are_shortened_to_fit_the_alert(self):
+        purchase = SimpleNamespace(
+            line_items=[{'name': f'Reward number {n} ' + 'x' * 40, 'unit_points': 100} for n in range(40)],
+            points_spent=4000,
+            point_balance=2000,
+        )
+        notify_reward_purchase(self.driver, purchase)
+
+        message = Notification.objects.get(user=self.driver_user).message
+        self.assertLessEqual(len(message), 1000)
+        self.assertRegex(message, r', and \d+ more\. Points used: 4,000 points\. New balance: 2,000 points\.$')
+
+    def test_email_failure_does_not_undo_the_purchase(self):
+        self.with_email()
+        self.fill(self.mug)
+        with patch('accounts.services.notify.EmailMessage.send', side_effect=OSError('SMTP down')):
+            response = self.checkout()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.balance(), 4750)
+        self.assertTrue(Notification.objects.filter(user=self.driver_user).exists())
 
     def test_view_as_cannot_check_out(self):
         self.fill(self.mug)

@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from accounts.permissions import DriverAccount, MFAEnrolled
 from catalog.serializers import CartAddSerializer, CartItemSerializer
 from catalog.serializers.cart import CartCheckoutSerializer
-from catalog.services import add_to_cart, checkout_cart, get_cart, remove_from_cart
+from catalog.services import add_to_cart, checkout_cart, empty_cart, get_cart, remove_from_cart
 from catalog.services.cart import ReviewChanged, purchase_receipt, review_cart
 from catalog.models import Redemption
 from django.shortcuts import get_object_or_404
@@ -59,6 +59,11 @@ class DriverCartView(APIView):
 @method_decorator(never_cache, name='dispatch')
 class CartView(DriverCartView):
     def get(self, request):
+        return _cart_response(request.user)
+
+    def delete(self, request):
+        self.check_not_viewing_as(request)
+        empty_cart(user=request.user)
         return _cart_response(request.user)
 
 

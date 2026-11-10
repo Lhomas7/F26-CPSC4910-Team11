@@ -213,6 +213,7 @@ class Notification(models.Model):
     DRIVER_POINTS = 'driver_points'
     DRIVER_APPLICATION = 'driver_application'
     CATALOG_PRODUCT = 'catalog_product'
+    REWARD_PURCHASE = 'reward_purchase'
     CATEGORY_CHOICES = [
         (POINTS_ADDED, 'Points added'),
         (POINTS_REMOVED, 'Points removed'),
@@ -221,6 +222,7 @@ class Notification(models.Model):
         (DRIVER_POINTS, "A driver's points changed"),
         (DRIVER_APPLICATION, "A driver applied"),
         (CATALOG_PRODUCT, 'New reward'),
+        (REWARD_PURCHASE, 'Reward purchase'),
     ]
 
     user = models.ForeignKey(
@@ -255,6 +257,8 @@ class DriverNotificationPreferences(models.Model):
     points_removed_enabled = models.BooleanField(default=True)
     # New-reward alerts are in-app only; email and text settings do not apply.
     new_products_enabled = models.BooleanField(default=True)
+    # Confirms the driver's own reward orders; delivered like point alerts.
+    reward_purchase_enabled = models.BooleanField(default=True)
     email_enabled = models.BooleanField(default=True)
     # The driver contact number is unverified, so texts are opt-in.
     sms_enabled = models.BooleanField(default=False)

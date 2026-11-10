@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import Modal from 'components/feedback/Modal';
@@ -22,16 +22,29 @@ function Lines({ rows }) {
     </li>)}</ul>;
 }
 
-function Totals({ total, balance, receipt = false }) {
-  const short = validPoints(balance) && validPoints(total) && total > balance;
+function Receipt({ total, balance }) {
   return <dl className="cart-totals">
-    <div className="cart-total-main"><dt>{receipt ? 'Points spent' : 'Total'}</dt><dd>{points(total)}</dd></div>
-    <div><dt>{receipt ? 'Balance after this purchase' : 'Current balance'}</dt><dd>{points(balance)}</dd></div>
-    {!receipt && validPoints(total) && validPoints(balance) && <div>
-      <dt>{short ? 'Short by' : 'Expected balance after purchase'}</dt>
-      <dd>{points(short ? total - balance : balance - total)}</dd>
-    </div>}
+    <div className="cart-total-main"><dt>Points spent</dt><dd>{points(total)}</dd></div>
+    <div><dt>Balance after this purchase</dt><dd>{points(balance)}</dd></div>
   </dl>;
+}
+
+/** Compares the cart's total with the balance; turns red when the driver is short. */
+function Totals({ count, total, balance }) {
+  const known = validPoints(total) && validPoints(balance);
+  const short = known && total > balance;
+  return <div className={`cart-balance-check${short ? ' is-short' : ''}`} role="group" aria-label="Points check">
+    <dl className="cart-totals">
+      <div><dt>Items</dt><dd>{numbers.format(count)}</dd></div>
+      <div className="cart-total-main"><dt>Total price</dt><dd>{points(total)}</dd></div>
+      <div><dt>Current balance</dt><dd>{points(balance)}</dd></div>
+      {known && <div className="cart-total-after">
+        <dt>Balance after purchase</dt>
+        <dd>{short ? `−${points(total - balance)}` : points(balance - total)}</dd>
+      </div>}
+    </dl>
+    {short && <p className="cart-shortfall" role="alert">You need {points(total - balance)} more for these items.</p>}
+  </div>;
 }
 
 function blockers(cart, viewingAs, changing) {
@@ -41,7 +54,7 @@ function blockers(cart, viewingAs, changing) {
   if (!validPoints(cart.total_points) || !validPoints(cart.point_balance) ||
       cart.results.some((item) => !validPoints(item.product.point_cost))) return 'A point cost is unavailable. Refresh before buying.';
   const reasons = [];
-  if (cart.total_points > cart.point_balance) reasons.push(`You need ${points(cart.total_points - cart.point_balance)} more`);
+  if (cart.total_points > cart.point_balance) reasons.push('Remove items or earn more points before checking out');
   if (cart.results.some((item) => !item.product.is_available)) reasons.push('Remove unavailable rewards before buying');
   return reasons.join('. ');
 }
@@ -50,8 +63,9 @@ export default function CartDrawer({ onClose }) {
   const state = useCart();
   const { cart, review, reviewStatus, reviewNotice, status, error, actionError, pendingAttempt,
     checkingOut, checkoutPhase, lastPurchase, viewingAs, pendingIds, reload, beginReview,
-    clearReview, checkout, checkPurchaseStatus, canRetry, clearLastPurchase, remove } = state;
+    clearReview, checkout, checkPurchaseStatus, canRetry, clearLastPurchase, remove, clear, clearing } = state;
   const heading = useRef(null);
+  const [confirmingClear, setConfirmingClear] = useState(false);
   useEffect(() => { reload(); }, [reload]);
   const reviewing = reviewStatus !== 'idle';
   const pending = pendingAttempt && !(checkingOut && checkoutPhase === 'submitting');
@@ -82,13 +96,14 @@ export default function CartDrawer({ onClose }) {
     </div>;
   } else if (lastPurchase) {
     body = <div className="cart-view">
-      <p className="banner banner-success" role="status">{lastPurchase.points_spent === 0 ? 'Purchase complete. No points were deducted.' : 'Purchase complete.'}</p>
+      <p className="banner banner-success" role="status">Order submitted! {lastPurchase.points_spent === 0
+        ? 'No points were deducted.'
+        : `You used ${points(lastPurchase.points_spent)}. Your new balance is ${points(lastPurchase.point_balance)}.`}</p>
       {lastPurchase.replayed && <p className="banner">This purchase was already completed. These are the original purchase details.</p>}
       <h3 className="cart-view-heading">What you bought</h3>
       <Lines rows={lastPurchase.line_items} />
-      <Totals receipt total={lastPurchase.points_spent} balance={lastPurchase.point_balance} />
+      <Receipt total={lastPurchase.points_spent} balance={lastPurchase.point_balance} />
       <p className="cart-view-lead">Completed <time dateTime={lastPurchase.completed_at}>{localTime.format(new Date(lastPurchase.completed_at))}</time></p>
-      <div><span className="cart-reference-label">Reference</span><code className="cart-reference" tabIndex={0}>{lastPurchase.reference}</code></div>
       <button className="button button-primary" onClick={() => { clearLastPurchase(); clearReview(); onClose(); }}>Keep shopping</button>
       {lastPurchase.points_spent > 0 && <Link to="/points" onClick={onClose}>See point history</Link>}
     </div>;
@@ -99,7 +114,7 @@ export default function CartDrawer({ onClose }) {
         {reviewNotice && <p className="banner banner-warning" role="alert">{reviewNotice}</p>}
         <p className="cart-view-lead">Confirming spends the points below and empties your cart.</p>
         <Lines rows={review.results.map(({ product }) => ({ name: product.name, unit_points: product.point_cost }))} />
-        <Totals total={review.total_points} balance={review.point_balance} />
+        <Totals count={review.results.length} total={review.total_points} balance={review.point_balance} />
       </> : <p>No points were spent. {reviewStatus === 'denied' ? 'Sign in with an eligible Driver account to continue.' : 'The review could not be loaded.'}</p>}
       <div className="cart-actions-row">
         {review && <button className="button button-primary" disabled={Boolean(blocked) || checkingOut} onClick={checkout}>{checkingOut ? 'Purchasing…' : 'Confirm purchase'}</button>}
@@ -116,19 +131,35 @@ export default function CartDrawer({ onClose }) {
   } else if (!cart.results.length) {
     body = <div className="cart-drawer-state"><p>Your cart is empty.</p><p>Use Add to cart on a reward in the catalog to save it here.</p></div>;
   } else {
-    const blocked = blockers(cart, viewingAs, pendingIds.size);
+    const blocked = blockers(cart, viewingAs, pendingIds.size || clearing);
+    const unavailable = cart.results.filter((item) => !item.product.is_available);
+    // One at a time, so each response reflects every removal before it.
+    const removeUnavailable = async () => { for (const { product } of unavailable) await remove(product.id); };
     body = <div className="cart-view">
-      <ul className="cart-items" aria-label="Rewards in your cart">{cart.results.map(({ product }) => <li className="cart-item" key={product.id}>
+      {unavailable.length > 0 && <div className="banner banner-warning cart-unavailable-notice" role="alert">
+        <p>{unavailable.length === 1 ? '1 reward in your cart is' : `${unavailable.length} rewards in your cart are`} no longer available and can’t be purchased.</p>
+        {!viewingAs && <button className="button" disabled={pendingIds.size > 0 || clearing} onClick={removeUnavailable}>Remove unavailable items</button>}
+      </div>}
+      <ul className="cart-items" aria-label="Rewards in your cart">{cart.results.map(({ product }) => <li className={`cart-item${product.is_available ? '' : ' cart-item-unavailable'}`} key={product.id}>
         <div className="cart-item-image"><ProductImage src={product.image_url} name={product.name} emptyText="" failedText="" /></div>
         <div className="cart-item-body"><strong className="cart-item-name">{product.name}</strong><span className="cart-item-cost">{points(product.point_cost)}</span>
-          {!product.is_available && <span className="badge badge-dot badge-neutral">Unavailable</span>}</div>
+          {!product.is_available && <span className="badge badge-dot badge-danger">Out of stock</span>}</div>
         <button className="button button-danger-outline cart-item-remove" disabled={viewingAs || pendingIds.has(product.id)} aria-label={`Remove ${product.name} from cart`} onClick={() => remove(product.id)}>{pendingIds.has(product.id) ? 'Removing…' : 'Remove'}</button>
       </li>)}</ul>
-      <Totals total={cart.total_points} balance={cart.point_balance} />
+      <Totals count={cart.item_count} total={cart.total_points} balance={cart.point_balance} />
       {error && <p className="banner banner-warning" role="alert">Cart could not be refreshed. Previously loaded information is shown.</p>}
       {viewingAs && <p className="banner">You’re viewing as this driver, so the cart is read-only.</p>}
-      <button className="button button-primary" disabled={Boolean(blocked) || status === 'loading' || Boolean(error)} onClick={beginReview}>Check out</button>
-      {blocked && !viewingAs && <p className="cart-blocked-reason">{blocked}</p>}
+      {confirmingClear && !viewingAs ? <div className="cart-clear-confirm" role="alertdialog" aria-labelledby="cart-clear-title">
+        <p id="cart-clear-title">{cart.item_count === 1 ? 'Remove the 1 item from your cart?' : `Remove all ${numbers.format(cart.item_count)} items from your cart?`}</p>
+        <div className="cart-actions-row">
+          <button className="button button-danger" onClick={() => { setConfirmingClear(false); clear(); }}>Clear cart</button>
+          <button className="button" data-autofocus onClick={() => setConfirmingClear(false)}>Keep items</button>
+        </div>
+      </div> : <div className="cart-actions-row">
+        <button className="button button-primary" disabled={Boolean(blocked) || status === 'loading' || Boolean(error)} onClick={beginReview}>Check out</button>
+        {!viewingAs && <button className="button button-danger-outline" disabled={clearing || pendingIds.size > 0} onClick={() => setConfirmingClear(true)}>{clearing ? 'Clearing…' : 'Clear cart'}</button>}
+      </div>}
+      {blocked && !viewingAs && !confirmingClear && <p className="cart-blocked-reason">{blocked}</p>}
     </div>;
   }
 
