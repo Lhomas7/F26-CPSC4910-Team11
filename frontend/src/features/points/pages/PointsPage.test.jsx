@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 import * as api from 'api';
@@ -37,6 +37,7 @@ function renderPage() {
   );
 }
 
+beforeEach(() => api.getBehaviors.mockResolvedValue([]));
 afterEach(() => jest.clearAllMocks());
 
 test('drivers see their balance, sponsor and full history with reasons', async () => {
@@ -107,4 +108,59 @@ test('sponsors see recent activity across drivers and can narrow it to one', asy
     'href',
     '/drivers/4',
   );
+});
+
+const driverRecord = {
+  id: 4,
+  name: 'Jamie Rivera',
+  username: 'jamie.rivera',
+  status: 'approved',
+  point_balance: 125,
+  sponsor_name: 'Palmetto Freight',
+};
+
+test("drivers see their sponsor's good and bad behaviors in their standing", async () => {
+  useAuth.mockReturnValue({ user: { account_type: 'driver' } });
+  api.getDrivers.mockResolvedValue([driverRecord]);
+  api.getPointHistory.mockResolvedValue([]);
+  api.getBehaviors.mockResolvedValue([
+    { id: 1, kind: 'bad', description: 'Hard braking', point_value: 50, signed_points: -50 },
+    {
+      id: 2,
+      kind: 'good',
+      description: 'On-time delivery',
+      point_value: 1500,
+      signed_points: 1500,
+    },
+  ]);
+  renderPage();
+
+  const standing = await screen.findByRole('region', { name: 'Program standing' });
+  const earns = await within(standing).findByRole('region', { name: 'Earns points' });
+  expect(within(earns).getByText('On-time delivery')).toBeInTheDocument();
+  expect(within(earns).getByText('+1,500 pts')).toBeInTheDocument();
+  const costs = within(standing).getByRole('region', { name: 'Costs points' });
+  expect(within(costs).getByText('Hard braking')).toBeInTheDocument();
+  expect(within(costs).getByText('−50 pts')).toBeInTheDocument();
+});
+
+test('drivers are told when their sponsor has not listed behaviors', async () => {
+  useAuth.mockReturnValue({ user: { account_type: 'driver' } });
+  api.getDrivers.mockResolvedValue([driverRecord]);
+  api.getPointHistory.mockResolvedValue([]);
+  renderPage();
+
+  expect(
+    await screen.findByText("Palmetto Freight hasn't listed example behaviors yet."),
+  ).toBeInTheDocument();
+});
+
+test('drivers without a sponsor see no behavior section', async () => {
+  useAuth.mockReturnValue({ user: { account_type: 'driver' } });
+  api.getDrivers.mockResolvedValue([{ ...driverRecord, sponsor_name: null, status: 'pending' }]);
+  api.getPointHistory.mockResolvedValue([]);
+  renderPage();
+
+  expect(await screen.findByText('Not linked to a sponsor')).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'How points change' })).not.toBeInTheDocument();
 });

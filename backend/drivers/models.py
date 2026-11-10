@@ -138,3 +138,47 @@ class DriverStatusChange(models.Model):
 
     def __str__(self):
         return f'{self.driver}: {self.get_action_display()}'
+
+
+class SponsorBehavior(models.Model):
+    """An example behavior a sponsor rewards or penalizes, shown to its drivers."""
+
+    GOOD = 'good'
+    BAD = 'bad'
+    KIND_CHOICES = [
+        (GOOD, 'Earns points'),
+        (BAD, 'Costs points'),
+    ]
+    MAX_PER_KIND = 25
+    MAX_DESCRIPTION_LENGTH = 200
+
+    sponsor = models.ForeignKey(
+        'accounts.SponsorCompany',
+        on_delete=models.CASCADE,
+        related_name='behaviors',
+    )
+    kind = models.CharField(max_length=10, choices=KIND_CHOICES)
+    description = models.CharField(max_length=MAX_DESCRIPTION_LENGTH)
+    # Always positive; the kind decides whether points are earned or lost.
+    point_value = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('kind', '-point_value', 'id')
+        constraints = [
+            models.UniqueConstraint(
+                fields=('sponsor', 'kind', 'description'),
+                name='sponsor_behavior_unique_description',
+            ),
+            models.CheckConstraint(
+                condition=models.Q(point_value__gte=1),
+                name='sponsor_behavior_points_positive',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.sponsor}: {self.description} ({self.signed_points:+})'
+
+    @property
+    def signed_points(self):
+        return self.point_value if self.kind == self.GOOD else -self.point_value

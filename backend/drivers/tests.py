@@ -19,7 +19,7 @@ from accounts.models import (
 )
 from accounts.tests.common import enroll_totp
 
-from .models import Driver, DriverStatusChange, PointTransaction
+from .models import Driver, DriverStatusChange, PointTransaction, SponsorBehavior
 from .services import MAX_POINT_ADJUSTMENT, PointAdjustmentError, adjust_driver_points
 
 
@@ -1373,3 +1373,114 @@ class PersonalDataAccessTests(RoleScopedDriverTestData):
                 ).status_code,
                 status.HTTP_403_FORBIDDEN,
             )
+
+
+class SponsorBehaviorApiTests(RoleScopedDriverTestData):
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.braking = SponsorBehavior.objects.create(
+            sponsor=cls.company, kind='bad', description='Hard braking', point_value=50
+        )
+        cls.inspection = SponsorBehavior.objects.create(
+            sponsor=cls.company, kind='good', description='Clean inspection', point_value=100
+        )
+        cls.elsewhere = SponsorBehavior.objects.create(
+            sponsor=cls.other_company, kind='good', description='On-time delivery', point_value=25
+        )
+
+    def list_as(self, user):
+        self.client.force_authenticate(user)
+        return self.client.get(reverse('point-behaviors'))
+
+    def create_as(self, user, **data):
+        self.client.force_authenticate(user)
+        payload = {'kind': 'good', 'description': 'Zero idle time', 'point_value': 40, **data}
+        return self.client.post(reverse('point-behaviors'), payload, format='json')
+
+    def item_url(self, behavior):
+        return reverse('point-behavior', args=[behavior.pk])
+
+    def test_drivers_see_their_sponsors_behaviors_with_signed_points(self):
+        response = self.list_as(self.approved.user)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [(row['kind'], row['description'], row['signed_points']) for row in response.data],
+            [('bad', 'Hard braking', -50), ('good', 'Clean inspection', 100)],
+        )
+
+    def test_pending_drivers_also_see_the_list_and_unlinked_drivers_see_none(self):
+        self.assertEqual(len(self.list_as(self.pending.user).data), 2)
+
+        self.pending.sponsor = None
+        self.pending.save(update_fields=['sponsor'])
+        response = self.list_as(self.pending.user)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, [])
+
+    def test_sponsor_creates_edits_and_deletes_their_behaviors(self):
+        created = self.create_as(self.sponsor_user, description='  Zero   idle time ')
+        self.assertEqual(created.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(created.data['description'], 'Zero idle time')
+        behavior = SponsorBehavior.objects.get(pk=created.data['id'])
+        self.assertEqual(behavior.sponsor, self.company)
+
+        updated = self.client.patch(
+            self.item_url(behavior), {'kind': 'bad', 'point_value': 15}, format='json'
+        )
+        self.assertEqual(updated.status_code, status.HTTP_200_OK)
+        self.assertEqual(updated.data['signed_points'], -15)
+
+        deleted = self.client.delete(self.item_url(behavior))
+        self.assertEqual(deleted.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(SponsorBehavior.objects.filter(pk=behavior.pk).exists())
+
+    def test_sponsors_cannot_see_or_change_another_organizations_behaviors(self):
+        self.assertEqual(
+            [row['description'] for row in self.list_as(self.other_sponsor_user).data],
+            ['On-time delivery'],
+        )
+        self.client.force_authenticate(self.sponsor_user)
+        url = self.item_url(self.elsewhere)
+        self.assertEqual(self.client.patch(url, {'point_value': 1}, format='json').status_code, 404)
+        self.assertEqual(self.client.delete(url).status_code, 404)
+        self.elsewhere.refresh_from_db()
+        self.assertEqual(self.elsewhere.point_value, 25)
+
+    def test_drivers_and_admins_cannot_change_behaviors(self):
+        self.assertEqual(self.create_as(self.approved.user).status_code, status.HTTP_403_FORBIDDEN)
+        self.client.force_authenticate(self.approved.user)
+        self.assertEqual(self.client.delete(self.item_url(self.braking)).status_code, 403)
+        self.assertEqual(self.list_as(self.admin_user).status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(self.create_as(self.admin_user).status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(SponsorBehavior.objects.count(), 3)
+
+    def test_invalid_behaviors_are_rejected(self):
+        cases = {
+            'blank description': ({'description': '   '}, 'description'),
+            'control characters': ({'description': 'Bad\x00input'}, 'description'),
+            'too long': ({'description': 'x' * 201}, 'description'),
+            'zero points': ({'point_value': 0}, 'point_value'),
+            'negative points': ({'point_value': -5}, 'point_value'),
+            'too many points': ({'point_value': MAX_POINT_ADJUSTMENT + 1}, 'point_value'),
+            'unknown kind': ({'kind': 'neutral'}, 'kind'),
+            'duplicate': ({'kind': 'bad', 'description': 'hard BRAKING'}, 'description'),
+        }
+        for label, (data, field) in cases.items():
+            with self.subTest(label):
+                response = self.create_as(self.sponsor_user, **data)
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn(field, response.data)
+        self.assertEqual(SponsorBehavior.objects.filter(sponsor=self.company).count(), 2)
+
+    def test_each_kind_is_capped(self):
+        SponsorBehavior.objects.bulk_create(
+            SponsorBehavior(sponsor=self.company, kind='good', description=f'Award {n}', point_value=1)
+            for n in range(SponsorBehavior.MAX_PER_KIND - 1)
+        )
+        response = self.create_as(self.sponsor_user)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('kind', response.data)
+        # The other kind still has room.
+        self.assertEqual(self.create_as(self.sponsor_user, kind='bad').status_code, 201)

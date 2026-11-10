@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Driver, PointTransaction
+from .models import Driver, PointTransaction, SponsorBehavior
 
 
 @admin.register(Driver)
@@ -28,3 +28,11 @@ class PointTransactionAdmin(admin.ModelAdmin):
         'reason',
     )
     readonly_fields = ('changed_at',)
+
+
+@admin.register(SponsorBehavior)
+class SponsorBehaviorAdmin(admin.ModelAdmin):
+    list_display = ('description', 'kind', 'point_value', 'sponsor')
+    list_filter = ('kind', 'sponsor')
+    list_select_related = ('sponsor',)
+    search_fields = ('description',)

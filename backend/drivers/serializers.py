@@ -2,9 +2,9 @@ from rest_framework import serializers
 
 from accounts.models import SponsorDriverAlert
 
-from .models import Driver, DriverStatusChange, PointTransaction
-from .services import MAX_POINT_REASON_LENGTH
-from .services.reasons import MAX_REASON_LENGTH
+from .models import Driver, DriverStatusChange, PointTransaction, SponsorBehavior
+from .services import MAX_POINT_ADJUSTMENT, MAX_POINT_REASON_LENGTH
+from .services.reasons import MAX_REASON_LENGTH, normalize_reason
 
 
 class DriverSerializer(serializers.ModelSerializer):
@@ -110,3 +110,51 @@ class SponsorDriverAlertSerializer(serializers.ModelSerializer):
     class Meta:
         model = SponsorDriverAlert
         fields = ('on_points_added', 'on_points_removed')
+
+
+class SponsorBehaviorSerializer(serializers.ModelSerializer):
+    """A sponsor's example behavior; the sponsor comes from the request."""
+
+    point_value = serializers.IntegerField(min_value=1, max_value=MAX_POINT_ADJUSTMENT)
+    signed_points = serializers.IntegerField(read_only=True)
+    # Bounds the payload only; validate_description applies the real limit.
+    description = serializers.CharField(trim_whitespace=False, max_length=MAX_REASON_LENGTH + 1)
+
+    class Meta:
+        model = SponsorBehavior
+        fields = ('id', 'kind', 'description', 'point_value', 'signed_points')
+        read_only_fields = ('id', 'signed_points')
+        # Uniqueness is checked in validate() with a friendlier message.
+        validators = []
+
+    def validate_description(self, value):
+        def error(code, message):
+            if code == 'missing_reason':
+                message = 'Describe this behavior.'
+            return serializers.ValidationError(message, code=code)
+
+        description = normalize_reason(value, subject='this behavior', error=error)
+        limit = SponsorBehavior.MAX_DESCRIPTION_LENGTH
+        if len(description) > limit:
+            raise serializers.ValidationError(
+                f'Behaviors must be {limit} characters or fewer.', code='description_too_long'
+            )
+        return description
+
+    def validate(self, attrs):
+        sponsor = self.context['sponsor']
+        kind = attrs.get('kind', getattr(self.instance, 'kind', None))
+        description = attrs.get('description', getattr(self.instance, 'description', None))
+        siblings = SponsorBehavior.objects.filter(sponsor=sponsor, kind=kind)
+        if self.instance is not None:
+            siblings = siblings.exclude(pk=self.instance.pk)
+        if siblings.filter(description__iexact=description).exists():
+            raise serializers.ValidationError(
+                {'description': 'This behavior is already listed.'}, code='duplicate_behavior'
+            )
+        if siblings.count() >= SponsorBehavior.MAX_PER_KIND:
+            raise serializers.ValidationError(
+                {'kind': f'You can list up to {SponsorBehavior.MAX_PER_KIND} behaviors of each kind.'},
+                code='too_many_behaviors',
+            )
+        return attrs

@@ -54,3 +54,22 @@ export function updateDriverAlerts(driverId, data) {
 export function getDriverAlertSettings(driverId) {
   return request(`/sponsor/drivers/${driverId}/notification-preferences/`).then(readJson);
 }
+
+/** Example behaviors that earn or cost points: a driver's sponsor's, or a sponsor's own. */
+export function getBehaviors() {
+  return request('/points/behaviors/').then(readJson);
+}
+
+export function createBehavior(data) {
+  return request('/points/behaviors/', { method: 'POST', body: data }).then(readJson);
+}
+
+export function updateBehavior(behaviorId, data) {
+  return request(`/points/behaviors/${behaviorId}/`, { method: 'PATCH', body: data }).then(
+    readJson,
+  );
+}
+
+export function deleteBehavior(behaviorId) {
+  return request(`/points/behaviors/${behaviorId}/`, { method: 'DELETE' }).then(readJson);
+}
