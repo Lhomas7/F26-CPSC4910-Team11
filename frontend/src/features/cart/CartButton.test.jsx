@@ -91,7 +91,7 @@ test('unavailable items are flagged and can still be removed', async () => {
   renderButton();
   fireEvent.click(await screen.findByRole('button', { name: 'Cart, 1 item' }));
   const dialog = await screen.findByRole('dialog');
-  expect(within(dialog).getByText('Unavailable')).toBeInTheDocument();
+  expect(within(dialog).getByText('Out of stock')).toBeInTheDocument();
   expect(within(dialog).getByRole('button', { name: 'Remove Travel Mug from cart' })).toBeEnabled();
 });
 
@@ -196,4 +196,78 @@ test('a failed checkout shows the error and keeps the cart', async () => {
   fireEvent.click(await within(dialog).findByRole('button', { name: 'Confirm purchase' }));
   expect(await within(dialog).findByRole('alert')).toHaveTextContent(/your balance is 0/);
   expect(within(dialog).getByRole('list', { name: 'Rewards in your cart' })).toBeInTheDocument();
+});
+
+test('the totals show the item count, total price and balance after purchase', async () => {
+  getCart.mockResolvedValue(cartWith([mug], 3200));
+  renderButton();
+  const dialog = await openDrawer(1);
+
+  const check = await within(dialog).findByRole('group', { name: 'Points check' });
+  expect(check).toHaveTextContent(
+    'Items1Total price2,495 pointsCurrent balance3,200 pointsBalance after purchase705 points',
+  );
+  expect(check).not.toHaveClass('is-short');
+  expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument();
+});
+
+test('a short balance turns the totals red and shows how many more points are needed', async () => {
+  getCart.mockResolvedValue(cartWith([mug, jacket], 3200));
+  renderButton();
+  const dialog = await openDrawer(2);
+
+  const check = await within(dialog).findByRole('group', { name: 'Points check' });
+  expect(check).toHaveClass('is-short');
+  expect(within(check).getByRole('alert')).toHaveTextContent(
+    'You need 3,295 points more for these items.',
+  );
+  expect(within(check).getByText('−3,295 points')).toBeInTheDocument();
+  expect(within(dialog).getByRole('button', { name: 'Check out' })).toBeDisabled();
+});
+
+test('the review also blocks confirming when the balance changed and is now short', async () => {
+  getCart.mockResolvedValue(cartWith([mug], 3200));
+  reviewCart.mockResolvedValue({ ...cartWith([mug], 1000), review_token: 'review-token' });
+  renderButton();
+  const dialog = await openDrawer(1);
+
+  fireEvent.click(await within(dialog).findByRole('button', { name: 'Check out' }));
+  expect(await within(dialog).findByText('You need 1,495 points more for these items.')).toBeInTheDocument();
+  expect(within(dialog).getByRole('button', { name: 'Confirm purchase' })).toBeDisabled();
+  expect(checkout).not.toHaveBeenCalled();
+});
+
+test('out-of-stock rewards are highlighted and can be removed together', async () => {
+  const soldOutMug = { ...mug, is_available: false };
+  const soldOutJacket = { ...jacket, id: 3, name: 'Rain Jacket', point_cost: 100, is_available: false };
+  const shirt = { ...mug, id: 4, name: 'Shirt', point_cost: 100 };
+  getCart.mockResolvedValue(cartWith([soldOutMug, soldOutJacket, shirt]));
+  removeFromCart
+    .mockResolvedValueOnce(cartWith([soldOutJacket, shirt]))
+    .mockResolvedValueOnce(cartWith([shirt]));
+  renderButton();
+  const dialog = await openDrawer(3);
+
+  expect(await within(dialog).findByText('2 rewards in your cart are no longer available and can’t be purchased.')).toBeInTheDocument();
+  const items = within(dialog).getAllByRole('listitem');
+  expect(items[0]).toHaveClass('cart-item-unavailable');
+  expect(items[2]).not.toHaveClass('cart-item-unavailable');
+  expect(within(dialog).getByRole('button', { name: 'Check out' })).toBeDisabled();
+
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Remove unavailable items' }));
+  expect(await screen.findByRole('dialog', { name: 'Your cart (1)' })).toBeInTheDocument();
+  expect(removeFromCart.mock.calls).toEqual([[1], [3]]);
+  expect(screen.queryByText(/no longer available/)).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Check out' })).toBeEnabled();
+});
+
+test('the cart is loaded from the server each time the app starts', async () => {
+  getCart.mockResolvedValue(cartWith([mug, jacket]));
+  const { unmount } = renderButton();
+  expect(await screen.findByRole('button', { name: 'Cart, 2 items' })).toBeInTheDocument();
+  unmount();
+
+  renderButton();
+  expect(await screen.findByRole('button', { name: 'Cart, 2 items' })).toBeInTheDocument();
+  expect(getCart).toHaveBeenCalledTimes(2);
 });

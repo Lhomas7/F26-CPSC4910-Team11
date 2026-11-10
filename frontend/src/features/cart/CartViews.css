@@ -242,3 +242,57 @@
   display: grid;
   gap: 0.5rem;
 }
+
+/* ---- Balance check. Red when the cart costs more than the balance. ---- */
+.cart-balance-check {
+  border-radius: 0.6rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.cart-balance-check.is-short {
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-line);
+  padding: 0 0.75rem 0.65rem;
+}
+
+.cart-balance-check.is-short .cart-totals {
+  border-top: 0;
+}
+
+.cart-balance-check.is-short .cart-total-after dt,
+.cart-balance-check.is-short .cart-total-after dd {
+  color: var(--danger-ink);
+}
+
+.cart-shortfall {
+  color: var(--danger-ink);
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* ---- Out-of-stock rewards stay listed so the driver can remove them. -- */
+.cart-item-unavailable {
+  background: var(--danger-soft);
+  border-color: var(--danger-line);
+}
+
+.cart-item-unavailable .cart-item-name,
+.cart-item-unavailable .cart-item-cost {
+  color: var(--ink-2);
+  text-decoration: line-through;
+}
+
+.cart-unavailable-notice {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  justify-content: space-between;
+}
+
+.cart-unavailable-notice p {
+  margin: 0;
+}

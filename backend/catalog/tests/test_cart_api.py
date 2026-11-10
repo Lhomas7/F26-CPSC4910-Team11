@@ -197,6 +197,40 @@ class DriverCartApiTests(APITestCase):
         self.assertTrue(in_cart[self.mug.pk])
         self.assertFalse(in_cart[self.jacket.pk])
 
+    def test_cart_survives_signing_out_and_back_in(self):
+        self.add(self.mug)
+        self.add(self.jacket)
+        first_session = APIClient()
+        first_session.force_login(self.driver_user)
+        self.assertEqual(first_session.get(self.cart_url).data['item_count'], 2)
+        first_session.logout()
+
+        second_session = APIClient()
+        second_session.force_login(self.driver_user)
+        response = second_session.get(self.cart_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([row['product']['name'] for row in response.data['results']], ['Jacket', 'Mug'])
+        self.assertEqual(response.data['total_points'], 5250)
+
+    def test_reward_that_goes_out_of_stock_stays_flagged_and_cannot_be_bought(self):
+        self.add(self.mug)
+        CatalogProduct.objects.filter(pk=self.mug.pk).update(is_available=False)
+
+        cart = self.client.get(self.cart_url).data
+        self.assertEqual(cart['item_count'], 1)
+        self.assertFalse(cart['results'][0]['product']['is_available'])
+
+        review = self.client.post(reverse('catalog:cart-review'), {}, format='json')
+        response = self.client.post(
+            reverse('catalog:cart-checkout'),
+            {'review_token': review.data.get('review_token', '')},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['code'], 'cart_has_unavailable')
+        self.assertEqual(Driver.objects.get(pk=self.driver.pk).point_balance, 3000)
+        self.assertTrue(CartItem.objects.filter(driver=self.driver, product=self.mug).exists())
+
     def test_sponsor_catalog_has_no_cart_state(self):
         self.client.force_authenticate(self.sponsor)
         response = self.client.get(reverse('catalog:browse'))
