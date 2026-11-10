@@ -5,6 +5,7 @@ from .cart import (
     cart_product_ids,
     checkout_cart,
     clear_cart,
+    empty_cart,
     get_cart,
     remove_from_cart,
 )
@@ -22,5 +23,6 @@ __all__ = [
     'remove_from_cart',
     'cart_product_ids',
     'clear_cart',
+    'empty_cart',
     'checkout_cart',
 ]

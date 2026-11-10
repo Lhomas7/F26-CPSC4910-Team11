@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import Modal from 'components/feedback/Modal';
@@ -63,8 +63,9 @@ export default function CartDrawer({ onClose }) {
   const state = useCart();
   const { cart, review, reviewStatus, reviewNotice, status, error, actionError, pendingAttempt,
     checkingOut, checkoutPhase, lastPurchase, viewingAs, pendingIds, reload, beginReview,
-    clearReview, checkout, checkPurchaseStatus, canRetry, clearLastPurchase, remove } = state;
+    clearReview, checkout, checkPurchaseStatus, canRetry, clearLastPurchase, remove, clear, clearing } = state;
   const heading = useRef(null);
+  const [confirmingClear, setConfirmingClear] = useState(false);
   useEffect(() => { reload(); }, [reload]);
   const reviewing = reviewStatus !== 'idle';
   const pending = pendingAttempt && !(checkingOut && checkoutPhase === 'submitting');
@@ -128,14 +129,14 @@ export default function CartDrawer({ onClose }) {
   } else if (!cart.results.length) {
     body = <div className="cart-drawer-state"><p>Your cart is empty.</p><p>Use Add to cart on a reward in the catalog to save it here.</p></div>;
   } else {
-    const blocked = blockers(cart, viewingAs, pendingIds.size);
+    const blocked = blockers(cart, viewingAs, pendingIds.size || clearing);
     const unavailable = cart.results.filter((item) => !item.product.is_available);
     // One at a time, so each response reflects every removal before it.
     const removeUnavailable = async () => { for (const { product } of unavailable) await remove(product.id); };
     body = <div className="cart-view">
       {unavailable.length > 0 && <div className="banner banner-warning cart-unavailable-notice" role="alert">
         <p>{unavailable.length === 1 ? '1 reward in your cart is' : `${unavailable.length} rewards in your cart are`} no longer available and can’t be purchased.</p>
-        {!viewingAs && <button className="button" disabled={pendingIds.size > 0} onClick={removeUnavailable}>Remove unavailable items</button>}
+        {!viewingAs && <button className="button" disabled={pendingIds.size > 0 || clearing} onClick={removeUnavailable}>Remove unavailable items</button>}
       </div>}
       <ul className="cart-items" aria-label="Rewards in your cart">{cart.results.map(({ product }) => <li className={`cart-item${product.is_available ? '' : ' cart-item-unavailable'}`} key={product.id}>
         <div className="cart-item-image"><ProductImage src={product.image_url} name={product.name} emptyText="" failedText="" /></div>
@@ -146,8 +147,17 @@ export default function CartDrawer({ onClose }) {
       <Totals count={cart.item_count} total={cart.total_points} balance={cart.point_balance} />
       {error && <p className="banner banner-warning" role="alert">Cart could not be refreshed. Previously loaded information is shown.</p>}
       {viewingAs && <p className="banner">You’re viewing as this driver, so the cart is read-only.</p>}
-      <button className="button button-primary" disabled={Boolean(blocked) || status === 'loading' || Boolean(error)} onClick={beginReview}>Check out</button>
-      {blocked && !viewingAs && <p className="cart-blocked-reason">{blocked}</p>}
+      {confirmingClear && !viewingAs ? <div className="cart-clear-confirm" role="alertdialog" aria-labelledby="cart-clear-title">
+        <p id="cart-clear-title">{cart.item_count === 1 ? 'Remove the 1 item from your cart?' : `Remove all ${numbers.format(cart.item_count)} items from your cart?`}</p>
+        <div className="cart-actions-row">
+          <button className="button button-danger" onClick={() => { setConfirmingClear(false); clear(); }}>Clear cart</button>
+          <button className="button" data-autofocus onClick={() => setConfirmingClear(false)}>Keep items</button>
+        </div>
+      </div> : <div className="cart-actions-row">
+        <button className="button button-primary" disabled={Boolean(blocked) || status === 'loading' || Boolean(error)} onClick={beginReview}>Check out</button>
+        {!viewingAs && <button className="button button-danger-outline" disabled={clearing || pendingIds.size > 0} onClick={() => setConfirmingClear(true)}>{clearing ? 'Clearing…' : 'Clear cart'}</button>}
+      </div>}
+      {blocked && !viewingAs && !confirmingClear && <p className="cart-blocked-reason">{blocked}</p>}
     </div>;
   }
 

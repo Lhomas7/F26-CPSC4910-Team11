@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
-import { checkout, getCart, removeFromCart, reviewCart } from 'api/cart';
+import { checkout, clearCart, getCart, removeFromCart, reviewCart } from 'api/cart';
 import CartButton from './CartButton';
 import { CartProvider } from './CartContext';
 
@@ -38,6 +38,7 @@ beforeEach(() => {
   getCart.mockReset();
   removeFromCart.mockReset();
   checkout.mockReset();
+  clearCart.mockReset();
   reviewCart.mockImplementation(async () => ({ ...await getCart(), review_token: 'review-token' }));
 });
 
@@ -271,4 +272,57 @@ test('the cart is loaded from the server each time the app starts', async () => 
   renderButton();
   expect(await screen.findByRole('button', { name: 'Cart, 2 items' })).toBeInTheDocument();
   expect(getCart).toHaveBeenCalledTimes(2);
+});
+
+test('clear cart asks for confirmation, then empties the cart', async () => {
+  getCart.mockResolvedValue(cartWith([mug, jacket]));
+  clearCart.mockResolvedValue(cartWith([]));
+  renderButton();
+  const dialog = await openDrawer(2);
+
+  fireEvent.click(await within(dialog).findByRole('button', { name: 'Clear cart' }));
+  const confirm = within(dialog).getByRole('alertdialog', { name: 'Remove all 2 items from your cart?' });
+  expect(clearCart).not.toHaveBeenCalled();
+  expect(within(dialog).queryByRole('button', { name: 'Check out' })).not.toBeInTheDocument();
+
+  fireEvent.click(within(confirm).getByRole('button', { name: 'Clear cart' }));
+  expect(await within(dialog).findByText('Your cart is empty.')).toBeInTheDocument();
+  expect(clearCart).toHaveBeenCalledTimes(1);
+  expect(screen.getByRole('dialog', { name: 'Your cart (0)' })).toBeInTheDocument();
+});
+
+test('keeping items cancels clearing the cart', async () => {
+  getCart.mockResolvedValue(cartWith([mug]));
+  renderButton();
+  const dialog = await openDrawer(1);
+
+  fireEvent.click(await within(dialog).findByRole('button', { name: 'Clear cart' }));
+  expect(within(dialog).getByRole('alertdialog', { name: 'Remove the 1 item from your cart?' })).toBeInTheDocument();
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Keep items' }));
+
+  expect(within(dialog).queryByRole('alertdialog')).not.toBeInTheDocument();
+  expect(within(dialog).getByRole('button', { name: 'Check out' })).toBeEnabled();
+  expect(within(dialog).getAllByRole('listitem')).toHaveLength(1);
+  expect(clearCart).not.toHaveBeenCalled();
+});
+
+test('a failed clear shows the error and keeps the cart', async () => {
+  getCart.mockResolvedValue(cartWith([mug]));
+  clearCart.mockRejectedValue(new Error('Your cart could not be cleared right now.'));
+  renderButton();
+  const dialog = await openDrawer(1);
+
+  fireEvent.click(await within(dialog).findByRole('button', { name: 'Clear cart' }));
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Clear cart' }));
+
+  expect(await within(dialog).findByText('Your cart could not be cleared right now.')).toBeInTheDocument();
+  expect(within(dialog).getByRole('list', { name: 'Rewards in your cart' })).toBeInTheDocument();
+});
+
+test('View-As cannot clear the cart', async () => {
+  getCart.mockResolvedValue(cartWith([mug]));
+  renderButton({ viewingAs: true });
+  const dialog = await openDrawer(1);
+  await within(dialog).findByRole('button', { name: 'Check out' });
+  expect(within(dialog).queryByRole('button', { name: 'Clear cart' })).not.toBeInTheDocument();
 });

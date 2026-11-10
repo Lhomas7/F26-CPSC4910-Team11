@@ -274,3 +274,20 @@
 .cart-unavailable-notice p {
   margin: 0;
 }
+
+/* ---- Clear cart asks first: it can't be undone. ---------------------- */
+.cart-clear-confirm {
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-line);
+  border-radius: 0.6rem;
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.75rem;
+}
+
+.cart-clear-confirm p {
+  color: var(--danger-ink);
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin: 0;
+}

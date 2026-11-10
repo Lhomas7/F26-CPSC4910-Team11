@@ -172,7 +172,46 @@ class DriverCartApiTests(APITestCase):
         response = client.post(self.items_url, {'product_id': self.jacket.pk}, format='json')
         self.assertEqual(response.status_code, 403)
         self.assertEqual(client.delete(self.item_url(self.mug.pk)).status_code, 403)
+        self.assertEqual(client.delete(self.cart_url).status_code, 403)
         self.assertEqual(CartItem.objects.filter(driver=self.driver).count(), 1)
+
+    def test_clear_cart_removes_every_item(self):
+        self.add(self.mug)
+        self.add(self.jacket)
+
+        response = self.client.delete(self.cart_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['results'], [])
+        self.assertEqual(response.data['item_count'], 0)
+        self.assertEqual(response.data['total_points'], 0)
+        self.assertEqual(response.data['point_balance'], 3000)
+        self.assertFalse(CartItem.objects.filter(driver=self.driver).exists())
+
+    def test_clearing_an_empty_cart_is_harmless(self):
+        response = self.client.delete(self.cart_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['item_count'], 0)
+
+    def test_clear_cart_leaves_other_drivers_carts_alone(self):
+        other_user = get_user_model().objects.create_user(username='cart.other.driver')
+        other = Driver.objects.create(
+            user=other_user, name='Other Driver', sponsor=self.company, status='approved'
+        )
+        CartItem.objects.create(driver=other, product=self.mug)
+        self.add(self.jacket)
+
+        self.assertEqual(self.client.delete(self.cart_url).status_code, 200)
+        self.assertTrue(CartItem.objects.filter(driver=other, product=self.mug).exists())
+
+    def test_pending_drivers_cannot_clear_a_cart(self):
+        CartItem.objects.create(driver=self.driver, product=self.mug)
+        Driver.objects.filter(pk=self.driver.pk).update(status='pending')
+        self.refresh_login()
+        response = self.client.delete(self.cart_url)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data['code'], 'driver_not_approved')
+        self.assertTrue(CartItem.objects.filter(driver=self.driver).exists())
 
     def test_leaving_sponsor_empties_the_cart(self):
         CartItem.objects.create(driver=self.driver, product=self.mug)

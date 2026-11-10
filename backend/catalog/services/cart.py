@@ -93,6 +93,12 @@ def clear_cart(driver):
     CartItem.objects.filter(driver=driver).delete()
 
 
+def empty_cart(*, user):
+    """Remove everything from the signed-in driver's cart. An empty cart is fine."""
+    scope = driver_catalog_scope(user)
+    CartItem.objects.filter(driver_id=scope.driver_id).delete()
+
+
 @dataclass(frozen=True)
 class Purchase:
     items: list[str]
