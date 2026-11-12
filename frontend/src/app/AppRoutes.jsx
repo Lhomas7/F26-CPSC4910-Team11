@@ -23,6 +23,7 @@ import { WelcomePage } from 'features/home';
 import { PrivacyPage, TermsPage } from 'features/legal';
 import { PlaygroundPage } from 'features/playground';
 import { PointsPage } from 'features/points';
+import { DriverPurchaseDetailPage, DriverPurchaseHistoryPage } from 'features/purchases';
 import { SalesReportsPage } from 'features/reports';
 import { AppLayout } from './AppLayout';
 import { PAGE_ROLES } from './navigation';
@@ -84,6 +85,22 @@ export function AppRoutes() {
           element={
             <RequireAuth roles={PAGE_ROLES.points}>
               <PointsPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/purchases"
+          element={
+            <RequireAuth roles={PAGE_ROLES.purchases}>
+              <DriverPurchaseHistoryPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/purchases/:purchaseId"
+          element={
+            <RequireAuth roles={PAGE_ROLES.purchases}>
+              <DriverPurchaseDetailPage />
             </RequireAuth>
           }
         />
