@@ -23,7 +23,12 @@ import { WelcomePage } from 'features/home';
 import { PrivacyPage, TermsPage } from 'features/legal';
 import { PlaygroundPage } from 'features/playground';
 import { PointsPage } from 'features/points';
-import { DriverPurchaseDetailPage, DriverPurchaseHistoryPage } from 'features/purchases';
+import {
+  DriverPurchaseDetailPage,
+  DriverPurchaseHistoryPage,
+  SponsorPurchaseDetailPage,
+  SponsorPurchaseHistoryPage,
+} from 'features/purchases';
 import { SalesReportsPage } from 'features/reports';
 import { AppLayout } from './AppLayout';
 import { PAGE_ROLES } from './navigation';
@@ -177,6 +182,22 @@ export function AppRoutes() {
           }
         />
         <Route path="/about" element={<AboutPage />} />
+        <Route
+          path="/drivers/:driverId/purchases"
+          element={
+            <RequireAuth roles={PAGE_ROLES.drivers}>
+              <SponsorPurchaseHistoryPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/drivers/:driverId/purchases/:purchaseId"
+          element={
+            <RequireAuth roles={PAGE_ROLES.drivers}>
+              <SponsorPurchaseDetailPage />
+            </RequireAuth>
+          }
+        />
       </Route>
     </Routes>
   );

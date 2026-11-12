@@ -3,6 +3,18 @@ from rest_framework import serializers
 from catalog.models import Redemption, RedemptionItem
 
 
+class PurchaseDateFilterSerializer(serializers.Serializer):
+    completed_from = serializers.DateTimeField(required=False)
+    completed_before = serializers.DateTimeField(required=False)
+
+    def validate(self, attrs):
+        start = attrs.get('completed_from')
+        end = attrs.get('completed_before')
+        if start is not None and end is not None and start >= end:
+            raise serializers.ValidationError({'completed_before': 'End must be after start.'})
+        return attrs
+
+
 class PurchaseItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = RedemptionItem

@@ -1,9 +1,14 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
-import { getPurchase, getPurchases } from 'api/purchases';
+import { getPurchase, getPurchases, getSponsorPurchase, getSponsorPurchases } from 'api/purchases';
 import { useAuth } from 'auth/AuthContext';
-import { DriverPurchaseDetailPage, DriverPurchaseHistoryPage } from './DriverPurchases';
+import {
+  DriverPurchaseDetailPage,
+  DriverPurchaseHistoryPage,
+  SponsorPurchaseDetailPage,
+  SponsorPurchaseHistoryPage,
+} from './PurchasePages';
 
 jest.mock('api/purchases');
 jest.mock('auth/AuthContext');
@@ -26,6 +31,11 @@ function renderPurchases(path = '/purchases') {
       <Routes>
         <Route path="/purchases" element={<DriverPurchaseHistoryPage />} />
         <Route path="/purchases/:purchaseId" element={<DriverPurchaseDetailPage />} />
+        <Route path="/drivers/:driverId/purchases" element={<SponsorPurchaseHistoryPage />} />
+        <Route
+          path="/drivers/:driverId/purchases/:purchaseId"
+          element={<SponsorPurchaseDetailPage />}
+        />
       </Routes>
     </MemoryRouter>,
   );
@@ -75,5 +85,30 @@ test('shows an unavailable purchase after the API denies a lookup with 404', asy
   expect(screen.getByRole('link', { name: 'Purchase history' })).toHaveAttribute(
     'href',
     '/purchases',
+  );
+});
+
+test('resets pagination for a local date range and keeps filters when returning from the receipt', async () => {
+  useAuth.mockReturnValue({ user: { id: 24, account_type: 'sponsor' } });
+  getSponsorPurchases.mockResolvedValue({ results: [purchase], next: null, previous: null });
+  getSponsorPurchase.mockResolvedValue(purchase);
+  renderPurchases('/drivers/12/purchases?page=2');
+
+  await screen.findByRole('link', { name: 'Trail Mug' });
+  fireEvent.change(screen.getByLabelText('From'), { target: { value: '2026-11-12' } });
+  fireEvent.change(screen.getByLabelText('Through'), { target: { value: '2026-11-12' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Apply filters' }));
+
+  const receiptLink = await screen.findByRole('link', { name: 'Trail Mug' });
+  expect(getSponsorPurchases).toHaveBeenLastCalledWith('12', 1, {
+    from: new Date(2026, 10, 12).toISOString(),
+    before: new Date(2026, 10, 13).toISOString(),
+  });
+  fireEvent.click(receiptLink);
+  expect(await screen.findByText('reward-42')).toBeInTheDocument();
+  expect(getSponsorPurchase).toHaveBeenCalledWith('12', '42');
+  expect(screen.getByRole('link', { name: 'Driver purchase history' })).toHaveAttribute(
+    'href',
+    '/drivers/12/purchases?from=2026-11-12&through=2026-11-12',
   );
 });

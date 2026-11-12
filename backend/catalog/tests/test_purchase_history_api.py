@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
-from accounts.models import SponsorCompany
+from accounts.models import MFASettings, SponsorAccount, SponsorCompany
 from catalog.models import CatalogProduct, Redemption, RedemptionItem
 from catalog.views.purchases import PurchaseHistoryPagination
 from drivers.models import Driver
@@ -24,6 +24,9 @@ class DriverPurchaseHistoryTests(APITestCase):
         cls.other = users.create_user(username='other-buyer')
         cls.admin = users.create_user(username='admin', is_staff=True)
         cls.sponsor = SponsorCompany.objects.create(name='Original Sponsor')
+        cls.sponsor_user = users.create_user(username='original-sponsor')
+        SponsorAccount.objects.create(user=cls.sponsor_user, company=cls.sponsor)
+        MFASettings.objects.create(user=cls.sponsor_user, totp_enabled=True)
         cls.driver = Driver.objects.create(user=cls.owner, name='Buyer', sponsor=cls.sponsor)
         cls.other_driver = Driver.objects.create(
             user=cls.other, name='Other Buyer', sponsor=cls.sponsor
@@ -106,3 +109,50 @@ class DriverPurchaseHistoryTests(APITestCase):
             self.client.force_authenticate(user)
             self.assertEqual(self.client.get(self.list_url).status_code, 403)
             self.assertEqual(self.client.get(self.detail_url(self.latest)).status_code, 403)
+
+    def sponsor_history_url(self, driver):
+        return reverse('catalog:sponsor-purchase-history', kwargs={'driver_id': driver.pk})
+
+    def sponsor_detail_url(self, driver, purchase):
+        return reverse(
+            'catalog:sponsor-purchase-detail', kwargs={'driver_id': driver.pk, 'pk': purchase.pk}
+        )
+
+    def test_sponsor_history_filters_at_inclusive_start_and_exclusive_end(self):
+        self.client.force_authenticate(self.sponsor_user)
+        response = self.client.get(self.sponsor_history_url(self.driver), {
+            'completed_from': self.older.completed_at.isoformat(),
+            'completed_before': self.latest.completed_at.isoformat(),
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([row['id'] for row in response.data['results']], [self.older.pk])
+        self.assertEqual(self.client.get(self.sponsor_detail_url(self.driver, self.latest)).status_code, 200)
+        self.assertEqual(self.client.get(self.sponsor_detail_url(self.driver, self.foreign)).status_code, 404)
+
+    def test_sponsor_cannot_read_another_organizations_driver_or_prior_sponsor_purchases(self):
+        new_company = SponsorCompany.objects.create(name='New Sponsor')
+        new_user = get_user_model().objects.create_user(username='new-sponsor')
+        SponsorAccount.objects.create(user=new_user, company=new_company)
+        MFASettings.objects.create(user=new_user, totp_enabled=True)
+        self.client.force_authenticate(new_user)
+        self.assertEqual(self.client.get(self.sponsor_history_url(self.driver)).status_code, 404)
+
+        Driver.objects.filter(pk=self.driver.pk).update(sponsor=new_company)
+        response = self.client.get(self.sponsor_history_url(self.driver))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['results'], [])
+        self.assertEqual(self.client.get(self.sponsor_detail_url(self.driver, self.latest)).status_code, 404)
+
+        self.client.force_authenticate(self.sponsor_user)
+        self.assertEqual(self.client.get(self.sponsor_history_url(self.driver)).status_code, 404)
+        self.assertEqual(self.client.get(self.sponsor_detail_url(self.driver, self.latest)).status_code, 404)
+
+    def test_sponsor_history_rejects_reversed_range_and_driver_access(self):
+        self.client.force_authenticate(self.sponsor_user)
+        response = self.client.get(self.sponsor_history_url(self.driver), {
+            'completed_from': self.latest.completed_at.isoformat(),
+            'completed_before': self.older.completed_at.isoformat(),
+        })
+        self.assertEqual(response.status_code, 400)
+        self.client.force_authenticate(self.owner)
+        self.assertEqual(self.client.get(self.sponsor_history_url(self.driver)).status_code, 403)

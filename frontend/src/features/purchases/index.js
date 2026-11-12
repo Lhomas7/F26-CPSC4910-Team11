@@ -1,1 +1,6 @@
-export { DriverPurchaseHistoryPage, DriverPurchaseDetailPage } from './pages/DriverPurchases';
+export {
+  DriverPurchaseHistoryPage,
+  DriverPurchaseDetailPage,
+  SponsorPurchaseHistoryPage,
+  SponsorPurchaseDetailPage,
+} from './pages/PurchasePages';
