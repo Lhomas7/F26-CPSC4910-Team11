@@ -45,6 +45,13 @@
   display: grid;
   gap: 0.75rem;
 }
+
+.reports-view-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .reports-results h2 {
   font-size: 1rem;
   margin: 0;
