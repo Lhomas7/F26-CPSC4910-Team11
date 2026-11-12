@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
+  <title>{{ title }}</title>
+  <style>
+    body { margin: 2rem auto; padding: 0 1rem; max-width: 72rem; color: #17251d; font: 1rem/1.5 system-ui, sans-serif; }
+    h1 { margin: 0 0 0.75rem; }
+    dl { margin: 0 0 1.5rem; }
+    dt { font-weight: 700; }
+    dd { margin: 0 0 0.35rem; overflow-wrap: anywhere; }
+    .table-region { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; }
+    caption { text-align: left; font-weight: 700; padding-bottom: 0.5rem; }
+    th, td { text-align: left; vertical-align: top; padding: 0.5rem; border-bottom: 1px solid #d8e2dc; overflow-wrap: anywhere; }
+    thead, tfoot { background: #e1efe8; }
+    tbody tr:nth-child(even) { background: #f5f7f6; }
+    .number { text-align: right; font-variant-numeric: tabular-nums; }
+    @media print {
+      body { margin: 0; padding: 0; font-size: 10pt; }
+      .table-region { overflow: visible; }
+      thead { display: table-header-group; }
+      tfoot { display: table-row-group; }
+      tr { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>{{ title }}</h1>
+    <dl>
+      {% for label, value in filters %}<dt>{{ label }}</dt><dd>{{ value }}</dd>{% endfor %}
+      <dt>Generated</dt><dd>{{ generated }}</dd>
+    </dl>
+    <div class="table-region">
+      <table>
+        <caption>Completed sales by group</caption>
+        <thead><tr>
+          {% for heading in headings %}<th scope="col"{% if forloop.counter0 >= label_count %} class="number"{% endif %}>{{ heading }}</th>{% endfor %}
+        </tr></thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>{% for value in row %}<td{% if forloop.counter0 >= label_count %} class="number"{% endif %}>{{ value }}</td>{% endfor %}</tr>
+          {% empty %}
+          <tr><td colspan="{{ headings|length }}">No completed sales match this report.</td></tr>
+          {% endfor %}
+        </tbody>
+        <tfoot><tr>
+          {% for value in total %}
+            {% if forloop.first %}<th scope="row">{{ value }}</th>
+            {% else %}<td{% if forloop.counter0 >= label_count %} class="number"{% endif %}>{{ value }}</td>{% endif %}
+          {% endfor %}
+        </tr></tfoot>
+      </table>
+    </div>
+  </main>
+</body>
+</html>

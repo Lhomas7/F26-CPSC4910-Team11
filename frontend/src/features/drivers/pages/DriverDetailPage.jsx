@@ -67,6 +67,11 @@ export default function DriverDetailPage() {
       <PageHeader
         title={title}
         subtitle="Enrollment, points, and history"
+        actions={status === 'ready' && driver && (
+          <Link className="button" to={`/drivers/${driver.id}/purchases`}>
+            Purchase history
+          </Link>
+        )}
         breadcrumb={
           <>
             <Link to="/drivers">Drivers</Link> / {breadcrumbName}

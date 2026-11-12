@@ -1,4 +1,11 @@
+import csv
+import re
+from datetime import datetime
 from decimal import Decimal
+from io import BytesIO, StringIO
+from unittest.mock import patch
+from xml.etree import ElementTree
+from zipfile import ZipFile
 
 from django.contrib.auth.models import User
 from django.urls import reverse
@@ -56,6 +63,185 @@ class SalesReportApiTests(APITestCase):
 
     def authenticate_admin(self):
         self.client.force_authenticate(self.admin)
+
+    def test_csv_export_includes_all_grouped_rows_in_applied_scope_and_totals(self):
+        self.authenticate_admin()
+        scope = {'group_by': 'driver', 'sponsor_id': self.alpha.pk}
+        first_page = self.client.get(reverse('reports:sales'), {**scope, 'page_size': 1})
+        self.assertEqual(len(first_page.data['results']), 1)
+        response = self.client.get(reverse('reports:sales-export'), {**scope, 'file_format': 'csv'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('no-store', response['Cache-Control'])
+        self.assertIn(f'sales-by-driver-sponsor-{self.alpha.pk}-', response['Content-Disposition'])
+        rows = list(csv.reader(StringIO(response.content.decode('utf-8-sig'))))
+        self.assertEqual(
+            rows[0],
+            [
+                'Sponsor',
+                'Driver',
+                'Username',
+                'Completed sales',
+                'Gross sales (USD)',
+                'Project share (USD)',
+                'Report name',
+                'Sponsor filter',
+                'Driver filter',
+                'Generated (UTC)',
+            ],
+        )
+        self.assertEqual([row[1] for row in rows[1:-1]], ['Alice Driver', 'Bob Driver'])
+        summary = first_page.data['summary']
+        self.assertEqual(
+            rows[-1][:6],
+            [
+                'Total',
+                '',
+                '',
+                str(summary['sale_count']),
+                summary['gross_sales_usd'],
+                summary['project_share_usd'],
+            ],
+        )
+        self.assertEqual(rows[-1][6:9], ['Sales by Driver', f'ID {self.alpha.pk}', 'All drivers'])
+        generated = datetime.fromisoformat(rows[-1][9])
+        self.assertEqual(generated.utcoffset().total_seconds(), 0)
+        self.assertEqual(rows[1][6:], rows[-1][6:])
+
+    def test_both_csv_encodings_export_the_same_data(self):
+        self.authenticate_admin()
+        SponsorCompany.objects.filter(pk=self.alpha.pk).update(name='Café Logistics')
+        url = reverse('reports:sales-export')
+        scope = {'group_by': 'sponsor', 'sponsor_id': self.alpha.pk}
+        with patch('reports.exports.datetime') as clock:
+            clock.now.return_value = timezone.now()
+            excel = self.client.get(url, {**scope, 'file_format': 'csv'})
+            plain = self.client.get(url, {**scope, 'file_format': 'csv-utf8'})
+
+        self.assertTrue(excel.content.startswith(b'\xef\xbb\xbf'))
+        self.assertEqual(excel.content[3:], plain.content)
+        self.assertIn('Café Logistics', plain.content.decode('utf-8'))
+        self.assertIn('-utf8.csv', plain['Content-Disposition'])
+
+    def test_all_export_formats_match_filtered_and_empty_report_totals(self):
+        self.authenticate_admin()
+        empty = SponsorCompany.objects.create(name='Empty export scope')
+        url = reverse('reports:sales-export')
+        ns = {'s': 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
+        for sponsor in (self.alpha, empty):
+            with self.subTest(sponsor=sponsor.pk):
+                scope = {'group_by': 'sponsor', 'sponsor_id': sponsor.pk}
+                displayed = self.client.get(reverse('reports:sales'), scope).data
+                summary = displayed['summary']
+                expected = (
+                    str(summary['sale_count']),
+                    summary['gross_sales_usd'],
+                    summary['project_share_usd'],
+                )
+
+                csv_file = self.client.get(url, {**scope, 'file_format': 'csv'})
+                rows = list(csv.reader(StringIO(csv_file.content.decode('utf-8-sig'))))
+                self.assertEqual(len(rows), displayed['count'] + 2)
+                self.assertEqual(tuple(rows[-1][1:4]), expected)
+
+                xlsx = self.client.get(url, {**scope, 'file_format': 'xlsx'})
+                with ZipFile(BytesIO(b''.join(xlsx.streaming_content))) as workbook:
+                    sheet = ElementTree.fromstring(workbook.read('xl/worksheets/sheet1.xml'))
+                total_row = 7 + displayed['count']
+                for column, value in zip('BCD', expected, strict=True):
+                    cell = sheet.findtext(f".//s:c[@r='{column}{total_row}']/s:v", namespaces=ns)
+                    self.assertEqual(Decimal(cell), Decimal(value))
+
+                html = self.client.get(url, {**scope, 'file_format': 'html'})
+                html_totals = html.content.decode().split('<tfoot>', 1)[1].split('</tfoot>', 1)[0]
+                for value in expected:
+                    self.assertIn(f'<td class="number">{value}</td>', html_totals)
+
+                # Read the last three values emitted by the real PDF table without adding a test dependency.
+                with patch('reportlab.rl_config.pageCompression', 0):
+                    pdf = self.client.get(url, {**scope, 'file_format': 'pdf'})
+                pdf_bytes = b''.join(pdf.streaming_content)
+                self.assertEqual(
+                    re.findall(rb'\(([0-9.]+)\) Tj', pdf_bytes)[-3:],
+                    [value.encode() for value in expected],
+                )
+
+    def test_exports_keep_formula_like_names_as_text_and_xlsx_money_numeric(self):
+        self.authenticate_admin()
+        SponsorCompany.objects.filter(pk=self.alpha.pk).update(name='  =1+1, "Example"')
+        url = reverse('reports:sales-export')
+        scope = {'group_by': 'sponsor', 'sponsor_id': self.alpha.pk}
+        csv_response = self.client.get(url, {**scope, 'file_format': 'csv'})
+        rows = list(csv.reader(StringIO(csv_response.content.decode('utf-8-sig'))))
+        self.assertEqual(rows[1][0], '\'  =1+1, "Example"')
+
+        response = self.client.get(url, {**scope, 'file_format': 'xlsx'})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('.xlsx', response['Content-Disposition'])
+        ns = {'s': 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
+        with ZipFile(BytesIO(b''.join(response.streaming_content))) as workbook:
+            cells = ElementTree.fromstring(workbook.read('xl/worksheets/sheet1.xml'))
+            strings = ElementTree.fromstring(workbook.read('xl/sharedStrings.xml'))
+        name = cells.find(".//s:c[@r='A7']", ns)
+        gross = cells.find(".//s:c[@r='C7']", ns)
+        share = cells.find(".//s:c[@r='D8']", ns)
+        self.assertEqual(name.get('t'), 's')
+        self.assertEqual(
+            strings[int(name.findtext('s:v', namespaces=ns))][0].text, '  =1+1, "Example"'
+        )
+        self.assertIsNone(cells.find('.//s:f', ns))
+        self.assertEqual(gross.get('t', 'n'), 'n')
+        self.assertEqual(Decimal(gross.findtext('s:v', namespaces=ns)), Decimal('40.00'))
+        self.assertEqual(Decimal(share.findtext('s:v', namespaces=ns)), Decimal('0.4000'))
+
+    def test_export_enforces_admin_mfa_and_valid_scope(self):
+        url = reverse('reports:sales-export')
+        query = {'group_by': 'sponsor', 'file_format': 'csv'}
+        self.client.force_authenticate(self.driver_a.user)
+        self.assertEqual(self.client.get(url, query).status_code, 403)
+        unenrolled = User.objects.create_user(username='unenrolled.export', is_staff=True)
+        self.client.force_authenticate(unenrolled)
+        self.assertEqual(self.client.get(url, query).status_code, 403)
+        self.authenticate_admin()
+        self.assertEqual(self.client.get(url, {**query, 'file_format': 'unknown'}).status_code, 400)
+        self.assertEqual(
+            self.client.get(url, {**query, 'driver_id': self.driver_a.pk}).status_code, 400
+        )
+
+    def test_html_export_escapes_names_and_keeps_the_applied_totals(self):
+        self.authenticate_admin()
+        SponsorCompany.objects.filter(pk=self.alpha.pk).update(name='<img src=x> & Logistics')
+        response = self.client.get(
+            reverse('reports:sales-export'),
+            {
+                'group_by': 'sponsor',
+                'sponsor_id': self.alpha.pk,
+                'file_format': 'html',
+            },
+        )
+        self.assertContains(response, '&lt;img src=x&gt; &amp; Logistics')
+        self.assertNotContains(response, '<img src=x>')
+        self.assertNotContains(response, 'Beta Transit')
+        self.assertContains(response, '<td class="number">40.00</td>')
+        self.assertContains(response, '<td class="number">0.4000</td>')
+        self.assertIn('.html', response['Content-Disposition'])
+        self.assertIn('no-store', response['Cache-Control'])
+
+    def test_print_exports_handle_empty_results(self):
+        self.authenticate_admin()
+        empty = SponsorCompany.objects.create(name='No sales yet')
+        url = reverse('reports:sales-export')
+        scope = {'group_by': 'sponsor', 'sponsor_id': empty.pk}
+        html = self.client.get(url, {**scope, 'file_format': 'html'})
+        self.assertContains(html, 'No completed sales match this report.')
+        self.assertContains(html, '<td class="number">0.0000</td>')
+
+        pdf = self.client.get(url, {**scope, 'file_format': 'pdf'})
+        self.assertEqual(pdf.status_code, 200)
+        self.assertEqual(pdf['Content-Type'], 'application/pdf')
+        self.assertIn('.pdf', pdf['Content-Disposition'])
+        self.assertIn('no-store', pdf['Cache-Control'])
+        self.assertTrue(b''.join(pdf.streaming_content).startswith(b'%PDF-'))
 
     def test_reports_require_enrolled_administrator(self):
         driver_response = self.client.get(

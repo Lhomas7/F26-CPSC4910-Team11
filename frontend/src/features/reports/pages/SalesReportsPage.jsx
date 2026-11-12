@@ -7,6 +7,7 @@ import SelectMenu from 'components/forms/SelectMenu';
 import StatePanel from 'components/feedback/StatePanel';
 import Skeleton from 'components/feedback/Skeleton';
 import useApiRequest from 'hooks/useApiRequest';
+import SalesReportExport from '../components/SalesReportExport';
 import './SalesReportsPage.css';
 
 const GROUP_OPTIONS = [
@@ -219,6 +220,17 @@ function SalesReportsSession({ user }) {
       <PageHeader
         title="Sales reports"
         subtitle="Audit completed sales and the project's 1% share"
+        actions={report && submitted && reportStatus !== 'loading' && (
+          <SalesReportExport
+            scope={submitted}
+            scopeText={scopeText}
+            onAccessDenied={() => {
+              setReport(null);
+              setSubmitted(null);
+              setAccessDenied(true);
+            }}
+          />
+        )}
       />
       <main className="reports-content">
         <p className="sr-only" role="status" aria-live="polite">

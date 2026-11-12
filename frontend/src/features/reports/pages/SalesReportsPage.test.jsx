@@ -72,6 +72,29 @@ test('runs an all-sponsor report and displays audited totals', async () => {
   });
 });
 
+test('exports the displayed report scope after changing a draft filter', async () => {
+  api.downloadSalesReport.mockRejectedValue(new Error('Download failed'));
+  renderPage();
+  fireEvent.click(await screen.findByRole('button', { name: 'Run report' }));
+  const exportButton = await screen.findByRole('button', { name: 'Export report' });
+  fireEvent.click(screen.getByRole('button', { name: 'Sponsor organization' }));
+  fireEvent.click(screen.getByRole('option', { name: 'Alpha Logistics' }));
+  fireEvent.click(exportButton);
+
+  const dialog = screen.getByRole('dialog', { name: 'Export sales report' });
+  expect(within(dialog).getByRole('button', { name: 'Download CSV (UTF-8)' })).toBeInTheDocument();
+  expect(within(dialog).getByRole('button', { name: 'Download CSV (Excel-compatible)' })).toBeInTheDocument();
+  expect(within(dialog).getByRole('button', { name: 'Download HTML' })).toBeInTheDocument();
+  expect(within(dialog).getByRole('button', { name: 'Download PDF' })).toBeInTheDocument();
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Download Excel' }));
+  expect(await within(dialog).findByRole('alert')).toHaveTextContent('Download failed');
+  expect(api.downloadSalesReport).toHaveBeenCalledWith(
+    expect.objectContaining({ groupBy: 'sponsor', sponsorId: 'all', driverId: 'all' }),
+    'xlsx',
+    expect.any(AbortSignal),
+  );
+});
+
 test('loads selected sponsor drivers and runs one-driver scope', async () => {
   api.getSalesReportOptions.mockResolvedValueOnce(options).mockResolvedValueOnce({
     ...options,

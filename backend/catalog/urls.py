@@ -16,6 +16,12 @@ from .views.products import (
     SponsorProviderRefreshView,
     SponsorProviderSearchView,
 )
+from .views.purchases import (
+    DriverPurchaseDetailView,
+    DriverPurchaseHistoryView,
+    SponsorPurchaseDetailView,
+    SponsorPurchaseHistoryView,
+)
 
 app_name = 'catalog'
 
@@ -26,6 +32,18 @@ urlpatterns = [
     path('sponsor/catalog/provider/products/<int:product_id>/import/', SponsorProviderImportView.as_view(), name='sponsor-provider-import'),
     path('sponsor/catalog/products/<int:product_id>/refresh/', SponsorProviderRefreshView.as_view(), name='sponsor-provider-refresh'),
     path('cart/', CartView.as_view(), name='cart'),
+    path('purchases/', DriverPurchaseHistoryView.as_view(), name='purchase-history'),
+    path('purchases/<int:pk>/', DriverPurchaseDetailView.as_view(), name='purchase-detail'),
+    path(
+        'sponsor/drivers/<int:driver_id>/purchases/',
+        SponsorPurchaseHistoryView.as_view(),
+        name='sponsor-purchase-history',
+    ),
+    path(
+        'sponsor/drivers/<int:driver_id>/purchases/<int:pk>/',
+        SponsorPurchaseDetailView.as_view(),
+        name='sponsor-purchase-detail',
+    ),
     path('cart/items/', CartItemsView.as_view(), name='cart-items'),
     path('cart/items/<int:product_id>/', CartItemView.as_view(), name='cart-item'),
     path('cart/checkout/', CartCheckoutView.as_view(), name='cart-checkout'),

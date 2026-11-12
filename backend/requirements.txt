@@ -13,3 +13,5 @@ twilio==9.4.0
 boto3==1.40.0
 gunicorn==23.0.0
 whitenoise==6.9.0
+XlsxWriter==3.3.1
+reportlab==5.1.0

@@ -269,6 +269,17 @@ export function CatalogIcon(props) {
   );
 }
 
+export function PurchasesIcon(props) {
+  return (
+    <SvgIcon {...props}>
+      <g stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z" />
+        <path d="M9 8h6m-6 4h6" />
+      </g>
+    </SvgIcon>
+  );
+}
+
 export function ReportsIcon(props) {
   return (
     <SvgIcon {...props}>
