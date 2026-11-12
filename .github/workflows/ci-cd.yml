@@ -22,7 +22,7 @@ env:
 jobs:
   backend:
     name: Backend (Django 6.1 / CPython 3.12)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -36,7 +36,13 @@ jobs:
         run: python scripts/check_tracked_files.py
 
       - name: System deps for mysqlclient wheel build
-        run: sudo apt-get update && sudo apt-get install -y libmysqlclient-dev pkg-config
+        run: |
+          # Reuse the runner's client headers to avoid upgrading its host MySQL server.
+          if ! pkg-config --exists mysqlclient; then
+            sudo apt-get update
+            sudo apt-get install -y libmysqlclient-dev pkg-config
+          fi
+          pkg-config --modversion mysqlclient
 
       - name: Install Python deps
         run: pip install -r backend/requirements.txt
@@ -75,7 +81,7 @@ jobs:
 
   backend-mysql:
     name: Backend compatibility (MySQL 8.4)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     services:
       mysql:
@@ -108,7 +114,13 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements.txt
       - name: MySQL client build dependencies
-        run: sudo apt-get update && sudo apt-get install -y libmysqlclient-dev pkg-config
+        run: |
+          # MySQL 8.4 is supplied by the service container, not the host package.
+          if ! pkg-config --exists mysqlclient; then
+            sudo apt-get update
+            sudo apt-get install -y libmysqlclient-dev pkg-config
+          fi
+          pkg-config --modversion mysqlclient
       - name: Install Python dependencies
         run: pip install -r backend/requirements.txt
       - name: Check and migrate the disposable MySQL schema
