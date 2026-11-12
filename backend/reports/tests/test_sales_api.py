@@ -1,4 +1,8 @@
+import csv
 from decimal import Decimal
+from io import BytesIO, StringIO
+from xml.etree import ElementTree
+from zipfile import ZipFile
 
 from django.contrib.auth.models import User
 from django.urls import reverse
@@ -56,6 +60,84 @@ class SalesReportApiTests(APITestCase):
 
     def authenticate_admin(self):
         self.client.force_authenticate(self.admin)
+
+    def test_csv_export_includes_all_grouped_rows_in_applied_scope_and_totals(self):
+        self.authenticate_admin()
+        scope = {'group_by': 'driver', 'sponsor_id': self.alpha.pk}
+        first_page = self.client.get(reverse('reports:sales'), {**scope, 'page_size': 1})
+        self.assertEqual(len(first_page.data['results']), 1)
+        response = self.client.get(reverse('reports:sales-export'), {**scope, 'file_format': 'csv'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('no-store', response['Cache-Control'])
+        self.assertIn(f'sales-by-driver-sponsor-{self.alpha.pk}-', response['Content-Disposition'])
+        rows = list(csv.reader(StringIO(response.content.decode('utf-8-sig'))))
+        self.assertEqual(
+            rows[0],
+            [
+                'Sponsor',
+                'Driver',
+                'Username',
+                'Completed sales',
+                'Gross sales (USD)',
+                'Project share (USD)',
+            ],
+        )
+        self.assertEqual([row[1] for row in rows[1:-1]], ['Alice Driver', 'Bob Driver'])
+        summary = first_page.data['summary']
+        self.assertEqual(
+            rows[-1],
+            [
+                'Total',
+                '',
+                '',
+                str(summary['sale_count']),
+                summary['gross_sales_usd'],
+                summary['project_share_usd'],
+            ],
+        )
+
+    def test_exports_keep_formula_like_names_as_text_and_xlsx_money_numeric(self):
+        self.authenticate_admin()
+        SponsorCompany.objects.filter(pk=self.alpha.pk).update(name='  =1+1, "Example"')
+        url = reverse('reports:sales-export')
+        scope = {'group_by': 'sponsor', 'sponsor_id': self.alpha.pk}
+        csv_response = self.client.get(url, {**scope, 'file_format': 'csv'})
+        rows = list(csv.reader(StringIO(csv_response.content.decode('utf-8-sig'))))
+        self.assertEqual(rows[1][0], '\'  =1+1, "Example"')
+
+        response = self.client.get(url, {**scope, 'file_format': 'xlsx'})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('.xlsx', response['Content-Disposition'])
+        ns = {'s': 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
+        with ZipFile(BytesIO(b''.join(response.streaming_content))) as workbook:
+            cells = ElementTree.fromstring(workbook.read('xl/worksheets/sheet1.xml'))
+            strings = ElementTree.fromstring(workbook.read('xl/sharedStrings.xml'))
+        name = cells.find(".//s:c[@r='A7']", ns)
+        gross = cells.find(".//s:c[@r='C7']", ns)
+        share = cells.find(".//s:c[@r='D8']", ns)
+        self.assertEqual(name.get('t'), 's')
+        self.assertEqual(
+            strings[int(name.findtext('s:v', namespaces=ns))][0].text, '  =1+1, "Example"'
+        )
+        self.assertIsNone(cells.find('.//s:f', ns))
+        self.assertEqual(gross.get('t', 'n'), 'n')
+        self.assertEqual(Decimal(gross.findtext('s:v', namespaces=ns)), Decimal('40.00'))
+        self.assertEqual(Decimal(share.findtext('s:v', namespaces=ns)), Decimal('0.4000'))
+
+    def test_export_enforces_admin_mfa_and_valid_scope(self):
+        url = reverse('reports:sales-export')
+        query = {'group_by': 'sponsor', 'file_format': 'csv'}
+        self.client.force_authenticate(self.driver_a.user)
+        self.assertEqual(self.client.get(url, query).status_code, 403)
+        unenrolled = User.objects.create_user(username='unenrolled.export', is_staff=True)
+        self.client.force_authenticate(unenrolled)
+        self.assertEqual(self.client.get(url, query).status_code, 403)
+        self.authenticate_admin()
+        self.assertEqual(self.client.get(url, {**query, 'file_format': 'unknown'}).status_code, 400)
+        self.assertEqual(
+            self.client.get(url, {**query, 'driver_id': self.driver_a.pk}).status_code, 400
+        )
 
     def test_reports_require_enrolled_administrator(self):
         driver_response = self.client.get(

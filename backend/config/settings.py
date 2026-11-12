@@ -328,6 +328,7 @@ SESSION_TIMEOUTS = {
 _DEV_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000']
 CORS_ALLOWED_ORIGINS = env_list('DJANGO_CORS_ALLOWED_ORIGINS') or (_DEV_ORIGINS if DEBUG else [])
 CORS_ALLOW_CREDENTIALS = True
+CORS_EXPOSE_HEADERS = ['Content-Disposition']
 CSRF_TRUSTED_ORIGINS = env_list('DJANGO_CSRF_TRUSTED_ORIGINS') or (_DEV_ORIGINS if DEBUG else [])
 
 # The SPA reads the csrftoken cookie with JavaScript. If the API and the app are on

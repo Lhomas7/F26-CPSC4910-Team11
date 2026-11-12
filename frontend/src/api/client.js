@@ -47,10 +47,11 @@ export class NetworkError extends Error {
   }
 }
 
-export async function request(path, { method = 'GET', body, headers } = {}) {
+export async function request(path, { method = 'GET', body, headers, signal } = {}) {
   const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
   const init = {
     method,
+    ...(signal ? { signal } : {}),
     credentials: 'include',
     headers: {
       Accept: 'application/json',

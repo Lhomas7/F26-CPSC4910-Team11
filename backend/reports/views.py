@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 
 from accounts.permissions import AdminAccount, MFAEnrolled
 
+from .exports import build_sales_export, sales_csv_response, sales_xlsx_response
 from .services import (
     parse_sales_report_scope,
     report_options,
@@ -31,6 +32,22 @@ class ReportPagination(PageNumberPagination):
 
 class AdminReportView(APIView):
     permission_classes = [IsAuthenticated, AdminAccount, MFAEnrolled]
+
+
+@method_decorator(never_cache, name='dispatch')
+class SalesReportExportView(AdminReportView):
+    def get(self, request):
+        unknown = request.query_params.keys() - {'group_by', 'sponsor_id', 'driver_id', 'file_format'}
+        if unknown:
+            raise ValidationError(
+                {key: 'This query parameter is not supported.' for key in sorted(unknown)}
+            )
+        exporters = {'csv': sales_csv_response, 'xlsx': sales_xlsx_response}
+        exporter = exporters.get(request.query_params.get('file_format'))
+        if exporter is None:
+            raise ValidationError({'file_format': 'Choose csv or xlsx.'})
+        scope = parse_sales_report_scope(request.query_params)
+        return exporter(build_sales_export(scope))
 
 
 @method_decorator(never_cache, name='dispatch')
