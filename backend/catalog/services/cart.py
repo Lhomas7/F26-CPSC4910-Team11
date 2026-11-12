@@ -10,7 +10,7 @@ from rest_framework.exceptions import APIException, ValidationError
 
 from accounts.models import SponsorCompany
 from accounts.services.notify import notify_reward_purchase
-from catalog.models import CartItem, CatalogProduct, Redemption, RedemptionItem
+from catalog.models import CancelledCheckout, CartItem, CatalogProduct, Redemption, RedemptionItem
 from catalog.pricing import point_cost
 from reports.models import CompletedSale
 from django.utils import timezone
@@ -117,6 +117,12 @@ class ReviewChanged(APIException):
     default_code = 'review_changed'
 
 
+class CheckoutCancelled(APIException):
+    status_code = 409
+    default_detail = 'This purchase attempt was cancelled. Review your cart before starting again.'
+    default_code = 'checkout_cancelled'
+
+
 def _locked_items(scope):
     items = list(_cart_items(scope).select_for_update(of=('self',)))
     products = {product.pk: product for product in CatalogProduct.objects.select_for_update().filter(
@@ -158,6 +164,17 @@ def purchase_receipt(redemption, *, replayed=False):
     )
 
 
+@transaction.atomic
+def cancel_unfinished_checkout(*, user, key):
+    # Recovery belongs to the Driver even if their sponsor access has changed.
+    driver = get_object_or_404(Driver.objects.select_for_update(), user=user)
+    redemption = Redemption.objects.filter(driver=driver, idempotency_key=key).first()
+    if redemption:
+        return purchase_receipt(redemption)
+    CancelledCheckout.objects.get_or_create(driver=driver, idempotency_key=key)
+    return None
+
+
 def _purchase_reason(names):
     from drivers.services.points import MAX_POINT_REASON_LENGTH
 
@@ -184,6 +201,8 @@ def checkout_cart(*, user, idempotency_key=None, review_token=None):
         existing = Redemption.objects.filter(driver=driver, idempotency_key=idempotency_key).first()
         if existing:
             return purchase_receipt(existing, replayed=True)
+        if CancelledCheckout.objects.filter(driver=driver, idempotency_key=idempotency_key).exists():
+            raise CheckoutCancelled()
     sponsor = SponsorCompany.objects.select_for_update().get(pk=scope.company_id)
     items = _locked_items(scope)
     try:

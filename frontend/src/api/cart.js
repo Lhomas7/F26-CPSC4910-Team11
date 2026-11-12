@@ -49,6 +49,17 @@ export function lookupRedemption(key) {
     .then(readJson).then((data) => readPurchase(data.purchase));
 }
 
+export function cancelUnfinishedCheckout(key) {
+  return request(`/cart/checkout/${encodeURIComponent(key)}/cancel/`, { method: 'POST', body: {} })
+    .then(readJson).then((data) => {
+      if (data?.status === 'cancelled') return { status: 'cancelled' };
+      if (data?.status === 'completed') {
+        return { status: 'completed', purchase: readPurchase(data.purchase) };
+      }
+      throw new ApiError('The purchase outcome could not be confirmed.', 502, data);
+    });
+}
+
 function checkProductId(productId) {
   if (!Number.isSafeInteger(productId) || productId < 1) {
     throw new RangeError('Product ID must be a positive whole number.');

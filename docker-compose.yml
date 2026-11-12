@@ -18,6 +18,22 @@ services:
       retries: 3
       start_period: 45s
 
+  catalog-sync:
+    image: gooddriver-web:latest
+    env_file: ./web/.env
+    restart: unless-stopped
+    init: true
+    depends_on:
+      web:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          python manage.py sync_catalog_products --limit 100 || echo 'Catalog sync failed. Retrying on the next run.' >&2
+          sleep 3600
+        done
+
   webproxy:
     image: caddy:2.9-alpine
     restart: unless-stopped

@@ -9,7 +9,7 @@ from .views import (
     SponsorProductAvailabilityView,
     SponsorProductCreateView,
 )
-from .views.cart import CartReviewView, RedemptionLookupView
+from .views.cart import CartReviewView, CheckoutCancellationView, RedemptionLookupView
 from .views.products import (
     SponsorProviderImportView,
     SponsorProviderProductView,
@@ -31,6 +31,7 @@ urlpatterns = [
     path('cart/checkout/', CartCheckoutView.as_view(), name='cart-checkout'),
     path('cart/review/', CartReviewView.as_view(), name='cart-review'),
     path('cart/redemptions/by-key/<uuid:key>/', RedemptionLookupView.as_view(), name='redemption-lookup'),
+    path('cart/checkout/<uuid:key>/cancel/', CheckoutCancellationView.as_view(), name='checkout-cancel'),
     path(
         'sponsor/catalog/products/',
         SponsorProductCreateView.as_view(),

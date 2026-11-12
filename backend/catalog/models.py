@@ -142,6 +142,22 @@ class Redemption(models.Model):
         ]
 
 
+class CancelledCheckout(models.Model):
+    """Reserve an attempt key so a delayed request cannot spend points."""
+
+    driver = models.ForeignKey('drivers.Driver', on_delete=models.CASCADE)
+    idempotency_key = models.UUIDField()
+    cancelled_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=('driver', 'idempotency_key'),
+                name='catalog_driver_cancelled_checkout_unique',
+            ),
+        ]
+
+
 class RedemptionItem(models.Model):
     """Price and identity snapshot; later catalog edits never rewrite history."""
 

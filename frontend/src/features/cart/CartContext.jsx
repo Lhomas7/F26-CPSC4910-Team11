@@ -13,6 +13,7 @@ export function CartProvider({ viewingAs = false, ownerId = null, organization =
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState(null);
   const [actionError, setActionError] = useState('');
+  const [actionNotice, setActionNotice] = useState('');
   const [pendingIds, setPendingIds] = useState(() => new Set());
   const [clearing, setClearing] = useState(false);
   const [open, setOpen] = useState(false);
@@ -74,6 +75,7 @@ export function CartProvider({ viewingAs = false, ownerId = null, organization =
     if (viewingAs || attempt.current || busy.current || pendingIds.size) return;
     const version = ++reviewVersion.current;
     setReview(null); setReviewStatus('loading'); setReviewNotice(''); setActionError('');
+    setActionNotice('');
     try {
       const fresh = await api.reviewCart();
       if (!alive.current || version !== reviewVersion.current) return;
@@ -86,10 +88,16 @@ export function CartProvider({ viewingAs = false, ownerId = null, organization =
     }
   }
 
-  function resolved(receipt) {
+  function clearPendingAttempt() {
     removeAttempt(ownerId);
-    attempt.current = null; setPendingAttempt(null); originalReview.current = null;
-    setLastPurchase(receipt); setReview(null); setReviewStatus('idle'); setActionError('');
+    attempt.current = null;
+    setPendingAttempt(null);
+    clearReview();
+  }
+
+  function resolved(receipt) {
+    clearPendingAttempt();
+    setLastPurchase(receipt); setActionError(''); setActionNotice('');
     setPurchaseVersion((version) => version + 1);
     announceNotificationsChanged();
   }
@@ -119,7 +127,11 @@ export function CartProvider({ viewingAs = false, ownerId = null, organization =
       setCart(nextCart); setError(null); setStatus('ready'); resolved(purchase);
     } catch (failure) {
       if (!alive.current) return;
-      if (!retry && [400, 401, 403, 409].includes(failure.status)) {
+      if (failure.status === 409 && failure.data?.code === 'checkout_cancelled') {
+        clearPendingAttempt();
+        setActionNotice('Purchase attempt cancelled. No points were spent on this attempt.');
+        reload();
+      } else if (!retry && [400, 401, 403, 409].includes(failure.status)) {
         removeAttempt(ownerId); attempt.current = null; setPendingAttempt(null);
         if (failure.status === 409 && failure.data?.code === 'review_changed') {
           try {
@@ -160,6 +172,28 @@ export function CartProvider({ viewingAs = false, ownerId = null, organization =
     }
   }
 
+  async function cancelPurchaseAttempt() {
+    if (!attempt.current || busy.current || viewingAs) return;
+    busy.current = true;
+    setCheckingOut(true); setCheckoutPhase('cancelling'); setActionError('');
+    try {
+      const outcome = await api.cancelUnfinishedCheckout(attempt.current.key);
+      if (!alive.current) return;
+      if (outcome.status === 'completed') {
+        resolved(outcome.purchase);
+      } else {
+        clearPendingAttempt();
+        setActionNotice('Purchase attempt cancelled. No points were spent on this attempt.');
+      }
+      reload();
+    } catch {
+      if (alive.current) setActionError('Cancellation could not be confirmed. Try again or check purchase status.');
+    } finally {
+      busy.current = false;
+      if (alive.current) setCheckingOut(false);
+    }
+  }
+
   async function clear() {
     if (viewingAs || attempt.current || busy.current || pendingIds.size) return;
     busy.current = true; setClearing(true); setActionError(''); clearReview();
@@ -190,10 +224,10 @@ export function CartProvider({ viewingAs = false, ownerId = null, organization =
   }
 
   return <CartContext.Provider value={{
-    cart, status, error, actionError, clearActionError, checkout, checkingOut, checkoutPhase,
+    cart, status, error, actionError, actionNotice, clearActionError, checkout, checkingOut, checkoutPhase,
     lastPurchase, clearLastPurchase, purchaseVersion, pendingIds, viewingAs, clear, clearing,
     open, setOpen, reload, review, reviewStatus, reviewNotice, beginReview, clearReview,
-    pendingAttempt, checkPurchaseStatus,
+    pendingAttempt, checkPurchaseStatus, cancelPurchaseAttempt,
     canRetry: Boolean(pendingAttempt && originalReview.current &&
       Date.now() - originalReview.current.receivedAt < 600000 && pendingAttempt.organization === organization),
     productIds: cart ? new Set(cart.results.map((item) => item.product.id)) : null,

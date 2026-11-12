@@ -130,6 +130,8 @@ jobs:
           drivers.tests.PointAdjustmentAPITests
           drivers.tests.DriverLinkTests
           drivers.tests.SponsorOnlyActionTests
+          catalog.tests.test_cart_api.CartCheckoutApiTests.test_cancellation_blocks_delayed_checkout_and_leaves_cart_ready_for_a_new_purchase
+          catalog.tests.test_cart_api.CartCheckoutApiTests.test_cancellation_returns_completed_receipt_only_to_its_driver_after_unlinking
           --noinput
 
   frontend:

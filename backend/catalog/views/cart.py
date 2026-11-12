@@ -10,7 +10,13 @@ from accounts.permissions import DriverAccount, MFAEnrolled
 from catalog.serializers import CartAddSerializer, CartItemSerializer
 from catalog.serializers.cart import CartCheckoutSerializer
 from catalog.services import add_to_cart, checkout_cart, empty_cart, get_cart, remove_from_cart
-from catalog.services.cart import ReviewChanged, purchase_receipt, review_cart
+from catalog.services.cart import (
+    CheckoutCancelled,
+    ReviewChanged,
+    cancel_unfinished_checkout,
+    purchase_receipt,
+    review_cart,
+)
 from catalog.models import Redemption
 from django.shortcuts import get_object_or_404
 
@@ -49,6 +55,8 @@ class DriverCartView(APIView):
             response.data['code'] = codes.get('detail', 'invalid_request') if isinstance(codes, dict) else 'invalid_request'
         elif isinstance(exc, NotFound):
             response.data['code'] = 'not_found'
+        elif isinstance(exc, CheckoutCancelled):
+            response.data['code'] = exc.default_code
         return response
 
     def check_not_viewing_as(self, request):
@@ -150,3 +158,17 @@ class RedemptionLookupView(DriverCartView):
             driver__user=request.user, idempotency_key=key,
         )
         return Response({'purchase': _receipt_data(purchase_receipt(redemption))})
+
+
+@method_decorator(never_cache, name='dispatch')
+class CheckoutCancellationView(DriverCartView):
+    def post(self, request, key):
+        self.check_not_viewing_as(request)
+        if not request.user.is_active:
+            raise PermissionDenied('An active account is required.')
+        if request.data:
+            raise ValidationError({'detail': 'Cancellation accepts an empty body.'})
+        purchase = cancel_unfinished_checkout(user=request.user, key=key)
+        if purchase:
+            return Response({'status': 'completed', 'purchase': _receipt_data(purchase)})
+        return Response({'status': 'cancelled'})

@@ -11,11 +11,11 @@ AWS as part of this verification.
 | Task | Repository result | Remaining verification |
 | --- | --- | --- |
 | 28607 point count updates | Home, Points, Catalog and cart refresh after checkout and on tab return | Actual browser/session verification; no continuous server push |
-| 28612 redeem points | Internal checkout, review guard, ledger deduction, item snapshots, sale record and recoverable receipt | MySQL/browser smoke test; unresolved-attempt limitation below |
+| 28612 redeem points | Internal checkout, review guard, ledger deduction, item snapshots, sale record and recoverable receipt or cancellation | MySQL/browser smoke test |
 | 28616 Driver point history | Existing history reused, refreshed after purchase | Confirm one purchase reason and deduction in UI |
 | 28621 balance-change reason | Server reasons remain visible with local timestamps | Check long reasons and purchase reason in UI |
 | 28627 external product API | Fake Store search, preview, import, ownership and duplicate handling | Full authenticated Sponsor import from deployment |
-| 28635 current provider data | Explicit product refresh, sync time, 24-hour stale flag, batch command | Schedule batch job if automatic refresh is required |
+| 28635 current provider data | Explicit refresh, 24-hour stale flag, and hourly batch worker in Compose | Verify the worker on the deployed environment |
 | 28638 API product information | Sponsor USD details and Driver converted point costs share catalog data | Final light/dark responsive review; Group B mockup refinements if desired |
 
 These task mappings use the supplied planning IDs; this document does not update
@@ -55,9 +55,15 @@ DevOps states. Close tasks only after their relevant acceptance checks pass.
   organization change without exposing it to another Driver.
 - [ ] Complete the responsive, keyboard, theme, and interruption checks in
   [the cart QA checklist](SPRINT7_CART_QA.md).
-- [ ] Configure a scheduled `python manage.py sync_catalog_products --limit 100`
-  job if periodic refresh is part of acceptance. The command selects imports
-  older than 24 hours; a command existing in the repo is not a deployed schedule.
+- [ ] After deploying, run `docker compose ps catalog-sync` and
+  `docker compose logs --tail 50 catalog-sync` from the deployment directory.
+  Compose starts the worker after the web service is healthy. It runs a batch
+  immediately and waits an hour between runs. Each batch attempts up to 100
+  Fake Store imports that were last refreshed more than 24 hours ago or have
+  no sync timestamp. Check that stale imports receive a new sync timestamp.
+- [ ] Interrupt a checkout, reload, and choose **Cancel unfinished purchase**.
+  Verify that a committed attempt shows its receipt, or that a cancelled
+  attempt keeps the cart intact and permits a new review.
 
 ## Known boundaries
 
@@ -66,12 +72,10 @@ Checkout validates the saved catalog price against a signed review. It does not
 make a live external-provider request during confirmation. Explicit/scheduled
 sync updates that saved price and invalidates an older review when necessary.
 
-An uncertain attempt whose original review is lost/expired and whose receipt
-cannot be found has no authoritative cancellation/resolution endpoint. The UI
-preserves the key and blocks new purchases. Do not mark that outcome resolved by
-clearing storage or claiming a 404 means the original request failed. Backend
-resolution remains follow-up work before treating interrupted checkout as fully
-recoverable in every case.
+An uncertain attempt can be resolved even after its review expires. Cancellation
+and checkout take the same Driver lock. The server either returns the committed
+receipt or records a cancellation that rejects any delayed checkout using that
+key. The UI preserves the pending key until it receives a definitive result.
 
 Latest receipts are retained in memory across drawer close. A pending key
 survives refresh in sessionStorage, but a dismissed completed receipt has no

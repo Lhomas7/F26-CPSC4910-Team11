@@ -61,9 +61,9 @@ function blockers(cart, viewingAs, changing) {
 
 export default function CartDrawer({ onClose }) {
   const state = useCart();
-  const { cart, review, reviewStatus, reviewNotice, status, error, actionError, pendingAttempt,
+  const { cart, review, reviewStatus, reviewNotice, status, error, actionError, actionNotice, pendingAttempt,
     checkingOut, checkoutPhase, lastPurchase, viewingAs, pendingIds, reload, beginReview,
-    clearReview, checkout, checkPurchaseStatus, canRetry, clearLastPurchase, remove, clear, clearing } = state;
+    clearReview, checkout, checkPurchaseStatus, cancelPurchaseAttempt, canRetry, clearLastPurchase, remove, clear, clearing } = state;
   const heading = useRef(null);
   const [confirmingClear, setConfirmingClear] = useState(false);
   useEffect(() => { reload(); }, [reload]);
@@ -78,7 +78,6 @@ export default function CartDrawer({ onClose }) {
       <div className="cart-pending-panel" role="alert">
         <h3>This purchase hasn’t been confirmed</h3>
         <p>We can’t tell whether this purchase went through. Your points may or may not have been spent.</p>
-        <p>Check your point balance on Points or Home before buying anything else.</p>
         <span className="cart-pending-meta">Started {localTime.format(new Date(pendingAttempt.startedAt))}{pendingAttempt.organization ? ` · ${pendingAttempt.organization}` : ''}</span>
       </div>
       <div className="cart-actions-row">
@@ -88,11 +87,11 @@ export default function CartDrawer({ onClose }) {
         <button className="button" disabled={checkingOut || viewingAs} onClick={checkPurchaseStatus}>
           {checkingOut && checkoutPhase === 'lookup' ? 'Checking…' : 'Check purchase status'}
         </button>
+        <button className="button" disabled={checkingOut || viewingAs} onClick={cancelPurchaseAttempt}>
+          {checkingOut && checkoutPhase === 'cancelling' ? 'Resolving…' : 'Cancel unfinished purchase'}
+        </button>
       </div>
-      <p className="cart-blocked-reason">{canRetry
-        ? 'Retry purchase may finish the original purchase using the same request. Check purchase status only reads its result.'
-        : 'The original review is no longer available. Checking status buys nothing and does not cancel the attempt.'}</p>
-      <p className="cart-view-lead">Until this is settled you can’t change your cart or start another purchase.</p>
+      <p className="cart-blocked-reason">If the purchase already went through, cancellation shows your receipt. Otherwise it cancels the attempt and lets you review your cart again.</p>
     </div>;
   } else if (lastPurchase) {
     body = <div className="cart-view">
@@ -167,6 +166,7 @@ export default function CartDrawer({ onClose }) {
     actions={<button className="button" data-autofocus onClick={onClose}>Close</button>}>
     <span className="sr-only" ref={heading} tabIndex={-1}>{title}</span>
     {actionError && <p className="banner banner-error" role="alert">{actionError}</p>}
+    {actionNotice && <p className="banner banner-success" role="status">{actionNotice}</p>}
     {body}
   </Modal>;
 }

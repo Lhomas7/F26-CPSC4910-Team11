@@ -22,8 +22,9 @@ receipt timestamps use local American dates and a 12-hour clock.
 - Network/server/malformed-success failures preserve the pending attempt.
   Cart mutations are blocked and catalog cards explain the pending state.
 - Page refresh restores the owning Driver's key and organization context;
-  only exact-key status lookup is offered without an in-memory token. A 404
-  or failed lookup leaves the attempt pending. Other Drivers do not restore it.
+  exact-key lookup and **Cancel unfinished purchase** remain available without
+  an in-memory token. A 404 or failed request leaves the attempt pending.
+  Cancellation returns a completed receipt or lets the Driver start a new review.
 - Storage failure prevents submission, because refresh recovery could not be
   saved. Missing/cleared storage cannot reconstruct an unknown purchase key.
 
@@ -39,9 +40,6 @@ both themes at 1440, 1366, 1100, 900, 760, 648, 528, 480, 398, 390, 360, and
 announcements; reduced motion; network interruption; and a real checkout's
 balance/history/report updates. No production build or live migration was run.
 
-An unresolved attempt with an expired/lost review and no completed receipt
-cannot currently be conclusively cancelled. The UI preserves it and blocks new
-purchases. Backend resolution is a separate follow-up, not a fake dismissal.
 The Sponsor provider UI is now integrated. Automated provider-to-report checks
 are documented in [the commerce closeout](SPRINT7_COMMERCE_CLOSEOUT.md); real
 authenticated browser and MySQL checks remain pending.

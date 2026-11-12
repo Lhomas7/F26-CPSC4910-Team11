@@ -454,6 +454,54 @@ class CartCheckoutApiTests(APITestCase):
         self.client.force_authenticate(other_user)
         self.assertEqual(self.client.get(url).status_code, 404)
 
+    def test_cancellation_blocks_delayed_checkout_and_leaves_cart_ready_for_a_new_purchase(self):
+        self.fill(self.mug)
+        key = uuid4()
+        review_url = reverse('catalog:cart-review')
+        token = self.client.post(review_url, {}, format='json').data['review_token']
+        cancel_url = reverse('catalog:checkout-cancel', args=[key])
+
+        for _ in range(2):
+            cancelled = self.client.post(cancel_url, {}, format='json')
+            self.assertEqual(cancelled.status_code, 200)
+            self.assertEqual(cancelled.data, {'status': 'cancelled'})
+
+        delayed = self.client.post(self.url, {
+            'review_token': token, 'idempotency_key': str(key),
+        }, format='json')
+        self.assertEqual(delayed.status_code, 409)
+        self.assertEqual(delayed.data['code'], 'checkout_cancelled')
+        self.assertEqual(self.balance(), 6000)
+        self.assertTrue(CartItem.objects.filter(driver=self.driver, product=self.mug).exists())
+        self.assertFalse(CompletedSale.objects.exists())
+
+        new_token = self.client.post(review_url, {}, format='json').data['review_token']
+        purchased = self.client.post(self.url, {
+            'review_token': new_token, 'idempotency_key': str(uuid4()),
+        }, format='json')
+        self.assertEqual(purchased.status_code, 200)
+        self.assertEqual(self.balance(), 4750)
+
+    def test_cancellation_returns_completed_receipt_only_to_its_driver_after_unlinking(self):
+        self.fill(self.mug)
+        key = uuid4()
+        token = self.client.post(reverse('catalog:cart-review'), {}, format='json').data['review_token']
+        bought = self.client.post(self.url, {
+            'review_token': token, 'idempotency_key': str(key),
+        }, format='json')
+        self.assertEqual(bought.status_code, 200)
+        Driver.objects.filter(pk=self.driver.pk).update(sponsor=None)
+        cancel_url = reverse('catalog:checkout-cancel', args=[key])
+        completed = self.client.post(cancel_url, {}, format='json')
+        self.assertEqual(completed.data, {'status': 'completed', 'purchase': bought.data['purchase']})
+
+        other_user = get_user_model().objects.create_user(username='cancel.other')
+        Driver.objects.create(user=other_user, name='Other', sponsor=self.company, status='approved')
+        self.client.force_authenticate(other_user)
+        self.assertEqual(self.client.post(cancel_url, {}, format='json').data, {'status': 'cancelled'})
+        self.assertEqual(self.balance(), 4750)
+        self.assertEqual(Redemption.objects.count(), 1)
+
     def test_free_cart_is_cleared_without_a_ledger_entry(self):
         self.fill(self.sticker)
         response = self.checkout()
@@ -536,7 +584,7 @@ class CartCheckoutApiTests(APITestCase):
         self.assertEqual(self.balance(), 4750)
         self.assertTrue(Notification.objects.filter(user=self.driver_user).exists())
 
-    def test_view_as_cannot_check_out(self):
+    def test_view_as_cannot_check_out_or_cancel(self):
         self.fill(self.mug)
         client = APIClient()
         client.force_login(self.admin)
@@ -546,6 +594,8 @@ class CartCheckoutApiTests(APITestCase):
         session[IMPERSONATION_ROLE_KEY] = 'driver'
         session.save()
         self.assertEqual(self.checkout(client).status_code, 403)
+        cancel_url = reverse('catalog:checkout-cancel', args=[uuid4()])
+        self.assertEqual(client.post(cancel_url, {}, format='json').status_code, 403)
         self.assertEqual(self.balance(), 6000)
 
     def test_sponsors_cannot_check_out(self):

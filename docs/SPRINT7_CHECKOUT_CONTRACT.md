@@ -45,10 +45,16 @@ same receipt shape. It performs no write and is scoped to the effective Driver.
 The owner can recover a historical receipt even after losing Sponsor membership.
 Other Drivers receive 404. This is not a most-recent-purchase lookup.
 
-A 404 means no completed matching redemption was found at read time. It does
-not cancel or conclusively reject an in-flight checkout. Keep an unresolved
-attempt recoverable. A POST retry may complete the original purchase and must
-use the same key. No cancellation or abandonment endpoint is implemented.
+A 404 means no completed matching redemption was found at read time. Keep the
+attempt pending. A checkout retry may complete the original purchase and must
+use the same key.
+
+`POST /api/cart/checkout/<uuid>/cancel/` accepts an empty body. It returns
+`{"status": "completed", "purchase": ...}` if checkout already committed, or
+`{"status": "cancelled"}` after recording a cancellation for the Driver and key.
+The operation is idempotent and available to the owning active Driver after a
+sponsor change. View-As is read-only. Both operations lock the same Driver row,
+so a checkout that arrives after cancellation returns `409 checkout_cancelled`.
 
 ## Errors
 
@@ -67,8 +73,9 @@ Driver in sessionStorage; review tokens stay in memory. Closing the drawer
 retains its pending attempt or latest receipt. Uncertain outcomes block further
 cart changes; a retry never silently adopts a new review. The original token
 can authorize a retry only while held in memory and within its ten-minute window.
-No migration is needed for these API changes. SQLite tests cover review drift,
-token rejection, replay, snapshot lookup, and ownership. Live MySQL locking
+Apply `catalog.0006_cancelled_checkout` before using cancellation. SQLite tests
+cover review drift, token rejection, replay, snapshot lookup, cancellation, and
+ownership. Live MySQL locking
 behavior and full browser checkout remain final integration checks. External
 provider synchronization is integrated; checkout reviews the saved catalog data,
 not a fresh external-provider request. A provider refresh between review and

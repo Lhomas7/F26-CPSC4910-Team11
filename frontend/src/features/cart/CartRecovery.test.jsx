@@ -38,7 +38,7 @@ test('uncertain checkout persists only recovery metadata and retries the same ke
   expect(sessionStorage.getItem('gdip.checkout.pending.17')).toBeNull();
 });
 
-test('a restored attempt offers read-only lookup; 404 keeps it pending and a receipt resolves it', async () => {
+test('a restored attempt stays pending after lookup 404 and clears when a receipt is found', async () => {
   const pending = { key: RESTORED_ATTEMPT_ID, startedAt: '2026-11-05T12:00:00Z', organization: 'Previous Sponsor' };
   saveAttempt(17, pending);
   api.lookupRedemption.mockRejectedValueOnce(Object.assign(new Error('Not found'), { status: 404 })).mockResolvedValueOnce(receipt);
@@ -52,6 +52,23 @@ test('a restored attempt offers read-only lookup; 404 keeps it pending and a rec
   expect(api.checkout).not.toHaveBeenCalled();
   expect(result.current.lastPurchase).toEqual(receipt);
   expect(result.current.pendingAttempt).toBeNull();
+});
+
+test.each([
+  { status: 'cancelled' },
+  { status: 'completed', purchase: receipt },
+])('a restored attempt unlocks the cart only after cancellation returns $status', async (outcome) => {
+  saveAttempt(17, { key: RESTORED_ATTEMPT_ID, startedAt: '2026-11-05T12:00:00Z' });
+  api.cancelUnfinishedCheckout.mockRejectedValueOnce(new Error('Lost response')).mockResolvedValueOnce(outcome);
+  const { result } = renderHook(() => useCart(), { wrapper });
+  await act(async () => { await result.current.cancelPurchaseAttempt(); });
+  expect(result.current.pendingAttempt?.key).toBe(RESTORED_ATTEMPT_ID);
+  await act(async () => { await result.current.cancelPurchaseAttempt(); });
+  expect(api.cancelUnfinishedCheckout).toHaveBeenLastCalledWith(RESTORED_ATTEMPT_ID);
+  expect(result.current.pendingAttempt).toBeNull();
+  expect(result.current.lastPurchase).toBe(outcome.purchase ?? null);
+  expect(sessionStorage.getItem('gdip.checkout.pending.17')).toBeNull();
+  expect(api.checkout).not.toHaveBeenCalled();
 });
 
 test('a retry conflict never adopts a fresh review or discards the pending attempt', async () => {
