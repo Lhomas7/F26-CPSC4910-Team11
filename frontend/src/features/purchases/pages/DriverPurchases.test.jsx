@@ -112,3 +112,61 @@ test('resets pagination for a local date range and keeps filters when returning 
     '/drivers/12/purchases?from=2026-11-12&through=2026-11-12',
   );
 });
+
+test('shows an empty filtered Sponsor history after retry and can clear the dates', async () => {
+  useAuth.mockReturnValue({ user: { id: 24, account_type: 'sponsor' } });
+  const empty = { results: [], next: null, previous: null };
+  getSponsorPurchases.mockRejectedValueOnce(new Error('Offline')).mockResolvedValue(empty);
+  renderPurchases('/drivers/12/purchases?from=2026-11-12&through=2026-11-12');
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+  expect(await screen.findByText(/No completed purchases match/)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
+  expect(await screen.findByText(/No completed purchases match/)).toBeInTheDocument();
+  expect(screen.getByLabelText('From')).toHaveValue('');
+  expect(screen.getByLabelText('Through')).toHaveValue('');
+  expect(getSponsorPurchases).toHaveBeenLastCalledWith('12', 1, {
+    from: undefined,
+    before: undefined,
+  });
+});
+
+test('can retry a purchase receipt opened directly', async () => {
+  getPurchase.mockRejectedValueOnce(new Error('Offline')).mockResolvedValue(purchase);
+  renderPurchases('/purchases/42');
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+  expect(await screen.findByText('reward-42')).toBeInTheDocument();
+  expect(getPurchase).toHaveBeenCalledTimes(2);
+});
+
+test.each([
+  ['America/Los_Angeles', /Nov 11, 2026.*6:05 PM/],
+  ['Asia/Tokyo', /Nov 12, 2026.*11:05 AM/],
+])('shows the local calendar day in %s on both history and receipt', async (timeZone, label) => {
+  const original = Date.prototype.toLocaleString;
+  const localClock = jest
+    .spyOn(Date.prototype, 'toLocaleString')
+    .mockImplementation(function (locale, options) {
+      return original.call(this, locale, { timeZone, ...options });
+    });
+  try {
+    const midnightPurchase = { ...purchase, completed_at: '2026-11-12T02:05:00Z' };
+    getPurchases.mockResolvedValue({ results: [midnightPurchase], next: null, previous: null });
+    getPurchase.mockResolvedValue(midnightPurchase);
+    renderPurchases();
+
+    expect(await screen.findByText(label)).toHaveAttribute(
+      'datetime',
+      midnightPurchase.completed_at,
+    );
+    fireEvent.click(screen.getByRole('link', { name: 'Trail Mug' }));
+    expect(await screen.findByText(label)).toHaveAttribute(
+      'datetime',
+      midnightPurchase.completed_at,
+    );
+    expect(screen.getByText('reward-42')).toBeInTheDocument();
+  } finally {
+    localClock.mockRestore();
+  }
+});

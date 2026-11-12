@@ -4,7 +4,8 @@ import { downloadSalesReport } from 'api';
 import Modal from 'components/feedback/Modal';
 
 const formats = [
-  ['csv', 'CSV'],
+  ['csv', 'CSV (Excel-compatible)'],
+  ['csv-utf8', 'CSV (UTF-8)'],
   ['xlsx', 'Excel'],
   ['pdf', 'PDF'],
   ['html', 'HTML'],

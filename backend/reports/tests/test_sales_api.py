@@ -1,6 +1,9 @@
 import csv
+import re
+from datetime import datetime
 from decimal import Decimal
 from io import BytesIO, StringIO
+from unittest.mock import patch
 from xml.etree import ElementTree
 from zipfile import ZipFile
 
@@ -81,12 +84,16 @@ class SalesReportApiTests(APITestCase):
                 'Completed sales',
                 'Gross sales (USD)',
                 'Project share (USD)',
+                'Report name',
+                'Sponsor filter',
+                'Driver filter',
+                'Generated (UTC)',
             ],
         )
         self.assertEqual([row[1] for row in rows[1:-1]], ['Alice Driver', 'Bob Driver'])
         summary = first_page.data['summary']
         self.assertEqual(
-            rows[-1],
+            rows[-1][:6],
             [
                 'Total',
                 '',
@@ -96,6 +103,68 @@ class SalesReportApiTests(APITestCase):
                 summary['project_share_usd'],
             ],
         )
+        self.assertEqual(rows[-1][6:9], ['Sales by Driver', f'ID {self.alpha.pk}', 'All drivers'])
+        generated = datetime.fromisoformat(rows[-1][9])
+        self.assertEqual(generated.utcoffset().total_seconds(), 0)
+        self.assertEqual(rows[1][6:], rows[-1][6:])
+
+    def test_both_csv_encodings_export_the_same_data(self):
+        self.authenticate_admin()
+        SponsorCompany.objects.filter(pk=self.alpha.pk).update(name='Café Logistics')
+        url = reverse('reports:sales-export')
+        scope = {'group_by': 'sponsor', 'sponsor_id': self.alpha.pk}
+        with patch('reports.exports.datetime') as clock:
+            clock.now.return_value = timezone.now()
+            excel = self.client.get(url, {**scope, 'file_format': 'csv'})
+            plain = self.client.get(url, {**scope, 'file_format': 'csv-utf8'})
+
+        self.assertTrue(excel.content.startswith(b'\xef\xbb\xbf'))
+        self.assertEqual(excel.content[3:], plain.content)
+        self.assertIn('Café Logistics', plain.content.decode('utf-8'))
+        self.assertIn('-utf8.csv', plain['Content-Disposition'])
+
+    def test_all_export_formats_match_filtered_and_empty_report_totals(self):
+        self.authenticate_admin()
+        empty = SponsorCompany.objects.create(name='Empty export scope')
+        url = reverse('reports:sales-export')
+        ns = {'s': 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
+        for sponsor in (self.alpha, empty):
+            with self.subTest(sponsor=sponsor.pk):
+                scope = {'group_by': 'sponsor', 'sponsor_id': sponsor.pk}
+                displayed = self.client.get(reverse('reports:sales'), scope).data
+                summary = displayed['summary']
+                expected = (
+                    str(summary['sale_count']),
+                    summary['gross_sales_usd'],
+                    summary['project_share_usd'],
+                )
+
+                csv_file = self.client.get(url, {**scope, 'file_format': 'csv'})
+                rows = list(csv.reader(StringIO(csv_file.content.decode('utf-8-sig'))))
+                self.assertEqual(len(rows), displayed['count'] + 2)
+                self.assertEqual(tuple(rows[-1][1:4]), expected)
+
+                xlsx = self.client.get(url, {**scope, 'file_format': 'xlsx'})
+                with ZipFile(BytesIO(b''.join(xlsx.streaming_content))) as workbook:
+                    sheet = ElementTree.fromstring(workbook.read('xl/worksheets/sheet1.xml'))
+                total_row = 7 + displayed['count']
+                for column, value in zip('BCD', expected, strict=True):
+                    cell = sheet.findtext(f".//s:c[@r='{column}{total_row}']/s:v", namespaces=ns)
+                    self.assertEqual(Decimal(cell), Decimal(value))
+
+                html = self.client.get(url, {**scope, 'file_format': 'html'})
+                html_totals = html.content.decode().split('<tfoot>', 1)[1].split('</tfoot>', 1)[0]
+                for value in expected:
+                    self.assertIn(f'<td class="number">{value}</td>', html_totals)
+
+                # Read the last three values emitted by the real PDF table without adding a test dependency.
+                with patch('reportlab.rl_config.pageCompression', 0):
+                    pdf = self.client.get(url, {**scope, 'file_format': 'pdf'})
+                pdf_bytes = b''.join(pdf.streaming_content)
+                self.assertEqual(
+                    re.findall(rb'\(([0-9.]+)\) Tj', pdf_bytes)[-3:],
+                    [value.encode() for value in expected],
+                )
 
     def test_exports_keep_formula_like_names_as_text_and_xlsx_money_numeric(self):
         self.authenticate_admin()

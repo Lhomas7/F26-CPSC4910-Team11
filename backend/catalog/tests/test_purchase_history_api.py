@@ -1,17 +1,18 @@
 from datetime import timedelta
 from decimal import Decimal
 from unittest.mock import patch
+from urllib.parse import urlsplit
 
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils import timezone
+from reports.models import CompletedSale
 from rest_framework.test import APITestCase
 
 from accounts.models import MFASettings, SponsorAccount, SponsorCompany
 from catalog.models import CatalogProduct, Redemption, RedemptionItem
 from catalog.views.purchases import PurchaseHistoryPagination
 from drivers.models import Driver
-from reports.models import CompletedSale
 
 
 class DriverPurchaseHistoryTests(APITestCase):
@@ -120,14 +121,21 @@ class DriverPurchaseHistoryTests(APITestCase):
 
     def test_sponsor_history_filters_at_inclusive_start_and_exclusive_end(self):
         self.client.force_authenticate(self.sponsor_user)
-        response = self.client.get(self.sponsor_history_url(self.driver), {
-            'completed_from': self.older.completed_at.isoformat(),
-            'completed_before': self.latest.completed_at.isoformat(),
-        })
+        response = self.client.get(
+            self.sponsor_history_url(self.driver),
+            {
+                'completed_from': self.older.completed_at.isoformat(),
+                'completed_before': self.latest.completed_at.isoformat(),
+            },
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual([row['id'] for row in response.data['results']], [self.older.pk])
-        self.assertEqual(self.client.get(self.sponsor_detail_url(self.driver, self.latest)).status_code, 200)
-        self.assertEqual(self.client.get(self.sponsor_detail_url(self.driver, self.foreign)).status_code, 404)
+        self.assertEqual(
+            self.client.get(self.sponsor_detail_url(self.driver, self.latest)).status_code, 200
+        )
+        self.assertEqual(
+            self.client.get(self.sponsor_detail_url(self.driver, self.foreign)).status_code, 404
+        )
 
     def test_sponsor_cannot_read_another_organizations_driver_or_prior_sponsor_purchases(self):
         new_company = SponsorCompany.objects.create(name='New Sponsor')
@@ -141,18 +149,47 @@ class DriverPurchaseHistoryTests(APITestCase):
         response = self.client.get(self.sponsor_history_url(self.driver))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['results'], [])
-        self.assertEqual(self.client.get(self.sponsor_detail_url(self.driver, self.latest)).status_code, 404)
+        self.assertEqual(
+            self.client.get(self.sponsor_detail_url(self.driver, self.latest)).status_code, 404
+        )
 
         self.client.force_authenticate(self.sponsor_user)
         self.assertEqual(self.client.get(self.sponsor_history_url(self.driver)).status_code, 404)
-        self.assertEqual(self.client.get(self.sponsor_detail_url(self.driver, self.latest)).status_code, 404)
+        self.assertEqual(
+            self.client.get(self.sponsor_detail_url(self.driver, self.latest)).status_code, 404
+        )
 
     def test_sponsor_history_rejects_reversed_range_and_driver_access(self):
         self.client.force_authenticate(self.sponsor_user)
-        response = self.client.get(self.sponsor_history_url(self.driver), {
-            'completed_from': self.latest.completed_at.isoformat(),
-            'completed_before': self.older.completed_at.isoformat(),
-        })
+        response = self.client.get(
+            self.sponsor_history_url(self.driver),
+            {
+                'completed_from': self.latest.completed_at.isoformat(),
+                'completed_before': self.older.completed_at.isoformat(),
+            },
+        )
         self.assertEqual(response.status_code, 400)
         self.client.force_authenticate(self.owner)
         self.assertEqual(self.client.get(self.sponsor_history_url(self.driver)).status_code, 403)
+
+    def test_sponsor_history_keeps_filter_boundaries_on_next_page(self):
+        self.create_purchase(
+            self.driver, 'outside-range', self.older.completed_at - timedelta(days=1)
+        )
+        self.client.force_authenticate(self.sponsor_user)
+        with patch.object(PurchaseHistoryPagination, 'page_size', 1):
+            first = self.client.get(
+                self.sponsor_history_url(self.driver),
+                {
+                    'completed_from': self.older.completed_at.isoformat(),
+                    'completed_before': (self.latest.completed_at + timedelta(days=1)).isoformat(),
+                },
+            )
+            self.assertEqual(first.status_code, 200)
+            next_url = urlsplit(first.data['next'])
+            second = self.client.get(f'{next_url.path}?{next_url.query}')
+
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(second.data['count'], 2)
+        self.assertEqual([row['id'] for row in second.data['results']], [self.older.pk])
+        self.assertIsNone(second.data['next'])

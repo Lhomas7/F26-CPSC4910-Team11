@@ -9,7 +9,7 @@ import StatePanel from 'components/feedback/StatePanel';
 import useApiRequest from 'hooks/useApiRequest';
 import './DriverPurchases.css';
 
-const purchaseDate = new Intl.DateTimeFormat('en-US', {
+const purchaseDateOptions = {
   month: 'short',
   day: 'numeric',
   year: 'numeric',
@@ -17,11 +17,13 @@ const purchaseDate = new Intl.DateTimeFormat('en-US', {
   minute: '2-digit',
   hour12: true,
   timeZoneName: 'short',
-});
+};
 const pointFormat = new Intl.NumberFormat('en-US');
 
 function PurchaseTime({ value }) {
-  return <time dateTime={value}>{purchaseDate.format(new Date(value))}</time>;
+  return (
+    <time dateTime={value}>{new Date(value).toLocaleString('en-US', purchaseDateOptions)}</time>
+  );
 }
 
 function PurchaseStatus({ status }) {

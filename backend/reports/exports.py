@@ -65,16 +65,33 @@ def _safe_csv_cell(value):
     return value
 
 
-def sales_csv_response(report):
+def sales_csv_response(report, *, excel_compatible=True):
     response = HttpResponse(content_type=CSV_TYPE)
-    response['Content-Disposition'] = f'attachment; filename="{report.filename("csv")}"'
-    response.write('\ufeff')  # Excel recognizes UTF-8 when opening the CSV directly.
+    filename = report.filename('csv')
+    if excel_compatible:
+        response.write('\ufeff')  # Excel recognizes UTF-8 when opening the CSV directly.
+    else:
+        filename = f'{filename.removesuffix(".csv")}-utf8.csv'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    scope = report.scope
+    metadata = (
+        report.title,
+        f'ID {scope.sponsor_id}' if scope.sponsor_id else 'All sponsors',
+        f'ID {scope.driver_id}' if scope.driver_id else 'All drivers',
+        report.generated_at.isoformat(timespec='seconds'),
+    )
     writer = csv.writer(response)
-    writer.writerow(report.headings)
+    writer.writerow(
+        (*report.headings, 'Report name', 'Sponsor filter', 'Driver filter', 'Generated (UTC)')
+    )
     for row in report.rows:
-        writer.writerow(_safe_csv_cell(value) for value in row)
-    writer.writerow(report.total)
+        writer.writerow(_safe_csv_cell(value) for value in (*row, *metadata))
+    writer.writerow((*report.total, *metadata))
     return response
+
+
+def sales_utf8_csv_response(report):
+    return sales_csv_response(report, excel_compatible=False)
 
 
 def sales_xlsx_response(report):

@@ -36,5 +36,7 @@ export async function downloadSalesReport({ groupBy, sponsorId, driverId }, form
   if (!response.ok) await readJson(response);
   const disposition = response.headers.get('Content-Disposition');
   const filename = disposition?.match(/filename="([a-z0-9-]+\.(?:csv|xlsx|pdf|html))"/i)?.[1];
-  return { blob: await response.blob(), filename: filename || `sales-by-${groupBy}.${format}` };
+  const fallback =
+    format === 'csv-utf8' ? `sales-by-${groupBy}-utf8.csv` : `sales-by-${groupBy}.${format}`;
+  return { blob: await response.blob(), filename: filename || fallback };
 }
