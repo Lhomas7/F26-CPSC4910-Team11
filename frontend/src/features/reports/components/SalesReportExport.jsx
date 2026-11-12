@@ -3,6 +3,13 @@ import { useEffect, useRef, useState } from 'react';
 import { downloadSalesReport } from 'api';
 import Modal from 'components/feedback/Modal';
 
+const formats = [
+  ['csv', 'CSV'],
+  ['xlsx', 'Excel'],
+  ['pdf', 'PDF'],
+  ['html', 'HTML'],
+];
+
 function saveFile(blob, filename) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -74,22 +81,17 @@ export default function SalesReportExport({ scope, scopeText, onAccessDenied }) 
               <button className="button" type="button" onClick={close}>
                 Cancel
               </button>
-              <button
-                className="button"
-                type="button"
-                aria-disabled={pending}
-                onClick={() => download('csv')}
-              >
-                Download CSV
-              </button>
-              <button
-                className="button button-primary"
-                type="button"
-                aria-disabled={pending}
-                onClick={() => download('xlsx')}
-              >
-                Download Excel
-              </button>
+              {formats.map(([format, label]) => (
+                <button
+                  key={format}
+                  className="button"
+                  type="button"
+                  aria-disabled={pending}
+                  onClick={() => download(format)}
+                >
+                  Download {label}
+                </button>
+              ))}
             </>
           }
         >

@@ -35,6 +35,6 @@ export async function downloadSalesReport({ groupBy, sponsorId, driverId }, form
   const response = await request(`/reports/sales/export/?${query}`, { signal });
   if (!response.ok) await readJson(response);
   const disposition = response.headers.get('Content-Disposition');
-  const filename = disposition?.match(/filename="([a-z0-9-]+\.(?:csv|xlsx))"/i)?.[1];
+  const filename = disposition?.match(/filename="([a-z0-9-]+\.(?:csv|xlsx|pdf|html))"/i)?.[1];
   return { blob: await response.blob(), filename: filename || `sales-by-${groupBy}.${format}` };
 }

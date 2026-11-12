@@ -139,6 +139,41 @@ class SalesReportApiTests(APITestCase):
             self.client.get(url, {**query, 'driver_id': self.driver_a.pk}).status_code, 400
         )
 
+    def test_html_export_escapes_names_and_keeps_the_applied_totals(self):
+        self.authenticate_admin()
+        SponsorCompany.objects.filter(pk=self.alpha.pk).update(name='<img src=x> & Logistics')
+        response = self.client.get(
+            reverse('reports:sales-export'),
+            {
+                'group_by': 'sponsor',
+                'sponsor_id': self.alpha.pk,
+                'file_format': 'html',
+            },
+        )
+        self.assertContains(response, '&lt;img src=x&gt; &amp; Logistics')
+        self.assertNotContains(response, '<img src=x>')
+        self.assertNotContains(response, 'Beta Transit')
+        self.assertContains(response, '<td class="number">40.00</td>')
+        self.assertContains(response, '<td class="number">0.4000</td>')
+        self.assertIn('.html', response['Content-Disposition'])
+        self.assertIn('no-store', response['Cache-Control'])
+
+    def test_print_exports_handle_empty_results(self):
+        self.authenticate_admin()
+        empty = SponsorCompany.objects.create(name='No sales yet')
+        url = reverse('reports:sales-export')
+        scope = {'group_by': 'sponsor', 'sponsor_id': empty.pk}
+        html = self.client.get(url, {**scope, 'file_format': 'html'})
+        self.assertContains(html, 'No completed sales match this report.')
+        self.assertContains(html, '<td class="number">0.0000</td>')
+
+        pdf = self.client.get(url, {**scope, 'file_format': 'pdf'})
+        self.assertEqual(pdf.status_code, 200)
+        self.assertEqual(pdf['Content-Type'], 'application/pdf')
+        self.assertIn('.pdf', pdf['Content-Disposition'])
+        self.assertIn('no-store', pdf['Cache-Control'])
+        self.assertTrue(b''.join(pdf.streaming_content).startswith(b'%PDF-'))
+
     def test_reports_require_enrolled_administrator(self):
         driver_response = self.client.get(
             reverse('reports:sales'),

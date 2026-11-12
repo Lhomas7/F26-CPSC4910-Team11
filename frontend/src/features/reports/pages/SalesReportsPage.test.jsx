@@ -82,6 +82,8 @@ test('exports the displayed report scope after changing a draft filter', async (
   fireEvent.click(exportButton);
 
   const dialog = screen.getByRole('dialog', { name: 'Export sales report' });
+  expect(within(dialog).getByRole('button', { name: 'Download HTML' })).toBeInTheDocument();
+  expect(within(dialog).getByRole('button', { name: 'Download PDF' })).toBeInTheDocument();
   fireEvent.click(within(dialog).getByRole('button', { name: 'Download Excel' }));
   expect(await within(dialog).findByRole('alert')).toHaveTextContent('Download failed');
   expect(api.downloadSalesReport).toHaveBeenCalledWith(
