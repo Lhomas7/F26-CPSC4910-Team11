@@ -1,0 +1,80 @@
+.bulk-page {
+  min-height: 100%;
+}
+
+.bulk-content {
+  display: grid;
+  gap: 1.35rem;
+  margin: 0 auto;
+  max-width: 56rem;
+  padding: 1.5rem 1.75rem 4rem;
+  width: 100%;
+}
+
+.bulk-card,
+.bulk-problems,
+.bulk-successes {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1.25rem;
+}
+
+.bulk-card h2,
+.bulk-problems h2 {
+  margin: 0;
+}
+
+.bulk-card pre {
+  background: var(--surface-2);
+  border-radius: 0.4rem;
+  margin: 0;
+  overflow-x: auto;
+  padding: 0.6rem 0.8rem;
+}
+
+.bulk-hint {
+  color: var(--ink-3);
+  margin: 0;
+}
+
+.bulk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.bulk-stats {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+}
+
+.bulk-summary {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.bulk-problems header {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.bulk-problems ul,
+.bulk-successes ul {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.bulk-problems code {
+  background: var(--surface-2);
+  border-radius: 0.3rem;
+  display: block;
+  margin: 0.2rem 0;
+  overflow-wrap: anywhere;
+  padding: 0.2rem 0.4rem;
+}

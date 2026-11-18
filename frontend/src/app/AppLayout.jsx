@@ -13,6 +13,7 @@ import {
   HomeIcon,
   InfoIcon,
   MoonIcon,
+  PlusIcon,
   PointsIcon,
   PurchasesIcon,
   ReportsIcon,
@@ -43,6 +44,8 @@ const NAV_ICONS = {
   users: UsersIcon,
   reports: ReportsIcon,
   about: InfoIcon,
+  organization: InfoIcon,
+  upload: PlusIcon,
 };
 
 function ThemeToggle() {

@@ -1,0 +1,118 @@
+.organization-page {
+  min-height: 100%;
+}
+
+.organization-content {
+  display: grid;
+  gap: 1.35rem;
+  margin: 0 auto;
+  max-width: 48rem;
+  padding: 1.5rem 1.75rem 4rem;
+  width: 100%;
+}
+
+.organization-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+.organization-card h2 {
+  margin: 0;
+}
+
+.organization-card header p {
+  color: var(--ink-3);
+  margin: 0.25rem 0 0;
+}
+
+.organization-field {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.organization-field input,
+.organization-field textarea {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  color: var(--ink);
+  font: inherit;
+  padding: 0.55rem 0.7rem;
+  width: 100%;
+}
+
+.organization-field small {
+  color: var(--ink-3);
+}
+
+.organization-field small.organization-error {
+  color: var(--danger-ink);
+}
+
+.organization-description {
+  margin: 0;
+  white-space: pre-line;
+}
+
+.organization-contact {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.organization-contact div {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.organization-contact dt {
+  color: var(--ink-3);
+  min-width: 4rem;
+}
+
+.organization-contact dd {
+  margin: 0;
+}
+
+.organization-team {
+  display: grid;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.organization-team li {
+  align-items: center;
+  border: 1px solid var(--line-soft);
+  border-radius: 0.5rem;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  padding: 0.65rem 0.8rem;
+}
+
+.organization-team li div {
+  display: grid;
+  min-width: 0;
+}
+
+.organization-team small {
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+
+.organization-badge {
+  background: var(--success-soft);
+  border: 1px solid var(--success-line);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  padding: 0.1rem 0.6rem;
+}
+
+.organization-badge.is-off {
+  background: var(--danger-soft);
+  border-color: var(--danger-line);
+  color: var(--danger-ink);
+}

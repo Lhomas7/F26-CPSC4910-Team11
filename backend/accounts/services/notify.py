@@ -169,6 +169,29 @@ def notify_driver_dropped(driver, sponsor_name, reason, *, rejected):
             logger.exception('Could not text sponsor removal notification.')
 
 
+def notify_driver_added(driver, sponsor_name):
+    """Tell an existing driver a sponsor added them to its program.
+
+    Like a removal, this is an affiliation notice: it is always recorded in-app
+    and emailed, whatever the driver's alert settings. Failures are logged.
+    """
+    message = (
+        f'{sponsor_name} added you to its Good Driver program. '
+        'You can start earning points right away.'
+    )
+    _record(driver.user, Notification.SPONSOR_DROPPED, message)
+    if driver.user.email:
+        try:
+            EmailMessage(
+                subject=f'You were added to the {sponsor_name} Good Driver program',
+                body=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[driver.user.email],
+            ).send()
+        except Exception:
+            logger.exception('Could not email sponsor added notification.')
+
+
 def notify_sponsors_of_point_change(driver, point_change, reason, balance, changed_by_user):
     """Alert the sponsors who asked to hear when this driver gains or loses points.
 

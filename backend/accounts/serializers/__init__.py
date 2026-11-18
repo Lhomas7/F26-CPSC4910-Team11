@@ -42,6 +42,11 @@ from .registration import (
     RegistrationSerializer,
     SponsorRegistrationSerializer,
 )
+from .sponsor_organization import (
+    SponsorOrganizationSerializer,
+    SponsorTeamMemberSerializer,
+    SponsorTeamMemberStatusSerializer,
+)
 
 __all__ = [
     'AdminPasswordResetConfirmSerializer',
@@ -75,6 +80,9 @@ __all__ = [
     'SponsorCompanySerializer',
     'SponsorMFASerializer',
     'SponsorNotificationPreferencesSerializer',
+    'SponsorOrganizationSerializer',
     'SponsorRegistrationSerializer',
+    'SponsorTeamMemberSerializer',
+    'SponsorTeamMemberStatusSerializer',
     'validate_code_for_method',
 ]

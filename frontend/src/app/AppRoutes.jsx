@@ -19,8 +19,10 @@ import {
 } from 'features/authentication';
 import { DriverDetailPage, DriverListPage } from 'features/drivers';
 import { AddProductPage, CatalogPage, ImportProductPage } from 'features/catalog';
+import { BulkUploadPage } from 'features/bulk-upload';
 import { WelcomePage } from 'features/home';
 import { PrivacyPage, TermsPage } from 'features/legal';
+import { OrganizationPage } from 'features/organization';
 import { PlaygroundPage } from 'features/playground';
 import { PointsPage } from 'features/points';
 import {
@@ -178,6 +180,22 @@ export function AppRoutes() {
           element={
             <RequireAuth roles={PAGE_ROLES.drivers}>
               <DriverDetailPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/organization"
+          element={
+            <RequireAuth roles={PAGE_ROLES.organization}>
+              <OrganizationPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/bulk-upload"
+          element={
+            <RequireAuth roles={PAGE_ROLES.bulkUpload}>
+              <BulkUploadPage />
             </RequireAuth>
           }
         />
