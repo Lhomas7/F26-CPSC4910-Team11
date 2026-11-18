@@ -9,6 +9,7 @@ test('each account type gets its own sidebar', () => {
     'Points',
     'Catalog',
     'Purchases',
+    'My sponsor',
     'About',
   ]);
   expect(labels({ account_type: 'sponsor' })).toEqual([
@@ -16,9 +17,17 @@ test('each account type gets its own sidebar', () => {
     'Points',
     'Drivers',
     'Catalog',
+    'Organization',
+    'Bulk upload',
     'About',
   ]);
-  expect(labels({ account_type: 'admin' })).toEqual(['Home', 'Users', 'Reports', 'About']);
+  expect(labels({ account_type: 'admin' })).toEqual([
+    'Home',
+    'Users',
+    'Bulk upload',
+    'Reports',
+    'About',
+  ]);
 });
 
 test('viewing as a sponsor includes Catalog while administrator navigation does not', () => {
@@ -29,5 +38,12 @@ test('viewing as a sponsor includes Catalog while administrator navigation does 
 test('viewing as someone shows their sidebar', () => {
   const adminViewingAsDriver = { account_type: 'driver', impersonation: { active: true } };
 
-  expect(labels(adminViewingAsDriver)).toEqual(['Home', 'Points', 'Catalog', 'Purchases', 'About']);
+  expect(labels(adminViewingAsDriver)).toEqual([
+    'Home',
+    'Points',
+    'Catalog',
+    'Purchases',
+    'My sponsor',
+    'About',
+  ]);
 });

@@ -8,7 +8,10 @@ export const NAV_ITEMS = [
   { to: '/drivers', label: 'Drivers', icon: 'drivers', roles: ['sponsor'] },
   { to: '/catalog', label: 'Catalog', icon: 'catalog', roles: ['driver', 'sponsor'] },
   { to: '/purchases', label: 'Purchases', icon: 'purchases', roles: ['driver'] },
+  { to: '/organization', label: 'Organization', icon: 'organization', roles: ['sponsor'] },
+  { to: '/organization', label: 'My sponsor', icon: 'organization', roles: ['driver'] },
   { to: '/users', label: 'Users', icon: 'users', roles: ['admin'] },
+  { to: '/bulk-upload', label: 'Bulk upload', icon: 'upload', roles: ['sponsor', 'admin'] },
   { to: '/reports', label: 'Reports', icon: 'reports', roles: ['admin'] },
   {
     to: '/about',
@@ -27,6 +30,8 @@ export const PAGE_ROLES = {
   drivers: ['sponsor'],
   users: ['admin'],
   reports: ['admin'],
+  organization: ['driver', 'sponsor'],
+  bulkUpload: ['sponsor', 'admin'],
 };
 
 /** The role the navigation should use for this user ('guest' when signed out). */

@@ -75,8 +75,27 @@ def _sponsor_company_id(user):
     return sponsor_account.company_id
 
 
+def _acting_company_id(user, on_behalf_of_company_id):
+    """The organization a point change is recorded against.
+
+    Sponsors always act for their own organization. Only an administrator may
+    name another one, which is how bulk uploads award points for any organization.
+    """
+    if on_behalf_of_company_id is None:
+        return _sponsor_company_id(user)
+    if not user or not user.is_authenticated or not user.is_active or not user.is_staff:
+        raise PointAdjustmentError(
+            'detail',
+            'Only an administrator can adjust points on behalf of an organization.',
+            code='not_sponsor',
+        )
+    return on_behalf_of_company_id
+
+
 @transaction.atomic
-def adjust_driver_points(*, driver, changed_by_user, point_change, reason):
+def adjust_driver_points(
+    *, driver, changed_by_user, point_change, reason, on_behalf_of_company_id=None
+):
     """Create one authorized adjustment and return its resulting balance.
 
     Locking the driver serializes balance-changing operations performed through
@@ -85,7 +104,7 @@ def adjust_driver_points(*, driver, changed_by_user, point_change, reason):
     """
     point_change = _validated_point_change(point_change)
     reason = _normalized_reason(reason)
-    sponsor_id = _sponsor_company_id(changed_by_user)
+    sponsor_id = _acting_company_id(changed_by_user, on_behalf_of_company_id)
 
     driver_id = driver.pk if isinstance(driver, Driver) else driver
     try:

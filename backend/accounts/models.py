@@ -42,6 +42,12 @@ class SponsorCompany(models.Model):
         validators=[MinValueValidator(1), MaxValueValidator(100000)],
     )
     driver_mfa_required = models.BooleanField(default=False)
+    # Public organization details a sponsor maintains so drivers can learn
+    # about the program they belong to. All optional; blank means not provided.
+    description = models.TextField(blank=True, max_length=1000)
+    website = models.URLField(blank=True, max_length=200)
+    contact_email = models.EmailField(blank=True, max_length=254)
+    contact_phone = models.CharField(blank=True, max_length=16)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

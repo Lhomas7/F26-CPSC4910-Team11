@@ -32,6 +32,11 @@ from .mfa import (
 from .notifications import NotificationPreferencesView
 from .profiles import SelfProfileView
 from .registration import DriverRegistrationView, SponsorRegistrationView
+from .sponsor_organization import (
+    SponsorOrganizationView,
+    SponsorTeamListView,
+    SponsorTeamMemberView,
+)
 
 __all__ = [
     'AdminAccountDetailView',
@@ -62,5 +67,8 @@ __all__ = [
     'PasswordResetRequestView',
     'SelfProfileView',
     'SponsorMFASettingsView',
+    'SponsorOrganizationView',
     'SponsorRegistrationView',
+    'SponsorTeamListView',
+    'SponsorTeamMemberView',
 ]
