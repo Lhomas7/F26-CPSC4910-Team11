@@ -90,3 +90,25 @@ test('another effective Driver does not restore the stored attempt', async () =>
   await waitFor(() => expect(result.current.status).toBe('ready'));
   expect(result.current.pendingAttempt).toBeNull();
 });
+
+test("switching sponsors drops the old sponsor's review and loads the new sponsor's cart", async () => {
+  const otherCart = { ...cart, results: [], item_count: 0, total_points: 0, point_balance: 900 };
+  let scope = 0;
+  const { result, rerender } = renderHook(() => useCart(), {
+    wrapper: ({ children }) => (
+      <CartProvider ownerId={17} organization="First Freight" scope={scope}>{children}</CartProvider>
+    ),
+  });
+  await waitFor(() => expect(result.current.cart).toEqual(cart));
+  await act(async () => { await result.current.beginReview(); });
+  expect(result.current.review).toEqual(review);
+
+  api.getCart.mockResolvedValue(otherCart);
+  scope = 1;
+  rerender();
+
+  await waitFor(() => expect(result.current.cart).toEqual(otherCart));
+  expect(result.current.review).toBeNull();
+  expect(result.current.reviewStatus).toBe('idle');
+  expect(api.getCart).toHaveBeenCalledTimes(2);
+});

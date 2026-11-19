@@ -49,10 +49,10 @@ export default function OrganizationPage() {
     setData,
   } = useApiRequest(useCallback(() => getOrganization(), []));
 
-  const title = isSponsor ? 'Organization' : 'My sponsor';
+  const title = isSponsor ? 'Organization' : 'Sponsor info';
   const subtitle = isSponsor
     ? 'Keep your details current and manage your sponsor team'
-    : 'Learn more about the organization you drive for';
+    : 'Learn more about the sponsor you are shopping with';
 
   return (
     <div className="organization-page">

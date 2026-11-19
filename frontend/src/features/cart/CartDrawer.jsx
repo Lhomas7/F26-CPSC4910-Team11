@@ -30,10 +30,11 @@ function Receipt({ total, balance }) {
 }
 
 /** Compares the cart's total with the balance; turns red when the driver is short. */
-function Totals({ count, total, balance }) {
+function Totals({ count, total, balance, sponsor }) {
   const known = validPoints(total) && validPoints(balance);
   const short = known && total > balance;
   return <div className={`cart-balance-check${short ? ' is-short' : ''}`} role="group" aria-label="Points check">
+    {sponsor?.name && <p className="cart-sponsor">Spending {sponsor.name} points</p>}
     <dl className="cart-totals">
       <div><dt>Items</dt><dd>{numbers.format(count)}</dd></div>
       <div className="cart-total-main"><dt>Total price</dt><dd>{points(total)}</dd></div>
@@ -113,7 +114,7 @@ export default function CartDrawer({ onClose }) {
         {reviewNotice && <p className="banner banner-warning" role="alert">{reviewNotice}</p>}
         <p className="cart-view-lead">Confirming spends the points below and empties your cart.</p>
         <Lines rows={review.results.map(({ product }) => ({ name: product.name, unit_points: product.point_cost }))} />
-        <Totals count={review.results.length} total={review.total_points} balance={review.point_balance} />
+        <Totals count={review.results.length} total={review.total_points} balance={review.point_balance} sponsor={review.sponsor} />
       </> : <p>No points were spent. {reviewStatus === 'denied' ? 'Sign in with an eligible Driver account to continue.' : 'The review could not be loaded.'}</p>}
       <div className="cart-actions-row">
         {review && <button className="button button-primary" disabled={Boolean(blocked) || checkingOut} onClick={checkout}>{checkingOut ? 'Purchasing…' : 'Confirm purchase'}</button>}
@@ -128,7 +129,7 @@ export default function CartDrawer({ onClose }) {
       {![401, 403].includes(error?.status) && <button className="button" onClick={reload}>Try again</button>}
     </div>;
   } else if (!cart.results.length) {
-    body = <div className="cart-drawer-state"><p>Your cart is empty.</p><p>Use Add to cart on a reward in the catalog to save it here.</p></div>;
+    body = <div className="cart-drawer-state"><p>{cart.sponsor?.name ? `Your ${cart.sponsor.name} cart is empty.` : 'Your cart is empty.'}</p><p>Use Add to cart on a reward in the catalog to save it here.</p></div>;
   } else {
     const blocked = blockers(cart, viewingAs, pendingIds.size || clearing);
     const unavailable = cart.results.filter((item) => !item.product.is_available);
@@ -145,7 +146,7 @@ export default function CartDrawer({ onClose }) {
           {!product.is_available && <span className="badge badge-dot badge-danger">Out of stock</span>}</div>
         <button className="button button-danger-outline cart-item-remove" disabled={viewingAs || pendingIds.has(product.id)} aria-label={`Remove ${product.name} from cart`} onClick={() => remove(product.id)}>{pendingIds.has(product.id) ? 'Removing…' : 'Remove'}</button>
       </li>)}</ul>
-      <Totals count={cart.item_count} total={cart.total_points} balance={cart.point_balance} />
+      <Totals count={cart.item_count} total={cart.total_points} balance={cart.point_balance} sponsor={cart.sponsor} />
       {error && <p className="banner banner-warning" role="alert">Cart could not be refreshed. Previously loaded information is shown.</p>}
       {viewingAs && <p className="banner">You’re viewing as this driver, so the cart is read-only.</p>}
       {confirmingClear && !viewingAs ? <div className="cart-clear-confirm" role="alertdialog" aria-labelledby="cart-clear-title">

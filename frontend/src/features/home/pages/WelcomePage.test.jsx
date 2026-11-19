@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 
 import * as api from 'api';
 import { useAuth } from 'auth/AuthContext';
+import { ActiveSponsorProvider } from 'features/sponsors';
 import WelcomePage from './WelcomePage';
 
 jest.mock('api');
@@ -23,6 +24,7 @@ const recent = [
 beforeEach(() => {
   useAuth.mockReturnValue({ user: null });
   api.getDrivers.mockResolvedValue([]);
+  api.getMySponsors.mockResolvedValue({ active_sponsor_id: null, memberships: [] });
   api.getPointHistory.mockResolvedValue([]);
   api.getAdminUsers.mockResolvedValue([]);
   api.getAdminSponsorOrganizations.mockResolvedValue([]);
@@ -30,10 +32,18 @@ beforeEach(() => {
 
 afterEach(() => jest.clearAllMocks());
 
-function renderWelcomePage() {
+/** As in the app shell, only drivers have the sponsor context. */
+function renderWelcomePage({ asDriver = false } = {}) {
+  const page = asDriver ? (
+    <ActiveSponsorProvider>
+      <WelcomePage />
+    </ActiveSponsorProvider>
+  ) : (
+    <WelcomePage />
+  );
   return render(
     <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <WelcomePage />
+      {page}
     </MemoryRouter>,
   );
 }
@@ -54,12 +64,16 @@ test('greets a signed-in user by name', async () => {
   useAuth.mockReturnValue({
     user: { name: 'Jamie Rivera', username: 'jamie.rivera', account_type: 'driver' },
   });
-  renderWelcomePage();
+  renderWelcomePage({ asDriver: true });
 
   expect(
     screen.getByRole('heading', { level: 2, name: 'Welcome back, Jamie Rivera' }),
   ).toBeInTheDocument();
-  expect(await screen.findByText('Not linked yet')).toBeInTheDocument();
+  expect(await screen.findByText("You aren't with any sponsor yet.")).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Apply to a sponsor' })).toHaveAttribute(
+    'href',
+    '/sponsors',
+  );
   expect(screen.queryByText(/rewards truck drivers for driving well/i)).not.toBeInTheDocument();
 });
 
@@ -74,28 +88,53 @@ test('a sponsor gets role-specific driver and points actions', async () => {
   expect(await screen.findByText('No drivers are waiting.')).toBeInTheDocument();
 });
 
-test('a driver gets a points shortcut and their balance with recent activity', async () => {
+test('a driver sees each sponsor separately, with no combined total, and recent activity', async () => {
   useAuth.mockReturnValue({
     user: { name: 'Jamie Rivera', username: 'jamie.rivera', account_type: 'driver' },
   });
-  api.getDrivers.mockResolvedValue([
-    {
-      id: 4,
-      name: 'Jamie Rivera',
-      status: 'approved',
-      point_balance: 50,
-      sponsor_name: 'Palmetto Freight',
-    },
-  ]);
+  api.getMySponsors.mockResolvedValue({
+    active_sponsor_id: 3,
+    memberships: [
+      { sponsor: { id: 3, name: 'Palmetto Freight' }, status: 'approved', point_balance: 50 },
+      { sponsor: { id: 5, name: 'Upstate Logistics' }, status: 'approved', point_balance: 1200 },
+      { sponsor: { id: 7, name: 'Coastal Carriers' }, status: 'pending' },
+    ],
+  });
   api.getPointHistory.mockResolvedValue(recent);
-  renderWelcomePage();
+  renderWelcomePage({ asDriver: true });
 
   expect(screen.queryByRole('link', { name: 'Go to drivers' })).not.toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'View all points' })).toHaveAttribute('href', '/points');
+  expect(screen.getByRole('link', { name: 'Apply to more sponsors' })).toHaveAttribute(
+    'href',
+    '/sponsors',
+  );
   expect(screen.getByRole('link', { name: 'My account' })).toHaveAttribute('href', '/account');
-  expect((await screen.findAllByText('Palmetto Freight')).length).toBeGreaterThan(0);
+  const standings = await screen.findByRole('region', { name: 'Your sponsors' });
+  expect(standings).toHaveTextContent('Palmetto Freight50 pts');
+  expect(standings).toHaveTextContent('Upstate Logistics1,200 pts');
+  expect(standings).toHaveTextContent('Coastal CarriersPending approval');
+  expect(screen.getByText('Shopping now')).toBeInTheDocument();
+  expect(screen.queryByText(/across every sponsor/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/1,250/)).not.toBeInTheDocument();
   expect(screen.getByText('Clean inspection')).toBeInTheDocument();
   expect(api.getPointHistory).toHaveBeenCalledWith({ limit: 5 });
+  expect(api.getDrivers).not.toHaveBeenCalled();
+});
+
+test('a driver whose applications are all pending is told who must approve them', async () => {
+  useAuth.mockReturnValue({
+    user: { name: 'Jamie Rivera', username: 'jamie.rivera', account_type: 'driver' },
+  });
+  api.getMySponsors.mockResolvedValue({
+    active_sponsor_id: null,
+    memberships: [{ sponsor: { id: 3, name: 'Palmetto Freight' }, status: 'pending' }],
+  });
+  renderWelcomePage({ asDriver: true });
+
+  expect(await screen.findByRole('status')).toHaveTextContent(
+    'Palmetto Freight must approve your application',
+  );
 });
 
 test('a sponsor dashboard lists pending applications and recent driver activity', async () => {

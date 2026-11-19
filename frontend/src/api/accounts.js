@@ -34,6 +34,11 @@ export function updateNotificationPreferences(data) {
   return request('/notifications/preferences/', { method: 'PATCH', body: data }).then(readJson);
 }
 
+/** Sponsor organizations a new driver can apply to. No sign-in needed. */
+export function getPublicSponsors() {
+  return request('/sponsors/').then(readJson);
+}
+
 export function registerDriver(data) {
   return request('/accounts/driver/', { method: 'POST', body: data }).then(readJson);
 }

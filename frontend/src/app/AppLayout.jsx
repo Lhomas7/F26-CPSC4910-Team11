@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from 'auth/AuthContext';
@@ -28,6 +28,7 @@ import { MfaSetupWall } from 'features/accounts';
 import { DeviceCheckDialog } from 'features/authentication';
 import CartButton from 'features/cart/CartButton';
 import { CartProvider } from 'features/cart/CartContext';
+import { ActiveSponsorProvider, SponsorSwitcher, useActiveSponsor } from 'features/sponsors';
 import './AppLayout.css';
 import ActiveViewAsIndicator from './ActiveViewAsIndicator';
 import { navItemsFor } from './navigation';
@@ -224,11 +225,37 @@ function AccountMenu({ user, onSignOut }) {
 /** Share one cart between the header button and catalog cards for drivers. */
 function DriverCart({ enabled, user, children }) {
   if (!enabled) return children;
+  return (
+    <ActiveSponsorProvider key={sessionIdentity(user)}>
+      <SponsorCart user={user}>{children}</SponsorCart>
+    </ActiveSponsorProvider>
+  );
+}
+
+/** The cart holds every sponsor's rewards but shows only the active sponsor's. */
+function SponsorCart({ user, children }) {
+  const { activeSponsor, scopeKey } = useActiveSponsor();
   const viewingAs = Boolean(user.impersonation?.active);
   return (
-    <CartProvider key={sessionIdentity(user)} viewingAs={viewingAs} ownerId={user.id} organization={user.company || ''}>
+    <CartProvider
+      key={sessionIdentity(user)}
+      viewingAs={viewingAs}
+      ownerId={user.id}
+      organization={activeSponsor?.sponsor.name || ''}
+      scope={scopeKey}
+    >
       {children}
     </CartProvider>
+  );
+}
+
+/** Remount the page when a driver switches sponsors, so it loads that sponsor's data. */
+function SponsorScopedOutlet() {
+  const sponsors = useActiveSponsor();
+  return (
+    <Fragment key={sponsors?.scopeKey ?? 0}>
+      <Outlet />
+    </Fragment>
   );
 }
 
@@ -321,6 +348,7 @@ export function AppLayout() {
               />
             )}
           </div>
+          {showCart && <SponsorSwitcher />}
           <nav className="site-nav" aria-label="Primary navigation">
             {navItemsFor(user).map((item) => {
               const Icon = NAV_ICONS[item.icon];
@@ -376,7 +404,7 @@ export function AppLayout() {
                       without interruption. <Link to="/account">Set up now</Link>
                     </div>
                   )}
-                  <Outlet />
+                  <SponsorScopedOutlet />
                 </>
               )}
             </PageHeaderTargetProvider>

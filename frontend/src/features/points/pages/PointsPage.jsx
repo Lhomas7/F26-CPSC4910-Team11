@@ -14,6 +14,7 @@ import BehaviorList from '../components/BehaviorList';
 import BehaviorManager from '../components/BehaviorManager';
 import PointHistoryList from '../components/PointHistoryList';
 import useDriverPointsRefresh from 'features/cart/useDriverPointsRefresh';
+import { useActiveSponsor } from 'features/sponsors';
 import '../Points.css';
 
 const PAGE_SIZE = 25;
@@ -111,15 +112,15 @@ function DriverStanding({ record, error, loading, onRetry, behaviors }) {
 
   const approved = record.status === 'approved';
   const linked = Boolean(record.sponsor_name);
-  let guidance = 'Your sponsor can award or deduct points and each change appears below.';
-  if (!linked) guidance = 'A sponsor must link your account before you can participate.';
+  let guidance = `${record.sponsor_name} can award or deduct points and each change appears below.`;
+  if (!linked) guidance = 'Apply to a sponsor from My sponsors to start earning points.';
   else if (!approved)
     guidance = `${record.sponsor_name} must approve your enrollment before your points can change.`;
 
   return (
     <section className="card points-standing" aria-label="Program standing" aria-busy={loading}>
       <div className="points-standing-balance">
-        <span>Current balance</span>
+        <span>{approved && linked ? `${record.sponsor_name} balance` : 'Current balance'}</span>
         <strong>
           {Number(record.point_balance || 0).toLocaleString()} <small>pts</small>
         </strong>
@@ -128,7 +129,7 @@ function DriverStanding({ record, error, loading, onRetry, behaviors }) {
         <div>
           <dt>Sponsor organization</dt>
           <dd className={linked ? '' : 'points-unassigned'}>
-            {record.sponsor_name || 'Not linked to a sponsor'}
+            {record.sponsor_name || 'Not with a sponsor yet'}
           </dd>
         </div>
         <div>
@@ -155,13 +156,27 @@ function DriverStanding({ record, error, loading, onRetry, behaviors }) {
   );
 }
 
+/** The standing shown for the active sponsor, else the first pending application. */
+function standingRecord({ loaded, memberships, activeSponsor }) {
+  if (!loaded) return null;
+  if (activeSponsor) {
+    return {
+      sponsor_name: activeSponsor.sponsor.name,
+      status: 'approved',
+      point_balance: activeSponsor.point_balance,
+    };
+  }
+  const pending = memberships.find((membership) => membership.status === 'pending');
+  return pending ? { sponsor_name: pending.sponsor.name, status: 'pending', point_balance: 0 } : {};
+}
+
 function DriverPoints() {
   const [limit, setLimit] = useState(PAGE_SIZE);
-  const driversRequest = useApiRequest(useCallback(() => getDrivers(), []));
+  const sponsors = useActiveSponsor();
   const historyRequest = useApiRequest(useCallback(() => getPointHistory({ limit }), [limit]));
   const behaviorsRequest = useApiRequest(useCallback(() => getBehaviors(), []));
-  useDriverPointsRefresh(driversRequest.reload, historyRequest.reload);
-  const record = driversRequest.data?.[0];
+  useDriverPointsRefresh(sponsors.reload, historyRequest.reload);
+  const record = standingRecord(sponsors);
 
   return (
     <>
@@ -169,9 +184,9 @@ function DriverPoints() {
       <main className="points-content">
         <DriverStanding
           behaviors={behaviorsRequest}
-          error={driversRequest.error}
-          loading={driversRequest.status === 'loading'}
-          onRetry={driversRequest.reload}
+          error={sponsors.error}
+          loading={sponsors.status === 'loading'}
+          onRetry={sponsors.reload}
           record={record}
         />
         <HistoryCard

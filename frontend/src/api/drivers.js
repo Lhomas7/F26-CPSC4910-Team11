@@ -16,6 +16,26 @@ export function linkDriver(username) {
   return request('/sponsor/drivers/link/', { method: 'POST', body: { username } }).then(readJson);
 }
 
+/** The signed-in driver's sponsors, each with its own balance, and the active one. */
+export function getMySponsors() {
+  return request('/driver/sponsors/').then(readJson);
+}
+
+export function applyToSponsors(sponsorIds) {
+  return request('/driver/sponsors/apply/', {
+    method: 'POST',
+    body: { sponsor_ids: sponsorIds },
+  }).then(readJson);
+}
+
+/** Choose which sponsor's catalog, cart, and points the driver is using. */
+export function setActiveSponsor(sponsorId) {
+  return request('/driver/sponsors/active/', {
+    method: 'POST',
+    body: { sponsor_id: sponsorId },
+  }).then(readJson);
+}
+
 export function adjustDriverPoints(driverId, pointChange, reason) {
   return request(`/sponsor/drivers/${driverId}/points/`, {
     method: 'POST',

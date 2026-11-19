@@ -228,6 +228,13 @@
   gap: 0.5rem;
 }
 
+.cart-sponsor {
+  color: var(--ink-2);
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0;
+}
+
 .cart-balance-check.is-short {
   background: var(--danger-soft);
   border: 1px solid var(--danger-line);

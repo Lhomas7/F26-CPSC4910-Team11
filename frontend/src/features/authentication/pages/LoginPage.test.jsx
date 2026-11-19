@@ -23,6 +23,7 @@ beforeEach(() => {
   });
   api.registerDriver.mockResolvedValue({ username: 'jamie.rivera' });
   api.currentRelease.mockResolvedValue(null);
+  api.getPublicSponsors.mockResolvedValue([]);
 });
 
 afterEach(() => jest.clearAllMocks());
@@ -113,6 +114,54 @@ test('driver registration sends separate name and email fields', async () => {
       accepted_terms: true,
     });
   });
+});
+
+/** Fill in a driver sign-up without submitting it. */
+function fillDriverDetails() {
+  fireEvent.click(screen.getByRole('button', { name: 'Create Account' }));
+  fireEvent.click(screen.getByRole('button', { name: /Driver.*Earn points/i }));
+  fireEvent.change(screen.getByLabelText(/First Name/i), { target: { value: 'Jamie' } });
+  fireEvent.change(screen.getByLabelText(/Last Name/i), { target: { value: 'Rivera' } });
+  fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'jamie@example.com' } });
+  fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'jamie.rivera' } });
+  fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ExamplePassword123!' } });
+  fireEvent.change(screen.getByLabelText('Confirm Password'), {
+    target: { value: 'ExamplePassword123!' },
+  });
+  fireEvent.click(screen.getByRole('checkbox', { name: /Terms of Service/i }));
+}
+
+test('driver registration applies to the sponsors the driver checks', async () => {
+  api.getPublicSponsors.mockResolvedValue([
+    { id: 4, name: 'Alpha Freight' },
+    { id: 9, name: 'Beta Haulers' },
+  ]);
+  renderLoginPage();
+  fillDriverDetails();
+
+  fireEvent.click(await screen.findByRole('checkbox', { name: 'Alpha Freight' }));
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Beta Haulers' }));
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Alpha Freight' }));
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Alpha Freight' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Create Driver Account' }));
+
+  await waitFor(() => {
+    expect(api.registerDriver).toHaveBeenCalledWith(
+      expect.objectContaining({ username: 'jamie.rivera', sponsor_ids: [9, 4] }),
+    );
+  });
+});
+
+test('driver registration still works when sponsors cannot be loaded', async () => {
+  api.getPublicSponsors.mockRejectedValue(new Error('down'));
+  renderLoginPage();
+  fillDriverDetails();
+
+  expect(await screen.findByText(/apply to sponsors after signing up/i)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Create Driver Account' }));
+
+  await waitFor(() => expect(api.registerDriver).toHaveBeenCalled());
+  expect(api.registerDriver.mock.calls[0][0]).not.toHaveProperty('sponsor_ids');
 });
 
 test('registration links to the terms and privacy notice without losing form state', () => {

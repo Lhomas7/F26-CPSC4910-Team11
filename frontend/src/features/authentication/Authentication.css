@@ -208,6 +208,12 @@
   line-height: 1.4;
 }
 
+.login-sponsor-note {
+  color: var(--ink-2);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
 .login-consent input {
   accent-color: var(--accent);
   margin-top: 0.15rem;

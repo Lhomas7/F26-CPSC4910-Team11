@@ -8,6 +8,7 @@ import RoadTruck from 'components/branding/RoadTruck';
 import PasswordInput from 'components/forms/PasswordInput';
 import PasswordRequirements from 'components/forms/PasswordRequirements';
 import { useAuth } from 'auth/AuthContext';
+import SponsorCheckboxList from 'features/sponsors/components/SponsorCheckboxList';
 import {
   validateEmail,
   validateName,
@@ -667,6 +668,41 @@ function RoleChoice({ onPick }) {
   );
 }
 
+/** Optional sponsors for a new driver to apply to. Sign-up never depends on it. */
+function SponsorApplicationChoices({ selected, onChange }) {
+  const [sponsors, setSponsors] = useState(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    api
+      .getPublicSponsors()
+      .then((list) => active && setSponsors(list))
+      .catch(() => active && setFailed(true));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (failed) {
+    return (
+      <p className="login-sponsor-note">
+        Sponsors couldn't be loaded. You can apply to sponsors after signing up.
+      </p>
+    );
+  }
+  if (!sponsors?.length) return null;
+  return (
+    <SponsorCheckboxList
+      legend="Sponsors to apply to (optional)"
+      hint="Each sponsor reviews your application separately."
+      sponsors={sponsors}
+      selected={selected}
+      onChange={onChange}
+    />
+  );
+}
+
 function RoleRegistrationForm({ role, onBack, onDone, onError, onOutage }) {
   const { updateUser } = useAuth();
   const navigate = useNavigate();
@@ -677,6 +713,7 @@ function RoleRegistrationForm({ role, onBack, onDone, onError, onOutage }) {
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [sponsorIds, setSponsorIds] = useState([]);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -727,6 +764,8 @@ function RoleRegistrationForm({ role, onBack, onDone, onError, onOutage }) {
     };
     if (role === 'sponsor') {
       payload.company_name = companyName.trim();
+    } else if (sponsorIds.length) {
+      payload.sponsor_ids = sponsorIds;
     }
     return role === 'sponsor' ? api.registerSponsor(payload) : api.registerDriver(payload);
   };
@@ -969,6 +1008,10 @@ function RoleRegistrationForm({ role, onBack, onDone, onError, onOutage }) {
           .
         </span>
       </label>
+
+      {role === 'driver' && (
+        <SponsorApplicationChoices selected={sponsorIds} onChange={setSponsorIds} />
+      )}
 
       {role === 'sponsor' && (
         <div className="login-field">

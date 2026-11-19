@@ -1,10 +1,11 @@
 import { useCallback } from 'react';
 import { Link } from 'react-router-dom';
 
-import { getDrivers, getPointHistory } from 'api';
+import { getPointHistory } from 'api';
 import useApiRequest from 'hooks/useApiRequest';
 import { PointHistoryList } from 'features/points';
 import useDriverPointsRefresh from 'features/cart/useDriverPointsRefresh';
+import { membershipStatus, useActiveSponsor } from 'features/sponsors';
 import DashboardCard from './DashboardCard';
 import DashboardSkeleton from './DashboardSkeleton';
 import QuickActions from './QuickActions';
@@ -13,66 +14,90 @@ import WelcomeHeader from './WelcomeHeader';
 
 const RECENT_ACTIVITY = 5;
 
+function guidanceFor(memberships, approved) {
+  if (approved.length) return null;
+  const pending = memberships.filter((membership) => membership.status === 'pending');
+  if (pending.length) {
+    const names = pending.map((membership) => membership.sponsor.name).join(', ');
+    return `${names} must approve your application before you can earn or spend points.`;
+  }
+  return 'Apply to a sponsor to start earning points.';
+}
+
+/** One card per sponsor. Points never mix, so there is deliberately no total. */
+function SponsorStandings({ memberships, activeSponsor }) {
+  if (!memberships.length) {
+    return (
+      <section className="card home-no-sponsors">
+        <p>You aren't with any sponsor yet.</p>
+        <Link className="button button-primary" to="/sponsors">
+          Apply to a sponsor
+        </Link>
+      </section>
+    );
+  }
+  return (
+    <section className="stat-grid home-sponsor-stats" aria-label="Your sponsors">
+      {memberships.map((membership) => {
+        const { label, badge } = membershipStatus(membership.status);
+        const approved = membership.status === 'approved';
+        const active = activeSponsor?.sponsor.id === membership.sponsor.id;
+        return (
+          <div
+            className={`stat home-sponsor-stat${active ? ' stat-highlight' : ''}`}
+            key={membership.sponsor.id}
+          >
+            <span className="stat-label">{membership.sponsor.name}</span>
+            <strong className={approved ? 'stat-value' : 'stat-value home-stat-badge'}>
+              {approved ? (
+                <>
+                  {Number(membership.point_balance || 0).toLocaleString()} <small>pts</small>
+                </>
+              ) : (
+                <span className={`badge badge-dot ${badge}`}>{label}</span>
+              )}
+            </strong>
+            <small className="stat-note">
+              {active ? 'Shopping now' : approved ? 'Approved' : 'No points until approved'}
+            </small>
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
 export default function DriverHome({ user }) {
-  const standing = useApiRequest(useCallback(() => getDrivers(), []));
+  const sponsors = useActiveSponsor();
   const activity = useApiRequest(
     useCallback(() => getPointHistory({ limit: RECENT_ACTIVITY }), []),
   );
-  useDriverPointsRefresh(standing.reload, activity.reload);
-  const record = standing.data?.[0];
-  const linked = Boolean(record?.sponsor_name);
-  const approved = linked && record?.status === 'approved';
+  useDriverPointsRefresh(sponsors.reload, activity.reload);
+  const { memberships, approved, activeSponsor, loaded } = sponsors;
+  const guidance = loaded ? guidanceFor(memberships, approved) : null;
 
   return (
     <div className="home-dashboard">
-      <WelcomeHeader user={user} organization={standing.error ? null : record?.sponsor_name} />
+      <WelcomeHeader user={user} organization={activeSponsor?.sponsor.name} />
 
-      {record && !approved && (
+      {guidance && memberships.length > 0 && (
         <p className="banner banner-warning home-guidance" role="status">
-          {linked
-            ? `${record.sponsor_name} must approve your enrollment before your points can change.`
-            : 'A sponsor must link your account before you can participate in a program.'}
+          {guidance}
         </p>
       )}
 
-      {standing.status === 'loading' && !record ? (
+      {!loaded && sponsors.status === 'loading' ? (
         <DashboardSkeleton count={3} type="stats" />
-      ) : standing.error && !record ? (
+      ) : !loaded ? (
         <section className="card">
           <SectionError
-            error={standing.error}
-            onRetry={standing.reload}
-            title="Your program standing couldn't be loaded"
+            error={sponsors.error}
+            onRetry={sponsors.reload}
+            title="Your sponsors couldn't be loaded"
           />
         </section>
       ) : (
-        <section className="stat-grid home-driver-stats" aria-label="Program standing">
-          <div className="stat stat-highlight stat-lead">
-            <span className="stat-label">Point balance</span>
-            <strong className="stat-value">
-              {Number(record?.point_balance || 0).toLocaleString()}
-            </strong>
-            <small className="stat-note">Across every sponsor</small>
-          </div>
-          <div className="stat">
-            <span className="stat-label">Sponsor organization</span>
-            <strong className="stat-value home-stat-text">
-              {record?.sponsor_name || 'Not linked yet'}
-            </strong>
-            <small className="stat-note">Who manages your points</small>
-          </div>
-          <div className="stat">
-            <span className="stat-label">Enrollment</span>
-            <strong className="stat-value home-stat-badge">
-              <span className={`badge badge-dot ${approved ? 'badge-success' : 'badge-warning'}`}>
-                {approved ? 'Approved' : linked ? 'Pending approval' : 'Not enrolled'}
-              </span>
-            </strong>
-            <small className="stat-note">
-              {approved ? 'Can receive point changes' : 'Waiting to participate'}
-            </small>
-          </div>
-        </section>
+        <SponsorStandings memberships={memberships} activeSponsor={activeSponsor} />
       )}
 
       <DashboardCard
@@ -100,6 +125,9 @@ export default function DriverHome({ user }) {
       <QuickActions>
         <Link className="button button-large button-primary" to="/points">
           View all points
+        </Link>
+        <Link className="button button-large" to="/sponsors">
+          Apply to more sponsors
         </Link>
         <Link className="button button-large" to="/account">
           My account

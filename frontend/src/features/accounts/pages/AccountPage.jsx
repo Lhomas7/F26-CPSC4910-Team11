@@ -219,8 +219,12 @@ export default function AccountPage() {
 
   const roleLabel = profile && (ACCOUNT_LABELS[profile.account_type] || profile.account_type);
   const displayedPicture = removePicture ? '' : picturePreview || profile?.avatar_url;
+  const isDriver = profile?.account_type === 'driver';
+  const companyLabel = isDriver ? 'Sponsors' : 'Sponsor organization';
   const companyValue =
-    profile?.account_type === 'admin' ? 'Not applicable' : profile?.company || 'Not assigned yet';
+    profile?.account_type === 'admin'
+      ? 'Not applicable'
+      : profile?.company || (isDriver ? 'None yet. Apply from My sponsors.' : 'Not assigned yet');
 
   return (
     <div className="account-page">
@@ -317,7 +321,7 @@ export default function AccountPage() {
                       <dd>{roleLabel}</dd>
                     </div>
                     <div>
-                      <dt>Sponsor organization</dt>
+                      <dt>{companyLabel}</dt>
                       <dd>
                         {profile.account_type === 'admin' ? (
                           <i>{companyValue}</i>
@@ -463,7 +467,7 @@ export default function AccountPage() {
                           <strong>{roleLabel}</strong>
                         </div>
                         <div>
-                          <span>Sponsor organization</span>
+                          <span>{companyLabel}</span>
                           <strong>{companyValue}</strong>
                         </div>
                       </div>
