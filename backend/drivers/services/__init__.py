@@ -1,7 +1,11 @@
 from .membership import (
     DriverMembershipError,
+    admin_assign_sponsors,
+    admin_remove_sponsor,
+    apply_to_sponsors,
+    approve_driver_application,
     link_driver_to_sponsor,
-    reassign_driver_sponsor,
+    open_application,
     remove_driver_from_sponsor,
 )
 from .points import (
@@ -19,7 +23,11 @@ __all__ = (
     'PointAdjustmentError',
     'PointAdjustmentResult',
     'adjust_driver_points',
+    'admin_assign_sponsors',
+    'admin_remove_sponsor',
+    'apply_to_sponsors',
+    'approve_driver_application',
     'link_driver_to_sponsor',
-    'reassign_driver_sponsor',
+    'open_application',
     'remove_driver_from_sponsor',
 )

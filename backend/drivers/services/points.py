@@ -2,8 +2,9 @@ from dataclasses import dataclass
 
 from django.db import transaction
 
+from accounts.models import SponsorCompany
 from accounts.services.notify import notify_point_change, notify_sponsors_of_point_change
-from drivers.models import Driver, PointTransaction
+from drivers.models import Driver, DriverSponsorMembership, PointTransaction
 
 from .reasons import MAX_REASON_LENGTH, normalize_reason
 
@@ -108,9 +109,7 @@ def adjust_driver_points(
 
     driver_id = driver.pk if isinstance(driver, Driver) else driver
     try:
-        locked_driver = (
-            Driver.objects.select_for_update().select_related('sponsor').get(pk=driver_id)
-        )
+        locked_driver = Driver.objects.select_for_update().get(pk=driver_id)
     except (Driver.DoesNotExist, TypeError, ValueError):
         raise PointAdjustmentError(
             'driver',
@@ -118,21 +117,26 @@ def adjust_driver_points(
             code='driver_not_found',
         ) from None
 
-    if locked_driver.sponsor_id != sponsor_id:
+    membership_status = (
+        DriverSponsorMembership.objects.filter(driver=locked_driver, sponsor_id=sponsor_id)
+        .values_list('status', flat=True)
+        .first()
+    )
+    if membership_status not in DriverSponsorMembership.ACTIVE_STATUSES:
         raise PointAdjustmentError(
             'driver',
             'Sponsors can only adjust points for drivers in their organization.',
             code='driver_outside_company',
         )
 
-    if locked_driver.status != 'approved':
+    if membership_status != DriverSponsorMembership.APPROVED:
         raise PointAdjustmentError(
             'driver',
             'Points can only be adjusted for approved drivers.',
             code='driver_not_approved',
         )
 
-    current_balance = locked_driver.point_balance
+    current_balance = locked_driver.point_balance_for(sponsor_id)
     resulting_balance = current_balance + point_change
     if resulting_balance < 0:
         raise PointAdjustmentError(
@@ -140,6 +144,7 @@ def adjust_driver_points(
             f'This deduction exceeds the driver’s current balance of {current_balance}.',
             code='insufficient_points',
         )
+    sponsor_name = SponsorCompany.objects.values_list('name', flat=True).get(pk=sponsor_id)
 
     entry = PointTransaction.objects.create(
         driver=locked_driver,
@@ -157,13 +162,13 @@ def adjust_driver_points(
             point_change,
             reason,
             resulting_balance,
-            locked_driver.sponsor.name,
+            sponsor_name,
         ),
         robust=True,
     )
     transaction.on_commit(
         lambda: notify_sponsors_of_point_change(
-            locked_driver, point_change, reason, resulting_balance, changed_by_user
+            locked_driver, sponsor_id, point_change, reason, resulting_balance, changed_by_user
         ),
         robust=True,
     )
@@ -171,35 +176,41 @@ def adjust_driver_points(
 
 
 @transaction.atomic
-def spend_driver_points(*, driver, point_cost, reason):
-    """Deduct points a driver spends on rewards, recorded with the driver as actor.
+def spend_driver_points(*, driver, sponsor_id, point_cost, reason):
+    """Deduct points a driver spends on one sponsor's rewards, with the driver as actor.
 
-    Shares the locking and balance check of adjust_driver_points. The caller
-    sends any notification, since a sponsor-change alert would be misleading.
+    Only that sponsor's balance counts: points from another sponsor never cover
+    the cost. Shares the locking and balance check of adjust_driver_points. The
+    caller sends any notification, since a sponsor-change alert would be misleading.
     """
     point_change = _validated_point_change(-point_cost)
     reason = _normalized_reason(reason)
     driver_id = driver.pk if isinstance(driver, Driver) else driver
     locked_driver = Driver.objects.select_for_update().get(pk=driver_id)
-    if locked_driver.sponsor_id is None or locked_driver.status != 'approved':
+    if not DriverSponsorMembership.objects.filter(
+        driver=locked_driver,
+        sponsor_id=sponsor_id,
+        status=DriverSponsorMembership.APPROVED,
+    ).exists():
         raise PointAdjustmentError(
             'driver',
             'Only approved drivers with a sponsor can spend points.',
             code='driver_not_approved',
         )
 
-    current_balance = locked_driver.point_balance
+    current_balance = locked_driver.point_balance_for(sponsor_id)
     resulting_balance = current_balance + point_change
     if resulting_balance < 0:
         raise PointAdjustmentError(
             'point_change',
-            f'This purchase needs {point_cost:,} points, but your balance is {current_balance:,}.',
+            f'This purchase needs {point_cost:,} points, but your balance with this '
+            f'sponsor is {current_balance:,}.',
             code='insufficient_points',
         )
 
     entry = PointTransaction.objects.create(
         driver=locked_driver,
-        sponsor_id=locked_driver.sponsor_id,
+        sponsor_id=sponsor_id,
         changed_by_user=locked_driver.user,
         point_change=point_change,
         reason=reason,

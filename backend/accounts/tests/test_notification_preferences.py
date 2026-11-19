@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from drivers.models import Driver
+from drivers.testing import create_driver
 
 from ..models import DriverNotificationPreferences, MFASettings, SponsorAccount, SponsorCompany
 
@@ -18,7 +19,7 @@ class NotificationPreferencesViewTests(APITestCase):
         cls.driver_user = User.objects.create_user(
             username='driver.one', password='ExamplePassword123!'
         )
-        cls.driver = Driver.objects.create(
+        cls.driver = create_driver(
             user=cls.driver_user,
             name='Driver One',
             sponsor=cls.company,
@@ -123,7 +124,7 @@ class SponsorNotificationPreferencesViewTests(APITestCase):
         cls.driver_user = User.objects.create_user(
             username='driver.email', password='ExamplePassword123!'
         )
-        Driver.objects.create(user=cls.driver_user, name='Driver Email')
+        create_driver(user=cls.driver_user, name='Driver Email')
 
     def test_email_is_off_by_default_and_can_be_turned_on(self):
         self.client.force_authenticate(self.sponsor)

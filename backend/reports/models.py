@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -91,7 +92,11 @@ class CompletedSale(models.Model):
             self._state.adding
             and self.driver_id
             and self.sponsor_id
-            and self.driver.sponsor_id != self.sponsor_id
+            and not apps.get_model('drivers', 'DriverSponsorMembership').objects.filter(
+                driver_id=self.driver_id,
+                sponsor_id=self.sponsor_id,
+                status__in=('pending', 'approved'),
+            ).exists()
         ):
             raise ValidationError(
                 {'driver': 'The Driver must belong to the sale sponsor when the sale is recorded.'}

@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from rest_framework import status
@@ -7,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.permissions import DriverAccount, MFAEnrolled
+from catalog.models import Redemption
 from catalog.serializers import CartAddSerializer, CartItemSerializer
 from catalog.serializers.cart import CartCheckoutSerializer
 from catalog.services import add_to_cart, checkout_cart, empty_cart, get_cart, remove_from_cart
@@ -17,12 +19,10 @@ from catalog.services.cart import (
     purchase_receipt,
     review_cart,
 )
-from catalog.models import Redemption
-from django.shortcuts import get_object_or_404
 
 
-def _cart_response(user, status_code=status.HTTP_200_OK, *, cart=None):
-    cart = cart if cart is not None else get_cart(user=user)
+def _cart_response(request, status_code=status.HTTP_200_OK, *, cart=None):
+    cart = cart if cart is not None else get_cart(user=request.user, session=request.session)
     rate = cart.sponsor.points_per_dollar
     items = list(cart.items)
     return Response(
@@ -67,12 +67,12 @@ class DriverCartView(APIView):
 @method_decorator(never_cache, name='dispatch')
 class CartView(DriverCartView):
     def get(self, request):
-        return _cart_response(request.user)
+        return _cart_response(request)
 
     def delete(self, request):
         self.check_not_viewing_as(request)
-        empty_cart(user=request.user)
-        return _cart_response(request.user)
+        empty_cart(user=request.user, session=request.session)
+        return _cart_response(request)
 
 
 @method_decorator(never_cache, name='dispatch')
@@ -82,11 +82,13 @@ class CartItemsView(DriverCartView):
         serializer = CartAddSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         _, created = add_to_cart(
-            user=request.user, product_id=serializer.validated_data['product_id']
+            user=request.user,
+            product_id=serializer.validated_data['product_id'],
+            session=request.session,
         )
         # Return the whole cart so the client can refresh its count and totals at once.
         return _cart_response(
-            request.user, status.HTTP_201_CREATED if created else status.HTTP_200_OK
+            request, status.HTTP_201_CREATED if created else status.HTTP_200_OK
         )
 
 
@@ -94,8 +96,8 @@ class CartItemsView(DriverCartView):
 class CartItemView(DriverCartView):
     def delete(self, request, product_id):
         self.check_not_viewing_as(request)
-        remove_from_cart(user=request.user, product_id=product_id)
-        return _cart_response(request.user)
+        remove_from_cart(user=request.user, product_id=product_id, session=request.session)
+        return _cart_response(request)
 
 
 @method_decorator(never_cache, name='dispatch')
@@ -109,14 +111,15 @@ class CartCheckoutView(DriverCartView):
                 user=request.user,
                 idempotency_key=serializer.validated_data.get('idempotency_key'),
                 review_token=serializer.validated_data.get('review_token'),
+                session=request.session,
             )
         except ReviewChanged:
-            cart, token = review_cart(user=request.user)
-            review = _cart_response(request.user, cart=cart).data
+            cart, token = review_cart(user=request.user, session=request.session)
+            review = _cart_response(request, cart=cart).data
             review['review_token'] = token
             return Response({'detail': str(ReviewChanged.default_detail),
                              'code': 'review_changed', 'review': review}, status=409)
-        response = _cart_response(request.user)
+        response = _cart_response(request)
         response.data['purchase'] = _receipt_data(purchase)
         return response
 
@@ -140,8 +143,8 @@ class CartReviewView(DriverCartView):
         self.check_not_viewing_as(request)
         if request.data:
             raise ValidationError({'detail': 'Review accepts an empty body.'}, code='invalid_request')
-        cart, token = review_cart(user=request.user)
-        response = _cart_response(request.user, cart=cart)
+        cart, token = review_cart(user=request.user, session=request.session)
+        response = _cart_response(request, cart=cart)
         response.data['review_token'] = token
         return response
 

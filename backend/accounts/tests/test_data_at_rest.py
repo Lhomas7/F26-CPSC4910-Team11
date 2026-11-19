@@ -8,7 +8,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from drivers.models import Driver
+from drivers.testing import create_driver
 
 from ..fields import CIPHERTEXT_PREFIX
 from ..models import MFASettings
@@ -63,7 +63,7 @@ class PasswordStorageTests(TestCase):
 class EncryptedPhoneNumberTests(TestCase):
     def setUp(self):
         user = get_user_model().objects.create_user(username='enc.driver', password=PASSWORD)
-        self.driver = Driver.objects.create(user=user, name='Enc Driver', phone_number=NUMBER)
+        self.driver = create_driver(user=user, name='Enc Driver', phone_number=NUMBER)
 
     def test_driver_phone_number_is_ciphertext_in_the_database(self):
         stored = raw_column('drivers_driver', 'phone_number', self.driver.pk)
@@ -129,7 +129,7 @@ class EncryptedPhoneNumberTests(TestCase):
 class EncryptedProfilePhoneTests(APITestCase):
     def test_saving_a_profile_phone_number_stores_it_encrypted(self):
         user = get_user_model().objects.create_user(username='enc.profile', password=PASSWORD)
-        driver = Driver.objects.create(user=user, name='Profile Driver')
+        driver = create_driver(user=user, name='Profile Driver')
         self.client.force_authenticate(user)
 
         response = self.client.patch(

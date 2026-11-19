@@ -29,7 +29,7 @@ class CatalogBrowseView(APIView):
         return response
 
     def get(self, request):
-        listing = browse_catalog(user=request.user)
+        listing = browse_catalog(user=request.user, session=request.session)
         # Ownership filters are intentionally not part of this contract.
         unknown = request.query_params.keys() - {'page', 'page_size'}
         if unknown:

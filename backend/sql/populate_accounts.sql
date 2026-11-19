@@ -90,66 +90,87 @@ FROM auth_user u
 JOIN accounts_sponsorcompany c ON c.name = 'Blue Ridge Logistics'
 WHERE u.username = 'dev.blueridge';
 
--- Create driver profiles.
+-- Create driver profiles. Sponsors are linked through memberships below.
 INSERT IGNORE INTO drivers_driver (
     name,
-    status,
-    user_id,
-    sponsor_id
+    user_id
 )
 SELECT
     'Marcus Alvarez',
-    'approved',
-    u.id,
-    c.id
+    u.id
 FROM auth_user u
-JOIN accounts_sponsorcompany c ON c.name = 'Palmetto Freight'
 WHERE u.username = 'dev.malvarez';
 
 INSERT IGNORE INTO drivers_driver (
     name,
-    status,
-    user_id,
-    sponsor_id
+    user_id
 )
 SELECT
     'Tasha Greene',
-    'approved',
-    u.id,
-    c.id
+    u.id
 FROM auth_user u
-JOIN accounts_sponsorcompany c ON c.name = 'Blue Ridge Logistics'
 WHERE u.username = 'dev.tgreene';
 
 -- Inactive driver for testing status display.
 INSERT IGNORE INTO drivers_driver (
     name,
-    status,
-    user_id,
-    sponsor_id
+    user_id
 )
 SELECT
     'Luis Ortega',
-    'approved',
-    u.id,
-    c.id
+    u.id
 FROM auth_user u
-JOIN accounts_sponsorcompany c ON c.name = 'Blue Ridge Logistics'
 WHERE u.username = 'dev.lortega';
 
 -- Driver without a sponsor.
 INSERT IGNORE INTO drivers_driver (
     name,
-    status,
-    user_id,
-    sponsor_id
+    user_id
 )
 SELECT
     'Jordan Pike',
-    'pending',
-    u.id,
-    NULL
+    u.id
 FROM auth_user u
 WHERE u.username = 'dev.jpike';
+
+-- Link drivers to their sponsors, one membership per driver and sponsor.
+INSERT IGNORE INTO drivers_driversponsormembership (
+    driver_id,
+    sponsor_id,
+    status,
+    created_at,
+    updated_at
+)
+SELECT d.id, c.id, 'approved', UTC_TIMESTAMP(6), UTC_TIMESTAMP(6)
+FROM drivers_driver d
+JOIN auth_user u ON u.id = d.user_id
+JOIN accounts_sponsorcompany c ON c.name = 'Palmetto Freight'
+WHERE u.username = 'dev.malvarez';
+
+INSERT IGNORE INTO drivers_driversponsormembership (
+    driver_id,
+    sponsor_id,
+    status,
+    created_at,
+    updated_at
+)
+SELECT d.id, c.id, 'approved', UTC_TIMESTAMP(6), UTC_TIMESTAMP(6)
+FROM drivers_driver d
+JOIN auth_user u ON u.id = d.user_id
+JOIN accounts_sponsorcompany c ON c.name = 'Blue Ridge Logistics'
+WHERE u.username = 'dev.tgreene';
+
+INSERT IGNORE INTO drivers_driversponsormembership (
+    driver_id,
+    sponsor_id,
+    status,
+    created_at,
+    updated_at
+)
+SELECT d.id, c.id, 'approved', UTC_TIMESTAMP(6), UTC_TIMESTAMP(6)
+FROM drivers_driver d
+JOIN auth_user u ON u.id = d.user_id
+JOIN accounts_sponsorcompany c ON c.name = 'Blue Ridge Logistics'
+WHERE u.username = 'dev.lortega';
 
 COMMIT;

@@ -13,7 +13,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from drivers.models import Driver
+from drivers.testing import add_membership, create_driver
 
 from ..models import (
     MFACode,
@@ -34,7 +34,7 @@ class MFAPhoneNumberValidationTests(APITestCase):
             username='phone.user',
             password='ExamplePassword123!',
         )
-        Driver.objects.create(user=cls.user, name='Phone User')
+        create_driver(user=cls.user, name='Phone User')
 
     def setUp(self):
         self.client.force_authenticate(self.user)
@@ -77,7 +77,7 @@ class MFASMSVerificationTests(APITestCase):
             password='ExamplePassword123!',
             email='sms.driver@example.com',
         )
-        Driver.objects.create(user=cls.user, name='SMS Driver', status='approved')
+        create_driver(user=cls.user, name='SMS Driver', status='approved')
 
     def setUp(self):
         cache.clear()
@@ -289,7 +289,7 @@ class MFAEnrollmentTests(APITestCase):
             password='ExamplePassword123!',
             email='driver@example.com',
         )
-        cls.driver = Driver.objects.create(
+        cls.driver = create_driver(
             user=cls.user,
             name='Driver One',
             sponsor=cls.sponsor,
@@ -392,7 +392,7 @@ class RoleMFAPolicyTests(APITestCase):
         cls.driver_user = get_user_model().objects.create_user(
             username='policy.driver', password='ExamplePassword123!'
         )
-        Driver.objects.create(user=cls.driver_user, name='Policy Driver', sponsor=cls.company)
+        create_driver(user=cls.driver_user, name='Policy Driver', sponsor=cls.company)
 
     def setUp(self):
         cache.clear()
@@ -464,7 +464,7 @@ class BackupCodeTests(APITestCase):
             password='ExamplePassword123!',
             email='driver@example.com',
         )
-        cls.driver = Driver.objects.create(user=cls.user, name='Driver One', sponsor=cls.company)
+        cls.driver = create_driver(user=cls.user, name='Driver One', sponsor=cls.company)
 
     def setUp(self):
         cache.clear()
@@ -692,7 +692,7 @@ class MFALoginTests(APITestCase):
             password='ExamplePassword123!',
             email='driver@example.com',
         )
-        cls.driver = Driver.objects.create(
+        cls.driver = create_driver(
             user=cls.user,
             name='Driver One',
             sponsor=cls.sponsor,
@@ -844,7 +844,7 @@ class LoginMFARequestCodeTests(APITestCase):
             password='ExamplePassword123!',
             email='driver@example.com',
         )
-        cls.driver = Driver.objects.create(
+        cls.driver = create_driver(
             user=cls.user,
             name='Driver One',
             sponsor=cls.sponsor,
@@ -934,7 +934,7 @@ class MFACodeInvalidationTests(APITestCase):
             password='ExamplePassword123!',
             email='driver@example.com',
         )
-        cls.driver = Driver.objects.create(
+        cls.driver = create_driver(
             user=cls.user,
             name='Driver One',
             sponsor=cls.sponsor,
@@ -1151,7 +1151,7 @@ class SponsorMFATests(MailAssertMixin, APITestCase):
             password='ExamplePassword123!',
             email='driver1@example.com',
         )
-        cls.driver = Driver.objects.create(
+        cls.driver = create_driver(
             user=cls.driver_user,
             name='Driver One',
             sponsor=cls.sponsor,
@@ -1170,7 +1170,7 @@ class SponsorMFATests(MailAssertMixin, APITestCase):
             password='ExamplePassword123!',
             email='driver2@example.com',
         )
-        cls.other_driver = Driver.objects.create(
+        cls.other_driver = create_driver(
             user=cls.other_driver_user,
             name='Driver Two',
             sponsor=cls.other_sponsor,
@@ -1198,6 +1198,19 @@ class SponsorMFATests(MailAssertMixin, APITestCase):
             response = self.client.post(self.url, {'driver_mfa_required': False}, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(Notification.objects.filter(user=self.driver.user).exists())
+        self.assertFalse(Notification.objects.filter(user=self.other_driver.user).exists())
+
+    def test_drivers_another_sponsor_already_requires_hear_nothing(self):
+        # Driver Two also drives for Acme, but Other Co already requires MFA.
+        add_membership(self.other_driver, self.sponsor)
+        self.other_sponsor.driver_mfa_required = True
+        self.other_sponsor.save(update_fields=['driver_mfa_required'])
+
+        for required in (True, False):
+            with self.subTest(required=required), self.assertSendsMail(1):
+                self.client.post(self.url, {'driver_mfa_required': required}, format='json')
+
+        self.assertEqual(Notification.objects.filter(user=self.driver.user).count(), 2)
         self.assertFalse(Notification.objects.filter(user=self.other_driver.user).exists())
 
     def test_get_returns_current_setting_for_sponsor(self):
@@ -1251,7 +1264,7 @@ class MFANotificationTests(MailAssertMixin, APITestCase):
             password='ExamplePassword123!',
             email='driver@example.com',
         )
-        self.driver = Driver.objects.create(
+        self.driver = create_driver(
             user=self.driver_user,
             name='Driver One',
             sponsor=self.sponsor,

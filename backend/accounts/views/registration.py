@@ -11,11 +11,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from drivers.models import Driver
+from drivers.services import open_application
 
 from ..models import RegistrationSettings, SponsorAccount, SponsorCompany
 from ..sensitive import hide_sensitive_data
 from ..serializers import DriverRegistrationSerializer, SponsorRegistrationSerializer
-from ..services import get_public_user, normalize_company_name
+from ..services import get_public_user, normalize_company_name, public_sponsor_companies
 from ..services.delivery import send_code_to_address
 from ..services.registration_verification import (
     create_registration_code,
@@ -69,6 +70,13 @@ def check_email_verification(data):
     )
 
 
+class PublicSponsorListView(AnonymousAPIView):
+    """Sponsor organizations a new driver can apply to, by name only."""
+
+    def get(self, request):
+        return Response(list(public_sponsor_companies().values('id', 'name')))
+
+
 @hide_sensitive_data
 class DriverRegistrationView(AnonymousAPIView):
     def post(self, request):
@@ -94,7 +102,9 @@ class DriverRegistrationView(AnonymousAPIView):
         with transaction.atomic():
             user.set_password(data['password'])
             user.save()
-            Driver.objects.create(user=user, name=user.get_full_name())
+            driver = Driver.objects.create(user=user, name=user.get_full_name())
+            for sponsor in data.get('sponsor_ids', []):
+                open_application(driver=driver, sponsor=sponsor, changed_by_user=user)
 
         return Response(get_public_user(user), status=status.HTTP_201_CREATED)
 

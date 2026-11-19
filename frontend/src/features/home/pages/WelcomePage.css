@@ -121,6 +121,22 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.home-sponsor-stats {
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+}
+
+.home-no-sponsors {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.home-no-sponsors p {
+  margin: 0;
+}
+
 .home-stat-text {
   font-size: 1rem;
 }

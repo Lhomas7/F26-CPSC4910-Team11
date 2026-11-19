@@ -11,7 +11,8 @@ from rest_framework.permissions import IsAuthenticated
 from accounts.permissions import DriverAccount, MFAEnrolled, SponsorAccount
 from catalog.models import Redemption, RedemptionItem
 from catalog.serializers.purchases import PurchaseDateFilterSerializer, PurchaseHistorySerializer
-from drivers.models import Driver
+from drivers.active_sponsor import resolve_active_sponsor_id
+from drivers.models import DriverSponsorMembership
 
 
 class PurchaseHistoryPagination(PageNumberPagination):
@@ -44,6 +45,16 @@ class DriverPurchaseView(PurchaseView):
 class DriverPurchaseHistoryView(ListModelMixin, DriverPurchaseView):
     pagination_class = PurchaseHistoryPagination
 
+    def get_queryset(self):
+        # The list follows the active sponsor; a receipt's detail stays reachable.
+        queryset = super().get_queryset()
+        sponsor_id = resolve_active_sponsor_id(
+            self.request.user.driver_profile, self.request.session
+        )
+        if sponsor_id is None:
+            return queryset.none()
+        return queryset.filter(sponsor_id=sponsor_id)
+
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -60,11 +71,14 @@ class SponsorPurchaseView(PurchaseView):
         queryset = super().get_queryset()
         company_id = self.request.user.sponsor_account.company_id
         driver_id = self.kwargs['driver_id']
-        get_object_or_404(Driver.objects.only('pk'), pk=driver_id, sponsor_id=company_id)
         # Current membership grants access only to purchases made under this company.
-        return queryset.filter(
-            driver_id=driver_id, driver__sponsor_id=company_id, sponsor_id=company_id
+        get_object_or_404(
+            DriverSponsorMembership.objects.only('pk'),
+            driver_id=driver_id,
+            sponsor_id=company_id,
+            status__in=DriverSponsorMembership.ACTIVE_STATUSES,
         )
+        return queryset.filter(driver_id=driver_id, sponsor_id=company_id)
 
 
 class SponsorPurchaseHistoryView(ListModelMixin, SponsorPurchaseView):

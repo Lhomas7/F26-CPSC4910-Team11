@@ -253,3 +253,71 @@
     flex: 1;
   }
 }
+
+.driver-sponsors-panel {
+  margin-top: 1.25rem;
+}
+
+.driver-sponsors-panel h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.driver-sponsors-body {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.driver-sponsors-body h3 {
+  font-size: 0.9rem;
+  margin: 0.5rem 0 0;
+}
+
+.driver-sponsors-body p {
+  margin: 0;
+}
+
+.driver-sponsors-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.driver-sponsors-table th,
+.driver-sponsors-table td {
+  border-bottom: 1px solid var(--line-soft);
+  padding: 0.55rem 0.5rem;
+  text-align: left;
+}
+
+.driver-sponsors-table td:last-child {
+  text-align: right;
+}
+
+.driver-sponsors-add {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+}
+
+.driver-sponsors-add .sponsor-checkboxes {
+  width: 100%;
+}
+
+.driver-sponsors-history {
+  display: grid;
+  gap: 0.6rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.driver-sponsors-history small {
+  color: var(--ink-2);
+  display: block;
+}
+
+.driver-sponsors-history p {
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}

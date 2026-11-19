@@ -72,8 +72,8 @@ export default function RemoveDriverDialog({ driver, onRemoved, onCancel }) {
       <form id="remove-driver-form" onSubmit={submit} noValidate>
         <p>
           {dropping
-            ? `${driver.name} will be removed from ${driver.sponsor_name || 'your organization'}. Their point history is preserved, and they can apply to another sponsor.`
-            : `${driver.name}'s application will be declined. They can apply to another sponsor.`}
+            ? `${driver.name} will be removed from ${driver.sponsor_name || 'your organization'}. Their point history is preserved, and their other sponsors aren't affected.`
+            : `${driver.name}'s application will be declined. Their other sponsors aren't affected.`}
         </p>
         <label htmlFor="remove-driver-reason">
           {dropping ? 'Reason for dropping' : 'Reason for rejecting'}

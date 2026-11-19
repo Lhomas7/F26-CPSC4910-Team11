@@ -25,6 +25,7 @@ import { PrivacyPage, TermsPage } from 'features/legal';
 import { OrganizationPage } from 'features/organization';
 import { PlaygroundPage } from 'features/playground';
 import { PointsPage } from 'features/points';
+import { MySponsorsPage } from 'features/sponsors';
 import {
   DriverPurchaseDetailPage,
   DriverPurchaseHistoryPage,
@@ -180,6 +181,14 @@ export function AppRoutes() {
           element={
             <RequireAuth roles={PAGE_ROLES.drivers}>
               <DriverDetailPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/sponsors"
+          element={
+            <RequireAuth roles={PAGE_ROLES.sponsors}>
+              <MySponsorsPage />
             </RequireAuth>
           }
         />

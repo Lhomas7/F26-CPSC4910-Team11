@@ -12,7 +12,8 @@ from accounts.middleware import (
 from accounts.models import MFASettings, Notification, SponsorAccount, SponsorCompany
 from catalog.models import CatalogProduct
 from catalog.services import browse_catalog
-from drivers.models import Driver, PointTransaction
+from drivers.models import DriverSponsorMembership, PointTransaction
+from drivers.testing import add_membership, create_driver
 
 
 class CatalogBrowseApiTests(APITestCase):
@@ -27,7 +28,7 @@ class CatalogBrowseApiTests(APITestCase):
         SponsorAccount.objects.create(user=cls.sponsor, company=cls.company)
         MFASettings.objects.create(user=cls.sponsor, totp_enabled=True)
         cls.driver_user = User.objects.create_user(username='browse.driver')
-        cls.driver = Driver.objects.create(
+        cls.driver = create_driver(
             user=cls.driver_user,
             name='Browse Driver',
             sponsor=cls.company,
@@ -144,15 +145,14 @@ class CatalogBrowseApiTests(APITestCase):
         self.assertEqual(response.data['sponsor']['id'], self.company.pk)
 
     def test_pending_and_unassigned_drivers_are_not_empty_catalog_successes(self):
-        for changes, code in (
-            ({'status': 'pending'}, 'driver_not_approved'),
-            ({'sponsor': None}, 'sponsor_required'),
+        for membership_status, code in (
+            ('pending', 'driver_not_approved'),
+            (None, 'sponsor_required'),
         ):
-            with self.subTest(changes=changes):
-                Driver.objects.filter(pk=self.driver.pk).update(
-                    status='approved', sponsor=self.company
-                )
-                Driver.objects.filter(pk=self.driver.pk).update(**changes)
+            with self.subTest(membership_status=membership_status):
+                DriverSponsorMembership.objects.filter(driver=self.driver).delete()
+                if membership_status:
+                    add_membership(self.driver, self.company, membership_status)
                 self.client.force_authenticate(get_user_model().objects.get(pk=self.driver_user.pk))
                 response = self.client.get(self.url)
                 self.assertEqual(response.status_code, 403)
@@ -224,7 +224,7 @@ class CatalogBrowseApiTests(APITestCase):
         self.assertEqual(self.client.patch(self.url, {}, format='json').status_code, 405)
 
     def test_service_also_enforces_driver_approval_outside_http(self):
-        Driver.objects.filter(pk=self.driver.pk).update(status='pending')
+        DriverSponsorMembership.objects.filter(driver=self.driver).update(status='pending')
         user = get_user_model().objects.get(pk=self.driver_user.pk)
         with self.assertRaises(PermissionDenied):
             browse_catalog(user=user)

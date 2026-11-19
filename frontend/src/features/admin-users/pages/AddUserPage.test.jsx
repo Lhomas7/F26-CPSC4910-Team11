@@ -38,19 +38,21 @@ function completeIdentityFields() {
   });
 }
 
-test('creates a driver with the selected sponsor organization', async () => {
+test('creates a driver in each selected sponsor organization', async () => {
   api.createAdminUser.mockResolvedValue({
     id: 4,
     display_name: 'Jamie Rivera',
     username: 'jamie.rivera',
     role: 'driver',
-    sponsor_org: organizations[0],
+    sponsor_orgs: organizations,
     is_active: true,
   });
   renderPage();
   await screen.findByRole('button', { name: 'Create driver account' });
   completeIdentityFields();
-  fireEvent.change(screen.getByLabelText(/Sponsor organization/), { target: { value: '7' } });
+  for (const org of organizations) {
+    fireEvent.click(screen.getByRole('checkbox', { name: org.name }));
+  }
   fireEvent.click(screen.getByRole('button', { name: 'Create driver account' }));
 
   await waitFor(() =>
@@ -60,13 +62,17 @@ test('creates a driver with the selected sponsor organization', async () => {
       username: 'jamie.rivera',
       email: 'jamie@example.com',
       role: 'driver',
-      sponsor_org_id: 7,
+      sponsor_org_id: null,
+      sponsor_org_ids: organizations.map((org) => org.id),
       password: 'ExamplePassword123!',
       password_confirm: 'ExamplePassword123!',
     }),
   );
   expect(
     await screen.findByRole('heading', { name: 'Driver account created' }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText(organizations.map((org) => org.name).join(', ')),
   ).toBeInTheDocument();
 });
 

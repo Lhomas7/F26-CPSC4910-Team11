@@ -18,16 +18,20 @@ from reports.models import CompletedSale
 
 from about_page.models import AboutPageRelease
 from accounts.models import SponsorAccount, SponsorCompany
-from drivers.models import Driver, PointTransaction
+from drivers.models import Driver, DriverSponsorMembership, PointTransaction
 
 ACCOUNTS = (
     ('demo.admin', 'Demo', 'Administrator', 'admin'),
     ('pat.sponsor', 'Pat', 'Sponsor', 'sponsor'),
+    ('casey.sponsor', 'Casey', 'Sponsor', 'sponsor'),
     ('jamie.rivera', 'Jamie', 'Rivera', 'approved'),
     ('priya.nair', 'Priya', 'Nair', 'pending'),
     ('unlinked.driver', 'Morgan', 'Lee', 'unlinked'),
 )
 COMPANY = 'Palmetto Freight'
+# Jamie drives for both companies, to demonstrate separate per-sponsor points.
+SECOND_COMPANY = 'Upstate Logistics'
+SPONSOR_COMPANIES = {'pat.sponsor': COMPANY, 'casey.sponsor': SECOND_COMPANY}
 
 
 def demo_email(username):
@@ -128,6 +132,8 @@ class Command(BaseCommand):
 
         with transaction.atomic():
             company, _ = SponsorCompany.objects.get_or_create(name=COMPANY)
+            second_company, _ = SponsorCompany.objects.get_or_create(name=SECOND_COMPANY)
+            companies = {COMPANY: company, SECOND_COMPANY: second_company}
             users = dict(existing)
             for username, first, last, role in missing:
                 user = User.objects.create_user(
@@ -140,32 +146,59 @@ class Command(BaseCommand):
                 )
                 users[username] = user
                 if role == 'sponsor':
-                    SponsorAccount.objects.create(user=user, company=company)
-                elif role != 'admin':
-                    Driver.objects.create(
-                        user=user,
-                        name=f'{first} {last}',
-                        sponsor=None if role == 'unlinked' else company,
-                        status='approved' if role == 'approved' else 'pending',
+                    SponsorAccount.objects.create(
+                        user=user, company=companies[SPONSOR_COMPANIES[username]]
                     )
+                elif role != 'admin':
+                    driver = Driver.objects.create(user=user, name=f'{first} {last}')
+                    memberships = {
+                        'approved': [company, second_company],
+                        'pending': [company],
+                        'unlinked': [],
+                    }[role]
+                    for sponsor_company in memberships:
+                        DriverSponsorMembership.objects.create(
+                            driver=driver,
+                            sponsor=sponsor_company,
+                            status=role,
+                        )
 
             driver = users['jamie.rivera'].driver_profile
-            sponsor = users['pat.sponsor']
-            if (
-                driver.sponsor_id == company.pk
-                and driver.status == 'approved'
-                and sponsor.sponsor_account.company_id == company.pk
-            ):
-                for amount, reason in (
+            if 'jamie.rivera' in existing:
+                # Demo databases seeded before multi-sponsor support gain the
+                # second sponsor; an existing row (even an ended one) is kept.
+                DriverSponsorMembership.objects.get_or_create(
+                    driver=driver,
+                    sponsor=second_company,
+                    defaults={'status': DriverSponsorMembership.APPROVED},
+                )
+            samples = {
+                'pat.sponsor': (
                     (100, '[Local demo v1] Safe driving award'),
                     (-15, '[Local demo v1] Training correction'),
+                ),
+                'casey.sponsor': ((250, '[Local demo v1] On-time delivery bonus'),),
+            }
+            seeded = []
+            for sponsor_username, entries in samples.items():
+                sponsor = users[sponsor_username]
+                sponsor_company = companies[SPONSOR_COMPANIES[sponsor_username]]
+                if not (
+                    driver.memberships.filter(
+                        sponsor=sponsor_company, status=DriverSponsorMembership.APPROVED
+                    ).exists()
+                    and sponsor.sponsor_account.company_id == sponsor_company.pk
                 ):
+                    continue
+                seeded.append(sponsor_company)
+                for amount, reason in entries:
                     PointTransaction.objects.get_or_create(
                         driver=driver,
-                        sponsor=company,
+                        sponsor=sponsor_company,
                         reason=reason,
                         defaults={'point_change': amount, 'changed_by_user': sponsor},
                     )
+            if company in seeded:
                 for reference, gross_amount in (
                     ('LOCAL-DEMO-SALE-001', Decimal('24.95')),
                     ('LOCAL-DEMO-SALE-002', Decimal('15.00')),

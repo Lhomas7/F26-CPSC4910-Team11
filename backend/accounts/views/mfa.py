@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from drivers.models import Driver
+from drivers.models import Driver, DriverSponsorMembership
 
 from ..permissions import MFAEnrolled, SponsorAccount
 from ..sensitive import hide_sensitive_data
@@ -361,8 +361,22 @@ class SponsorMFASettingsView(APIView):
         company.driver_mfa_required = driver_mfa_required
         company.save(update_fields=['driver_mfa_required'])
 
-        drivers = Driver.objects.filter(sponsor=company).select_related('user')
+        active = ('pending', 'approved')
+        drivers = Driver.objects.filter(
+            memberships__sponsor=company, memberships__status__in=active
+        ).select_related('user')
+        # Drivers another of their sponsors already requires MFA from; for them
+        # this organization's change makes no difference, so they hear nothing.
+        required_elsewhere = set(
+            DriverSponsorMembership.objects.filter(
+                driver__in=drivers, status__in=active, sponsor__driver_mfa_required=True
+            )
+            .exclude(sponsor=company)
+            .values_list('driver_id', flat=True)
+        )
         for driver in drivers:
+            if driver.pk in required_elsewhere:
+                continue
             message = (
                 'Your sponsor now requires multi-factor authentication. '
                 'Please set up MFA in your account.'

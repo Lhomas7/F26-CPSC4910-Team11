@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from drivers.models import Driver
+from drivers.testing import create_driver
 
 from ..middleware import IMPERSONATION_STARTED_KEY
 from ..models import AdminImpersonationEvent
@@ -20,7 +20,7 @@ class ImpersonationLifecycleTests(TestCase):
         cls.admin = User.objects.create_user(username='lifecycle.admin', is_staff=True)
         enroll_totp(cls.admin)
         cls.target = User.objects.create_user(username='lifecycle.driver')
-        Driver.objects.create(user=cls.target, name='Lifecycle Driver')
+        create_driver(user=cls.target, name='Lifecycle Driver')
 
     def setUp(self):
         self.client.force_login(self.admin)

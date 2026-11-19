@@ -1,12 +1,13 @@
 from django.db import transaction
 
-from accounts.models import SponsorDriverAlert
+from accounts.models import SponsorCompany, SponsorDriverAlert
 from accounts.services.notify import (
+    notify_driver_added,
     notify_driver_dropped,
     notify_sponsors_of_new_driver_application,
 )
 from catalog.services.cart import clear_cart
-from drivers.models import Driver, DriverStatusChange
+from drivers.models import Driver, DriverSponsorMembership, DriverStatusChange
 
 from .reasons import normalize_reason
 
@@ -23,25 +24,98 @@ class DriverMembershipError(ValueError):
 
 UNAVAILABLE_DRIVER_MESSAGE = (
     'No driver can be linked with that username. Check the spelling, or ask the '
-    'driver to confirm they have an unassigned driver account.'
+    'driver to confirm they have a driver account.'
 )
+
+
+def _sponsor_company_id(user, message):
+    sponsor_account = getattr(user, 'sponsor_account', None)
+    if not user.is_active or sponsor_account is None:
+        raise DriverMembershipError('detail', message, code='not_sponsor')
+    return sponsor_account.company_id
+
+
+def _lock_driver(driver):
+    """Lock the driver so concurrent membership changes for them serialize."""
+    driver_id = driver.pk if isinstance(driver, Driver) else driver
+    try:
+        return Driver.objects.select_for_update().get(pk=driver_id)
+    except (Driver.DoesNotExist, TypeError, ValueError):
+        raise DriverMembershipError(
+            'driver',
+            'The selected driver does not exist.',
+            code='driver_not_found',
+        ) from None
+
+
+def _audit(membership, action, changed_by_user, reason=''):
+    return DriverStatusChange.objects.create(
+        driver=membership.driver,
+        sponsor=membership.sponsor,
+        changed_by_user=changed_by_user,
+        action=action,
+        reason=reason,
+    )
+
+
+def open_application(*, driver, sponsor, changed_by_user):
+    """Create or reopen a pending application. The caller must lock the driver.
+
+    Returns the membership, or None when the driver already has an active
+    application or membership with this sponsor.
+    """
+    membership, created = DriverSponsorMembership.objects.get_or_create(
+        driver=driver, sponsor=sponsor
+    )
+    if not created:
+        if membership.is_active:
+            return None
+        membership.status = DriverSponsorMembership.PENDING
+        membership.save(update_fields=['status', 'updated_at'])
+    _audit(membership, DriverStatusChange.APPLIED, changed_by_user)
+    transaction.on_commit(
+        lambda: notify_sponsors_of_new_driver_application(driver, sponsor.pk), robust=True
+    )
+    return membership
+
+
+@transaction.atomic
+def apply_to_sponsors(*, driver, sponsors, changed_by_user):
+    """A driver applies to several sponsors at once, all or nothing.
+
+    Raises DriverMembershipError, naming each sponsor, when the driver already
+    has an active application or membership with any of them. Returns the
+    pending memberships.
+    """
+    locked_driver = _lock_driver(driver)
+    active = DriverSponsorMembership.objects.filter(
+        driver=locked_driver,
+        sponsor__in=sponsors,
+        status__in=DriverSponsorMembership.ACTIVE_STATUSES,
+    ).select_related('sponsor')
+    conflicts = {
+        str(membership.sponsor_id): (
+            'You already have an active application or membership with '
+            f'{membership.sponsor.name}.'
+        )
+        for membership in active
+    }
+    if conflicts:
+        raise DriverMembershipError('sponsor_ids', conflicts, code='already_active')
+    return [
+        open_application(driver=locked_driver, sponsor=sponsor, changed_by_user=changed_by_user)
+        for sponsor in sponsors
+    ]
 
 
 @transaction.atomic
 def link_driver_to_sponsor(*, username, changed_by_user):
-    """Link one unassigned driver to the sponsor as a pending application.
+    """Invite a driver to the sponsor's organization as a pending application.
 
-    Locking the driver prevents two organizations from linking the same
-    account concurrently. An existing membership must be removed through the
-    audited removal workflow before another link can be created.
+    Other sponsors' memberships are untouched and never revealed: an unknown
+    username gets the same answer as any other failure to find a driver.
     """
-    sponsor_account = getattr(changed_by_user, 'sponsor_account', None)
-    if not changed_by_user.is_active or sponsor_account is None:
-        raise DriverMembershipError(
-            'detail',
-            'Only a sponsor can link a driver.',
-            code='not_sponsor',
-        )
+    company_id = _sponsor_company_id(changed_by_user, 'Only a sponsor can link a driver.')
 
     username = (username or '').strip()
     if not username:
@@ -54,7 +128,7 @@ def link_driver_to_sponsor(*, username, changed_by_user):
     try:
         driver = (
             Driver.objects.select_for_update()
-            .select_related('user', 'sponsor')
+            .select_related('user')
             .get(user__username__iexact=username)
         )
     except Driver.DoesNotExist:
@@ -62,132 +136,168 @@ def link_driver_to_sponsor(*, username, changed_by_user):
             'detail', UNAVAILABLE_DRIVER_MESSAGE, code='driver_not_found'
         ) from None
 
-    if driver.sponsor_id is not None:
-        if driver.sponsor_id != sponsor_account.company_id:
-            # Same answer, and same status, as an unknown username: a sponsor
-            # must not be able to learn which accounts exist or who sponsors them.
-            raise DriverMembershipError(
-                'detail', UNAVAILABLE_DRIVER_MESSAGE, code='driver_not_found'
-            )
+    sponsor = SponsorCompany.objects.get(pk=company_id)
+    if open_application(driver=driver, sponsor=sponsor, changed_by_user=changed_by_user) is None:
         raise DriverMembershipError(
             'detail',
             'That driver is already linked to your organization.',
             code='already_linked',
         )
-
-    driver.sponsor_id = sponsor_account.company_id
-    driver.status = 'pending'
-    driver.save(update_fields=['sponsor', 'status'])
-    transaction.on_commit(
-        lambda: notify_sponsors_of_new_driver_application(driver), robust=True
-    )
     return driver
+
+
+def _active_membership(driver, sponsor_id):
+    membership = (
+        # of=('self',) locks only the membership, not the sponsor checkout locks.
+        DriverSponsorMembership.objects.select_for_update(of=('self',))
+        .select_related('sponsor', 'driver__user')
+        .filter(driver=driver, sponsor_id=sponsor_id)
+        .first()
+    )
+    if membership is None or not membership.is_active:
+        raise DriverMembershipError(
+            'driver',
+            'Sponsors can only manage drivers in their organization.',
+            code='driver_outside_company',
+        )
+    return membership
+
+
+@transaction.atomic
+def approve_driver_application(*, driver, changed_by_user):
+    """Approve a pending application to the sponsor's organization.
+
+    Approving an already approved driver changes nothing. Returns the membership.
+    """
+    company_id = _sponsor_company_id(
+        changed_by_user, 'Only sponsor accounts can approve drivers.'
+    )
+    membership = _active_membership(_lock_driver(driver), company_id)
+    if membership.status == DriverSponsorMembership.APPROVED:
+        return membership
+
+    membership.status = DriverSponsorMembership.APPROVED
+    membership.save(update_fields=['status', 'updated_at'])
+    _audit(membership, DriverStatusChange.APPROVED, changed_by_user)
+    sponsor_name = membership.sponsor.name
+    transaction.on_commit(
+        lambda: notify_driver_added(membership.driver, sponsor_name, approved=True),
+        robust=True,
+    )
+    return membership
 
 
 @transaction.atomic
 def remove_driver_from_sponsor(*, driver, changed_by_user, reason):
     """Reject a pending driver or drop an approved one, with an audited reason.
 
-    The driver is unlinked from the sponsor and reset to pending, so they can
-    apply to another sponsor; their point history is left untouched. Returns
-    the DriverStatusChange audit record.
+    Only the sponsor's own membership changes; the driver keeps every other
+    sponsor and all point history. Returns the DriverStatusChange record.
     """
-    sponsor_account = getattr(changed_by_user, 'sponsor_account', None)
-    if not changed_by_user.is_active or sponsor_account is None:
-        raise DriverMembershipError(
-            'detail',
-            'Only sponsor accounts can reject or drop drivers.',
-            code='not_sponsor',
-        )
-
-    driver_id = driver.pk if isinstance(driver, Driver) else driver
-    try:
-        locked_driver = Driver.objects.select_for_update().get(pk=driver_id)
-    except (Driver.DoesNotExist, TypeError, ValueError):
-        raise DriverMembershipError(
-            'driver',
-            'The selected driver does not exist.',
-            code='driver_not_found',
-        ) from None
-
-    if locked_driver.sponsor_id != sponsor_account.company_id:
-        raise DriverMembershipError(
-            'driver',
-            'Sponsors can only manage drivers in their organization.',
-            code='driver_outside_company',
-        )
-
-    action = (
-        DriverStatusChange.DROPPED
-        if locked_driver.status == 'approved'
-        else DriverStatusChange.REJECTED
+    company_id = _sponsor_company_id(
+        changed_by_user, 'Only sponsor accounts can reject or drop drivers.'
     )
+    membership = _active_membership(_lock_driver(driver), company_id)
+
+    rejecting = membership.status == DriverSponsorMembership.PENDING
     reason = normalize_reason(
         reason,
-        subject='dropping this driver'
-        if action == DriverStatusChange.DROPPED
-        else 'rejecting this driver',
+        subject='rejecting this driver' if rejecting else 'dropping this driver',
         error=lambda code, message: DriverMembershipError('reason', message, code=code),
     )
-
-    return _end_membership(locked_driver, action, changed_by_user, reason)
-
-
-ADMIN_REASSIGNMENT_REASON = 'An administrator changed your sponsor organization.'
+    return _end_membership(
+        membership,
+        DriverStatusChange.REJECTED if rejecting else DriverStatusChange.DROPPED,
+        changed_by_user,
+        reason,
+        rejected=rejecting,
+    )
 
 
 @transaction.atomic
-def reassign_driver_sponsor(*, driver, new_sponsor, changed_by_user):
-    """Move a driver to another sponsor, or none, as an administrator.
+def admin_assign_sponsors(*, driver, sponsors, changed_by_user, notify=True):
+    """Add a driver to sponsors as an administrator, approved immediately.
 
-    Leaving the current sponsor is audited and announced exactly like a sponsor
-    removing the driver, so a driver is never silently moved. The new sponsor
-    gets a pending application to approve. Assigning the current sponsor again
-    changes nothing.
+    Sponsors the driver is already approved with are left alone. Each new
+    approval is audited, and announced unless `notify` is False (an account
+    the administrator is creating right now). Returns the memberships that changed.
     """
-    locked_driver = Driver.objects.select_for_update().get(pk=driver.pk)
-    new_sponsor_id = new_sponsor.pk if new_sponsor is not None else None
-    if locked_driver.sponsor_id == new_sponsor_id:
-        return locked_driver
-
-    if locked_driver.sponsor_id is not None:
-        action = (
-            DriverStatusChange.DROPPED
-            if locked_driver.status == 'approved'
-            else DriverStatusChange.REJECTED
+    locked_driver = _lock_driver(driver)
+    changed = []
+    for sponsor in sponsors:
+        membership, _ = DriverSponsorMembership.objects.get_or_create(
+            driver=locked_driver, sponsor=sponsor
         )
-        _end_membership(locked_driver, action, changed_by_user, ADMIN_REASSIGNMENT_REASON)
+        if membership.status == DriverSponsorMembership.APPROVED:
+            continue
+        was_pending = membership.status == DriverSponsorMembership.PENDING
+        membership.status = DriverSponsorMembership.APPROVED
+        membership.save(update_fields=['status', 'updated_at'])
+        _audit(membership, DriverStatusChange.ASSIGNED, changed_by_user)
+        changed.append(membership)
+        if notify:
+            transaction.on_commit(
+                lambda name=sponsor.name, approved=was_pending: notify_driver_added(
+                    locked_driver, name, approved=approved
+                ),
+                robust=True,
+            )
+    return changed
 
-    if new_sponsor_id is not None:
-        locked_driver.sponsor_id = new_sponsor_id
-        locked_driver.status = 'pending'
-        locked_driver.save(update_fields=['sponsor', 'status'])
-    return locked_driver
 
-
-def _end_membership(locked_driver, action, changed_by_user, reason):
-    """Audit, unlink, and tell the driver. The alert cannot be turned off."""
-    sponsor = locked_driver.sponsor
-    record = DriverStatusChange.objects.create(
-        driver=locked_driver,
-        sponsor=sponsor,
-        changed_by_user=changed_by_user,
-        action=action,
-        reason=reason,
+@transaction.atomic
+def admin_remove_sponsor(*, driver, sponsor_id, changed_by_user, reason):
+    """Remove one of a driver's memberships as an administrator, with a reason."""
+    locked_driver = _lock_driver(driver)
+    membership = (
+        DriverSponsorMembership.objects.select_for_update(of=('self',))
+        .select_related('sponsor', 'driver__user')
+        .filter(driver=locked_driver, sponsor_id=sponsor_id)
+        .first()
     )
-    locked_driver.sponsor = None
-    locked_driver.status = 'pending'
-    locked_driver.save(update_fields=['sponsor', 'status'])
-    # Sponsors of the old organization no longer follow this driver.
-    SponsorDriverAlert.objects.filter(driver=locked_driver).delete()
-    # Cart rewards belong to the old organization's catalog.
-    clear_cart(locked_driver)
+    if membership is None or not membership.is_active:
+        raise DriverMembershipError(
+            'sponsor',
+            'This driver is not in that sponsor organization.',
+            code='membership_not_found',
+        )
+    reason = normalize_reason(
+        reason,
+        subject='removing this driver from the sponsor',
+        error=lambda code, message: DriverMembershipError('reason', message, code=code),
+    )
+    return _end_membership(
+        membership,
+        DriverStatusChange.REMOVED,
+        changed_by_user,
+        reason,
+        # Removing an application that was never approved is a rejection.
+        rejected=membership.status == DriverSponsorMembership.PENDING,
+    )
+
+
+def _end_membership(membership, action, changed_by_user, reason, *, rejected):
+    """Audit, close one membership, and tell the driver. The alert cannot be turned off."""
+    driver = membership.driver
+    sponsor = membership.sponsor
+    record = _audit(membership, action, changed_by_user, reason)
+    membership.status = (
+        DriverSponsorMembership.REJECTED if rejected else DriverSponsorMembership.DROPPED
+    )
+    membership.save(update_fields=['status', 'updated_at'])
+    # That organization's sponsors no longer follow this driver.
+    SponsorDriverAlert.objects.filter(
+        driver=driver, sponsor_account__company_id=sponsor.pk
+    ).delete()
+    # Cart rewards from that organization's catalog can no longer be bought.
+    clear_cart(driver, sponsor.pk)
     transaction.on_commit(
         lambda: notify_driver_dropped(
-            locked_driver,
+            driver,
             sponsor.name,
             reason,
-            rejected=action == DriverStatusChange.REJECTED,
-        )
+            rejected=rejected,
+        ),
+        robust=True,
     )
     return record

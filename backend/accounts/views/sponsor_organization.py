@@ -10,6 +10,7 @@ from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ..models import SponsorCompany
 from ..permissions import DriverOrSponsor, MFAEnrolled, SponsorAccount
 from ..serializers import (
     SponsorOrganizationSerializer,
@@ -33,7 +34,7 @@ class SponsorOrganizationView(APIView):
     """The details of a sponsor organization, as shown to its drivers.
 
     A sponsor reads and edits their own organization. A driver can read the
-    organization they are linked to, so they know more about their sponsor.
+    organization they are shopping with, so they know more about their sponsor.
     """
 
     permission_classes = [IsAuthenticated, DriverOrSponsor, MFAEnrolled]
@@ -52,10 +53,12 @@ class SponsorOrganizationView(APIView):
         user = self.request.user
         if get_account_type(user) == 'sponsor':
             return user.sponsor_account.company
-        company = user.driver_profile.sponsor
-        if company is None:
+        from drivers.active_sponsor import display_sponsor_id
+
+        sponsor_id = display_sponsor_id(user.driver_profile, self.request.session)
+        if sponsor_id is None:
             raise NotFound('You are not linked to a sponsor organization yet.')
-        return company
+        return SponsorCompany.objects.get(pk=sponsor_id)
 
     def get(self, request):
         return Response(SponsorOrganizationSerializer(self.get_company()).data)

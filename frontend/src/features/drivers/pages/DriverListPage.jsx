@@ -66,7 +66,7 @@ export default function DriverListPage() {
   const handleLinked = async (driver) => {
     await loadDrivers();
     setNotice(
-      `@${driver.username} was linked to ${user.company || 'your organization'} and is waiting for approval.`,
+      `@${driver.username} was invited to ${user.company || 'your organization'} and is waiting for approval.`,
     );
   };
 

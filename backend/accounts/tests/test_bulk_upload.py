@@ -8,7 +8,8 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from drivers.models import Driver, PointTransaction
+from drivers.models import Driver, DriverStatusChange, PointTransaction
+from drivers.testing import create_driver, membership_status
 
 from ..models import Notification, SponsorAccount, SponsorCompany
 from .common import InlineThread, enroll_totp
@@ -42,7 +43,7 @@ class BulkUploadTestCase(APITestCase):
 
     def make_driver(self, username, email, company=None, status_='approved'):
         user = User.objects.create_user(username, email=email, password=PASSWORD)
-        return Driver.objects.create(
+        return create_driver(
             user=user, name=username, sponsor=company, status=status_
         )
 
@@ -67,10 +68,15 @@ class SponsorBulkUploadTests(BulkUploadTestCase):
         self.assertEqual(summary['drivers_created'], 2)
         self.assertEqual(summary['sponsors_created'], 1)
         jane = Driver.objects.get(user__email='jane@example.com')
-        self.assertEqual(jane.sponsor, self.company)
-        self.assertEqual(jane.status, 'approved')
-        self.assertEqual(jane.point_balance, 500)
-        self.assertEqual(Driver.objects.get(user__email='sam@example.com').status, 'approved')
+        self.assertEqual(membership_status(jane, self.company), 'approved')
+        self.assertEqual(jane.point_balance_for(self.company), 500)
+        sam = Driver.objects.get(user__email='sam@example.com')
+        self.assertEqual(membership_status(sam, self.company), 'approved')
+        self.assertTrue(
+            DriverStatusChange.objects.filter(
+                driver=jane, sponsor=self.company, action=DriverStatusChange.APPROVED
+            ).exists()
+        )
         sponsor = SponsorAccount.objects.get(user__email='pat@example.com')
         self.assertEqual(sponsor.company, self.company)
         # Each new person gets an email with a link to choose their own password.
@@ -158,39 +164,51 @@ class SponsorBulkUploadTests(BulkUploadTestCase):
             response = self.post(text)
 
         self.assertEqual(response.data['summary']['failed'], 0, response.data)
-        self.assertEqual(member.point_balance, 250)
+        self.assertEqual(member.point_balance_for(self.company), 250)
         self.assertEqual(
             PointTransaction.objects.get(driver=member).reason, 'Great month'
         )
-        pending.refresh_from_db()
-        self.assertEqual(pending.status, 'approved')
-        self.assertEqual(pending.point_balance, 100)
+        self.assertEqual(membership_status(pending, self.company), 'approved')
+        self.assertEqual(pending.point_balance_for(self.company), 100)
         self.assertEqual(
             PointTransaction.objects.get(driver=pending).reason, 'Bulk upload'
         )
-        unassigned.refresh_from_db()
-        self.assertEqual((unassigned.sponsor, unassigned.status), (self.company, 'approved'))
+        self.assertEqual(membership_status(unassigned, self.company), 'approved')
         self.assertTrue(
             Notification.objects.filter(
                 user=unassigned.user, message__contains='added you'
             ).exists()
         )
 
-    def test_drivers_of_other_organizations_and_non_drivers_cannot_be_taken(self):
+    def test_another_organizations_driver_joins_without_leaving_it(self):
+        theirs = self.make_driver('theirs', 'theirs@example.com', self.other)
+        PointTransaction.objects.create(
+            driver=theirs, sponsor=self.other, point_change=30, reason='Theirs'
+        )
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.post('D||A|B|theirs@example.com|10\n')
+
+        self.assertEqual(response.data['summary']['failed'], 0, response.data)
+        self.assertEqual(membership_status(theirs, self.company), 'approved')
+        self.assertEqual(membership_status(theirs, self.other), 'approved')
+        # Points never mix between sponsors.
+        self.assertEqual(theirs.point_balance_for(self.company), 10)
+        self.assertEqual(theirs.point_balance_for(self.other), 30)
+        # The answer does not reveal which other organizations the driver is in.
+        self.assertNotIn('Blue Ridge', response.data['results'][0]['message'])
+
+    def test_non_drivers_cannot_be_taken(self):
         self.make_driver('theirs', 'theirs@example.com', self.other)
         self.sponsor.email = 'dana.sponsor@example.com'
         self.sponsor.save()
 
         response = self.post(
-            'D||A|B|theirs@example.com|10\n'
             'D||A|B|dana.sponsor@example.com\n'
             'S||A|B|theirs@example.com\n'
         )
 
-        self.assertEqual(response.data['summary']['failed'], 3)
-        self.assertEqual(Driver.objects.get(user__email='theirs@example.com').sponsor, self.other)
-        # The answer does not reveal which organization the driver is in.
-        self.assertNotIn('Blue Ridge', response.data['results'][0]['message'])
+        self.assertEqual(response.data['summary']['failed'], 2)
 
     def test_csv_upload_adds_drivers(self):
         text = 'First Name,Last Name,Email,Points,Reason\nJane,Doe,jane@example.com,20,Hello\n'
@@ -200,7 +218,10 @@ class SponsorBulkUploadTests(BulkUploadTestCase):
         self.assertEqual(response.data['format'], 'csv')
         self.assertEqual(response.data['summary']['drivers_created'], 1)
         driver = Driver.objects.get(user__email='jane@example.com')
-        self.assertEqual((driver.status, driver.point_balance), ('approved', 20))
+        self.assertEqual(
+            (membership_status(driver, self.company), driver.point_balance_for(self.company)),
+            ('approved', 20),
+        )
 
     def test_csv_without_required_columns_is_rejected(self):
         response = self.post('Name,Email\nJane,j@example.com\n', name='drivers.csv')
@@ -263,7 +284,14 @@ class AdminBulkUploadTests(BulkUploadTestCase):
         fresh = SponsorCompany.objects.get(name='Fresh Org')
         self.assertEqual(SponsorAccount.objects.get(user__email='sue@example.com').company, fresh)
         dan = Driver.objects.get(user__email='dan@example.com')
-        self.assertEqual((dan.sponsor, dan.status, dan.point_balance), (fresh, 'approved', 75))
+        self.assertEqual(
+            (membership_status(dan, fresh), dan.point_balance_for(fresh)), ('approved', 75)
+        )
+        self.assertTrue(
+            DriverStatusChange.objects.filter(
+                driver=dan, sponsor=fresh, action=DriverStatusChange.ASSIGNED
+            ).exists()
+        )
         self.assertEqual(PointTransaction.objects.get(driver=dan).changed_by_user, self.admin)
         self.assertEqual(response.data['results'][4]['status'], 'unchanged')
 
@@ -278,13 +306,15 @@ class AdminBulkUploadTests(BulkUploadTestCase):
         self.assertEqual(response.data['results'][0]['status'], 'error')
         self.assertFalse(SponsorCompany.objects.filter(name='Some Org').exists())
 
-    def test_admin_cannot_move_a_driver_between_organizations(self):
-        self.make_driver('theirs', 'theirs@example.com', self.other)
+    def test_admin_adds_a_driver_to_a_second_organization(self):
+        driver = self.make_driver('theirs', 'theirs@example.com', self.other)
         response = self.post('D|Palmetto Freight|A|B|theirs@example.com\n', user=self.admin)
-        self.assertIn('Blue Ridge Haulers', response.data['results'][0]['message'])
+        self.assertEqual(response.data['results'][0]['status'], 'updated')
+        self.assertEqual(membership_status(driver, self.company), 'approved')
+        self.assertEqual(membership_status(driver, self.other), 'approved')
 
     def test_admin_points_for_any_organization(self):
         driver = self.make_driver('theirs', 'theirs@example.com', self.other)
         self.post('D|Blue Ridge Haulers|A|B|theirs@example.com|40|Bonus\n', user=self.admin)
-        self.assertEqual(driver.point_balance, 40)
+        self.assertEqual(driver.point_balance_for(self.other), 40)
         self.assertEqual(PointTransaction.objects.get(driver=driver).sponsor, self.other)

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import ViewedIdentitySummary from 'components/primitives/ViewedIdentitySummary';
 import { ViewingAsIcon } from 'components/primitives/Icons';
+import { useActiveSponsor } from 'features/sponsors';
 import './ActiveViewAsIndicator.css';
 
 const FIVE_MINUTES = 5 * 60 * 1000;
@@ -20,6 +21,8 @@ function expiryDetails(value) {
 
 export default function ActiveViewAsIndicator({ user, busy, error, onReturn }) {
   const administrator = user.impersonation.admin;
+  // A driver's sponsors live in the sponsor context; sponsors have one company.
+  const sponsors = useActiveSponsor();
   const expiry = useMemo(
     () => expiryDetails(user.impersonation.expires_at),
     [user.impersonation.expires_at],
@@ -49,7 +52,7 @@ export default function ActiveViewAsIndicator({ user, busy, error, onReturn }) {
           name={user.name || user.username}
           username={user.username}
           role={user.account_type}
-          organization={user.company}
+          organization={sponsors?.activeSponsor?.sponsor.name ?? user.company}
           showAvatar={false}
         />
         <p className={expiresSoon || expiryReached ? 'view-as-expiry-warning' : undefined}>

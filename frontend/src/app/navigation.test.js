@@ -9,7 +9,8 @@ test('each account type gets its own sidebar', () => {
     'Points',
     'Catalog',
     'Purchases',
-    'My sponsor',
+    'My sponsors',
+    'Sponsor info',
     'About',
   ]);
   expect(labels({ account_type: 'sponsor' })).toEqual([
@@ -43,7 +44,8 @@ test('viewing as someone shows their sidebar', () => {
     'Points',
     'Catalog',
     'Purchases',
-    'My sponsor',
+    'My sponsors',
+    'Sponsor info',
     'About',
   ]);
 });

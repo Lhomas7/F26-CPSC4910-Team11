@@ -8,7 +8,7 @@ import { loadAttempt, newAttemptKey, removeAttempt, saveAttempt } from './pendin
 const CartContext = createContext(null);
 
 /** One effective Driver's cart and recoverable purchase attempt. */
-export function CartProvider({ viewingAs = false, ownerId = null, organization = '', children }) {
+export function CartProvider({ viewingAs = false, ownerId = null, organization = '', scope = null, children }) {
   const [cart, setCart] = useState(null);
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState(null);
@@ -53,6 +53,17 @@ export function CartProvider({ viewingAs = false, ownerId = null, organization =
     return () => { alive.current = false; latestRead.current += 1; reviewVersion.current += 1; };
   }, [reload]);
   useRefreshOnReturn(() => { if (!busy.current) reload(); });
+  // Switching sponsors shows that sponsor's cart. A review belongs to the old one.
+  const loadedScope = useRef(scope);
+  useEffect(() => {
+    if (loadedScope.current === scope) return;
+    loadedScope.current = scope;
+    reviewVersion.current += 1;
+    originalReview.current = null;
+    setReview(null); setReviewStatus('idle'); setReviewNotice('');
+    setActionError(''); setActionNotice(''); setLastPurchase(null);
+    reload();
+  }, [scope, reload]);
   useEffect(() => {
     if (!pendingAttempt || !originalReview.current) return undefined;
     const remaining = Math.max(0, originalReview.current.receivedAt + 600000 - Date.now());

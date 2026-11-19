@@ -4,6 +4,8 @@ from ..views.admin_password_reset import AdminPasswordResetRequestView
 from ..views.admin_users import (
     AdminAccountDetailView,
     AdminDriverDetailView,
+    AdminDriverSponsorAssignView,
+    AdminDriverSponsorRemoveView,
     AdminImpersonationStartView,
     AdminImpersonationStopView,
     AdminRegistrationSettingsView,
@@ -53,5 +55,15 @@ urlpatterns = [
         'admin/drivers/<int:user_id>/',
         AdminDriverDetailView.as_view(),
         name='admin-driver-detail',
+    ),
+    path(
+        'admin/drivers/<int:user_id>/sponsors/',
+        AdminDriverSponsorAssignView.as_view(),
+        name='admin-driver-sponsor-assign',
+    ),
+    path(
+        'admin/drivers/<int:user_id>/sponsors/<int:sponsor_id>/remove/',
+        AdminDriverSponsorRemoveView.as_view(),
+        name='admin-driver-sponsor-remove',
     ),
 ]

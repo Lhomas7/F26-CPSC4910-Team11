@@ -16,7 +16,7 @@ SELECT fixture.reference, fixture.sponsor_id, fixture.driver_id,
        DATE_SUB(UTC_TIMESTAMP(6), INTERVAL fixture.day_number DAY), UTC_TIMESTAMP(6)
 FROM (
     SELECT CONCAT('S6-DEMO-V2-D', driver.id, '-N', LPAD(numbers.n, 2, '0')) AS reference,
-           driver.id AS driver_id, driver.sponsor_id,
+           driver.id AS driver_id, membership.sponsor_id,
            numbers.n AS day_number,
            CAST(CASE MOD(numbers.n, 10)
                WHEN 0 THEN 0.00 WHEN 1 THEN 0.01 WHEN 2 THEN 24.95
@@ -24,6 +24,8 @@ FROM (
                WHEN 6 THEN 349.95 WHEN 7 THEN 19.99 WHEN 8 THEN 75.00
                ELSE 1299.99 END AS DECIMAL(12,2)) AS amount
     FROM drivers_driver AS driver
+    JOIN drivers_driversponsormembership AS membership
+        ON membership.driver_id = driver.id AND membership.status = 'approved'
     JOIN auth_user AS account ON account.id = driver.user_id AND account.is_active = 1
     CROSS JOIN (
         SELECT tens.n * 10 + units.n AS n
@@ -34,9 +36,8 @@ FROM (
             UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9
         ) AS units
     ) AS numbers
-    WHERE (driver.id = 3 AND driver.sponsor_id = 2
-        OR driver.id IN (4,5) AND driver.sponsor_id = 3)
-      AND driver.status = 'approved'
+    WHERE (driver.id = 3 AND membership.sponsor_id = 2
+        OR driver.id IN (4,5) AND membership.sponsor_id = 3)
 ) AS fixture
 WHERE NOT EXISTS (
     SELECT 1 FROM reports_completedsale AS existing WHERE existing.reference = fixture.reference
@@ -82,22 +83,23 @@ SELECT ROW_COUNT() AS inserted_products;
 INSERT INTO drivers_pointtransaction (
     driver_id, sponsor_id, changed_by_user_id, point_change, reason, changed_at
 )
-SELECT driver.id, driver.sponsor_id, NULL, adjustment.amount,
+SELECT driver.id, membership.sponsor_id, NULL, adjustment.amount,
        adjustment.reason, DATE_SUB(UTC_TIMESTAMP(6), INTERVAL adjustment.days_ago DAY)
 FROM drivers_driver AS driver
+JOIN drivers_driversponsormembership AS membership
+    ON membership.driver_id = driver.id AND membership.status = 'approved'
 JOIN auth_user AS account ON account.id = driver.user_id AND account.is_active = 1
 CROSS JOIN (
     SELECT 2000 AS amount, '[Demo S6 v2] Safe-driving milestone' AS reason, 7 AS days_ago
     UNION ALL SELECT 750, '[Demo S6 v2] On-time delivery award', 3
     UNION ALL SELECT -200, '[Demo S6 v2] Training correction', 1
 ) AS adjustment
-WHERE (driver.id = 3 AND driver.sponsor_id = 2
-    OR driver.id IN (4,5) AND driver.sponsor_id = 3)
-  AND driver.status = 'approved'
+WHERE (driver.id = 3 AND membership.sponsor_id = 2
+    OR driver.id IN (4,5) AND membership.sponsor_id = 3)
   AND NOT EXISTS (
       SELECT 1 FROM drivers_pointtransaction AS existing
       WHERE existing.driver_id = driver.id
-        AND existing.sponsor_id = driver.sponsor_id
+        AND existing.sponsor_id = membership.sponsor_id
         AND existing.reason = adjustment.reason
   );
 SELECT ROW_COUNT() AS inserted_point_transactions;
@@ -120,8 +122,11 @@ ORDER BY sponsor.name;
 SELECT driver.name, sponsor.name AS sponsor_name,
        SUM(points.point_change) AS current_point_balance
 FROM drivers_driver AS driver
-JOIN accounts_sponsorcompany AS sponsor ON sponsor.id = driver.sponsor_id
-LEFT JOIN drivers_pointtransaction AS points ON points.driver_id = driver.id
+JOIN drivers_driversponsormembership AS membership
+    ON membership.driver_id = driver.id AND membership.status = 'approved'
+JOIN accounts_sponsorcompany AS sponsor ON sponsor.id = membership.sponsor_id
+LEFT JOIN drivers_pointtransaction AS points
+    ON points.driver_id = driver.id AND points.sponsor_id = membership.sponsor_id
 WHERE driver.id IN (3,4,5)
 GROUP BY driver.id, driver.name, sponsor.name;
 

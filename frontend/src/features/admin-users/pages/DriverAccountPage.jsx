@@ -8,6 +8,7 @@ import useApiRequest from 'hooks/useApiRequest';
 import Avatar from 'components/primitives/Avatar';
 import ConfirmPasswordDialog from 'components/feedback/ConfirmPasswordDialog';
 import StatePanel from 'components/feedback/StatePanel';
+import DriverSponsorsPanel from '../components/DriverSponsorsPanel';
 import ViewAsConfirmationDialog from '../components/ViewAsConfirmationDialog';
 import '../AdminUsers.css';
 
@@ -16,9 +17,15 @@ function formFrom(account) {
     display_name: account.display_name,
     username: account.username,
     email: account.email,
-    sponsor_org_id: account.sponsor_org ? String(account.sponsor_org.id) : '',
     is_active: account.is_active,
   };
+}
+
+function approvedSponsorNames(account) {
+  return (account.sponsor_memberships || [])
+    .filter((membership) => membership.status === 'approved')
+    .map((membership) => membership.sponsor.name)
+    .join(', ');
 }
 
 export default function DriverAccountPage() {
@@ -109,7 +116,6 @@ export default function DriverAccountPage() {
         display_name: form.display_name.trim(),
         username: form.username.trim(),
         email: form.email.trim(),
-        sponsor_org_id: form.sponsor_org_id ? Number(form.sponsor_org_id) : null,
       });
       setData((current) => ({ ...current, account: saved }));
       setForm(formFrom(saved));
@@ -264,10 +270,6 @@ export default function DriverAccountPage() {
                 <dd>{account.email}</dd>
               </div>
               <div>
-                <dt>Sponsor organization</dt>
-                <dd>{account.sponsor_org?.name || <i>Not assigned</i>}</dd>
-              </div>
-              <div>
                 <dt>Account status</dt>
                 <dd>{account.is_active ? 'Active' : 'Inactive'}</dd>
               </div>
@@ -319,21 +321,6 @@ export default function DriverAccountPage() {
                   {errors.email && <small>{errors.email}</small>}
                 </label>
                 <label>
-                  Sponsor organization
-                  <select
-                    value={form.sponsor_org_id}
-                    onChange={(e) => update('sponsor_org_id', e.target.value)}
-                  >
-                    <option value="">Not assigned</option>
-                    {organizations.map((org) => (
-                      <option value={org.id} key={org.id}>
-                        {org.name}
-                      </option>
-                    ))}
-                  </select>
-                  <small>Optional. Leave unassigned until the driver joins a sponsor.</small>
-                </label>
-                <label>
                   Account status
                   <select
                     value={String(form.is_active)}
@@ -361,6 +348,12 @@ export default function DriverAccountPage() {
             </form>
           )}
         </section>
+        <DriverSponsorsPanel
+          userId={userId}
+          account={account}
+          organizations={organizations}
+          onChanged={(updated) => setData((current) => ({ ...current, account: updated }))}
+        />
       </main>
       {confirmingDeactivation && (
         <ConfirmPasswordDialog
@@ -377,7 +370,7 @@ export default function DriverAccountPage() {
             name: account.display_name,
             username: account.username,
             role: 'driver',
-            organization: account.sponsor_org?.name,
+            organization: approvedSponsorNames(account),
             avatarSrc: account.profile_picture_url,
             isActive: account.is_active,
           }}

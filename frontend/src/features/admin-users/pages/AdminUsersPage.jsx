@@ -31,6 +31,9 @@ function DirectorySkeleton() {
   );
 }
 
+/** A driver's active sponsors, or a sponsor's one organization. */
+const orgsOf = (account) => account.sponsor_orgs || [];
+
 export default function AdminUsersPage() {
   const { user } = useAuth();
   const [query, setQuery] = useState('');
@@ -67,15 +70,15 @@ export default function AdminUsersPage() {
     () =>
       Array.from(
         new Map(
-          users
-            .filter((current) => current.sponsor_org)
-            .map((current) => [String(current.sponsor_org.id), current.sponsor_org]),
+          users.flatMap((current) =>
+            orgsOf(current).map((org) => [String(org.id), org]),
+          ),
         ).values(),
       ).sort((left, right) => left.name.localeCompare(right.name)),
     [users],
   );
   const hasUnassignedDrivers = users.some(
-    (current) => current.role === 'driver' && !current.sponsor_org,
+    (current) => current.role === 'driver' && !orgsOf(current).length,
   );
   const organizationOptions = useMemo(
     () => [
@@ -93,8 +96,8 @@ export default function AdminUsersPage() {
         (role === 'all' || current.role === role) &&
         (organization === 'all' ||
           (organization === 'unassigned'
-            ? current.role === 'driver' && !current.sponsor_org
-            : String(current.sponsor_org?.id) === organization)) &&
+            ? current.role === 'driver' && !orgsOf(current).length
+            : orgsOf(current).some((org) => String(org.id) === organization))) &&
         (!normalized ||
           current.display_name.toLowerCase().includes(normalized) ||
           current.username.toLowerCase().includes(normalized)),
@@ -269,7 +272,9 @@ export default function AdminUsersPage() {
                           </span>
                         </td>
                         <td data-label="Sponsor organization">
-                          {listedUser.sponsor_org?.name ||
+                          {orgsOf(listedUser)
+                            .map((org) => org.name)
+                            .join(', ') ||
                             (listedUser.role === 'driver' ? (
                               <i>Not assigned</i>
                             ) : (

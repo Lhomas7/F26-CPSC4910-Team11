@@ -139,14 +139,14 @@ def notify_driver_dropped(driver, sponsor_name, reason, *, rejected):
         subject = f'{sponsor_name} declined your Good Driver application'
         message = (
             f'{sponsor_name} declined your application to its Good Driver program. '
-            f'Reason: {reason}. You can be linked to another sponsor.'
+            f'Reason: {reason}. Your other sponsors are not affected.'
         )
     else:
         subject = f'You were removed from the {sponsor_name} Good Driver program'
         message = (
             f'{sponsor_name} removed you from its Good Driver program. '
-            f'Reason: {reason}. Your point history is kept, and you can be linked to '
-            'another sponsor.'
+            f'Reason: {reason}. Your point history is kept, and your other sponsors '
+            'are not affected.'
         )
     _record(driver.user, Notification.SPONSOR_DROPPED, message)
 
@@ -169,21 +169,26 @@ def notify_driver_dropped(driver, sponsor_name, reason, *, rejected):
             logger.exception('Could not text sponsor removal notification.')
 
 
-def notify_driver_added(driver, sponsor_name):
-    """Tell an existing driver a sponsor added them to its program.
+def notify_driver_added(driver, sponsor_name, *, approved=False):
+    """Tell a driver a sponsor added them to, or approved them for, its program.
 
     Like a removal, this is an affiliation notice: it is always recorded in-app
     and emailed, whatever the driver's alert settings. Failures are logged.
     """
+    verb = 'approved your application to' if approved else 'added you to'
     message = (
-        f'{sponsor_name} added you to its Good Driver program. '
+        f'{sponsor_name} {verb} its Good Driver program. '
         'You can start earning points right away.'
     )
     _record(driver.user, Notification.SPONSOR_DROPPED, message)
     if driver.user.email:
         try:
             EmailMessage(
-                subject=f'You were added to the {sponsor_name} Good Driver program',
+                subject=(
+                    f'You were approved for the {sponsor_name} Good Driver program'
+                    if approved
+                    else f'You were added to the {sponsor_name} Good Driver program'
+                ),
                 body=message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 to=[driver.user.email],
@@ -192,10 +197,12 @@ def notify_driver_added(driver, sponsor_name):
             logger.exception('Could not email sponsor added notification.')
 
 
-def notify_sponsors_of_point_change(driver, point_change, reason, balance, changed_by_user):
+def notify_sponsors_of_point_change(
+    driver, sponsor_id, point_change, reason, balance, changed_by_user
+):
     """Alert the sponsors who asked to hear when this driver gains or loses points.
 
-    Only sponsors in the driver's current organization are alerted, including
+    Only sponsors in the organization whose points changed are alerted, including
     the sponsor who made the change. Each alert is recorded in-app and also
     emailed to sponsors who turned email on. A failure for one sponsor is
     logged and never stops the others.
@@ -204,7 +211,7 @@ def notify_sponsors_of_point_change(driver, point_change, reason, balance, chang
     direction = {'on_points_added' if added else 'on_points_removed': True}
     subscriptions = SponsorDriverAlert.objects.filter(
         driver=driver,
-        sponsor_account__company_id=driver.sponsor_id,
+        sponsor_account__company_id=sponsor_id,
         sponsor_account__user__is_active=True,
         **direction,
     ).select_related('sponsor_account__user')
@@ -234,18 +241,16 @@ def notify_sponsors_of_point_change(driver, point_change, reason, balance, chang
             logger.exception('Could not send a driver point alert to a sponsor.')
 
 
-def notify_sponsors_of_new_driver_application(driver):
+def notify_sponsors_of_new_driver_application(driver, sponsor_id):
     """Notify every active sponsor account in the organization of a new application."""
     from accounts.models import SponsorAccount
 
-    if driver.sponsor_id is None:
-        return
     message = (
         f'{driver.name} has applied to join your Good Driver program. '
         'Review the application in your driver directory.'
     )
     sponsor_accounts = SponsorAccount.objects.filter(
-        company_id=driver.sponsor_id,
+        company_id=sponsor_id,
         user__is_active=True,
     ).select_related('user')
     for sponsor_account in sponsor_accounts:
@@ -273,8 +278,8 @@ def notify_drivers_of_new_product(product):
 
     drivers = (
         Driver.objects.filter(
-            sponsor_id=product.sponsor_id,
-            status='approved',
+            memberships__sponsor_id=product.sponsor_id,
+            memberships__status='approved',
             user__is_active=True,
         )
         .exclude(notification_preferences__new_products_enabled=False)

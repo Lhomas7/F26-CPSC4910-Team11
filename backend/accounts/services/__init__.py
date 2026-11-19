@@ -35,19 +35,36 @@ def get_mfa_allowed_methods(user):
 def is_mfa_required(user):
     """Whether this user's role requires MFA to use the app.
 
-    Admins and sponsors always require it. Drivers require it only when their
-    sponsor company has opted every driver in.
+    Admins and sponsors always require it. Drivers require it when any sponsor
+    they are approved by, or have applied to, has opted every driver in.
     """
     account_type = get_account_type(user)
     if account_type in ('admin', 'sponsor'):
         return True
-    if (
-        account_type == 'driver'
-        and hasattr(user, 'driver_profile')
-        and user.driver_profile.sponsor is not None
-    ):
-        return user.driver_profile.sponsor.driver_mfa_required
+    if account_type == 'driver' and hasattr(user, 'driver_profile'):
+        return user.driver_profile.memberships.filter(
+            status__in=('pending', 'approved'), sponsor__driver_mfa_required=True
+        ).exists()
     return False
+
+
+def driver_sponsor_names(driver):
+    """The sponsors a driver is with or has applied to, approved first, for display."""
+    memberships = driver.memberships.filter(status__in=('approved', 'pending')).order_by(
+        'status', 'sponsor__name'
+    )
+    return ', '.join(memberships.values_list('sponsor__name', flat=True)) or None
+
+
+def public_sponsor_companies():
+    """Sponsor organizations a driver may apply to: those with an active sponsor user."""
+    from ..models import SponsorCompany
+
+    return (
+        SponsorCompany.objects.filter(sponsor_accounts__user__is_active=True)
+        .distinct()
+        .order_by('name', 'pk')
+    )
 
 
 def get_mfa_status(user):
@@ -87,9 +104,7 @@ def get_public_user(user):
         company = user.sponsor_account.company.name
     else:
         name = user.driver_profile.name
-        company = (
-            user.driver_profile.sponsor.name if user.driver_profile.sponsor is not None else None
-        )
+        company = driver_sponsor_names(user.driver_profile)
 
     return {
         'id': user.id,

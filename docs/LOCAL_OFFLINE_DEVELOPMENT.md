@@ -175,9 +175,10 @@ accounts only when missing:
 | -------- | ------------- |
 | `demo.admin` | Application administrator; enroll MFA at first sign-in |
 | `pat.sponsor` | Sponsor at Palmetto Freight; enroll MFA at first sign-in |
-| `jamie.rivera` | Approved Driver at Palmetto Freight |
-| `priya.nair` | Pending Driver at Palmetto Freight |
-| `unlinked.driver` | Pending Driver without an organization |
+| `casey.sponsor` | Sponsor at Upstate Logistics; enroll MFA at first sign-in |
+| `jamie.rivera` | Driver approved by both Palmetto Freight and Upstate Logistics |
+| `priya.nair` | Pending application to Palmetto Freight |
+| `unlinked.driver` | Driver with no sponsor memberships |
 
 Enter a password privately when prompted. It must satisfy the application
 password policy and is assigned only to newly created accounts. There is no
@@ -190,10 +191,12 @@ assignments, and Driver states. A matching username with an unexpected email
 or role stops the command instead of repurposing the account. The legacy
 `unlinked.driver` email `morgan.lee@example.com` remains supported.
 
-Jamie receives two sample point entries: +100 and -15, for a starting balance
-of 85. Reruns do not duplicate those entries. Sample points are skipped if the
-existing approved Driver or Sponsor has moved to another organization or the
-Driver's status has changed. No external point-change notifications are sent
+Jamie keeps a separate balance with each sponsor, since points never mix:
+Palmetto Freight awards +100 and -15 (85 points) and Upstate Logistics awards
++250. Reruns do not duplicate those entries. A sponsor's sample points are
+skipped if Jamie is no longer approved by that sponsor or the sponsor account
+has moved to another organization. Rerunning on a database seeded before
+multi-sponsor support adds Jamie's Upstate Logistics membership. No external point-change notifications are sent
 by this fixture command.
 
 For noninteractive setup, provide a private `GDIP_DEMO_PASSWORD` environment
@@ -253,8 +256,9 @@ If port 3000 is occupied, stop the old process instead of accepting another port
 | Role | Username | Password | State |
 | --- | --- | --- | --- |
 | Sponsor | `pat.sponsor` | `DemoAccessAB12!` | Palmetto Freight |
-| Driver | `jamie.rivera` | `DemoAccessAB12!` | Approved and linked |
-| Driver | `priya.nair` | `DemoAccessAB12!` | Pending and linked |
+| Sponsor | `casey.sponsor` | `DemoAccessAB12!` | Upstate Logistics |
+| Driver | `jamie.rivera` | `DemoAccessAB12!` | Approved by both sponsors |
+| Driver | `priya.nair` | `DemoAccessAB12!` | Pending at Palmetto Freight |
 | Driver | `unlinked.driver` | `DemoAccessAB12!` | No sponsor |
 | Administrator | Entered during `createsuperuser` | Entered during `createsuperuser` | Active |
 

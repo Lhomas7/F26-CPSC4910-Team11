@@ -10,6 +10,9 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from drivers.active_sponsor import SESSION_KEY as ACTIVE_SPONSOR_KEY
+from drivers.services import DriverMembershipError, admin_assign_sponsors, admin_remove_sponsor
+
 from ..middleware import (
     IMPERSONATION_ENDED_KEY,
     IMPERSONATION_ROLE_KEY,
@@ -25,6 +28,8 @@ from ..sensitive import hide_sensitive_data
 from ..serializers import (
     AdminAccountDetailSerializer,
     AdminDriverDetailSerializer,
+    AdminDriverSponsorAssignSerializer,
+    AdminDriverSponsorRemoveSerializer,
     AdminSponsorDetailSerializer,
     AdminUserCreateSerializer,
     AdminUserListSerializer,
@@ -66,6 +71,7 @@ class AdminImpersonationStartView(APIView):
         request.session[IMPERSONATION_TARGET_KEY] = target.id
         request.session[IMPERSONATION_ROLE_KEY] = target_role
         request.session[IMPERSONATION_STARTED_KEY] = started_at.isoformat()
+        request.session.pop(ACTIVE_SPONSOR_KEY, None)
         AdminImpersonationEvent.objects.create(
             admin=request.user,
             target=target,
@@ -138,10 +144,8 @@ class AdminUserListView(APIView):
                 | Q(driver_profile__isnull=False)
                 | Q(sponsor_account__isnull=False)
             )
-            .select_related(
-                'driver_profile__sponsor',
-                'sponsor_account__company',
-            )
+            .select_related('driver_profile', 'sponsor_account__company')
+            .prefetch_related('driver_profile__memberships__sponsor')
             .distinct()
         )
 
@@ -169,7 +173,7 @@ class AdminUserListView(APIView):
             error = current_password_error(request.user, request.data.get('current_password'))
             if error:
                 return error
-        serializer = AdminUserCreateSerializer(data=request.data)
+        serializer = AdminUserCreateSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         return Response(
@@ -271,7 +275,7 @@ class AdminDriverDetailView(APIView):
 
     def get_object(self, user_id):
         return get_object_or_404(
-            get_user_model().objects.select_related('driver_profile__sponsor'),
+            get_user_model().objects.select_related('driver_profile'),
             pk=user_id,
             is_staff=False,
             driver_profile__isnull=False,
@@ -293,3 +297,57 @@ class AdminDriverDetailView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+
+def _driver_user(user_id):
+    return get_object_or_404(
+        get_user_model().objects.select_related('driver_profile'),
+        pk=user_id,
+        is_staff=False,
+        driver_profile__isnull=False,
+    )
+
+
+@method_decorator(never_cache, name='dispatch')
+class AdminDriverSponsorAssignView(APIView):
+    """Add a driver to one or more sponsors; each is approved immediately."""
+
+    permission_classes = [IsAdminUser, MFAEnrolled]
+
+    def post(self, request, user_id):
+        user = _driver_user(user_id)
+        serializer = AdminDriverSponsorAssignSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        admin_assign_sponsors(
+            driver=user.driver_profile,
+            sponsors=serializer.validated_data['sponsor_ids'],
+            changed_by_user=request.user,
+        )
+        return Response(AdminDriverDetailSerializer(user, context={'request': request}).data)
+
+
+@method_decorator(never_cache, name='dispatch')
+class AdminDriverSponsorRemoveView(APIView):
+    """End one of a driver's memberships, with a reason; the others are untouched."""
+
+    permission_classes = [IsAdminUser, MFAEnrolled]
+
+    def post(self, request, user_id, sponsor_id):
+        user = _driver_user(user_id)
+        serializer = AdminDriverSponsorRemoveSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            admin_remove_sponsor(
+                driver=user.driver_profile,
+                sponsor_id=sponsor_id,
+                changed_by_user=request.user,
+                reason=serializer.validated_data.get('reason'),
+            )
+        except DriverMembershipError as error:
+            response_status = (
+                status.HTTP_404_NOT_FOUND
+                if error.code == 'membership_not_found'
+                else status.HTTP_400_BAD_REQUEST
+            )
+            return Response({error.field: [error.message]}, status=response_status)
+        return Response(AdminDriverDetailSerializer(user, context={'request': request}).data)

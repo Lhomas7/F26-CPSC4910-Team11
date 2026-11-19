@@ -11,7 +11,7 @@ from django.utils.http import urlsafe_base64_encode
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from drivers.models import Driver
+from drivers.testing import create_driver
 
 from ..models import AdminPasswordResetEvent, LoginAttempt, MFABackupCode
 from ..services.admin_password_reset import admin_token_generator
@@ -48,7 +48,7 @@ class AdminPasswordResetTests(APITestCase):
         cls.driver = User.objects.create_user(
             username='reset.driver', email='driver@example.com', password=PASSWORD
         )
-        Driver.objects.create(user=cls.driver, name='Reset Driver')
+        create_driver(user=cls.driver, name='Reset Driver')
 
     def setUp(self):
         mail.outbox = []

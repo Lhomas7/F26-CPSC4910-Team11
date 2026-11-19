@@ -17,24 +17,12 @@ def profile_picture_upload_to(instance, filename):
 
 
 class Driver(models.Model):
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('approved', 'Approved'),
-    ]
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='driver_profile',
     )
     name = models.CharField(max_length=200)
-    sponsor = models.ForeignKey(
-        'accounts.SponsorCompany',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='drivers',
-    )
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     profile_picture = models.ImageField(
         upload_to=profile_picture_upload_to,
         blank=True,
@@ -48,12 +36,79 @@ class Driver(models.Model):
     def __str__(self):
         return self.name
 
-    @property
-    def point_balance(self):
-        """Derive the current balance from the immutable transaction ledger."""
-        return self.point_transactions.aggregate(
+    def point_balance_for(self, sponsor_id):
+        """One sponsor's balance from the immutable ledger.
+
+        Points from different sponsors never mix, so there is deliberately no
+        combined balance.
+        """
+        return self.point_transactions.filter(sponsor_id=sponsor_id).aggregate(
             balance=Coalesce(Sum('point_change'), Value(0)),
         )['balance']
+
+    def approved_sponsor_ids(self):
+        return list(
+            self.memberships.filter(status=DriverSponsorMembership.APPROVED).values_list(
+                'sponsor_id', flat=True
+            )
+        )
+
+
+class DriverSponsorMembership(models.Model):
+    """A driver's application to, or membership in, one sponsor organization.
+
+    There is one row per driver and sponsor. Reapplying after a rejection or a
+    drop reopens the same row, so a driver never has two active applications
+    with one sponsor, and one sponsor's decision never touches another's row.
+    """
+
+    PENDING = 'pending'
+    APPROVED = 'approved'
+    REJECTED = 'rejected'
+    DROPPED = 'dropped'
+    STATUS_CHOICES = [
+        (PENDING, 'Pending'),
+        (APPROVED, 'Approved'),
+        (REJECTED, 'Rejected'),
+        (DROPPED, 'Dropped'),
+    ]
+    ACTIVE_STATUSES = (PENDING, APPROVED)
+
+    driver = models.ForeignKey(
+        Driver,
+        on_delete=models.CASCADE,
+        related_name='memberships',
+    )
+    sponsor = models.ForeignKey(
+        'accounts.SponsorCompany',
+        on_delete=models.PROTECT,
+        related_name='driver_memberships',
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ('sponsor__name', 'id')
+        constraints = [
+            models.UniqueConstraint(
+                fields=('driver', 'sponsor'),
+                name='driver_membership_unique_sponsor',
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=('sponsor', 'status'),
+                name='driver_membership_sponsor_idx',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.driver} @ {self.sponsor}: {self.status}'
+
+    @property
+    def is_active(self):
+        return self.status in self.ACTIVE_STATUSES
 
 
 class PointTransaction(models.Model):
@@ -104,13 +159,21 @@ class PointTransaction(models.Model):
 
 
 class DriverStatusChange(models.Model):
-    """Audit record of a sponsor rejecting or dropping a driver, with the reason."""
+    """Audit record of a change to one of a driver's sponsor memberships."""
 
+    APPLIED = 'applied'
+    APPROVED = 'approved'
     REJECTED = 'rejected'
     DROPPED = 'dropped'
+    ASSIGNED = 'assigned'
+    REMOVED = 'removed'
     ACTION_CHOICES = [
+        (APPLIED, 'Applied to sponsor'),
+        (APPROVED, 'Approved application'),
         (REJECTED, 'Rejected application'),
         (DROPPED, 'Dropped from sponsor'),
+        (ASSIGNED, 'Assigned by administrator'),
+        (REMOVED, 'Removed by administrator'),
     ]
 
     driver = models.ForeignKey(
@@ -130,7 +193,8 @@ class DriverStatusChange(models.Model):
         related_name='driver_status_changes_made',
     )
     action = models.CharField(max_length=20, choices=ACTION_CHOICES)
-    reason = models.CharField(max_length=500)
+    # Required for rejections and removals; approvals and assignments may be blank.
+    reason = models.CharField(max_length=500, blank=True)
     changed_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

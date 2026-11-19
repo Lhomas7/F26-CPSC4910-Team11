@@ -15,7 +15,7 @@ from accounts.middleware import (
 from accounts.models import MFASettings, SponsorAccount, SponsorCompany
 from catalog.models import CatalogProduct
 from catalog.services import create_catalog_product, update_product_availability
-from drivers.models import Driver
+from drivers.testing import create_driver
 
 
 class SponsorCatalogApiTests(APITestCase):
@@ -39,7 +39,7 @@ class SponsorCatalogApiTests(APITestCase):
         cls.admin = User.objects.create_user(username='api.catalog.admin', is_staff=True)
         MFASettings.objects.create(user=cls.admin, totp_enabled=True)
         cls.driver = User.objects.create_user(username='api.catalog.driver')
-        Driver.objects.create(
+        create_driver(
             user=cls.driver, name='API Driver', sponsor=cls.company, status='approved'
         )
         cls.product = CatalogProduct.objects.create(

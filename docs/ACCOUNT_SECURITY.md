@@ -6,12 +6,17 @@ here is enforced by Django; the React app only reflects it.
 ## Personal information
 
 - Every endpoint that returns personal data scopes its queryset on the server from
-  `request.user` (drivers see themselves, sponsors see their company's drivers, admins
-  use `/api/admin/...`). A record outside that scope is a `404`, not a `403`.
+  `request.user` (sponsors see only drivers with an active membership in their company,
+  admins use `/api/admin/...`). A record outside that scope is a `404`, not a `403`.
+  `/api/sponsor/drivers/` is sponsor-only; drivers and admins get a `403`.
+- A driver can belong to several sponsors. Each sponsor sees only its own membership
+  status, point balance, and point history for that driver, never the driver's other
+  sponsors.
 - Driver records returned to sponsors carry no email or phone number.
 - Personal-data responses are sent with `Cache-Control: no-store`.
-- Linking a driver by username answers the same way for an unknown username and for a
-  driver who belongs to another sponsor, so usernames and affiliations cannot be probed.
+- Linking a driver by username sends that driver a pending application to the sponsor's
+  organization only. An unknown username always gets the same generic answer, and the
+  response never mentions the driver's other sponsors.
 
 ## Sign-in lockout
 

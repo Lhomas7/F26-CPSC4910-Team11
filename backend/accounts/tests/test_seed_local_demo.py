@@ -10,6 +10,7 @@ from reports.models import CompletedSale
 
 from about_page.models import AboutPageRelease
 from drivers.models import Driver, PointTransaction
+from drivers.testing import membership_status
 
 from ..models import MFASettings, SponsorCompany
 
@@ -28,11 +29,18 @@ class LocalDemoSeedTests(TestCase):
     def test_creates_role_states_and_point_history_without_bypassing_mfa(self):
         self.seed()
 
-        self.assertEqual(get_user_model().objects.count(), 5)
+        self.assertEqual(get_user_model().objects.count(), 6)
         self.assertEqual(Driver.objects.count(), 3)
-        self.assertEqual(Driver.objects.get(user__username='jamie.rivera').point_balance, 85)
-        self.assertEqual(Driver.objects.get(user__username='priya.nair').status, 'pending')
-        self.assertIsNone(Driver.objects.get(user__username='unlinked.driver').sponsor_id)
+        palmetto = SponsorCompany.objects.get(name='Palmetto Freight')
+        upstate = SponsorCompany.objects.get(name='Upstate Logistics')
+        # Jamie drives for two sponsors and keeps a separate balance with each.
+        jamie = Driver.objects.get(user__username='jamie.rivera')
+        self.assertEqual(jamie.point_balance_for(palmetto), 85)
+        self.assertEqual(jamie.point_balance_for(upstate), 250)
+        self.assertEqual(membership_status(jamie, upstate), 'approved')
+        priya = Driver.objects.get(user__username='priya.nair')
+        self.assertEqual(membership_status(priya, palmetto), 'pending')
+        self.assertFalse(Driver.objects.get(user__username='unlinked.driver').memberships.exists())
         self.assertFalse(MFASettings.objects.exists())
         self.assertTrue(get_user_model().objects.get(username='demo.admin').is_staff)
         self.assertEqual(CompletedSale.objects.count(), 3)
@@ -60,7 +68,7 @@ class LocalDemoSeedTests(TestCase):
         self.assertEqual(user.first_name, 'Edited')
         self.assertTrue(user.mfa_settings.totp_enabled)
         self.assertEqual(driver.name, 'Edited Driver')
-        self.assertEqual(PointTransaction.objects.count(), 2)
+        self.assertEqual(PointTransaction.objects.count(), 3)
         self.assertEqual(CompletedSale.objects.count(), 3)
 
     def test_partial_existing_demo_account_is_preserved(self):
@@ -77,8 +85,10 @@ class LocalDemoSeedTests(TestCase):
         output = self.seed()
 
         self.assertEqual(user.sponsor_account.company, company)
-        self.assertEqual(get_user_model().objects.count(), 5)
-        self.assertFalse(PointTransaction.objects.exists())
+        self.assertEqual(get_user_model().objects.count(), 6)
+        self.assertFalse(
+            PointTransaction.objects.filter(sponsor__name='Palmetto Freight').exists()
+        )
         self.assertIn('Skipped sample points', output)
 
     def test_username_collision_refuses_before_creating_demo_records(self):

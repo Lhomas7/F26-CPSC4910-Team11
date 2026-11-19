@@ -5,7 +5,8 @@ from django.db import transaction
 from rest_framework import serializers
 
 from drivers.models import Driver
-from drivers.services import reassign_driver_sponsor
+from drivers.services import admin_assign_sponsors
+from drivers.services.reasons import MAX_REASON_LENGTH
 
 from ..input_cleaning import (
     HumanTextField,
@@ -19,11 +20,31 @@ from ..models import RegistrationSettings, SponsorAccount, SponsorCompany
 from ..services import get_account_type
 from ..services.impersonation import view_as_eligibility
 
+STATUS_HISTORY_LIMIT = 50
+
+
+class AdminDriverSponsorAssignSerializer(serializers.Serializer):
+    sponsor_ids = serializers.PrimaryKeyRelatedField(
+        queryset=SponsorCompany.objects.all(),
+        many=True,
+        allow_empty=False,
+    )
+
+
+class AdminDriverSponsorRemoveSerializer(serializers.Serializer):
+    # The service enforces the real rules; this only bounds the payload size.
+    reason = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        trim_whitespace=False,
+        max_length=MAX_REASON_LENGTH + 1,
+    )
+
 
 class AdminUserListSerializer(serializers.ModelSerializer):
     display_name = serializers.SerializerMethodField()
     role = serializers.SerializerMethodField()
-    sponsor_org = serializers.SerializerMethodField()
+    sponsor_orgs = serializers.SerializerMethodField()
 
     class Meta:
         model = get_user_model()
@@ -32,7 +53,7 @@ class AdminUserListSerializer(serializers.ModelSerializer):
             'display_name',
             'username',
             'role',
-            'sponsor_org',
+            'sponsor_orgs',
             'is_active',
         )
 
@@ -44,15 +65,18 @@ class AdminUserListSerializer(serializers.ModelSerializer):
     def get_role(self, user):
         return get_account_type(user)
 
-    def get_sponsor_org(self, user):
-        company = None
+    def get_sponsor_orgs(self, user):
+        """A sponsor's organization, or every sponsor a driver is active with."""
         if hasattr(user, 'driver_profile'):
-            company = user.driver_profile.sponsor
-        elif hasattr(user, 'sponsor_account'):
+            return [
+                {'id': membership.sponsor_id, 'name': membership.sponsor.name}
+                for membership in user.driver_profile.memberships.all()
+                if membership.is_active
+            ]
+        if hasattr(user, 'sponsor_account'):
             company = user.sponsor_account.company
-        if company is None:
-            return None
-        return {'id': company.id, 'name': company.name}
+            return [{'id': company.id, 'name': company.name}]
+        return []
 
 
 class SponsorCompanySerializer(serializers.ModelSerializer):
@@ -209,14 +233,8 @@ class AdminDriverDetailSerializer(ViewAsEligibilityMixin, serializers.ModelSeria
     email = NormalizedEmailField(max_length=254)
     role = serializers.SerializerMethodField()
     view_as = serializers.SerializerMethodField()
-    sponsor_org = serializers.SerializerMethodField()
-    sponsor_org_id = serializers.PrimaryKeyRelatedField(
-        queryset=SponsorCompany.objects.all(),
-        source='driver_profile.sponsor',
-        write_only=True,
-        required=False,
-        allow_null=True,
-    )
+    sponsor_memberships = serializers.SerializerMethodField()
+    status_history = serializers.SerializerMethodField()
     profile_picture_url = serializers.SerializerMethodField()
 
     class Meta:
@@ -228,19 +246,54 @@ class AdminDriverDetailSerializer(ViewAsEligibilityMixin, serializers.ModelSeria
             'email',
             'role',
             'view_as',
-            'sponsor_org',
-            'sponsor_org_id',
+            'sponsor_memberships',
+            'status_history',
             'is_active',
             'profile_picture_url',
         )
-        read_only_fields = ('id', 'role', 'sponsor_org', 'profile_picture_url')
+        read_only_fields = (
+            'id',
+            'role',
+            'sponsor_memberships',
+            'status_history',
+            'profile_picture_url',
+        )
 
     def get_role(self, user):
         return 'driver'
 
-    def get_sponsor_org(self, user):
-        company = user.driver_profile.sponsor
-        return {'id': company.id, 'name': company.name} if company else None
+    def get_sponsor_memberships(self, user):
+        """Every sponsor the driver is associated with, with that sponsor's balance."""
+        driver = user.driver_profile
+        return [
+            {
+                'sponsor': {'id': membership.sponsor_id, 'name': membership.sponsor.name},
+                'status': membership.status,
+                'point_balance': driver.point_balance_for(membership.sponsor_id),
+                'updated_at': membership.updated_at,
+            }
+            for membership in driver.memberships.select_related('sponsor')
+        ]
+
+    def get_status_history(self, user):
+        changes = user.driver_profile.status_changes.select_related(
+            'sponsor', 'changed_by_user'
+        )[:STATUS_HISTORY_LIMIT]
+        return [
+            {
+                'id': change.id,
+                'sponsor': {'id': change.sponsor_id, 'name': change.sponsor.name},
+                'action': change.action,
+                'reason': change.reason,
+                'changed_by': (
+                    change.changed_by_user.get_full_name() or change.changed_by_user.username
+                    if change.changed_by_user
+                    else None
+                ),
+                'changed_at': change.changed_at,
+            }
+            for change in changes
+        ]
 
     def get_profile_picture_url(self, user):
         picture = user.driver_profile.profile_picture
@@ -283,13 +336,6 @@ class AdminDriverDetailSerializer(ViewAsEligibilityMixin, serializers.ModelSeria
         for field, value in validated_data.items():
             setattr(instance, field, value)
         instance.save()
-        if 'sponsor' in driver_data:
-            # Leaving a sponsor is audited and always announced to the driver.
-            instance.driver_profile = reassign_driver_sponsor(
-                driver=instance.driver_profile,
-                new_sponsor=driver_data.pop('sponsor'),
-                changed_by_user=self.context['request'].user,
-            )
         for field, value in driver_data.items():
             setattr(instance.driver_profile, field, value)
         if driver_data:
@@ -310,6 +356,13 @@ class AdminUserCreateSerializer(serializers.Serializer):
         source='sponsor_org',
         required=False,
         allow_null=True,
+    )
+    # Drivers may start in several organizations; sponsors use sponsor_org_id.
+    sponsor_org_ids = serializers.PrimaryKeyRelatedField(
+        queryset=SponsorCompany.objects.all(),
+        source='sponsor_orgs',
+        many=True,
+        required=False,
     )
     password = serializers.CharField(write_only=True, trim_whitespace=False)
     password_confirm = serializers.CharField(write_only=True, trim_whitespace=False)
@@ -356,12 +409,17 @@ class AdminUserCreateSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 {'sponsor_org_id': 'Administrator accounts cannot have a sponsor organization.'}
             )
+        if role != 'driver' and attrs.get('sponsor_orgs'):
+            raise serializers.ValidationError(
+                {'sponsor_org_ids': 'Only drivers can belong to several organizations.'}
+            )
         return attrs
 
     @transaction.atomic
     def create(self, validated_data):
         role = validated_data.pop('role')
         sponsor_org = validated_data.pop('sponsor_org', None)
+        sponsor_orgs = validated_data.pop('sponsor_orgs', [])
         password = validated_data.pop('password')
         validated_data.pop('password_confirm')
         is_admin = role == 'admin'
@@ -375,10 +433,15 @@ class AdminUserCreateSerializer(serializers.Serializer):
         user.save()
 
         if role == 'driver':
-            Driver.objects.create(
-                user=user,
-                name=user.get_full_name(),
-                sponsor=sponsor_org,
+            driver = Driver.objects.create(user=user, name=user.get_full_name())
+            sponsors = {company.pk: company for company in [sponsor_org, *sponsor_orgs] if company}
+            # Admin assignments are approved immediately and audited.
+            admin_assign_sponsors(
+                driver=driver,
+                sponsors=list(sponsors.values()),
+                changed_by_user=self.context['request'].user,
+                # The new account's welcome email covers this; no separate notice.
+                notify=False,
             )
         elif role == 'sponsor':
             SponsorAccount.objects.create(user=user, company=sponsor_org)

@@ -26,7 +26,8 @@ export default function AdminHome({ user }) {
   const active = (accounts || []).filter((account) => account.is_active).length;
   const inactive = (accounts || []).length - active;
   const unassigned = (accounts || []).filter(
-    (account) => account.role === 'driver' && !account.sponsor_org,
+    // sponsor_orgs lists only active (pending or approved) memberships.
+    (account) => account.role === 'driver' && !account.sponsor_orgs?.length,
   ).length;
 
   return (
