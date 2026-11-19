@@ -204,6 +204,22 @@ export function InfoIcon(props) {
   );
 }
 
+export function HelpIcon(props) {
+  return (
+    <SvgIcon {...props}>
+      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="2" />
+      <path
+        d="M9.6 9.4a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.7"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
+      <circle cx="12" cy="16.9" fill="currentColor" r="1" />
+    </SvgIcon>
+  );
+}
+
 export function SignInIcon(props) {
   return (
     <SvgIcon {...props}>

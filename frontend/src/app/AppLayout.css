@@ -743,5 +743,6 @@
 
 /* Keep the floating cart button from covering pagination or the last cards. */
 .has-cart-button .app-content {
-  padding-bottom: 5.5rem;
+  /* Room for the floating cart and help buttons. */
+  padding-bottom: 8.5rem;
 }
