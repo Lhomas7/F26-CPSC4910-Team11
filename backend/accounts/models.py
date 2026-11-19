@@ -48,6 +48,12 @@ class SponsorCompany(models.Model):
     website = models.URLField(blank=True, max_length=200)
     contact_email = models.EmailField(blank=True, max_length=254)
     contact_phone = models.CharField(blank=True, max_length=16)
+    # Who drivers should reach when they need help. Blank email or phone falls
+    # back to the public contact details above.
+    support_contact_name = models.CharField(blank=True, max_length=100)
+    support_email = models.EmailField(blank=True, max_length=254)
+    support_phone = models.CharField(blank=True, max_length=16)
+    support_hours = models.CharField(blank=True, max_length=200)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

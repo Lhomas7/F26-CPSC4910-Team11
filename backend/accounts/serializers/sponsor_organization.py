@@ -45,10 +45,25 @@ class SponsorOrganizationSerializer(serializers.ModelSerializer):
     website = serializers.URLField(required=False, allow_blank=True, max_length=200)
     contact_email = NormalizedEmailField(required=False, allow_blank=True, max_length=254)
     contact_phone = serializers.CharField(required=False, allow_blank=True, max_length=40)
+    support_contact_name = HumanTextField(required=False, allow_blank=True, max_length=100)
+    support_email = NormalizedEmailField(required=False, allow_blank=True, max_length=254)
+    support_phone = serializers.CharField(required=False, allow_blank=True, max_length=40)
+    support_hours = HumanTextField(required=False, allow_blank=True, max_length=200)
 
     class Meta:
         model = SponsorCompany
-        fields = ('id', 'name', 'description', 'website', 'contact_email', 'contact_phone')
+        fields = (
+            'id',
+            'name',
+            'description',
+            'website',
+            'contact_email',
+            'contact_phone',
+            'support_contact_name',
+            'support_email',
+            'support_phone',
+            'support_hours',
+        )
         read_only_fields = ('id',)
 
     def validate_name(self, value):
@@ -72,6 +87,9 @@ class SponsorOrganizationSerializer(serializers.ModelSerializer):
         return value
 
     def validate_contact_phone(self, value):
+        return normalize_contact_phone(value)
+
+    def validate_support_phone(self, value):
         return normalize_contact_phone(value)
 
 

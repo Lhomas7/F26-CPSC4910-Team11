@@ -81,6 +81,31 @@ class SponsorOrganizationTests(APITestCase):
         self.assertEqual(self.company.contact_phone, '+18645550100')
         self.assertEqual(self.company.name, 'Palmetto Freight')
 
+    def test_sponsor_sets_a_support_contact_for_drivers(self):
+        self.client.force_authenticate(self.sponsor)
+        response = self.client.patch(
+            self.url,
+            {
+                'support_contact_name': '  Jordan   Lee ',
+                'support_email': 'Help@Palmetto.example.com',
+                'support_phone': '864.555.0199',
+                'support_hours': 'Mon-Fri, 8am-5pm ET',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.company.refresh_from_db()
+        self.assertEqual(self.company.support_contact_name, 'Jordan Lee')
+        self.assertEqual(self.company.support_email, 'help@palmetto.example.com')
+        self.assertEqual(self.company.support_phone, '+18645550199')
+        self.assertEqual(self.company.support_hours, 'Mon-Fri, 8am-5pm ET')
+
+        self.client.force_authenticate(self.driver_user)
+        driver_view = self.client.get(self.url).data
+        self.assertEqual(driver_view['support_email'], 'help@palmetto.example.com')
+        self.assertEqual(driver_view['support_phone'], '+18645550199')
+
     def test_driver_can_read_their_sponsors_details(self):
         self.company.description = 'Produce hauling.'
         self.company.save()
@@ -116,6 +141,9 @@ class SponsorOrganizationTests(APITestCase):
             {'website': 'not a url'},
             {'contact_email': 'nope'},
             {'contact_phone': '12'},
+            {'support_email': 'nope'},
+            {'support_phone': '12'},
+            {'support_hours': 'x' * 201},
             {'description': 'x' * 1001},
             {'name': 'blue ridge haulers'},
             {'name': '   '},
