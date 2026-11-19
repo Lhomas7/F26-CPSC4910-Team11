@@ -8,6 +8,12 @@ const FIELDS = [
   ['contact_email', 'Contact email', 'email', 'Where drivers can reach your program.'],
   ['contact_phone', 'Contact phone', 'tel', 'Include the country code outside the US.'],
 ];
+const SUPPORT_FIELDS = [
+  ['support_contact_name', 'Contact name', 'text', 'Who drivers should ask for.'],
+  ['support_email', 'Support email', 'email', 'Leave blank to use your contact email.'],
+  ['support_phone', 'Support phone', 'tel', 'Leave blank to use your contact phone.'],
+  ['support_hours', 'Hours', 'text', 'For example, Mon-Fri, 8am-5pm ET.'],
+];
 
 function toForm(organization) {
   return {
@@ -16,6 +22,10 @@ function toForm(organization) {
     website: organization.website || '',
     contact_email: organization.contact_email || '',
     contact_phone: organization.contact_phone || '',
+    support_contact_name: organization.support_contact_name || '',
+    support_email: organization.support_email || '',
+    support_phone: organization.support_phone || '',
+    support_hours: organization.support_hours || '',
   };
 }
 
@@ -56,29 +66,31 @@ export default function OrganizationForm({ organization, onSaved }) {
     }
   };
 
+  const renderField = ([name, label, type, hint]) => (
+    <div className="organization-field" key={name}>
+      <label htmlFor={`org-${name}`}>{label}</label>
+      <input
+        id={`org-${name}`}
+        type={type}
+        value={form[name]}
+        onChange={(event) => update(name, event.target.value)}
+        disabled={busy}
+        aria-invalid={Boolean(fieldErrors[name])}
+        aria-describedby={`org-${name}-hint`}
+      />
+      <small id={`org-${name}-hint`} className={fieldErrors[name] ? 'organization-error' : ''}>
+        {fieldErrors[name] || hint}
+      </small>
+    </div>
+  );
+
   return (
     <form className="card organization-card" onSubmit={submit} noValidate>
       <header>
         <h2>Organization details</h2>
         <p>Drivers see this so they know more about their sponsor.</p>
       </header>
-      {FIELDS.map(([name, label, type, hint]) => (
-        <div className="organization-field" key={name}>
-          <label htmlFor={`org-${name}`}>{label}</label>
-          <input
-            id={`org-${name}`}
-            type={type}
-            value={form[name]}
-            onChange={(event) => update(name, event.target.value)}
-            disabled={busy}
-            aria-invalid={Boolean(fieldErrors[name])}
-            aria-describedby={`org-${name}-hint`}
-          />
-          <small id={`org-${name}-hint`} className={fieldErrors[name] ? 'organization-error' : ''}>
-            {fieldErrors[name] || hint}
-          </small>
-        </div>
-      ))}
+      {FIELDS.map(renderField)}
       <div className="organization-field">
         <label htmlFor="org-description">About your program</label>
         <textarea
@@ -98,6 +110,11 @@ export default function OrganizationForm({ organization, onSaved }) {
           {fieldErrors.description || `${form.description.length}/1000 characters`}
         </small>
       </div>
+      <fieldset className="organization-support">
+        <legend>Driver support contact</legend>
+        <p>Shown in the help menu when your drivers need to reach you.</p>
+        {SUPPORT_FIELDS.map(renderField)}
+      </fieldset>
       {error && (
         <p className="banner banner-error" role="alert">
           {error}
