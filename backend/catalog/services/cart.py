@@ -2,18 +2,18 @@ from dataclasses import dataclass
 from decimal import Decimal
 from uuid import uuid4
 
+from django.core import signing
 from django.db import IntegrityError, transaction
 from django.db.models import QuerySet
-from django.core import signing
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from reports.models import CompletedSale
 from rest_framework.exceptions import APIException, ValidationError
 
 from accounts.models import SponsorCompany
 from accounts.services.notify import notify_reward_purchase
 from catalog.models import CancelledCheckout, CartItem, CatalogProduct, Redemption, RedemptionItem
 from catalog.pricing import point_cost
-from reports.models import CompletedSale
-from django.utils import timezone
 from drivers.models import Driver
 
 from .access import driver_catalog_scope
@@ -32,8 +32,8 @@ class Cart:
 
 
 def _cart_items(scope):
-    # Filter by the current sponsor as well as the driver: a row left behind
-    # by a sponsor change must never show another organization's reward.
+    # Filter by the active sponsor as well as the driver: each sponsor's
+    # rewards stay in the cart but appear only while shopping that catalog.
     return CartItem.objects.filter(
         driver_id=scope.driver_id,
         product__sponsor_id=scope.company_id,
@@ -45,7 +45,7 @@ def get_cart(*, user):
     scope = driver_catalog_scope(user)
     return Cart(
         sponsor=SponsorCompany.objects.get(pk=scope.company_id),
-        point_balance=user.driver_profile.point_balance,
+        point_balance=user.driver_profile.point_balance_for(scope.company_id),
         items=_cart_items(scope),
     )
 
@@ -88,15 +88,15 @@ def remove_from_cart(*, user, product_id):
     item.delete()
 
 
-def clear_cart(driver):
-    """Empty a driver's cart, e.g. when they leave their sponsor organization."""
-    CartItem.objects.filter(driver=driver).delete()
+def clear_cart(driver, sponsor_id):
+    """Empty a driver's cart for one sponsor, e.g. when they leave that organization."""
+    CartItem.objects.filter(driver=driver, product__sponsor_id=sponsor_id).delete()
 
 
 def empty_cart(*, user):
-    """Remove everything from the signed-in driver's cart. An empty cart is fine."""
+    """Remove the active sponsor's rewards from the driver's cart. An empty cart is fine."""
     scope = driver_catalog_scope(user)
-    CartItem.objects.filter(driver_id=scope.driver_id).delete()
+    _cart_items(scope).delete()
 
 
 @dataclass(frozen=True)
@@ -136,7 +136,7 @@ def _locked_items(scope):
 def _review_payload(driver, sponsor, items):
     return {
         'driver': driver.pk, 'sponsor': sponsor.pk,
-        'rate': sponsor.points_per_dollar, 'balance': driver.point_balance,
+        'rate': sponsor.points_per_dollar, 'balance': driver.point_balance_for(sponsor.pk),
         'items': [[item.pk, item.product_id, str(item.product.price_usd),
                    item.product.is_available, item.product.name] for item in items],
     }
@@ -149,7 +149,7 @@ def review_cart(*, user):
     sponsor = SponsorCompany.objects.select_for_update().get(pk=scope.company_id)
     items = _locked_items(scope)
     token = signing.dumps(_review_payload(driver, sponsor, items), salt='catalog.checkout-review', compress=True)
-    return Cart(sponsor=sponsor, point_balance=driver.point_balance, items=items), token
+    return Cart(sponsor=sponsor, point_balance=driver.point_balance_for(sponsor.pk), items=items), token
 
 
 def purchase_receipt(redemption, *, replayed=False):
@@ -225,13 +225,14 @@ def checkout_cart(*, user, idempotency_key=None, review_token=None):
     if total > 0:
         try:
             balance = spend_driver_points(
-                driver=driver, point_cost=total, reason=_purchase_reason(names)
+                driver=driver, sponsor_id=sponsor.pk, point_cost=total,
+                reason=_purchase_reason(names),
             ).balance
         except PointAdjustmentError as error:
             raise ValidationError({'detail': error.message}, code=error.code) from error
     else:
         # The ledger rejects zero-point entries, so free rewards leave no row.
-        balance = driver.point_balance
+        balance = driver.point_balance_for(sponsor.pk)
 
     completed_at = timezone.now()
     sale = CompletedSale.objects.create(

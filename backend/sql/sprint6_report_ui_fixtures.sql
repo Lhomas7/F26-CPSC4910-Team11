@@ -35,8 +35,10 @@ FROM (
 ) AS fixture
 JOIN drivers_driver AS driver
     ON driver.id = fixture.driver_id
-   AND driver.sponsor_id = fixture.sponsor_id
-   AND driver.status = 'approved'
+JOIN drivers_driversponsormembership AS membership
+    ON membership.driver_id = driver.id
+   AND membership.sponsor_id = fixture.sponsor_id
+   AND membership.status = 'approved'
 JOIN auth_user AS account
     ON account.id = driver.user_id AND account.is_active = 1
 WHERE NOT EXISTS (

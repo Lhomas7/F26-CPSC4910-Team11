@@ -15,7 +15,8 @@ from accounts.models import MFASettings, SponsorAccount, SponsorCompany
 from accounts.permissions import MFAEnrolled
 from catalog.models import CatalogProduct
 from catalog.services import driver_catalog_scope, sponsor_catalog_scope
-from drivers.models import Driver
+from drivers.models import DriverSponsorMembership
+from drivers.testing import create_driver
 
 
 class CatalogAccessTests(TestCase):
@@ -30,14 +31,14 @@ class CatalogAccessTests(TestCase):
         SponsorAccount.objects.create(user=cls.sponsor, company=cls.company)
         MFASettings.objects.create(user=cls.sponsor, totp_enabled=True)
         cls.driver_user = User.objects.create_user(username='catalog.driver')
-        cls.driver = Driver.objects.create(
+        cls.driver = create_driver(
             user=cls.driver_user,
             name='Catalog Driver',
             sponsor=cls.company,
             status='approved',
         )
         cls.other_user = User.objects.create_user(username='catalog.other')
-        cls.other_driver = Driver.objects.create(
+        cls.other_driver = create_driver(
             user=cls.other_user,
             name='Other Driver',
             sponsor=cls.other_company,
@@ -132,14 +133,14 @@ class CatalogAccessTests(TestCase):
         self.assertEqual(driver_catalog_scope(user).company_id, self.company.pk)
 
     def test_driver_without_sponsor_has_explicit_missing_relationship_error(self):
-        Driver.objects.filter(pk=self.driver.pk).update(sponsor=None)
+        DriverSponsorMembership.objects.filter(driver=self.driver).delete()
         user = get_user_model().objects.get(pk=self.driver_user.pk)
         with self.assertRaises(PermissionDenied) as error:
             driver_catalog_scope(user)
         self.assertEqual(error.exception.get_codes(), 'sponsor_required')
 
     def test_pending_driver_cannot_browse_catalog(self):
-        Driver.objects.filter(pk=self.driver.pk).update(status='pending')
+        DriverSponsorMembership.objects.filter(driver=self.driver).update(status='pending')
         user = get_user_model().objects.get(pk=self.driver_user.pk)
         with self.assertRaises(PermissionDenied) as error:
             driver_catalog_scope(user)

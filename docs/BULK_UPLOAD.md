@@ -32,10 +32,10 @@ D|Acme Trucking|Jane|Doe|jane.doe@example.com|500|Welcome bonus
 ### Drivers
 
 - Drivers added by an upload are **accepted immediately**; no approval step is needed.
-- If the email already belongs to a driver, no account is created: an unassigned driver joins the
-  organization (and is notified), a pending driver of the same organization is accepted, and an
-  approved driver just receives any points. A driver of another organization, or any non-driver
-  account, is rejected.
+- If the email already belongs to a driver, no account is created: a driver new to the
+  organization joins it (and is notified), a pending applicant is accepted, and an approved driver
+  just receives any points. Drivers can belong to several sponsors, so their other memberships are
+  untouched. Any non-driver account is rejected.
 - New people get a username made from their email and an email with a link to choose their own
   password. No password is ever stored in or sent from the file.
 

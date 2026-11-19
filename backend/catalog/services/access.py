@@ -43,22 +43,32 @@ def sponsor_catalog_scope(user):
     return CatalogScope(company_id=user.sponsor_account.company_id)
 
 
-def driver_catalog_scope(user):
-    """Allow only approved, sponsor-linked drivers to browse their catalog."""
+def driver_catalog_scope(user, session=None):
+    """Allow only drivers approved by a sponsor to browse, and only its catalog.
+
+    The sponsor is the driver's active sponsor (see drivers.active_sponsor),
+    never a browser-supplied ID that was not checked against their memberships.
+    """
+    from drivers.active_sponsor import resolve_active_sponsor_id
+    from drivers.models import DriverSponsorMembership
+
     _require_access(user, DriverAccount)
     driver = user.driver_profile
-    if driver.sponsor_id is None:
+    sponsor_id = resolve_active_sponsor_id(driver, session)
+    if sponsor_id is None:
+        if DriverSponsorMembership.objects.filter(
+            driver=driver, status=DriverSponsorMembership.PENDING
+        ).exists():
+            raise PermissionDenied(
+                'Your sponsor must approve your driver account before you can browse its catalog.',
+                code='driver_not_approved',
+            )
         raise PermissionDenied(
             'A sponsor organization is required to access its catalog.',
             code='sponsor_required',
         )
-    if driver.status != 'approved':
-        raise PermissionDenied(
-            'Your sponsor must approve your driver account before you can browse its catalog.',
-            code='driver_not_approved',
-        )
     return CatalogScope(
-        company_id=driver.sponsor_id,
+        company_id=sponsor_id,
         driver_id=driver.pk,
-        driver_status=driver.status,
+        driver_status=DriverSponsorMembership.APPROVED,
     )

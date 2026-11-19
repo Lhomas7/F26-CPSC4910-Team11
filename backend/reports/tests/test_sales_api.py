@@ -15,7 +15,8 @@ from rest_framework.test import APITestCase
 
 from accounts.models import SponsorAccount, SponsorCompany
 from accounts.tests.common import enroll_totp
-from drivers.models import Driver
+from drivers.models import DriverSponsorMembership
+from drivers.testing import add_membership, create_driver
 from reports.models import CompletedSale
 
 
@@ -29,32 +30,32 @@ class SalesReportApiTests(APITestCase):
         enroll_totp(cls.admin)
         cls.alpha = SponsorCompany.objects.create(name='Alpha Logistics')
         cls.beta = SponsorCompany.objects.create(name='Beta Transit')
-        cls.driver_a = Driver.objects.create(
+        cls.driver_a = create_driver(
             user=User.objects.create_user(username='alice.driver'),
             name='Alice Driver',
             sponsor=cls.alpha,
             status='approved',
         )
-        cls.driver_b = Driver.objects.create(
+        cls.driver_b = create_driver(
             user=User.objects.create_user(username='bob.driver'),
             name='Bob Driver',
             sponsor=cls.alpha,
             status='approved',
         )
-        cls.driver_c = Driver.objects.create(
+        cls.driver_c = create_driver(
             user=User.objects.create_user(username='cora.driver'),
             name='Cora Driver',
             sponsor=cls.beta,
             status='approved',
         )
-        for reference, driver, amount in (
-            ('A-1', cls.driver_a, '10.00'),
-            ('A-2', cls.driver_a, '24.95'),
-            ('B-1', cls.driver_b, '5.05'),
-            ('C-1', cls.driver_c, '100.00'),
+        for reference, driver, sponsor, amount in (
+            ('A-1', cls.driver_a, cls.alpha, '10.00'),
+            ('A-2', cls.driver_a, cls.alpha, '24.95'),
+            ('B-1', cls.driver_b, cls.alpha, '5.05'),
+            ('C-1', cls.driver_c, cls.beta, '100.00'),
         ):
             CompletedSale.objects.create(
-                sponsor=driver.sponsor,
+                sponsor=sponsor,
                 driver=driver,
                 reference=reference,
                 gross_amount_usd=Decimal(amount),
@@ -369,8 +370,8 @@ class SalesReportApiTests(APITestCase):
         self.assertEqual(response.data['summary']['project_share_usd'], '0.0000')
 
     def test_transferred_driver_remains_selectable_for_historical_sponsor(self):
-        self.driver_a.sponsor = self.beta
-        self.driver_a.save()
+        DriverSponsorMembership.objects.filter(driver=self.driver_a).update(status='dropped')
+        add_membership(self.driver_a, self.beta)
         self.authenticate_admin()
         options = self.client.get(reverse('reports:sales-options'), {'sponsor_id': self.alpha.pk})
         self.assertIn(self.driver_a.pk, [row['id'] for row in options.data['drivers']])
@@ -443,8 +444,8 @@ class SalesReportApiTests(APITestCase):
         self.assertEqual(invalid.status_code, 404)
 
     def test_one_driver_is_grouped_separately_for_each_sale_sponsor(self):
-        self.driver_a.sponsor = self.beta
-        self.driver_a.save()
+        DriverSponsorMembership.objects.filter(driver=self.driver_a).update(status='dropped')
+        add_membership(self.driver_a, self.beta)
         CompletedSale.objects.create(
             sponsor=self.beta,
             driver=self.driver_a,

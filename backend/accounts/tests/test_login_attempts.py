@@ -6,7 +6,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from drivers.models import Driver
+from drivers.testing import create_driver
 
 from ..models import LoginAttempt, MFASettings, SponsorAccount, SponsorCompany
 
@@ -26,7 +26,7 @@ class LoginAttemptsViewTests(APITestCase):
             username='admin.one', password='ExamplePassword123!'
         )
         cls.driver = User.objects.create_user(username='driver.one', password='ExamplePassword123!')
-        Driver.objects.create(user=cls.driver, name='Driver One', status='approved')
+        create_driver(user=cls.driver, name='Driver One', status='approved')
         for user in (cls.sponsor, cls.admin, cls.driver):
             MFASettings.objects.create(user=user, totp_enabled=True)
 

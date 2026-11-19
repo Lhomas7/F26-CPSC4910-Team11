@@ -8,7 +8,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from drivers.models import Driver
+from drivers.testing import create_driver
 
 from ..models import LoginAttempt, SponsorAccount, SponsorCompany
 from ..services.crypto import decrypt_secret
@@ -29,7 +29,7 @@ class LoginLockoutTests(APITestCase):
         User = get_user_model()
         company = SponsorCompany.objects.create(name='Lockout Freight')
         driver = User.objects.create_user(username='lock.driver', password=PASSWORD)
-        Driver.objects.create(user=driver, name='Lock Driver', sponsor=company, status='approved')
+        create_driver(user=driver, name='Lock Driver', sponsor=company, status='approved')
         sponsor = User.objects.create_user(username='lock.sponsor', password=PASSWORD)
         SponsorAccount.objects.create(user=sponsor, company=company)
         User.objects.create_user(username='lock.admin', password=PASSWORD, is_staff=True)

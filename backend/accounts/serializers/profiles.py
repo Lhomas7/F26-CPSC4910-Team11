@@ -12,7 +12,7 @@ from ..input_cleaning import (
     validate_new_password,
 )
 from ..models import AccountProfile
-from ..services import get_account_type, get_mfa_status
+from ..services import driver_sponsor_names, get_account_type, get_mfa_status
 
 
 class ChangePasswordSerializer(serializers.Serializer):
@@ -88,8 +88,7 @@ class SelfProfileSerializer(serializers.ModelSerializer):
 
     def get_company(self, user):
         if hasattr(user, 'driver_profile'):
-            sponsor = user.driver_profile.sponsor
-            return sponsor.name if sponsor is not None else None
+            return driver_sponsor_names(user.driver_profile)
         if hasattr(user, 'sponsor_account'):
             return user.sponsor_account.company.name
         return None

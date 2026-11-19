@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from drivers.models import Driver
+from drivers.testing import create_driver
 
 from ..models import SponsorAccount, SponsorCompany
 from .common import enroll_totp
@@ -56,7 +56,7 @@ class SponsorOrganizationTests(APITestCase):
         cls.driver_user = get_user_model().objects.create_user(
             username='marcus.driver', password=PASSWORD
         )
-        cls.driver = Driver.objects.create(
+        cls.driver = create_driver(
             user=cls.driver_user, name='Marcus Alvarez', sponsor=cls.company, status='approved'
         )
 
@@ -100,8 +100,7 @@ class SponsorOrganizationTests(APITestCase):
             self.client.patch(self.url, {'description': 'x'}, format='json').status_code,
             status.HTTP_403_FORBIDDEN,
         )
-        self.driver.sponsor = None
-        self.driver.save()
+        self.driver.memberships.all().delete()
         self.assertEqual(self.client.get(self.url).status_code, status.HTTP_404_NOT_FOUND)
 
     def test_sponsor_only_ever_sees_and_edits_their_own_company(self):
@@ -241,6 +240,6 @@ class SponsorTeamTests(APITestCase):
     def test_drivers_and_anonymous_users_are_refused(self):
         self.assertEqual(self.client.get(self.list_url).status_code, status.HTTP_403_FORBIDDEN)
         driver = get_user_model().objects.create_user('some.driver', password=PASSWORD)
-        Driver.objects.create(user=driver, name='Some Driver', sponsor=self.company)
+        create_driver(user=driver, name='Some Driver', sponsor=self.company)
         self.client.force_authenticate(driver)
         self.assertEqual(self.client.get(self.list_url).status_code, status.HTTP_403_FORBIDDEN)

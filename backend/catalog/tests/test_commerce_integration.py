@@ -4,12 +4,13 @@ from uuid import uuid4
 
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from reports.models import CompletedSale
 from rest_framework.test import APITestCase
 
 from accounts.models import MFASettings, SponsorAccount, SponsorCompany
 from catalog.models import CartItem, CatalogProduct, Redemption
 from drivers.models import Driver, PointTransaction
-from reports.models import CompletedSale
+from drivers.testing import create_driver
 
 
 class CommerceIntegrationTests(APITestCase):
@@ -21,7 +22,7 @@ class CommerceIntegrationTests(APITestCase):
         SponsorAccount.objects.create(user=cls.sponsor, company=cls.company)
         MFASettings.objects.create(user=cls.sponsor, totp_enabled=True)
         cls.user = User.objects.create_user(username='commerce.driver')
-        cls.driver = Driver.objects.create(user=cls.user, name='Commerce Driver', sponsor=cls.company, status='approved')
+        cls.driver = create_driver(user=cls.user, name='Commerce Driver', sponsor=cls.company, status='approved')
         cls.admin = User.objects.create_user(username='commerce.admin', is_staff=True)
         MFASettings.objects.create(user=cls.admin, totp_enabled=True)
         PointTransaction.objects.create(driver=cls.driver, sponsor=cls.company,
@@ -88,7 +89,7 @@ class CommerceIntegrationTests(APITestCase):
                 self.client.post(reverse('catalog:cart-checkout'), {
                     'review_token': token, 'idempotency_key': str(uuid4()),
                 }, format='json')
-        self.assertEqual(Driver.objects.get(pk=self.driver.pk).point_balance, 10000)
+        self.assertEqual(Driver.objects.get(pk=self.driver.pk).point_balance_for(self.company), 10000)
         self.assertTrue(CartItem.objects.filter(driver=self.driver).exists())
         self.assertFalse(Redemption.objects.exists())
         self.assertFalse(CompletedSale.objects.exists())

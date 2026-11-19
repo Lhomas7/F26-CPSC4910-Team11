@@ -12,7 +12,8 @@ from rest_framework.test import APITestCase
 from accounts.models import MFASettings, SponsorAccount, SponsorCompany
 from catalog.models import CatalogProduct, Redemption, RedemptionItem
 from catalog.views.purchases import PurchaseHistoryPagination
-from drivers.models import Driver
+from drivers.models import DriverSponsorMembership
+from drivers.testing import add_membership, create_driver
 
 
 class DriverPurchaseHistoryTests(APITestCase):
@@ -28,8 +29,8 @@ class DriverPurchaseHistoryTests(APITestCase):
         cls.sponsor_user = users.create_user(username='original-sponsor')
         SponsorAccount.objects.create(user=cls.sponsor_user, company=cls.sponsor)
         MFASettings.objects.create(user=cls.sponsor_user, totp_enabled=True)
-        cls.driver = Driver.objects.create(user=cls.owner, name='Buyer', sponsor=cls.sponsor)
-        cls.other_driver = Driver.objects.create(
+        cls.driver = create_driver(user=cls.owner, name='Buyer', sponsor=cls.sponsor)
+        cls.other_driver = create_driver(
             user=cls.other, name='Other Buyer', sponsor=cls.sponsor
         )
         now = timezone.now()
@@ -84,7 +85,8 @@ class DriverPurchaseHistoryTests(APITestCase):
         self.client.force_authenticate(self.owner)
         CatalogProduct.objects.filter(pk=self.product.pk).update(name='New Mug', price_usd='12.00')
         new_sponsor = SponsorCompany.objects.create(name='New Sponsor')
-        Driver.objects.filter(pk=self.driver.pk).update(sponsor=new_sponsor, status='pending')
+        DriverSponsorMembership.objects.filter(driver=self.driver).update(status='dropped')
+        add_membership(self.driver, new_sponsor, 'pending')
 
         response = self.client.get(self.detail_url(self.latest))
 
@@ -145,7 +147,8 @@ class DriverPurchaseHistoryTests(APITestCase):
         self.client.force_authenticate(new_user)
         self.assertEqual(self.client.get(self.sponsor_history_url(self.driver)).status_code, 404)
 
-        Driver.objects.filter(pk=self.driver.pk).update(sponsor=new_company)
+        # Joining a second sponsor shows it none of the first sponsor's purchases.
+        add_membership(self.driver, new_company)
         response = self.client.get(self.sponsor_history_url(self.driver))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['results'], [])
@@ -153,7 +156,14 @@ class DriverPurchaseHistoryTests(APITestCase):
             self.client.get(self.sponsor_detail_url(self.driver, self.latest)).status_code, 404
         )
 
+        # The original sponsor keeps access while the driver is still theirs...
         self.client.force_authenticate(self.sponsor_user)
+        self.assertEqual(self.client.get(self.sponsor_history_url(self.driver)).status_code, 200)
+
+        # ...and loses it once they drop the driver.
+        DriverSponsorMembership.objects.filter(driver=self.driver, sponsor=self.sponsor).update(
+            status='dropped'
+        )
         self.assertEqual(self.client.get(self.sponsor_history_url(self.driver)).status_code, 404)
         self.assertEqual(
             self.client.get(self.sponsor_detail_url(self.driver, self.latest)).status_code, 404

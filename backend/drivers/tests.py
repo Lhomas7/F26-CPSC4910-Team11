@@ -19,8 +19,15 @@ from accounts.models import (
 )
 from accounts.tests.common import enroll_totp
 
-from .models import Driver, DriverStatusChange, PointTransaction, SponsorBehavior
+from .models import (
+    Driver,
+    DriverSponsorMembership,
+    DriverStatusChange,
+    PointTransaction,
+    SponsorBehavior,
+)
 from .services import MAX_POINT_ADJUSTMENT, PointAdjustmentError, adjust_driver_points
+from .testing import add_membership, create_driver, membership_status
 
 
 class PointTransactionModelTests(TestCase):
@@ -36,7 +43,7 @@ class PointTransactionModelTests(TestCase):
             username='points.driver',
             password='ExamplePassword123!',
         )
-        cls.driver = Driver.objects.create(
+        cls.driver = create_driver(
             user=cls.driver_user,
             name='Points Driver',
             sponsor=cls.company,
@@ -53,14 +60,14 @@ class PointTransactionModelTests(TestCase):
         )
 
     def test_new_driver_has_zero_point_balance(self):
-        self.assertEqual(self.driver.point_balance, 0)
+        self.assertEqual(self.driver.point_balance_for(self.company), 0)
 
     def test_balance_is_sum_of_signed_transactions(self):
         self.record(100)
         self.record(-25, reason='Documented policy violation')
         self.record(10)
 
-        self.assertEqual(self.driver.point_balance, 85)
+        self.assertEqual(self.driver.point_balance_for(self.company), 85)
 
     def test_transaction_retains_audit_context(self):
         entry = self.record(25)
@@ -115,7 +122,7 @@ class PointAdjustmentServiceTests(TestCase):
             username='adjust.driver',
             password='ExamplePassword123!',
         )
-        cls.driver = Driver.objects.create(
+        cls.driver = create_driver(
             user=cls.driver_user,
             name='Adjustment Driver',
             sponsor=cls.company,
@@ -125,7 +132,7 @@ class PointAdjustmentServiceTests(TestCase):
             username='unassigned.driver',
             password='ExamplePassword123!',
         )
-        cls.unassigned_driver = Driver.objects.create(
+        cls.unassigned_driver = create_driver(
             user=cls.unassigned_user,
             name='Unassigned Driver',
             status='approved',
@@ -162,13 +169,13 @@ class PointAdjustmentServiceTests(TestCase):
         result = self.adjust(-40, 'Documented safety violation')
 
         self.assertEqual(result.balance, 60)
-        self.assertEqual(self.driver.point_balance, 60)
+        self.assertEqual(self.driver.point_balance_for(self.company), 60)
         self.assert_adjustment_error(
             'insufficient_points',
             amount=-61,
             reason='Another documented violation',
         )
-        self.assertEqual(self.driver.point_balance, 60)
+        self.assertEqual(self.driver.point_balance_for(self.company), 60)
 
     def test_rejects_zero_noninteger_boolean_and_excessive_amounts(self):
         for amount, code in (
@@ -220,8 +227,7 @@ class PointAdjustmentServiceTests(TestCase):
         self.assert_adjustment_error('driver_not_found', driver=999_999)
 
     def test_rejects_point_changes_for_pending_drivers(self):
-        self.driver.status = 'pending'
-        self.driver.save(update_fields=['status'])
+        DriverSponsorMembership.objects.filter(driver=self.driver).update(status='pending')
 
         error = self.assert_adjustment_error('driver_not_approved')
 
@@ -245,7 +251,7 @@ class PointChangeNotificationTests(TestCase):
             email='notify.driver@example.com',
             password='ExamplePassword123!',
         )
-        cls.driver = Driver.objects.create(
+        cls.driver = create_driver(
             user=cls.driver_user,
             name='Notify Driver',
             sponsor=cls.company,
@@ -338,7 +344,7 @@ class PointChangeNotificationTests(TestCase):
             result = self.adjust(25)
 
         self.assertEqual(result.balance, 25)
-        self.assertEqual(self.driver.point_balance, 25)
+        self.assertEqual(self.driver.point_balance_for(self.company), 25)
         send_sms.assert_called_once()
 
     def test_rejected_adjustment_sends_nothing(self, send_sms):
@@ -373,7 +379,7 @@ class PointAdjustmentAPITests(APITestCase):
             username='api.driver',
             password='ExamplePassword123!',
         )
-        cls.driver = Driver.objects.create(
+        cls.driver = create_driver(
             user=cls.driver_user,
             name='API Driver',
             sponsor=cls.company,
@@ -383,7 +389,7 @@ class PointAdjustmentAPITests(APITestCase):
             username='outside.driver',
             password='ExamplePassword123!',
         )
-        cls.other_driver = Driver.objects.create(
+        cls.other_driver = create_driver(
             user=cls.other_driver_user,
             name='Outside Driver',
             sponsor=cls.other_company,
@@ -466,7 +472,7 @@ class PointAdjustmentAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertFalse(PointTransaction.objects.exists())
 
-    def test_driver_api_exposes_calculated_balance(self):
+    def test_sponsor_api_exposes_only_its_own_calculated_balance(self):
         PointTransaction.objects.create(
             driver=self.driver,
             sponsor=self.company,
@@ -481,7 +487,15 @@ class PointAdjustmentAPITests(APITestCase):
             point_change=-15,
             reason='Adjustment',
         )
-        self.client.force_authenticate(self.driver_user)
+        # Points from another sponsor are never added to this sponsor's view.
+        add_membership(self.driver, self.other_company)
+        PointTransaction.objects.create(
+            driver=self.driver,
+            sponsor=self.other_company,
+            point_change=1000,
+            reason='Other sponsor award',
+        )
+        self.client.force_authenticate(self.sponsor_user)
 
         response = self.client.get(reverse('driver-detail', kwargs={'pk': self.driver.pk}))
 
@@ -505,7 +519,7 @@ class DriverViewSetMFAGateTests(APITestCase):
         cls.driver_user = get_user_model().objects.create_user(
             username='fleet.driver', password='ExamplePassword123!'
         )
-        cls.driver = Driver.objects.create(
+        cls.driver = create_driver(
             user=cls.driver_user, name='Fleet Driver', sponsor=cls.company
         )
 
@@ -523,19 +537,19 @@ class DriverViewSetMFAGateTests(APITestCase):
     def test_driver_only_blocked_when_companys_mfa_is_required(self):
         self.client.force_authenticate(self.driver_user)
 
-        # Not required yet: the driver can see their own record.
-        response = self.client.get(reverse('driver-list'))
+        # Not required yet: the driver can see their own point history.
+        response = self.client.get(reverse('point-history'))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         self.company.driver_mfa_required = True
         self.company.save(update_fields=['driver_mfa_required'])
 
-        blocked = self.client.get(reverse('driver-list'))
+        blocked = self.client.get(reverse('point-history'))
         self.assertEqual(blocked.status_code, status.HTTP_403_FORBIDDEN)
 
         enroll_totp(self.driver_user)
 
-        allowed = self.client.get(reverse('driver-list'))
+        allowed = self.client.get(reverse('point-history'))
         self.assertEqual(allowed.status_code, status.HTTP_200_OK)
 
 
@@ -571,7 +585,7 @@ class RoleScopedDriverTestData(APITestCase):
             user = get_user_model().objects.create_user(
                 username=username, password='ExamplePassword123!'
             )
-            return Driver.objects.create(user=user, name=name, sponsor=company, status=status_value)
+            return create_driver(user=user, name=name, sponsor=company, status=status_value)
 
         cls.approved = make_driver('scope.approved', 'Avery Approved', cls.company, 'approved')
         cls.pending = make_driver('scope.pending', 'Blake Pending', cls.company, 'pending')
@@ -598,12 +612,14 @@ class AdminDriverApiTests(RoleScopedDriverTestData):
     def test_admins_get_no_drivers_and_cannot_change_them(self):
         self.client.force_authenticate(self.admin_user)
 
-        self.assertEqual(self.client.get(reverse('driver-list')).data, [])
+        self.assertEqual(
+            self.client.get(reverse('driver-list')).status_code, status.HTTP_403_FORBIDDEN
+        )
         detail_url = reverse('driver-detail', kwargs={'pk': self.approved.pk})
-        self.assertEqual(self.client.get(detail_url).status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(self.client.get(detail_url).status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(
             self.client.patch(detail_url, {'status': 'pending'}, format='json').status_code,
-            status.HTTP_405_METHOD_NOT_ALLOWED,
+            status.HTTP_403_FORBIDDEN,
         )
 
     def test_driver_list_includes_sponsor_name(self):
@@ -639,7 +655,7 @@ class DriverLinkTests(RoleScopedDriverTestData):
             username='Available.Driver',
             password='ExamplePassword123!',
         )
-        driver = Driver.objects.create(
+        driver = create_driver(
             user=user,
             name='Available Driver',
             status='approved',
@@ -648,9 +664,7 @@ class DriverLinkTests(RoleScopedDriverTestData):
         response = self.link('available.driver')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        driver.refresh_from_db()
-        self.assertEqual(driver.sponsor, self.company)
-        self.assertEqual(driver.status, 'pending')
+        self.assertEqual(membership_status(driver, self.company), 'pending')
         self.assertEqual(response.data['username'], 'Available.Driver')
         self.assertEqual(response.data['status'], 'pending')
 
@@ -666,7 +680,7 @@ class DriverLinkTests(RoleScopedDriverTestData):
             username='new.applicant',
             password='ExamplePassword123!',
         )
-        applicant = Driver.objects.create(user=applicant_user, name='New Applicant')
+        applicant = create_driver(user=applicant_user, name='New Applicant')
 
         with self.captureOnCommitCallbacks(execute=True):
             response = self.link(applicant.user.username)
@@ -690,21 +704,29 @@ class DriverLinkTests(RoleScopedDriverTestData):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('already linked to your organization', response.data['detail'])
-        self.approved.refresh_from_db()
-        self.assertEqual(self.approved.status, 'approved')
-        self.assertEqual(self.approved.sponsor, self.company)
+        self.assertEqual(membership_status(self.approved, self.company), 'approved')
 
-    def test_driver_linked_to_another_company_looks_the_same_as_an_unknown_username(self):
-        unknown = self.link('does.not.exist')
-        elsewhere = self.link(self.outsider.user.username)
+    def test_driver_of_another_company_can_be_invited_without_revealing_it(self):
+        response = self.link(self.outsider.user.username)
 
-        # Neither the status nor the wording may reveal that the account exists
-        # or who sponsors it.
-        self.assertEqual(elsewhere.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(elsewhere.status_code, unknown.status_code)
-        self.assertEqual(elsewhere.data, unknown.data)
-        self.outsider.refresh_from_db()
-        self.assertEqual(self.outsider.sponsor, self.other_company)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # The invite is a pending application with this sponsor only.
+        self.assertEqual(membership_status(self.outsider, self.company), 'pending')
+        self.assertEqual(membership_status(self.outsider, self.other_company), 'approved')
+        # The response shows only this sponsor's view of the driver.
+        self.assertEqual(response.data['sponsor_name'], 'Scope Freight')
+        self.assertEqual(response.data['status'], 'pending')
+        self.assertEqual(response.data['point_balance'], 0)
+        self.assertNotIn('Elsewhere', str(response.data))
+
+    def test_a_rejected_driver_can_be_invited_again(self):
+        DriverSponsorMembership.objects.filter(driver=self.pending).update(status='rejected')
+
+        response = self.link(self.pending.user.username)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(membership_status(self.pending, self.company), 'pending')
+        self.assertEqual(DriverSponsorMembership.objects.filter(driver=self.pending).count(), 1)
 
     def test_unknown_blank_and_non_sponsor_link_requests_are_rejected(self):
         self.assertEqual(self.link('').status_code, status.HTTP_400_BAD_REQUEST)
@@ -731,17 +753,54 @@ class DriverApiMutationTests(RoleScopedDriverTestData):
                 response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED for response in responses
             )
         )
-        self.pending.refresh_from_db()
-        self.assertEqual(self.pending.status, 'pending')
+        self.assertEqual(membership_status(self.pending, self.company), 'pending')
 
     def test_sponsor_uses_the_explicit_approve_action(self):
         self.client.force_authenticate(self.sponsor_user)
 
-        response = self.client.post(reverse('driver-approve', kwargs={'pk': self.pending.pk}))
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                reverse('driver-approve', kwargs={'pk': self.pending.pk})
+            )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.pending.refresh_from_db()
-        self.assertEqual(self.pending.status, 'approved')
+        self.assertEqual(response.data['status'], 'approved')
+        self.assertEqual(membership_status(self.pending, self.company), 'approved')
+        record = DriverStatusChange.objects.get(driver=self.pending)
+        self.assertEqual(
+            (record.action, record.sponsor, record.changed_by_user),
+            (DriverStatusChange.APPROVED, self.company, self.sponsor_user),
+        )
+        notification = Notification.objects.get(user=self.pending.user)
+        self.assertIn('Scope Freight approved your application', notification.message)
+
+    def test_approving_an_unknown_or_outside_driver_is_a_404(self):
+        self.client.force_authenticate(self.sponsor_user)
+
+        for pk in (self.outsider.pk, 999_999):
+            with self.subTest(pk=pk):
+                response = self.client.post(reverse('driver-approve', kwargs={'pk': pk}))
+                self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_a_pending_drivers_company_still_names_the_sponsor_applied_to(self):
+        from accounts.services import get_public_user
+
+        add_membership(self.pending, self.other_company, 'rejected')
+
+        self.assertEqual(get_public_user(self.pending.user)['company'], 'Scope Freight')
+        add_membership(self.approved, self.other_company, 'pending')
+        # Approved sponsors are listed before pending applications.
+        self.assertEqual(
+            get_public_user(self.approved.user)['company'], 'Scope Freight, Elsewhere Freight'
+        )
+
+    def test_approving_an_approved_driver_changes_nothing(self):
+        self.client.force_authenticate(self.sponsor_user)
+
+        response = self.client.post(reverse('driver-approve', kwargs={'pk': self.approved.pk}))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(DriverStatusChange.objects.exists())
 
     def test_driver_cannot_approve_themselves(self):
         self.client.force_authenticate(self.pending.user)
@@ -749,8 +808,7 @@ class DriverApiMutationTests(RoleScopedDriverTestData):
         response = self.client.post(reverse('driver-approve', kwargs={'pk': self.pending.pk}))
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.pending.refresh_from_db()
-        self.assertEqual(self.pending.status, 'pending')
+        self.assertEqual(membership_status(self.pending, self.company), 'pending')
 
 
 class DriverRemovalTests(RoleScopedDriverTestData):
@@ -760,13 +818,12 @@ class DriverRemovalTests(RoleScopedDriverTestData):
             reverse('driver-remove', kwargs={'pk': driver.pk}), data, format='json'
         )
 
-    def test_rejecting_a_pending_driver_unlinks_them_with_an_audited_reason(self):
+    def test_rejecting_a_pending_driver_records_the_audited_reason(self):
         response = self.remove(self.pending, {'reason': '  Missing   CDL details '})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['action'], 'rejected')
-        self.pending.refresh_from_db()
-        self.assertIsNone(self.pending.sponsor)
+        self.assertEqual(membership_status(self.pending, self.company), 'rejected')
         record = DriverStatusChange.objects.get(driver=self.pending)
         self.assertEqual(record.reason, 'Missing CDL details')
         self.assertEqual(record.sponsor, self.company)
@@ -777,10 +834,8 @@ class DriverRemovalTests(RoleScopedDriverTestData):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['action'], 'dropped')
-        self.approved.refresh_from_db()
-        self.assertIsNone(self.approved.sponsor)
-        self.assertEqual(self.approved.status, 'pending')
-        self.assertEqual(self.approved.point_balance, 40)
+        self.assertEqual(membership_status(self.approved, self.company), 'dropped')
+        self.assertEqual(self.approved.point_balance_for(self.company), 40)
         self.assertEqual(self.approved.point_transactions.count(), 2)
 
     def test_a_reason_is_required_and_nothing_changes_without_one(self):
@@ -789,8 +844,7 @@ class DriverRemovalTests(RoleScopedDriverTestData):
                 response = self.remove(self.pending, data)
                 self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
                 self.assertIn('reason', response.data)
-        self.pending.refresh_from_db()
-        self.assertEqual(self.pending.sponsor, self.company)
+        self.assertEqual(membership_status(self.pending, self.company), 'pending')
         self.assertFalse(DriverStatusChange.objects.exists())
 
     def test_only_the_drivers_own_sponsor_can_remove_them(self):
@@ -810,8 +864,14 @@ class DriverRemovalTests(RoleScopedDriverTestData):
             self.remove(self.pending, {'reason': 'Self'}, user=self.pending.user).status_code,
             status.HTTP_403_FORBIDDEN,
         )
-        self.pending.refresh_from_db()
-        self.assertEqual(self.pending.sponsor, self.company)
+        self.assertEqual(membership_status(self.pending, self.company), 'pending')
+
+    def test_a_removed_driver_disappears_from_the_sponsors_list(self):
+        self.remove(self.pending, {'reason': 'Missing CDL details'})
+
+        names = [row['name'] for row in self.client.get(reverse('driver-list')).data]
+
+        self.assertEqual(names, ['Avery Approved'])
 
 
 @patch('accounts.services.notify.send_sms')
@@ -886,75 +946,82 @@ class DriverRemovalNotificationTests(RoleScopedDriverTestData):
         self.assertTrue(Notification.objects.filter(user=self.approved.user).exists())
 
 
-@patch('accounts.services.notify.send_sms')
-class AdminSponsorReassignmentTests(RoleScopedDriverTestData):
-    """Admins can move a driver, but a driver only ever has one sponsor."""
+class MultiSponsorIndependenceTests(RoleScopedDriverTestData):
+    """One sponsor's decisions never change a driver's standing with another."""
 
-    def patch_sponsor(self, driver, company):
-        self.client.force_authenticate(self.admin_user)
+    def setUp(self):
+        # Avery is approved by both companies, with separate balances.
+        add_membership(self.approved, self.other_company)
+        PointTransaction.objects.create(
+            driver=self.approved,
+            sponsor=self.other_company,
+            changed_by_user=self.other_sponsor_user,
+            point_change=500,
+            reason='Elsewhere award',
+        )
+
+    def act(self, user, name, driver, data=None):
+        self.client.force_authenticate(user)
         with self.captureOnCommitCallbacks(execute=True):
-            return self.client.patch(
-                reverse('accounts:admin-driver-detail', kwargs={'user_id': driver.user.pk}),
-                {'sponsor_org_id': company.pk if company else None},
-                format='json',
+            return self.client.post(
+                reverse(f'driver-{name}', kwargs={'pk': driver.pk}), data or {}, format='json'
             )
 
-    def test_moving_a_driver_audits_and_announces_leaving_the_old_sponsor(self, send_sms):
-        response = self.patch_sponsor(self.approved, self.other_company)
+    def test_dropping_by_one_sponsor_keeps_the_other_membership_and_points(self):
+        response = self.act(self.sponsor_user, 'remove', self.approved, {'reason': 'Left'})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['sponsor_org']['name'], 'Elsewhere Freight')
-        self.approved.refresh_from_db()
-        self.assertEqual(self.approved.sponsor, self.other_company)
-        self.assertEqual(self.approved.status, 'pending')
-        record = DriverStatusChange.objects.get(driver=self.approved)
-        self.assertEqual(record.action, DriverStatusChange.DROPPED)
-        self.assertEqual(record.sponsor, self.company)
-        self.assertEqual(record.changed_by_user, self.admin_user)
-        notification = Notification.objects.get(user=self.approved.user)
-        self.assertEqual(notification.category, Notification.SPONSOR_DROPPED)
-        self.assertIn('administrator', notification.message)
-
-    def test_unassigning_a_driver_announces_it(self, send_sms):
-        self.patch_sponsor(self.pending, None)
-
-        self.pending.refresh_from_db()
-        self.assertIsNone(self.pending.sponsor)
-        self.assertEqual(
-            DriverStatusChange.objects.get(driver=self.pending).action,
-            DriverStatusChange.REJECTED,
-        )
-        self.assertTrue(Notification.objects.filter(user=self.pending.user).exists())
-
-    def test_saving_the_same_sponsor_changes_nothing(self, send_sms):
-        self.patch_sponsor(self.approved, self.company)
-
-        self.approved.refresh_from_db()
-        self.assertEqual(self.approved.status, 'approved')
-        self.assertFalse(DriverStatusChange.objects.exists())
-        self.assertFalse(Notification.objects.exists())
-
-    def test_assigning_an_unaffiliated_driver_is_not_a_drop(self, send_sms):
-        self.patch_sponsor(self.approved, None)
-        Notification.objects.all().delete()
-
-        self.patch_sponsor(self.approved, self.company)
-
-        self.approved.refresh_from_db()
-        self.assertEqual(self.approved.sponsor, self.company)
-        self.assertEqual(self.approved.status, 'pending')
-        self.assertFalse(Notification.objects.exists())
-
-    def test_a_linked_driver_cannot_be_linked_by_a_second_sponsor(self, send_sms):
+        self.assertEqual(membership_status(self.approved, self.company), 'dropped')
+        self.assertEqual(membership_status(self.approved, self.other_company), 'approved')
+        self.assertEqual(self.approved.point_balance_for(self.other_company), 500)
         self.client.force_authenticate(self.other_sponsor_user)
+        detail = self.client.get(reverse('driver-detail', kwargs={'pk': self.approved.pk}))
+        self.assertEqual((detail.data['status'], detail.data['point_balance']), ('approved', 500))
 
-        response = self.client.post(
-            reverse('driver-link'), {'username': self.approved.user.username}, format='json'
-        )
+    def test_rejecting_or_approving_one_application_leaves_the_other_pending(self):
+        add_membership(self.pending, self.other_company, 'pending')
 
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.approved.refresh_from_db()
-        self.assertEqual(self.approved.sponsor, self.company)
+        self.act(self.sponsor_user, 'remove', self.pending, {'reason': 'No CDL'})
+        self.assertEqual(membership_status(self.pending, self.company), 'rejected')
+        self.assertEqual(membership_status(self.pending, self.other_company), 'pending')
+
+        self.act(self.other_sponsor_user, 'approve', self.pending)
+        self.assertEqual(membership_status(self.pending, self.company), 'rejected')
+        self.assertEqual(membership_status(self.pending, self.other_company), 'approved')
+
+    def test_each_sponsor_sees_only_its_own_status_and_balance(self):
+        for user, sponsor_name, balance in (
+            (self.sponsor_user, 'Scope Freight', 40),
+            (self.other_sponsor_user, 'Elsewhere Freight', 500),
+        ):
+            with self.subTest(sponsor=sponsor_name):
+                self.client.force_authenticate(user)
+                response = self.client.get(
+                    reverse('driver-detail', kwargs={'pk': self.approved.pk})
+                )
+                self.assertEqual(response.data['sponsor_name'], sponsor_name)
+                self.assertEqual(response.data['point_balance'], balance)
+                other = 'Elsewhere' if sponsor_name == 'Scope Freight' else 'Scope'
+                self.assertNotIn(other, str(response.data))
+
+    def test_points_from_one_sponsor_never_cover_a_deduction_for_another(self):
+        with self.assertRaises(PointAdjustmentError) as error:
+            adjust_driver_points(
+                driver=self.approved,
+                changed_by_user=self.sponsor_user,
+                point_change=-100,
+                reason='Too much',
+            )
+
+        self.assertEqual(error.exception.code, 'insufficient_points')
+        self.assertEqual(self.approved.point_balance_for(self.company), 40)
+        self.assertEqual(self.approved.point_balance_for(self.other_company), 500)
+
+    def test_an_active_application_cannot_be_duplicated(self):
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            DriverSponsorMembership.objects.create(
+                driver=self.approved, sponsor=self.company, status='pending'
+            )
 
 
 @patch('accounts.services.notify.send_sms')
@@ -1180,7 +1247,7 @@ class SponsorOnlyActionTests(RoleScopedDriverTestData):
             username='scope.unassigned',
             password='ExamplePassword123!',
         )
-        Driver.objects.create(user=unassigned, name='Dana Unassigned', status='approved')
+        create_driver(user=unassigned, name='Dana Unassigned', status='approved')
 
     def sponsor_requests(self):
         return {
@@ -1200,7 +1267,11 @@ class SponsorOnlyActionTests(RoleScopedDriverTestData):
         return (
             PointTransaction.objects.count(),
             DriverStatusChange.objects.count(),
-            list(Driver.objects.order_by('pk').values_list('sponsor_id', 'status')),
+            list(
+                DriverSponsorMembership.objects.order_by('pk').values_list(
+                    'driver_id', 'sponsor_id', 'status'
+                )
+            ),
         )
 
     def test_non_sponsor_callers_are_refused_every_sponsor_action(self):
@@ -1248,13 +1319,17 @@ class SponsorOnlyActionTests(RoleScopedDriverTestData):
         url, data = self.sponsor_requests()['remove']
         self.assertEqual(self.client.post(url, data, format='json').status_code, status.HTTP_200_OK)
 
-    def test_drivers_can_still_read_their_own_record(self):
+    def test_drivers_cannot_read_sponsor_driver_records(self):
+        # Drivers read their own sponsors and balances through driver/sponsors/.
         self.client.force_authenticate(self.approved.user)
 
-        response = self.client.get(reverse('driver-list'))
+        list_response = self.client.get(reverse('driver-list'))
+        detail_response = self.client.get(
+            reverse('driver-detail', kwargs={'pk': self.approved.pk})
+        )
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual([row['name'] for row in response.data], ['Avery Approved'])
+        self.assertEqual(list_response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(detail_response.status_code, status.HTTP_403_FORBIDDEN)
 
 
 class PointHistoryApiTests(RoleScopedDriverTestData):
@@ -1305,15 +1380,11 @@ class PersonalDataAccessTests(RoleScopedDriverTestData):
     def test_a_driver_cannot_read_another_drivers_record(self):
         self.client.force_authenticate(self.approved.user)
 
-        own = self.client.get(self.detail_url(self.approved))
-        same_company = self.client.get(self.detail_url(self.pending))
-        other_company = self.client.get(self.detail_url(self.outsider))
-
-        self.assertEqual(own.status_code, status.HTTP_200_OK)
-        self.assertEqual(same_company.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(other_company.status_code, status.HTTP_404_NOT_FOUND)
-        listed = {row['username'] for row in self.client.get(reverse('driver-list')).data}
-        self.assertEqual(listed, {'scope.approved'})
+        for driver in (self.approved, self.pending, self.outsider):
+            with self.subTest(driver=driver.name):
+                response = self.client.get(self.detail_url(driver))
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+                self.assertNotIn('username', response.data)
 
     def test_a_sponsor_only_reaches_their_own_companys_drivers(self):
         self.client.force_authenticate(self.sponsor_user)
@@ -1414,8 +1485,7 @@ class SponsorBehaviorApiTests(RoleScopedDriverTestData):
     def test_pending_drivers_also_see_the_list_and_unlinked_drivers_see_none(self):
         self.assertEqual(len(self.list_as(self.pending.user).data), 2)
 
-        self.pending.sponsor = None
-        self.pending.save(update_fields=['sponsor'])
+        self.pending.memberships.all().delete()
         response = self.list_as(self.pending.user)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, [])

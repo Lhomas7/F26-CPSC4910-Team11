@@ -76,7 +76,7 @@ This repository is maintained by **CPSC 4910 Team 11**.
 - Admin user directory with search and role filters
 - Driver, sponsor, and administrator account creation
 - Driver and sponsor account detail/edit pages
-- Sponsor assignment and reassignment
+- Multi-sponsor driver memberships with audited admin assignment and removal
 - Account activation and deactivation
 - Audited administrator view-as sessions for driver and sponsor troubleshooting
 - Site-wide switch to require email verification for new accounts
@@ -87,7 +87,7 @@ This repository is maintained by **CPSC 4910 Team 11**.
 - Database-backed About page with product, team, sprint/version, and release information
 - Seed command for initial About-page content
 - Sponsor-scoped driver list
-- Driver-to-sponsor linking
+- Driver-to-sponsor invitations (one membership per sponsor; points never mix)
 - Driver detail viewing and approval workflow foundations
 
 ### Reward catalog and points checkout

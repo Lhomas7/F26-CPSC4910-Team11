@@ -10,7 +10,7 @@ from PIL import Image
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from drivers.models import Driver
+from drivers.testing import create_driver, membership_status
 
 from ..models import (
     SponsorCompany,
@@ -27,7 +27,7 @@ class SelfProfileTests(APITestCase):
             username='driver.one',
             password='ExamplePassword123!',
         )
-        cls.driver = Driver.objects.create(
+        cls.driver = create_driver(
             user=cls.user,
             name='Driver One',
             sponsor=cls.sponsor,
@@ -37,7 +37,7 @@ class SelfProfileTests(APITestCase):
             username='driver.two',
             password='ExamplePassword123!',
         )
-        cls.other_driver = Driver.objects.create(
+        cls.other_driver = create_driver(
             user=cls.other_user,
             name='Driver Two',
             status='approved',
@@ -127,7 +127,7 @@ class SelfProfileTests(APITestCase):
         self.other_driver.refresh_from_db()
         self.assertEqual(self.user.username, 'updated.driver')
         self.assertEqual(self.driver.name, 'Updated Driver')
-        self.assertEqual(self.driver.sponsor, self.sponsor)
+        self.assertEqual(membership_status(self.driver, self.sponsor), 'approved')
         self.assertEqual(self.other_user.username, 'driver.two')
         self.assertEqual(self.other_driver.name, 'Driver Two')
 

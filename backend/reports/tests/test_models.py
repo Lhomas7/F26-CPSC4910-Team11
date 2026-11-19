@@ -7,7 +7,8 @@ from django.test import TestCase
 from django.utils import timezone
 
 from accounts.models import SponsorCompany
-from drivers.models import Driver
+from drivers.models import DriverSponsorMembership
+from drivers.testing import add_membership, create_driver
 from reports.models import CompletedSale
 
 
@@ -15,7 +16,7 @@ class CompletedSaleTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.sponsor = SponsorCompany.objects.create(name='Sales Test Sponsor')
-        cls.driver = Driver.objects.create(
+        cls.driver = create_driver(
             user=User.objects.create_user(username='sales-driver'),
             name='Sales Driver',
             sponsor=cls.sponsor,
@@ -92,8 +93,8 @@ class CompletedSaleTests(TestCase):
         sale = self.sale()
         sale.save()
         other = SponsorCompany.objects.create(name='Transferred Sponsor')
-        self.driver.sponsor = other
-        self.driver.save()
+        DriverSponsorMembership.objects.filter(driver=self.driver).update(status='dropped')
+        add_membership(self.driver, other)
         sale.refresh_from_db()
         sale.save()
         self.assertEqual(sale.sponsor_id, self.sponsor.pk)

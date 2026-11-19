@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from drivers.models import Driver
+from drivers.testing import create_driver
 
 from ..models import SponsorAccount, SponsorCompany
 from ..serializers.admin_users import AdminDriverDetailSerializer, AdminSponsorDetailSerializer
@@ -14,7 +14,7 @@ class ViewAsEligibilityResponseTests(TestCase):
         User = get_user_model()
         cls.company = SponsorCompany.objects.create(name='Eligibility Freight')
         cls.driver = User.objects.create_user(username='eligible.driver')
-        Driver.objects.create(user=cls.driver, name='Eligible Driver', sponsor=cls.company)
+        create_driver(user=cls.driver, name='Eligible Driver', sponsor=cls.company)
         cls.sponsor = User.objects.create_user(username='eligible.sponsor')
         SponsorAccount.objects.create(user=cls.sponsor, company=cls.company)
 

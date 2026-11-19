@@ -9,7 +9,7 @@ from accounts.models import (
     SponsorAccount,
     SponsorCompany,
 )
-from drivers.models import Driver
+from drivers.testing import create_driver
 
 
 class NewProductNotificationTests(APITestCase):
@@ -29,7 +29,7 @@ class NewProductNotificationTests(APITestCase):
                 username=username, is_active=kwargs.pop('is_active', True)
             )
             fields = {'sponsor': cls.company, 'status': 'approved', **kwargs}
-            return Driver.objects.create(user=user, name=username, **fields)
+            return create_driver(user=user, name=username, **fields)
 
         cls.approved = driver('alert.approved')
         cls.opted_out = driver('alert.opted.out')

@@ -32,8 +32,8 @@ def browse_catalog(*, user):
     elif role == 'driver':
         scope = driver_catalog_scope(user)
         # Reuse the ledger-derived balance; catalog reads never adjust points or
-        # create notifications. Catalog conversion never changes this balance.
-        balance = user.driver_profile.point_balance
+        # create notifications. Only the active sponsor's points are spendable here.
+        balance = user.driver_profile.point_balance_for(scope.company_id)
         cart_ids = cart_product_ids(user=user)
     else:
         raise PermissionDenied('Only driver and sponsor accounts can browse a catalog.')

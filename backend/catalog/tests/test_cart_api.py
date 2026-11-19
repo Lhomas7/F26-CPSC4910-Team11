@@ -1,10 +1,12 @@
-from django.contrib.auth import get_user_model
 from types import SimpleNamespace
-from uuid import uuid4
 from unittest.mock import patch
+from uuid import uuid4
+
+from django.contrib.auth import get_user_model
 from django.core import mail, signing
 from django.urls import reverse
 from django.utils import timezone
+from reports.models import CompletedSale
 from rest_framework.test import APIClient, APITestCase
 
 from accounts.middleware import (
@@ -21,9 +23,9 @@ from accounts.models import (
 )
 from accounts.services.notify import notify_reward_purchase
 from catalog.models import CartItem, CatalogProduct, Redemption, RedemptionItem
-from drivers.models import Driver, PointTransaction
-from drivers.services.membership import reassign_driver_sponsor, remove_driver_from_sponsor
-from reports.models import CompletedSale
+from drivers.models import Driver, DriverSponsorMembership, PointTransaction
+from drivers.services.membership import admin_remove_sponsor, remove_driver_from_sponsor
+from drivers.testing import add_membership, create_driver
 
 
 class DriverCartApiTests(APITestCase):
@@ -41,7 +43,7 @@ class DriverCartApiTests(APITestCase):
         cls.admin = User.objects.create_user(username='cart.admin', is_staff=True)
         MFASettings.objects.create(user=cls.admin, totp_enabled=True)
         cls.driver_user = User.objects.create_user(username='cart.driver')
-        cls.driver = Driver.objects.create(
+        cls.driver = create_driver(
             user=cls.driver_user, name='Cart Driver', sponsor=cls.company, status='approved'
         )
         cls.mug = CatalogProduct.objects.create(sponsor=cls.company, name='Mug', price_usd='12.50')
@@ -139,12 +141,12 @@ class DriverCartApiTests(APITestCase):
         self.client.force_authenticate(get_user_model().objects.get(pk=self.driver_user.pk))
 
     def test_pending_and_unassigned_drivers_are_refused_with_codes(self):
-        Driver.objects.filter(pk=self.driver.pk).update(status='pending')
+        DriverSponsorMembership.objects.filter(driver=self.driver).update(status='pending')
         self.refresh_login()
         response = self.client.get(self.cart_url)
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.data['code'], 'driver_not_approved')
-        Driver.objects.filter(pk=self.driver.pk).update(sponsor=None)
+        DriverSponsorMembership.objects.filter(driver=self.driver).delete()
         self.refresh_login()
         response = self.client.get(self.cart_url)
         self.assertEqual(response.status_code, 403)
@@ -195,7 +197,7 @@ class DriverCartApiTests(APITestCase):
 
     def test_clear_cart_leaves_other_drivers_carts_alone(self):
         other_user = get_user_model().objects.create_user(username='cart.other.driver')
-        other = Driver.objects.create(
+        other = create_driver(
             user=other_user, name='Other Driver', sponsor=self.company, status='approved'
         )
         CartItem.objects.create(driver=other, product=self.mug)
@@ -206,28 +208,36 @@ class DriverCartApiTests(APITestCase):
 
     def test_pending_drivers_cannot_clear_a_cart(self):
         CartItem.objects.create(driver=self.driver, product=self.mug)
-        Driver.objects.filter(pk=self.driver.pk).update(status='pending')
+        DriverSponsorMembership.objects.filter(driver=self.driver).update(status='pending')
         self.refresh_login()
         response = self.client.delete(self.cart_url)
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.data['code'], 'driver_not_approved')
         self.assertTrue(CartItem.objects.filter(driver=self.driver).exists())
 
-    def test_leaving_sponsor_empties_the_cart(self):
+    def test_leaving_sponsor_empties_only_that_sponsors_cart_items(self):
+        add_membership(self.driver, self.other_company)
         CartItem.objects.create(driver=self.driver, product=self.mug)
+        CartItem.objects.create(driver=self.driver, product=self.foreign)
         remove_driver_from_sponsor(
             driver=self.driver, changed_by_user=self.sponsor, reason='Left the company'
         )
-        self.assertFalse(CartItem.objects.filter(driver=self.driver).exists())
+        self.assertEqual(
+            list(CartItem.objects.filter(driver=self.driver).values_list('product', flat=True)),
+            [self.foreign.pk],
+        )
 
-    def test_admin_reassignment_empties_the_cart(self):
+    def test_admin_removal_empties_that_sponsors_cart_items(self):
         CartItem.objects.create(driver=self.driver, product=self.mug)
-        reassign_driver_sponsor(
-            driver=self.driver, new_sponsor=self.other_company, changed_by_user=self.admin
+        admin_remove_sponsor(
+            driver=self.driver,
+            sponsor_id=self.company.pk,
+            changed_by_user=self.admin,
+            reason='Moved on',
         )
         self.assertFalse(CartItem.objects.filter(driver=self.driver).exists())
 
-    def test_stale_rows_from_another_sponsor_never_show(self):
+    def test_another_sponsors_items_stay_in_the_cart_but_never_show(self):
         CartItem.objects.create(driver=self.driver, product=self.foreign)
         self.assertEqual(self.client.get(self.cart_url).data['item_count'], 0)
 
@@ -269,7 +279,7 @@ class DriverCartApiTests(APITestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['code'], 'cart_has_unavailable')
-        self.assertEqual(Driver.objects.get(pk=self.driver.pk).point_balance, 3000)
+        self.assertEqual(Driver.objects.get(pk=self.driver.pk).point_balance_for(self.company), 3000)
         self.assertTrue(CartItem.objects.filter(driver=self.driver, product=self.mug).exists())
 
     def test_sponsor_catalog_has_no_cart_state(self):
@@ -291,7 +301,7 @@ class CartCheckoutApiTests(APITestCase):
         cls.admin = User.objects.create_user(username='checkout.admin', is_staff=True)
         MFASettings.objects.create(user=cls.admin, totp_enabled=True)
         cls.driver_user = User.objects.create_user(username='checkout.driver')
-        cls.driver = Driver.objects.create(
+        cls.driver = create_driver(
             user=cls.driver_user, name='Checkout Driver', sponsor=cls.company, status='approved'
         )
         cls.mug = CatalogProduct.objects.create(sponsor=cls.company, name='Mug', price_usd='12.50')
@@ -325,7 +335,7 @@ class CartCheckoutApiTests(APITestCase):
             return client.post(self.url, {'review_token': review.data['review_token']}, format='json')
 
     def balance(self):
-        return Driver.objects.get(pk=self.driver.pk).point_balance
+        return Driver.objects.get(pk=self.driver.pk).point_balance_for(self.company)
 
     def test_checkout_spends_points_and_empties_the_cart(self):
         self.fill(self.mug, self.jacket)
@@ -447,10 +457,10 @@ class CartCheckoutApiTests(APITestCase):
         self.assertEqual(receipt.status_code, 200)
         self.assertEqual(receipt.data['purchase']['reference'], bought.data['purchase']['reference'])
         self.assertEqual(receipt.data['purchase']['line_items'], [{'name': 'Mug', 'unit_points': 1250, 'quantity': 1}])
-        Driver.objects.filter(pk=self.driver.pk).update(sponsor=None)
+        DriverSponsorMembership.objects.filter(driver=self.driver).delete()
         self.assertEqual(self.client.get(url).status_code, 200)
         other_user = get_user_model().objects.create_user(username='lookup.other')
-        Driver.objects.create(user=other_user, name='Other', sponsor=self.company, status='approved')
+        create_driver(user=other_user, name='Other', sponsor=self.company, status='approved')
         self.client.force_authenticate(other_user)
         self.assertEqual(self.client.get(url).status_code, 404)
 
@@ -490,13 +500,13 @@ class CartCheckoutApiTests(APITestCase):
             'review_token': token, 'idempotency_key': str(key),
         }, format='json')
         self.assertEqual(bought.status_code, 200)
-        Driver.objects.filter(pk=self.driver.pk).update(sponsor=None)
+        DriverSponsorMembership.objects.filter(driver=self.driver).delete()
         cancel_url = reverse('catalog:checkout-cancel', args=[key])
         completed = self.client.post(cancel_url, {}, format='json')
         self.assertEqual(completed.data, {'status': 'completed', 'purchase': bought.data['purchase']})
 
         other_user = get_user_model().objects.create_user(username='cancel.other')
-        Driver.objects.create(user=other_user, name='Other', sponsor=self.company, status='approved')
+        create_driver(user=other_user, name='Other', sponsor=self.company, status='approved')
         self.client.force_authenticate(other_user)
         self.assertEqual(self.client.post(cancel_url, {}, format='json').data, {'status': 'cancelled'})
         self.assertEqual(self.balance(), 4750)

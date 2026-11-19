@@ -10,8 +10,9 @@ from django.db import IntegrityError, close_old_connections, connection, transac
 from django.test import TestCase, TransactionTestCase, skipUnlessDBFeature
 from django.utils import timezone
 
-from drivers.models import Driver, PointTransaction
+from drivers.models import PointTransaction
 from drivers.services import PointAdjustmentError, adjust_driver_points
+from drivers.testing import create_driver
 
 from ..models import SponsorAccount, SponsorCompany
 from ..serializers.registration import RegistrationSerializer
@@ -25,7 +26,7 @@ class DatabaseContractTests(TestCase):
         cls.sponsor = User.objects.create_user(username='compat.sponsor')
         SponsorAccount.objects.create(user=cls.sponsor, company=cls.company)
         user = User.objects.create_user(username='compat.driver', email='Known.Driver@example.com')
-        cls.driver = Driver.objects.create(
+        cls.driver = create_driver(
             user=user,
             name='Compatibility Driver',
             sponsor=cls.company,
@@ -58,7 +59,7 @@ class DatabaseContractTests(TestCase):
                     )
                     raise RuntimeError('Rollback this operation')
             notify.assert_not_called()
-        self.assertEqual(self.driver.point_balance, 100)
+        self.assertEqual(self.driver.point_balance_for(self.company), 100)
         self.assertEqual(PointTransaction.objects.count(), 1)
 
     def test_timestamp_ties_use_primary_key_for_stable_history_order(self):
@@ -100,7 +101,7 @@ class ConcurrentPointDeductionTests(TransactionTestCase):
         sponsor = User.objects.create_user(username='concurrent.sponsor')
         SponsorAccount.objects.create(user=sponsor, company=company)
         user = User.objects.create_user(username='concurrent.driver')
-        driver = Driver.objects.create(
+        driver = create_driver(
             user=user, name='Concurrent Driver', sponsor=company, status='approved'
         )
         PointTransaction.objects.create(
@@ -141,5 +142,5 @@ class ConcurrentPointDeductionTests(TransactionTestCase):
             futures = [pool.submit(deduct) for _ in range(2)]
             outcomes = [future.result(timeout=20) for future in futures]
         self.assertCountEqual(outcomes, ['accepted', 'insufficient_points'])
-        self.assertEqual(driver.point_balance, 25)
+        self.assertEqual(driver.point_balance_for(company), 25)
         self.assertEqual(driver.point_transactions.count(), 2)

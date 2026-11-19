@@ -6,11 +6,13 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from drivers.models import Driver
+from drivers.models import DriverStatusChange, PointTransaction
+from drivers.testing import add_membership, create_driver, membership_status
 
 from ..middleware import IMPERSONATION_STARTED_KEY
 from ..models import (
     AdminImpersonationEvent,
+    Notification,
     RegistrationSettings,
     SponsorAccount,
     SponsorCompany,
@@ -35,7 +37,7 @@ class AdminUserListTests(APITestCase):
             username='marcus.driver',
             password='ExamplePassword123!',
         )
-        Driver.objects.create(
+        create_driver(
             user=cls.driver_user,
             name='Marcus Alvarez',
             sponsor=cls.company,
@@ -70,7 +72,7 @@ class AdminUserListTests(APITestCase):
         )
         driver = next(user for user in response.data if user['role'] == 'driver')
         self.assertEqual(driver['display_name'], 'Marcus Alvarez')
-        self.assertEqual(driver['sponsor_org']['name'], 'Palmetto Freight')
+        self.assertEqual([org['name'] for org in driver['sponsor_orgs']], ['Palmetto Freight'])
         self.assertNotIn('orphan.user', [user['username'] for user in response.data])
 
     def test_filters_by_role_and_searches_name_or_username(self):
@@ -107,7 +109,7 @@ class AdminUserCreationTests(APITestCase):
             username='ordinary.driver',
             password='ExamplePassword123!',
         )
-        Driver.objects.create(user=cls.driver_user, name='Ordinary Driver')
+        create_driver(user=cls.driver_user, name='Ordinary Driver')
 
     def payload(self, **overrides):
         data = {
@@ -156,8 +158,38 @@ class AdminUserCreationTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         user = get_user_model().objects.get(username='jamie.rivera')
         self.assertEqual(user.driver_profile.name, 'Jamie Rivera')
-        self.assertEqual(user.driver_profile.sponsor, self.company)
+        # Admin assignments are approved immediately and audited.
+        self.assertEqual(membership_status(user.driver_profile, self.company), 'approved')
+        self.assertTrue(
+            DriverStatusChange.objects.filter(
+                driver=user.driver_profile,
+                sponsor=self.company,
+                action=DriverStatusChange.ASSIGNED,
+                changed_by_user=self.admin,
+            ).exists()
+        )
         self.assertEqual(response.data['role'], 'driver')
+        # A brand-new account gets its welcome email, not a separate "added" notice.
+        self.assertFalse(Notification.objects.filter(user=user).exists())
+
+    def test_creates_driver_in_several_sponsors(self):
+        other = SponsorCompany.objects.create(name='Blue Ridge Logistics')
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.post(
+            self.user_url,
+            self.payload(sponsor_org_id=None, sponsor_org_ids=[self.company.id, other.id]),
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        driver = get_user_model().objects.get(username='jamie.rivera').driver_profile
+        self.assertEqual(membership_status(driver, self.company), 'approved')
+        self.assertEqual(membership_status(driver, other), 'approved')
+        self.assertEqual(
+            [org['name'] for org in response.data['sponsor_orgs']],
+            ['Blue Ridge Logistics', 'Palmetto Freight'],
+        )
 
     def test_rejects_weak_passwords_with_every_problem_under_the_password_field(self):
         self.client.force_authenticate(self.admin)
@@ -202,7 +234,9 @@ class AdminUserCreationTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         user = get_user_model().objects.get(username='sponsor.user')
         self.assertEqual(user.sponsor_account.company, self.company)
-        self.assertEqual(response.data['sponsor_org']['name'], 'Palmetto Freight')
+        self.assertEqual(
+            [org['name'] for org in response.data['sponsor_orgs']], ['Palmetto Freight']
+        )
 
     def test_creates_staff_superuser_for_admin_role(self):
         self.client.force_authenticate(self.admin)
@@ -280,7 +314,7 @@ class AdminAccountDetailTests(APITestCase):
             username='ordinary.driver',
             password='ExamplePassword123!',
         )
-        Driver.objects.create(user=cls.driver_user, name='Ordinary Driver')
+        create_driver(user=cls.driver_user, name='Ordinary Driver')
 
     def detail_url(self, user=None):
         return reverse(
@@ -418,7 +452,7 @@ class AdminSponsorDetailTests(APITestCase):
         cls.driver_user = get_user_model().objects.create_user(
             username='ordinary.driver', password='ExamplePassword123!'
         )
-        Driver.objects.create(user=cls.driver_user, name='Ordinary Driver')
+        create_driver(user=cls.driver_user, name='Ordinary Driver')
 
     def detail_url(self, user=None):
         return reverse(
@@ -510,7 +544,7 @@ class AdminDriverDetailTests(APITestCase):
             password='ExamplePassword123!',
             email='tasha@example.com',
         )
-        Driver.objects.create(
+        create_driver(
             user=cls.driver_user,
             name='Tasha Greene',
             sponsor=cls.company,
@@ -535,8 +569,36 @@ class AdminDriverDetailTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['display_name'], 'Tasha Greene')
         self.assertEqual(response.data['role'], 'driver')
-        self.assertEqual(response.data['sponsor_org']['name'], 'Palmetto Freight')
+        self.assertEqual(
+            response.data['sponsor_memberships'],
+            [
+                {
+                    'sponsor': {'id': self.company.id, 'name': 'Palmetto Freight'},
+                    'status': 'approved',
+                    'point_balance': 0,
+                    'updated_at': response.data['sponsor_memberships'][0]['updated_at'],
+                }
+            ],
+        )
         self.assertIsNone(response.data['profile_picture_url'])
+
+    def test_lists_every_sponsor_with_its_own_status_and_balance(self):
+        driver = self.driver_user.driver_profile
+        add_membership(driver, self.other_company, 'rejected')
+        PointTransaction.objects.create(
+            driver=driver, sponsor=self.company, point_change=40, reason='Bonus'
+        )
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.get(self.detail_url())
+
+        self.assertEqual(
+            [
+                (row['sponsor']['name'], row['status'], row['point_balance'])
+                for row in response.data['sponsor_memberships']
+            ],
+            [('Blue Ridge Logistics', 'rejected', 0), ('Palmetto Freight', 'approved', 40)],
+        )
 
     def test_non_admin_cannot_view_or_edit_driver(self):
         self.client.force_authenticate(self.sponsor_user)
@@ -556,7 +618,7 @@ class AdminDriverDetailTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_admin_can_update_driver_and_remove_sponsor(self):
+    def test_admin_can_update_driver(self):
         self.client.force_authenticate(self.admin)
 
         response = self.client.patch(
@@ -565,7 +627,6 @@ class AdminDriverDetailTests(APITestCase):
                 'display_name': 'Tasha Green',
                 'username': 'tasha.green',
                 'email': 'tasha.green@example.com',
-                'sponsor_org_id': None,
                 'is_active': False,
                 'current_password': 'ExamplePassword123!',
             },
@@ -576,20 +637,114 @@ class AdminDriverDetailTests(APITestCase):
         self.driver_user.refresh_from_db()
         self.driver_user.driver_profile.refresh_from_db()
         self.assertEqual(self.driver_user.driver_profile.name, 'Tasha Green')
-        self.assertIsNone(self.driver_user.driver_profile.sponsor)
+        self.assertEqual(
+            membership_status(self.driver_user.driver_profile, self.company), 'approved'
+        )
         self.assertFalse(self.driver_user.is_active)
 
-    def test_admin_can_reassign_driver_to_another_sponsor(self):
-        self.client.force_authenticate(self.admin)
-
-        response = self.client.patch(
-            self.detail_url(),
-            {'sponsor_org_id': self.other_company.id},
-            format='json',
+    def assign_url(self):
+        return reverse(
+            'accounts:admin-driver-sponsor-assign', kwargs={'user_id': self.driver_user.id}
         )
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['sponsor_org']['name'], 'Blue Ridge Logistics')
+    def remove_url(self, company):
+        return reverse(
+            'accounts:admin-driver-sponsor-remove',
+            kwargs={'user_id': self.driver_user.id, 'sponsor_id': company.id},
+        )
+
+    def test_admin_adds_a_driver_to_another_sponsor_approved_immediately(self):
+        third = SponsorCompany.objects.create(name='Coastal Carriers')
+        driver = self.driver_user.driver_profile
+        add_membership(driver, third, 'pending')
+        self.client.force_authenticate(self.admin)
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                self.assign_url(),
+                {'sponsor_ids': [self.other_company.id, third.id, self.company.id]},
+                format='json',
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.assertEqual(
+            [(row['sponsor']['name'], row['status']) for row in response.data['sponsor_memberships']],
+            [
+                ('Blue Ridge Logistics', 'approved'),
+                ('Coastal Carriers', 'approved'),
+                ('Palmetto Freight', 'approved'),
+            ],
+        )
+        # Only the two new approvals are audited; the existing one is untouched.
+        assigned = DriverStatusChange.objects.filter(
+            driver=driver, action=DriverStatusChange.ASSIGNED, changed_by_user=self.admin
+        )
+        self.assertCountEqual(
+            assigned.values_list('sponsor__name', flat=True),
+            ['Blue Ridge Logistics', 'Coastal Carriers'],
+        )
+        self.assertEqual(response.data['status_history'][0]['action'], 'assigned')
+
+    def test_admin_removes_one_sponsor_without_touching_the_others(self):
+        driver = self.driver_user.driver_profile
+        add_membership(driver, self.other_company)
+        self.client.force_authenticate(self.admin)
+
+        missing_reason = self.client.post(self.remove_url(self.other_company), {}, format='json')
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                self.remove_url(self.other_company),
+                {'reason': 'Contract ended'},
+                format='json',
+            )
+
+        self.assertEqual(missing_reason.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.assertEqual(membership_status(driver, self.other_company), 'dropped')
+        self.assertEqual(membership_status(driver, self.company), 'approved')
+        record = DriverStatusChange.objects.get(driver=driver, action=DriverStatusChange.REMOVED)
+        self.assertEqual(
+            (record.sponsor, record.reason, record.changed_by_user),
+            (self.other_company, 'Contract ended', self.admin),
+        )
+        self.assertEqual(response.data['status_history'][0]['reason'], 'Contract ended')
+        # Removing a sponsor the driver is not active with is a 404.
+        again = self.client.post(
+            self.remove_url(self.other_company), {'reason': 'Again'}, format='json'
+        )
+        self.assertEqual(again.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_admin_removing_a_pending_application_rejects_it(self):
+        driver = self.driver_user.driver_profile
+        add_membership(driver, self.other_company, 'pending')
+        self.client.force_authenticate(self.admin)
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                self.remove_url(self.other_company), {'reason': 'Incomplete'}, format='json'
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.assertEqual(membership_status(driver, self.other_company), 'rejected')
+        self.assertEqual(
+            DriverStatusChange.objects.get(driver=driver).action, DriverStatusChange.REMOVED
+        )
+        notice = Notification.objects.get(user=self.driver_user)
+        self.assertIn('declined your application', notice.message)
+
+    def test_only_admins_assign_or_remove_sponsors(self):
+        self.client.force_authenticate(self.sponsor_user)
+
+        assign = self.client.post(
+            self.assign_url(), {'sponsor_ids': [self.other_company.id]}, format='json'
+        )
+        remove = self.client.post(
+            self.remove_url(self.company), {'reason': 'No'}, format='json'
+        )
+
+        self.assertEqual(assign.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(remove.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(membership_status(self.driver_user.driver_profile, self.company), 'approved')
 
     def test_rejects_invalid_or_duplicate_identity_fields(self):
         get_user_model().objects.create_user(username='existing.user', email='existing@example.com')
@@ -626,7 +781,7 @@ class AdminImpersonationTests(APITestCase):
             password='ExamplePassword123!',
             email='driver@example.com',
         )
-        Driver.objects.create(user=self.driver_user, name='Drew Driver')
+        create_driver(user=self.driver_user, name='Drew Driver')
         self.company = SponsorCompany.objects.create(name='Palmetto Freight')
         self.sponsor_user = User.objects.create_user(
             username='sponsor.target',
@@ -688,7 +843,7 @@ class AdminImpersonationTests(APITestCase):
         self.sponsor_user.mfa_settings.delete()
         self.company.driver_mfa_required = True
         self.company.save(update_fields=['driver_mfa_required'])
-        Driver.objects.filter(user=self.driver_user).update(sponsor=self.company)
+        add_membership(self.driver_user.driver_profile, self.company)
 
         for target in (self.sponsor_user, self.driver_user):
             with self.subTest(role=target.username):
@@ -811,7 +966,7 @@ class AdminRegistrationSettingsTests(APITestCase):
             username='marcus.driver',
             password='ExamplePassword123!',
         )
-        Driver.objects.create(user=cls.driver_user, name='Marcus Alvarez', sponsor=company)
+        create_driver(user=cls.driver_user, name='Marcus Alvarez', sponsor=company)
 
     def test_admin_reads_default_setting(self):
         self.client.force_authenticate(self.admin)

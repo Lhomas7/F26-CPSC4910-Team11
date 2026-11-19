@@ -5,7 +5,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
-from drivers.models import Driver
+from drivers.testing import create_driver
 
 from ..middleware import (
     IMPERSONATION_ROLE_KEY,
@@ -34,13 +34,13 @@ class NotificationCenterTests(APITestCase):
         cls.driver_user = User.objects.create_user(
             username='driver.one', password='ExamplePassword123!', email='driver@example.com'
         )
-        cls.driver = Driver.objects.create(
+        cls.driver = create_driver(
             user=cls.driver_user, name='Driver One', sponsor=cls.company, status='approved'
         )
         cls.other_user = User.objects.create_user(
             username='driver.two', password='ExamplePassword123!'
         )
-        Driver.objects.create(user=cls.other_user, name='Driver Two')
+        create_driver(user=cls.other_user, name='Driver Two')
         cls.sponsor = User.objects.create_user(
             username='sponsor.one', password='ExamplePassword123!'
         )

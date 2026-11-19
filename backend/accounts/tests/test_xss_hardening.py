@@ -5,8 +5,8 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from drivers.models import Driver
 from drivers.services.points import adjust_driver_points
+from drivers.testing import create_driver
 
 from ..models import Notification, SponsorAccount, SponsorCompany
 
@@ -21,7 +21,7 @@ class XssHardeningTests(APITestCase):
         cls.sponsor = User.objects.create_user(username='xss.sponsor', password='x')
         SponsorAccount.objects.create(user=cls.sponsor, company=cls.company)
         cls.driver_user = User.objects.create_user(username='xss.driver', password='x')
-        cls.driver = Driver.objects.create(
+        cls.driver = create_driver(
             user=cls.driver_user, name='Escape Driver', sponsor=cls.company, status='approved'
         )
 

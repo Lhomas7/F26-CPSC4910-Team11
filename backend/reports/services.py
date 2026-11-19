@@ -6,7 +6,7 @@ from django.db.models.functions import Coalesce
 from rest_framework.exceptions import ValidationError
 
 from accounts.models import SponsorCompany
-from drivers.models import Driver
+from drivers.models import Driver, DriverSponsorMembership
 
 from .models import CompletedSale
 
@@ -52,7 +52,7 @@ def parse_sales_report_scope(params):
         driver_id
         and not Driver.objects.filter(pk=driver_id)
         .filter(
-            Q(sponsor_id=sponsor_id) | Q(completed_sales__sponsor_id=sponsor_id),
+            _in_sponsor(sponsor_id),
         )
         .exists()
     ):
@@ -112,6 +112,14 @@ def sales_report_summary(scope):
     )
 
 
+def _in_sponsor(sponsor_id):
+    """Drivers currently with the sponsor, or who bought from it in the past."""
+    return Q(
+        memberships__sponsor_id=sponsor_id,
+        memberships__status__in=DriverSponsorMembership.ACTIVE_STATUSES,
+    ) | Q(completed_sales__sponsor_id=sponsor_id)
+
+
 def report_options(sponsor_id=None):
     sponsors = SponsorCompany.objects.order_by('name', 'id').values('id', 'name')
     drivers = Driver.objects.none()
@@ -120,7 +128,7 @@ def report_options(sponsor_id=None):
             raise ValidationError({'sponsor_id': 'Choose an existing sponsor organization.'})
         drivers = (
             Driver.objects.filter(
-                Q(sponsor_id=sponsor_id) | Q(completed_sales__sponsor_id=sponsor_id),
+                _in_sponsor(sponsor_id),
             )
             .distinct()
             .select_related('user')

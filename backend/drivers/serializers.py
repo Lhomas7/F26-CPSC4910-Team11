@@ -8,9 +8,17 @@ from .services.reasons import MAX_REASON_LENGTH, normalize_reason
 
 
 class DriverSerializer(serializers.ModelSerializer):
+    """A driver as one sponsor sees them: only that sponsor's status and points.
+
+    The sponsor comes from the context, and the view annotates the driver with
+    that membership's status and balance.
+    """
+
     username = serializers.CharField(source='user.username', read_only=True)
-    point_balance = serializers.SerializerMethodField()
-    sponsor_name = serializers.CharField(source='sponsor.name', read_only=True, default=None)
+    sponsor = serializers.SerializerMethodField()
+    sponsor_name = serializers.SerializerMethodField()
+    status = serializers.CharField(source='membership_status', read_only=True)
+    point_balance = serializers.IntegerField(source='calculated_point_balance', read_only=True)
 
     class Meta:
         model = Driver
@@ -26,9 +34,11 @@ class DriverSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
-    def get_point_balance(self, driver):
-        annotated = getattr(driver, 'calculated_point_balance', None)
-        return annotated if annotated is not None else driver.point_balance
+    def get_sponsor(self, driver):
+        return self.context['sponsor'].pk
+
+    def get_sponsor_name(self, driver):
+        return self.context['sponsor'].name
 
 
 class PointAdjustmentRequestSerializer(serializers.Serializer):
@@ -100,7 +110,7 @@ class DriverRemovalRequestSerializer(serializers.Serializer):
 class DriverStatusChangeSerializer(serializers.ModelSerializer):
     class Meta:
         model = DriverStatusChange
-        fields = ('id', 'driver', 'action', 'reason', 'changed_at')
+        fields = ('id', 'driver', 'sponsor', 'action', 'reason', 'changed_at')
         read_only_fields = fields
 
 

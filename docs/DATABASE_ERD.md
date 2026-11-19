@@ -43,10 +43,17 @@ erDiagram
     DRIVERS_DRIVER {
         bigint id PK
         varchar name
-        varchar status
-        bigint sponsor_id FK "nullable"
         int user_id FK, UK
         varchar profile_picture "nullable"
+    }
+
+    DRIVERS_DRIVERSPONSORMEMBERSHIP {
+        bigint id PK
+        bigint driver_id FK
+        bigint sponsor_id FK
+        varchar status "pending, approved, rejected, dropped"
+        datetime created_at
+        datetime updated_at
     }
 
     ACCOUNTS_MFASETTINGS {
@@ -154,7 +161,8 @@ erDiagram
     AUTH_USER o|--o{ ACCOUNTS_ADMINIMPERSONATIONEVENT : "starts view-as events"
     AUTH_USER o|--o{ ACCOUNTS_ADMINIMPERSONATIONEVENT : "is view-as target"
     ACCOUNTS_SPONSORCOMPANY ||--o{ ACCOUNTS_SPONSORACCOUNT : "employs"
-    ACCOUNTS_SPONSORCOMPANY o|--o{ DRIVERS_DRIVER : "sponsors"
+    ACCOUNTS_SPONSORCOMPANY ||--o{ DRIVERS_DRIVERSPONSORMEMBERSHIP : "sponsors"
+    DRIVERS_DRIVER ||--o{ DRIVERS_DRIVERSPONSORMEMBERSHIP : "belongs to"
     DRIVERS_DRIVER ||--o{ ACCOUNTS_DRIVERNOTIFICATION : "receives"
 ```
 
@@ -259,10 +267,17 @@ erDiagram
     DRIVERS_DRIVER {
         bigint id PK
         varchar name
-        varchar status
-        bigint sponsor_id FK "nullable"
         int user_id FK, UK
         varchar profile_picture "nullable"
+    }
+
+    DRIVERS_DRIVERSPONSORMEMBERSHIP {
+        bigint id PK
+        bigint driver_id FK
+        bigint sponsor_id FK
+        varchar status "pending, approved, rejected, dropped"
+        datetime created_at
+        datetime updated_at
     }
 
     ACCOUNTS_MFASETTINGS {
@@ -369,7 +384,8 @@ erDiagram
     AUTH_USER o|--o{ ACCOUNTS_ADMINIMPERSONATIONEVENT : "starts view-as events"
     AUTH_USER o|--o{ ACCOUNTS_ADMINIMPERSONATIONEVENT : "is view-as target"
     ACCOUNTS_SPONSORCOMPANY ||--o{ ACCOUNTS_SPONSORACCOUNT : "employs"
-    ACCOUNTS_SPONSORCOMPANY o|--o{ DRIVERS_DRIVER : "sponsors"
+    ACCOUNTS_SPONSORCOMPANY ||--o{ DRIVERS_DRIVERSPONSORMEMBERSHIP : "sponsors"
+    DRIVERS_DRIVER ||--o{ DRIVERS_DRIVERSPONSORMEMBERSHIP : "belongs to"
     DRIVERS_DRIVER ||--o{ ACCOUNTS_DRIVERNOTIFICATION : "receives"
 
     AUTH_USER ||--o{ AUTH_USER_GROUPS : "belongs through"

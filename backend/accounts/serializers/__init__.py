@@ -5,6 +5,8 @@ from .admin_password_reset import (
 from .admin_users import (
     AdminAccountDetailSerializer,
     AdminDriverDetailSerializer,
+    AdminDriverSponsorAssignSerializer,
+    AdminDriverSponsorRemoveSerializer,
     AdminSponsorDetailSerializer,
     AdminUserCreateSerializer,
     AdminUserListSerializer,
@@ -53,6 +55,8 @@ __all__ = [
     'AdminPasswordResetRequestSerializer',
     'AdminAccountDetailSerializer',
     'AdminDriverDetailSerializer',
+    'AdminDriverSponsorAssignSerializer',
+    'AdminDriverSponsorRemoveSerializer',
     'AdminSponsorDetailSerializer',
     'AdminUserCreateSerializer',
     'AdminUserListSerializer',

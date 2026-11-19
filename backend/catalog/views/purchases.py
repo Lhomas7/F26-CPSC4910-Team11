@@ -11,7 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from accounts.permissions import DriverAccount, MFAEnrolled, SponsorAccount
 from catalog.models import Redemption, RedemptionItem
 from catalog.serializers.purchases import PurchaseDateFilterSerializer, PurchaseHistorySerializer
-from drivers.models import Driver
+from drivers.models import DriverSponsorMembership
 
 
 class PurchaseHistoryPagination(PageNumberPagination):
@@ -60,11 +60,14 @@ class SponsorPurchaseView(PurchaseView):
         queryset = super().get_queryset()
         company_id = self.request.user.sponsor_account.company_id
         driver_id = self.kwargs['driver_id']
-        get_object_or_404(Driver.objects.only('pk'), pk=driver_id, sponsor_id=company_id)
         # Current membership grants access only to purchases made under this company.
-        return queryset.filter(
-            driver_id=driver_id, driver__sponsor_id=company_id, sponsor_id=company_id
+        get_object_or_404(
+            DriverSponsorMembership.objects.only('pk'),
+            driver_id=driver_id,
+            sponsor_id=company_id,
+            status__in=DriverSponsorMembership.ACTIVE_STATUSES,
         )
+        return queryset.filter(driver_id=driver_id, sponsor_id=company_id)
 
 
 class SponsorPurchaseHistoryView(ListModelMixin, SponsorPurchaseView):

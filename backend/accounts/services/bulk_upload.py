@@ -28,7 +28,7 @@ from django.core.mail import EmailMessage
 from django.db import IntegrityError, transaction
 from rest_framework import serializers
 
-from drivers.models import Driver
+from drivers.models import Driver, DriverSponsorMembership, DriverStatusChange
 from drivers.services import (
     MAX_POINT_ADJUSTMENT,
     PointAdjustmentError,
@@ -519,9 +519,11 @@ class BulkUploader:
 
         if existing is None:
             user = self._new_user(data)
-            driver = Driver.objects.create(
-                user=user, name=user.get_full_name(), sponsor=company, status='approved'
+            driver = Driver.objects.create(user=user, name=user.get_full_name())
+            membership = DriverSponsorMembership.objects.create(
+                driver=driver, sponsor=company, status=DriverSponsorMembership.APPROVED
             )
+            self._audit_acceptance(membership)
             self._count('drivers_created')
             status, message = 'created', f'New driver account, accepted into {company.name}.'
             invite = (user, company.name, 'driver')
@@ -540,7 +542,7 @@ class BulkUploader:
     def _join_existing_driver(self, user, company):
         driver = (
             Driver.objects.select_for_update()
-            .select_related('user', 'sponsor')
+            .select_related('user')
             .filter(user=user)
             .first()
         )
@@ -550,36 +552,33 @@ class BulkUploader:
                 'driver.',
                 'email',
             )
-        if driver.sponsor_id is None:
-            driver.sponsor = company
-            driver.status = 'approved'
-            driver.save(update_fields=['sponsor', 'status'])
-            self._count('drivers_added')
-            transaction.on_commit(
-                lambda: notify_driver_added(driver, company.name),
-                robust=True,
-            )
-            return driver, 'updated', f'Existing driver accepted into {company.name}.'
-        if driver.sponsor_id != company.id:
-            if not self.is_admin:
-                # Same answer as any other unusable account, so a sponsor cannot
-                # learn which organization another driver belongs to.
-                raise RowError(
-                    'This email address is already used by an account that cannot be added as a '
-                    'driver.',
-                    'email',
-                )
-            raise RowError(
-                f'This driver already belongs to {driver.sponsor.name}. Move them on the Users '
-                'page first.',
-                'email',
-            )
-        if driver.status != 'approved':
-            driver.status = 'approved'
-            driver.save(update_fields=['status'])
-            self._count('drivers_added')
+        membership, created = DriverSponsorMembership.objects.select_for_update().get_or_create(
+            driver=driver, sponsor=company
+        )
+        if membership.status == DriverSponsorMembership.APPROVED:
+            return driver, 'unchanged', f'Already an approved driver in {company.name}.'
+        was_pending = membership.status == DriverSponsorMembership.PENDING
+        membership.status = DriverSponsorMembership.APPROVED
+        membership.save(update_fields=['status', 'updated_at'])
+        self._audit_acceptance(membership)
+        self._count('drivers_added')
+        if was_pending and not created:
             return driver, 'updated', f'Pending driver accepted into {company.name}.'
-        return driver, 'unchanged', f'Already an approved driver in {company.name}.'
+        # Joining another sponsor never changes the driver's other memberships.
+        transaction.on_commit(
+            lambda: notify_driver_added(driver, company.name),
+            robust=True,
+        )
+        return driver, 'updated', f'Existing driver accepted into {company.name}.'
+
+    def _audit_acceptance(self, membership):
+        DriverStatusChange.objects.create(
+            driver=membership.driver,
+            sponsor=membership.sponsor,
+            changed_by_user=self.actor,
+            action=DriverStatusChange.ASSIGNED if self.is_admin else DriverStatusChange.APPROVED,
+            reason='Accepted by bulk upload.',
+        )
 
     def _award_points(self, driver, company, points, data):
         reason = data.get('reason') or DEFAULT_POINTS_REASON

@@ -1,4 +1,4 @@
-from django.db.models import IntegerField, Sum, Value
+from django.db.models import IntegerField, OuterRef, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
@@ -8,12 +8,13 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.response import Response
 
-from accounts.models import DriverNotificationPreferences, SponsorDriverAlert
+from accounts.models import DriverNotificationPreferences, SponsorCompany, SponsorDriverAlert
 from accounts.permissions import DriverOrSponsor, MFAEnrolled, SponsorAccount
 from accounts.serializers import DriverAlertSettingsSerializer
 from accounts.services import get_account_type
 
-from .models import Driver, PointTransaction, SponsorBehavior
+from .active_sponsor import display_sponsor_id
+from .models import Driver, DriverSponsorMembership, PointTransaction, SponsorBehavior
 from .serializers import (
     DriverRemovalRequestSerializer,
     DriverSerializer,
@@ -28,6 +29,7 @@ from .services import (
     DriverMembershipError,
     PointAdjustmentError,
     adjust_driver_points,
+    approve_driver_application,
     link_driver_to_sponsor,
     remove_driver_from_sponsor,
 )
@@ -37,44 +39,50 @@ MAX_POINT_HISTORY_LIMIT = 200
 
 @method_decorator(never_cache, name='dispatch')
 class DriverViewSet(viewsets.ReadOnlyModelViewSet):
-    """Read driver records and expose narrowly scoped sponsor actions.
+    """A sponsor's own drivers, and narrowly scoped sponsor actions on them.
 
-    Driver creation, arbitrary updates, and deletion deliberately are not
-    router actions. Membership and point changes must use the audited domain
-    actions below instead.
+    Every record shows only the sponsor's own membership status and points; a
+    driver's other sponsors are never revealed. A driver outside the
+    organization is a 404. Driver creation, arbitrary updates, and deletion
+    deliberately are not router actions. Membership and point changes must use
+    the audited domain actions below instead.
     """
 
     serializer_class = DriverSerializer
-    permission_classes = [IsAuthenticated, MFAEnrolled]
-    # Actions that change a driver's membership or points; only the sponsor
-    # side of the relationship may call them.
-    sponsor_actions = frozenset({'points', 'approve', 'remove', 'link'})
-    # A sponsor's own alerts about a driver, and a view of the driver's settings.
-    sponsor_alert_actions = frozenset({'alerts', 'alert_settings'})
-
-    def get_permissions(self):
-        if self.action in self.sponsor_actions | self.sponsor_alert_actions:
-            return [IsAuthenticated(), SponsorAccount(), MFAEnrolled()]
-        return super().get_permissions()
+    # Drivers read their own sponsors through driver/sponsors/, and admins
+    # through the admin user endpoints, so only sponsors use this viewset.
+    permission_classes = [IsAuthenticated, SponsorAccount, MFAEnrolled]
 
     def get_queryset(self):
-        # Sponsors manage their own company's drivers and drivers see their own
-        # record. Admins manage driver accounts through the admin user
-        # endpoints instead, so they get nothing here.
-        user = self.request.user
-        if hasattr(user, 'sponsor_account') and user.sponsor_account is not None:
-            queryset = Driver.objects.filter(sponsor=user.sponsor_account.company)
-        elif hasattr(user, 'driver_profile') and user.driver_profile is not None:
-            queryset = Driver.objects.filter(user=user)
-        else:
-            return Driver.objects.none()
-        return queryset.select_related('user', 'sponsor').annotate(
-            calculated_point_balance=Coalesce(
-                Sum('point_transactions__point_change'),
-                Value(0),
-                output_field=IntegerField(),
-            )
+        company_id = self.request.user.sponsor_account.company_id
+        membership_status = DriverSponsorMembership.objects.filter(
+            driver=OuterRef('pk'), sponsor_id=company_id
+        ).values('status')[:1]
+        sponsor_balance = (
+            PointTransaction.objects.filter(driver=OuterRef('pk'), sponsor_id=company_id)
+            .values('driver')
+            .annotate(total=Sum('point_change'))
+            .values('total')
         )
+        return (
+            Driver.objects.filter(
+                memberships__sponsor_id=company_id,
+                memberships__status__in=DriverSponsorMembership.ACTIVE_STATUSES,
+            )
+            .select_related('user')
+            .annotate(
+                membership_status=Subquery(membership_status),
+                calculated_point_balance=Coalesce(
+                    Subquery(sponsor_balance, output_field=IntegerField()),
+                    Value(0),
+                    output_field=IntegerField(),
+                ),
+            )
+            .order_by('name', 'id')
+        )
+
+    def get_serializer_context(self):
+        return {**super().get_serializer_context(), 'sponsor': self.request.user.sponsor_account.company}
 
     @action(detail=True, methods=['post'], url_path='points')
     def points(self, request, pk=None):
@@ -138,12 +146,17 @@ class DriverViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
-        """Approve a pending driver belonging to the sponsor's company."""
-        driver = self.get_object()
-        if driver.status != 'approved':
-            driver.status = 'approved'
-            driver.save(update_fields=['status'])
-        return Response(self.get_serializer(driver).data, status=status.HTTP_200_OK)
+        """Approve a pending application to the sponsor's organization."""
+        try:
+            approve_driver_application(driver=self.get_object(), changed_by_user=request.user)
+        except DriverMembershipError as error:
+            response_status = (
+                status.HTTP_404_NOT_FOUND
+                if error.code == 'driver_not_found'
+                else status.HTTP_403_FORBIDDEN
+            )
+            return Response({error.field: [error.message]}, status=response_status)
+        return Response(self.get_serializer(self.get_object()).data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], url_path='remove')
     def remove(self, request, pk=None):
@@ -186,7 +199,7 @@ class DriverViewSet(viewsets.ReadOnlyModelViewSet):
             )
             return Response({error.field: error.message}, status=response_status)
 
-        return Response(self.get_serializer(driver).data)
+        return Response(self.get_serializer(self.get_queryset().get(pk=driver.pk)).data)
 
 
 @method_decorator(never_cache, name='dispatch')
@@ -226,7 +239,7 @@ class PointHistoryView(generics.ListAPIView):
 class SponsorBehaviorMixin:
     """Sponsors manage their own organization's example behaviors.
 
-    Drivers may read their current sponsor's list; every write is sponsor-only
+    Drivers may read their active sponsor's list; every write is sponsor-only
     and refused while an admin is viewing as the sponsor.
     """
 
@@ -247,7 +260,8 @@ class SponsorBehaviorMixin:
         user = self.request.user
         if get_account_type(user) == 'sponsor':
             return user.sponsor_account.company
-        return user.driver_profile.sponsor
+        sponsor_id = display_sponsor_id(user.driver_profile, self.request.session)
+        return SponsorCompany.objects.filter(pk=sponsor_id).first() if sponsor_id else None
 
     def get_queryset(self):
         sponsor = self.get_sponsor()

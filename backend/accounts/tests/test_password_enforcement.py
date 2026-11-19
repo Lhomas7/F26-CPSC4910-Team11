@@ -12,7 +12,7 @@ from django.utils.http import urlsafe_base64_encode
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from drivers.models import Driver
+from drivers.testing import create_driver
 
 from ..input_cleaning import password_requirements
 from ..models import PasswordHistory, SponsorCompany
@@ -94,7 +94,7 @@ class PasswordPathEnforcementTests(APITestCase):
         cls.driver_user = User.objects.create_user(
             username='path.driver', email='path.driver@example.com', password=FIRST
         )
-        Driver.objects.create(user=cls.driver_user, name='Path Driver')
+        create_driver(user=cls.driver_user, name='Path Driver')
         cls.admin = User.objects.create_superuser(
             username='path.admin', email='path.admin@example.com', password=FIRST
         )
@@ -223,7 +223,7 @@ class AdminReauthenticationTests(APITestCase):
         enroll_totp(cls.admin)
         cls.other_admin = User.objects.create_superuser(username='reauth.other', password=FIRST)
         cls.driver_user = User.objects.create_user(username='reauth.driver', password=FIRST)
-        Driver.objects.create(user=cls.driver_user, name='Reauth Driver')
+        create_driver(user=cls.driver_user, name='Reauth Driver')
 
     def setUp(self):
         self.client.force_authenticate(self.admin)

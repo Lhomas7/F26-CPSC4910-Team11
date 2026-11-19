@@ -92,8 +92,8 @@ class CatalogProduct(models.Model):
 class CartItem(models.Model):
     """A reward a driver is considering. Each reward is in a cart at most once.
 
-    Rows are deleted when the driver leaves their sponsor; reads also filter by
-    the driver's current sponsor so a stale row can never surface.
+    A reward belongs to its product's sponsor, so reads filter by the driver's
+    active sponsor. Rows are deleted when the driver leaves that sponsor.
     """
 
     driver = models.ForeignKey(

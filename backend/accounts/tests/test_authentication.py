@@ -15,7 +15,7 @@ from django.views.debug import ExceptionReporter
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from drivers.models import Driver
+from drivers.testing import create_driver
 
 from ..models import (
     AdminImpersonationEvent,
@@ -120,7 +120,7 @@ class LoginAttemptLoggingTests(APITestCase):
             password='ExamplePassword123!',
             email='driver@example.com',
         )
-        Driver.objects.create(user=cls.user, name='Driver One', status='approved')
+        create_driver(user=cls.user, name='Driver One', status='approved')
 
     def setUp(self):
         cache.clear()
@@ -241,7 +241,7 @@ class LogoutTests(APITestCase):
             password='ExamplePassword123!',
             email='driver@example.com',
         )
-        Driver.objects.create(user=cls.driver, name='Driver One', status='approved')
+        create_driver(user=cls.driver, name='Driver One', status='approved')
         cls.admin = User.objects.create_superuser(
             username='admin.one',
             password='ExamplePassword123!',
@@ -389,7 +389,7 @@ class PasswordResetTests(APITestCase):
             email='driver@example.com',
             password='ExamplePassword123!',
         )
-        self.driver = Driver.objects.create(user=self.user, name='Driver One', status='approved')
+        self.driver = create_driver(user=self.user, name='Driver One', status='approved')
 
     def request_reset(self, email='driver@example.com'):
         return self.client.post(self.request_url, {'email': email}, format='json')
@@ -553,7 +553,7 @@ class PasswordResetTests(APITestCase):
             email='two@example.com',
             password='ExamplePassword123!',
         )
-        Driver.objects.create(user=other, name='Driver Two', status='approved')
+        create_driver(user=other, name='Driver Two', status='approved')
         _uid, token = self.issue_link()
         other_uid = urlsafe_base64_encode(force_bytes(other.pk))
 
@@ -702,7 +702,7 @@ class PasswordResetTests(APITestCase):
             email='two@example.com',
             password='ExamplePassword123!',
         )
-        Driver.objects.create(user=other, name='Driver Two', status='approved')
+        create_driver(user=other, name='Driver Two', status='approved')
         browser = self.sign_in_browser(username='driver.two')
         uid, token = self.issue_link()
 
@@ -746,7 +746,7 @@ class PasswordResetDeliveryTimingTests(APITestCase):
             email='driver@example.com',
             password='ExamplePassword123!',
         )
-        Driver.objects.create(user=user, name='Driver One', status='approved')
+        create_driver(user=user, name='Driver One', status='approved')
 
     def test_response_does_not_wait_for_email_delivery(self):
         started = threading.Event()
@@ -813,7 +813,7 @@ class PasswordResetExcludesAdminsTests(APITestCase):
             email='driver@example.com',
             password='ExamplePassword123!',
         )
-        Driver.objects.create(user=user, name='Driver One', status='approved')
+        create_driver(user=user, name='Driver One', status='approved')
 
         response = self.client.post(
             self.request_url, {'email': 'driver@example.com'}, format='json'

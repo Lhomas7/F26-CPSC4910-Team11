@@ -12,7 +12,7 @@ from django.utils.http import urlsafe_base64_encode
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from drivers.models import Driver
+from drivers.testing import create_driver
 
 from ..models import MFASettings, Notification, SponsorAccount, SponsorCompany, TrustedDevice
 from ..services.mfa import create_mfa_code
@@ -34,11 +34,11 @@ class DeviceCheckTests(MailAssertMixin, APITestCase):
         cls.user = User.objects.create_user(
             username='driver.one', password=PASSWORD, email='driver@example.com'
         )
-        cls.driver = Driver.objects.create(user=cls.user, name='Driver One', status='approved')
+        cls.driver = create_driver(user=cls.user, name='Driver One', status='approved')
         cls.other = User.objects.create_user(
             username='driver.two', password=PASSWORD, email='two@example.com'
         )
-        Driver.objects.create(user=cls.other, name='Driver Two', status='approved')
+        create_driver(user=cls.other, name='Driver Two', status='approved')
 
     def setUp(self):
         cache.clear()

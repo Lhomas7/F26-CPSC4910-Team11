@@ -7,7 +7,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from drivers.models import Driver
+from drivers.testing import create_driver
 
 from ..middleware import (
     ACTIVITY_WRITE_INTERVAL,
@@ -36,7 +36,7 @@ class SessionTimeoutTests(APITestCase):
         cls.driver_user = User.objects.create_user(
             username='driver.one', password=PASSWORD, email='driver@example.com'
         )
-        cls.driver = Driver.objects.create(
+        cls.driver = create_driver(
             user=cls.driver_user, name='Driver One', status='approved'
         )
 
