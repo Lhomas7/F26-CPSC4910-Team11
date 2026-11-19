@@ -10,6 +10,7 @@ import StatePanel from 'components/feedback/StatePanel';
 import SelectMenu from 'components/forms/SelectMenu';
 import Avatar from 'components/primitives/Avatar';
 import RegistrationSettingsPanel from '../components/RegistrationSettingsPanel';
+import SupportContactPanel from '../components/SupportContactPanel';
 import './AdminUsersPage.css';
 
 const ROLE_LABELS = { driver: 'Driver', sponsor: 'Sponsor', admin: 'Admin' };
@@ -128,6 +129,7 @@ export default function AdminUsersPage() {
           {status === 'loading' ? 'Loading users' : `${visibleUsers.length} users shown`}
         </p>
         <RegistrationSettingsPanel />
+        <SupportContactPanel />
         {status === 'loading' && <DirectorySkeleton />}
         {status === 'error' && (
           <StatePanel tone="error" title="Users couldn't be loaded">

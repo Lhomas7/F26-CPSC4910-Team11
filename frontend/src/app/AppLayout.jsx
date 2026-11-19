@@ -28,6 +28,7 @@ import { MfaSetupWall } from 'features/accounts';
 import { DeviceCheckDialog } from 'features/authentication';
 import CartButton from 'features/cart/CartButton';
 import { CartProvider } from 'features/cart/CartContext';
+import HelpButton from 'features/help/HelpButton';
 import { ActiveSponsorProvider, SponsorSwitcher, useActiveSponsor } from 'features/sponsors';
 import './AppLayout.css';
 import ActiveViewAsIndicator from './ActiveViewAsIndicator';
@@ -335,6 +336,7 @@ export function AppLayout() {
           Skip to content
         </a>
         {showCart && <CartButton />}
+        {showCart && <HelpButton />}
         <aside className="site-sidebar">
           <div className="brand-bar">
             <Link className="brand" to="/" aria-label="Good Driver home">

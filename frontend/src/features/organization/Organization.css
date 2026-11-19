@@ -50,6 +50,30 @@
   color: var(--danger-ink);
 }
 
+.organization-support {
+  border: 1px solid var(--line-soft);
+  border-radius: 0.5rem;
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0.9rem 1rem 1rem;
+}
+
+.organization-support legend {
+  font-weight: 600;
+  padding: 0 0.35rem;
+}
+
+.organization-support p {
+  color: var(--ink-3);
+  margin: 0;
+}
+
+.organization-subheading {
+  font-size: 1rem;
+  margin: 0;
+}
+
 .organization-description {
   margin: 0;
   white-space: pre-line;

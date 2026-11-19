@@ -1,0 +1,109 @@
+/* Floats just above the cart button (CartButton.css), below dialogs (z-index 100). */
+.help-button-shell {
+  bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+  position: fixed;
+  right: calc(1.6rem + env(safe-area-inset-right, 0px));
+  z-index: 40;
+}
+
+.help-button {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  box-shadow: 0 0.4rem 1rem rgb(0 0 0 / 18%);
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  height: 2.5rem;
+  justify-content: center;
+  transition: transform 120ms ease;
+  width: 2.5rem;
+}
+
+.help-button:hover {
+  transform: translateY(-2px);
+}
+
+.help-button:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.help-dialog section {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.help-dialog section + section {
+  border-top: 1px solid var(--line-soft);
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+.help-dialog h3,
+.help-dialog h4,
+.help-dialog p {
+  margin: 0;
+}
+
+.help-dialog h3 {
+  font-size: 1rem;
+}
+
+.help-muted {
+  color: var(--ink-3);
+}
+
+.help-list {
+  display: grid;
+  gap: 0.6rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.help-card {
+  border: 1px solid var(--line-soft);
+  border-radius: 0.5rem;
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.7rem 0.85rem;
+}
+
+.help-card h4 {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.help-badge {
+  background: var(--success-soft);
+  border: 1px solid var(--success-line);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.05rem 0.5rem;
+}
+
+.help-contact {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0;
+}
+
+.help-contact div {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.help-contact dt {
+  color: var(--ink-3);
+  min-width: 3.5rem;
+}
+
+.help-contact dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}

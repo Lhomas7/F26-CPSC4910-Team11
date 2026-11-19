@@ -61,6 +61,29 @@ describe('as a sponsor', () => {
     expect(await screen.findByText(/details were saved/)).toBeInTheDocument();
   });
 
+  test('saves a driver support contact', async () => {
+    api.updateOrganization.mockImplementation(async (form) => ({ ...organization, ...form }));
+    render(<OrganizationPage />);
+
+    const group = await screen.findByRole('group', { name: 'Driver support contact' });
+    await userEvent.type(within(group).getByLabelText('Contact name'), 'Jordan Lee');
+    await userEvent.type(
+      within(group).getByLabelText('Support email'),
+      'help@palmetto.example.com',
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Save details' }));
+
+    await waitFor(() =>
+      expect(api.updateOrganization).toHaveBeenCalledWith(
+        expect.objectContaining({
+          support_contact_name: 'Jordan Lee',
+          support_email: 'help@palmetto.example.com',
+          support_phone: '',
+        }),
+      ),
+    );
+  });
+
   test('shows server validation errors next to the field', async () => {
     api.updateOrganization.mockRejectedValue(
       new ApiError('Enter a website address', 400, { website: ['Enter a valid URL.'] }),
@@ -103,7 +126,26 @@ describe('as a driver', () => {
     expect(screen.getByText('We haul produce.')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'hello@palmetto.example.com' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Save details' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Driver support' })).not.toBeInTheDocument();
     expect(api.getTeam).not.toHaveBeenCalled();
+  });
+
+  test('shows the driver support contact when the sponsor set one', async () => {
+    api.getOrganization.mockResolvedValue({
+      ...organization,
+      support_contact_name: 'Jordan Lee',
+      support_email: 'help@palmetto.example.com',
+      support_hours: 'Mon-Fri, 8am-5pm ET',
+    });
+    render(<OrganizationPage />);
+
+    expect(await screen.findByRole('heading', { name: 'Driver support' })).toBeInTheDocument();
+    expect(screen.getByText('Jordan Lee')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'help@palmetto.example.com' })).toHaveAttribute(
+      'href',
+      'mailto:help@palmetto.example.com',
+    );
+    expect(screen.getByText('Mon-Fri, 8am-5pm ET')).toBeInTheDocument();
   });
 
   test('explains when there is no sponsor yet', async () => {

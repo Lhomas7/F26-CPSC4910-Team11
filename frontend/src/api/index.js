@@ -3,6 +3,7 @@ export * from './about';
 export * from './authentication';
 export * from './accounts';
 export * from './drivers';
+export * from './help';
 export * from './adminUsers';
 export * from './cart';
 export * from './catalog';

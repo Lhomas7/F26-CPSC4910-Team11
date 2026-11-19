@@ -9,11 +9,31 @@ import OrganizationForm from '../components/OrganizationForm';
 import TeamPanel from '../components/TeamPanel';
 import '../Organization.css';
 
+function ContactList({ rows }) {
+  if (rows.length === 0) return null;
+  return (
+    <dl className="organization-contact">
+      {rows.map(([label, value, render]) => (
+        <div key={label}>
+          <dt>{label}</dt>
+          <dd>{render(value)}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 function OrganizationDetails({ organization }) {
   const rows = [
     ['Website', organization.website, (value) => <a href={value}>{value}</a>],
     ['Email', organization.contact_email, (value) => <a href={`mailto:${value}`}>{value}</a>],
     ['Phone', organization.contact_phone, (value) => <a href={`tel:${value}`}>{value}</a>],
+  ].filter(([, value]) => value);
+  const supportRows = [
+    ['Contact', organization.support_contact_name, (value) => value],
+    ['Email', organization.support_email, (value) => <a href={`mailto:${value}`}>{value}</a>],
+    ['Phone', organization.support_phone, (value) => <a href={`tel:${value}`}>{value}</a>],
+    ['Hours', organization.support_hours, (value) => value],
   ].filter(([, value]) => value);
 
   return (
@@ -24,15 +44,12 @@ function OrganizationDetails({ organization }) {
       ) : (
         <p>Your sponsor hasn&apos;t added a description yet.</p>
       )}
-      {rows.length > 0 && (
-        <dl className="organization-contact">
-          {rows.map(([label, value, render]) => (
-            <div key={label}>
-              <dt>{label}</dt>
-              <dd>{render(value)}</dd>
-            </div>
-          ))}
-        </dl>
+      <ContactList rows={rows} />
+      {supportRows.length > 0 && (
+        <>
+          <h3 className="organization-subheading">Driver support</h3>
+          <ContactList rows={supportRows} />
+        </>
       )}
     </section>
   );
