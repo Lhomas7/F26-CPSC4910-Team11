@@ -184,6 +184,9 @@ class RegistrationSettings(models.Model):
     """
 
     email_verification_required = models.BooleanField(default=False)
+    # How any user can reach the site administrators for help. Blank means not provided.
+    support_email = models.EmailField(blank=True, max_length=254)
+    support_phone = models.CharField(blank=True, max_length=16)
     updated_at = models.DateTimeField(auto_now=True)
 
     @classmethod

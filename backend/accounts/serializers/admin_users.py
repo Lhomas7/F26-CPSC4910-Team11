@@ -19,6 +19,7 @@ from ..input_cleaning import (
 from ..models import RegistrationSettings, SponsorAccount, SponsorCompany
 from ..services import get_account_type
 from ..services.impersonation import view_as_eligibility
+from .sponsor_organization import normalize_contact_phone
 
 STATUS_HISTORY_LIMIT = 50
 
@@ -86,10 +87,16 @@ class SponsorCompanySerializer(serializers.ModelSerializer):
 
 
 class RegistrationSettingsSerializer(serializers.ModelSerializer):
+    support_email = NormalizedEmailField(required=False, allow_blank=True, max_length=254)
+    support_phone = serializers.CharField(required=False, allow_blank=True, max_length=40)
+
     class Meta:
         model = RegistrationSettings
-        fields = ('email_verification_required', 'updated_at')
+        fields = ('email_verification_required', 'support_email', 'support_phone', 'updated_at')
         read_only_fields = ('updated_at',)
+
+    def validate_support_phone(self, value):
+        return normalize_contact_phone(value)
 
 
 class AdminAccountDetailSerializer(serializers.ModelSerializer):

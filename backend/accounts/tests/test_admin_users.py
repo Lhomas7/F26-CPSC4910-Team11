@@ -991,6 +991,25 @@ class AdminRegistrationSettingsTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(RegistrationSettings.load().email_verification_required)
 
+    def test_admin_sets_support_contact(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.patch(
+            self.url,
+            {'support_email': 'Support@GoodDriver.example.com', 'support_phone': '(800) 555-0123'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        settings_row = RegistrationSettings.load()
+        self.assertEqual(settings_row.support_email, 'support@gooddriver.example.com')
+        self.assertEqual(settings_row.support_phone, '+18005550123')
+
+        for payload in ({'support_email': 'nope'}, {'support_phone': '12'}):
+            with self.subTest(payload=payload):
+                response = self.client.patch(self.url, payload, format='json')
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_invalid_value_is_rejected(self):
         self.client.force_authenticate(self.admin)
 
