@@ -10,6 +10,7 @@ import Skeleton from 'components/feedback/Skeleton';
 import StatePanel from 'components/feedback/StatePanel';
 import PasswordInput from 'components/forms/PasswordInput';
 import PasswordRequirements from 'components/forms/PasswordRequirements';
+import SponsorCheckboxList from 'features/sponsors/components/SponsorCheckboxList';
 import {
   validateEmail,
   validateName,
@@ -25,6 +26,7 @@ const EMPTY_FORM = {
   username: '',
   email: '',
   sponsor_org_id: '',
+  sponsor_org_ids: [],
   password: '',
   confirm_password: '',
 };
@@ -61,7 +63,7 @@ export default function AddUserPage() {
   };
 
   const chooseRole = (role) => {
-    setForm((current) => ({ ...current, role, sponsor_org_id: '' }));
+    setForm((current) => ({ ...current, role, sponsor_org_id: '', sponsor_org_ids: [] }));
     setErrors({});
   };
 
@@ -104,8 +106,10 @@ export default function AddUserPage() {
       username: form.username.trim(),
       email: form.email.trim(),
       role: form.role,
+      // A driver can start in several organizations; a sponsor manages exactly one.
       sponsor_org_id:
-        form.role === 'admin' || !form.sponsor_org_id ? null : Number(form.sponsor_org_id),
+        form.role !== 'sponsor' || !form.sponsor_org_id ? null : Number(form.sponsor_org_id),
+      ...(form.role === 'driver' ? { sponsor_org_ids: form.sponsor_org_ids } : {}),
       password: form.password,
       password_confirm: form.confirm_password,
       ...(currentPassword ? { current_password: currentPassword } : {}),
@@ -223,10 +227,10 @@ export default function AddUserPage() {
                 <dd>{ROLE_LABELS[created.role]}</dd>
               </div>
               <div>
-                <dt>Sponsor organization</dt>
+                <dt>{created.role === 'driver' ? 'Sponsors' : 'Sponsor organization'}</dt>
                 <dd>
-                  {created.sponsor_org?.name ||
-                    (created.role === 'driver' ? 'Not assigned' : 'Not applicable')}
+                  {(created.sponsor_orgs || []).map((org) => org.name).join(', ') ||
+                    (created.role === 'driver' ? 'None yet' : 'Not applicable')}
                 </dd>
               </div>
             </dl>
@@ -311,11 +315,24 @@ export default function AddUserPage() {
                   disabled={status === 'saving'}
                 />
               </div>
-              {form.role !== 'admin' && (
+              {form.role === 'driver' && organizations.length > 0 && (
                 <div className="add-user-field">
-                  <label htmlFor="sponsor-org">
-                    Sponsor organization {form.role === 'driver' && <span>(optional)</span>}
-                  </label>
+                  <SponsorCheckboxList
+                    legend="Sponsor organizations (optional)"
+                    hint="The driver is approved in each one right away. You can add more later."
+                    sponsors={organizations}
+                    selected={form.sponsor_org_ids}
+                    onChange={(ids) => update('sponsor_org_ids', ids)}
+                    disabled={status === 'saving'}
+                  />
+                  {fieldError('sponsor_org_ids') && (
+                    <small className="error">{fieldError('sponsor_org_ids')}</small>
+                  )}
+                </div>
+              )}
+              {form.role === 'sponsor' && (
+                <div className="add-user-field">
+                  <label htmlFor="sponsor-org">Sponsor organization</label>
                   <select
                     id="sponsor-org"
                     value={form.sponsor_org_id}
@@ -324,11 +341,7 @@ export default function AddUserPage() {
                     aria-invalid={Boolean(fieldError('sponsor_org_id'))}
                   >
                     <option value="">
-                      {form.role === 'driver'
-                        ? 'Leave unassigned for now'
-                        : organizations.length
-                          ? 'Choose an organization'
-                          : 'No organizations available'}
+                      {organizations.length ? 'Choose an organization' : 'No organizations available'}
                     </option>
                     {organizations.map((org) => (
                       <option key={org.id} value={org.id}>
@@ -337,10 +350,7 @@ export default function AddUserPage() {
                     ))}
                   </select>
                   <small className={fieldError('sponsor_org_id') ? 'error' : ''}>
-                    {fieldError('sponsor_org_id') ||
-                      (form.role === 'driver'
-                        ? 'A driver can be linked to a sponsor later.'
-                        : 'Required for sponsor accounts.')}
+                    {fieldError('sponsor_org_id') || 'Required for sponsor accounts.'}
                   </small>
                 </div>
               )}

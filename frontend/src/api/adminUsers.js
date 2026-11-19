@@ -47,6 +47,22 @@ export function updateAdminDriver(userId, data) {
   return request(`/admin/drivers/${userId}/`, { method: 'PATCH', body: data }).then(readJson);
 }
 
+/** Add a driver to sponsors, approved immediately. Returns the updated driver. */
+export function assignDriverSponsors(userId, sponsorIds) {
+  return request(`/admin/drivers/${userId}/sponsors/`, {
+    method: 'POST',
+    body: { sponsor_ids: sponsorIds },
+  }).then(readJson);
+}
+
+/** Remove one of a driver's sponsors, with a required reason. Returns the updated driver. */
+export function removeDriverSponsor(userId, sponsorId, reason) {
+  return request(`/admin/drivers/${userId}/sponsors/${sponsorId}/remove/`, {
+    method: 'POST',
+    body: { reason },
+  }).then(readJson);
+}
+
 export function startAdminImpersonation(userId) {
   return request(`/admin/impersonation/${userId}/`, { method: 'POST' }).then(readJson);
 }

@@ -120,7 +120,7 @@ test('links a driver from the modal and announces the pending enrollment', async
 
   await waitFor(() => expect(api.linkDriver).toHaveBeenCalledWith('alex.moreno'));
   expect(await screen.findByRole('status')).toHaveTextContent(
-    '@alex.moreno was linked to Palmetto Freight and is waiting for approval.',
+    '@alex.moreno was invited to Palmetto Freight and is waiting for approval.',
   );
   expect(screen.getByRole('link', { name: 'View Alex Moreno' })).toBeInTheDocument();
 });

@@ -22,7 +22,7 @@ const users = [
     display_name: 'Kylie Gilbert',
     username: 'kgilbert',
     role: 'admin',
-    sponsor_org: null,
+    sponsor_orgs: [],
     is_active: true,
   },
   {
@@ -30,7 +30,7 @@ const users = [
     display_name: 'Marcus Alvarez',
     username: 'malvarez',
     role: 'driver',
-    sponsor_org: { id: 7, name: 'Palmetto Freight' },
+    sponsor_orgs: [{ id: 7, name: 'Palmetto Freight' }],
     is_active: true,
   },
   {
@@ -38,7 +38,7 @@ const users = [
     display_name: 'Dana Whitfield',
     username: 'dwhitfield',
     role: 'sponsor',
-    sponsor_org: { id: 7, name: 'Palmetto Freight' },
+    sponsor_orgs: [{ id: 7, name: 'Palmetto Freight' }],
     is_active: false,
   },
 ];
@@ -85,6 +85,32 @@ test('filters users by sponsor organization', async () => {
   expect(screen.getByText('Dana Whitfield')).toBeInTheDocument();
   expect(screen.queryByText('Kylie Gilbert')).not.toBeInTheDocument();
   expect(screen.getByText('Showing 2 of 3 users')).toBeInTheDocument();
+});
+
+test('a driver with several sponsors is listed under each of them', async () => {
+  api.getAdminUsers.mockResolvedValue([
+    ...users,
+    {
+      id: 4,
+      display_name: 'Jamie Rivera',
+      username: 'jrivera',
+      role: 'driver',
+      sponsor_orgs: [
+        { id: 7, name: 'Palmetto Freight' },
+        { id: 9, name: 'Upstate Logistics' },
+      ],
+      is_active: true,
+    },
+  ]);
+  renderPage();
+
+  expect(await screen.findByText('Palmetto Freight, Upstate Logistics')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Filter by sponsor organization' }));
+  fireEvent.click(screen.getByRole('option', { name: 'Upstate Logistics' }));
+
+  expect(screen.getByText('Jamie Rivera')).toBeInTheDocument();
+  expect(screen.queryByText('Marcus Alvarez')).not.toBeInTheDocument();
+  expect(screen.getByText('Showing 1 of 4 users')).toBeInTheDocument();
 });
 
 test('does not call the API for a non-admin user', () => {

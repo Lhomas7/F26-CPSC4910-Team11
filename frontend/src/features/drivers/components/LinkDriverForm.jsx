@@ -77,8 +77,9 @@ export default function LinkDriverForm({
           }
         >
           <p>
-            Add an existing driver account to {company || 'your organization'} by username. They
-            join as a pending application until you approve them.
+            Invite an existing driver account to {company || 'your organization'} by username.
+            They join as a pending application until you approve them, and keep any other
+            sponsors they already have.
           </p>
           <form id="link-driver-form" onSubmit={submit} noValidate>
             <label htmlFor="link-username">Driver username</label>

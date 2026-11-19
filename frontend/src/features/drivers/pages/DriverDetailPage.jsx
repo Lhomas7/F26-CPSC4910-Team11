@@ -212,8 +212,8 @@ function DriverWorkspace({
               <ul>
                 <li>Approving adds them to your driver list so you can award and deduct points.</li>
                 <li>
-                  Rejecting declines the application. A reason is required, and they can apply to
-                  another sponsor.
+                  Rejecting declines the application to your organization only. A reason is
+                  required, and the driver is told why.
                 </li>
               </ul>
               <div className="driver-enrollment-actions">

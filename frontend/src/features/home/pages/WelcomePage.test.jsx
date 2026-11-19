@@ -161,8 +161,8 @@ test('an admin gets account counts and shortcuts', async () => {
     user: { name: 'Sam Admin', username: 'sam.admin', account_type: 'admin' },
   });
   api.getAdminUsers.mockResolvedValue([
-    { id: 1, role: 'driver', sponsor_org: null, is_active: false },
-    { id: 2, role: 'driver', sponsor_org: { id: 3 }, is_active: true },
+    { id: 1, role: 'driver', sponsor_orgs: [], is_active: false },
+    { id: 2, role: 'driver', sponsor_orgs: [{ id: 3, name: 'Alpha' }], is_active: true },
     { id: 3, role: 'sponsor', is_active: true },
     { id: 4, role: 'admin', is_active: true },
   ]);
