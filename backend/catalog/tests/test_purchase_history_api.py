@@ -29,7 +29,9 @@ class DriverPurchaseHistoryTests(APITestCase):
         cls.sponsor_user = users.create_user(username='original-sponsor')
         SponsorAccount.objects.create(user=cls.sponsor_user, company=cls.sponsor)
         MFASettings.objects.create(user=cls.sponsor_user, totp_enabled=True)
-        cls.driver = create_driver(user=cls.owner, name='Buyer', sponsor=cls.sponsor)
+        cls.driver = create_driver(
+            user=cls.owner, name='Buyer', sponsor=cls.sponsor, status=DriverSponsorMembership.APPROVED
+        )
         cls.other_driver = create_driver(
             user=cls.other, name='Other Buyer', sponsor=cls.sponsor
         )

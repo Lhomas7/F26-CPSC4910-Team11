@@ -1,8 +1,15 @@
 from rest_framework import serializers
 
 from accounts.models import SponsorDriverAlert
+from accounts.serializers.registration import SponsorIdsField
 
-from .models import Driver, DriverStatusChange, PointTransaction, SponsorBehavior
+from .models import (
+    Driver,
+    DriverSponsorMembership,
+    DriverStatusChange,
+    PointTransaction,
+    SponsorBehavior,
+)
 from .services import MAX_POINT_ADJUSTMENT, MAX_POINT_REASON_LENGTH
 from .services.reasons import MAX_REASON_LENGTH, normalize_reason
 
@@ -39,6 +46,34 @@ class DriverSerializer(serializers.ModelSerializer):
 
     def get_sponsor_name(self, driver):
         return self.context['sponsor'].name
+
+
+class DriverMembershipSerializer(serializers.ModelSerializer):
+    """One of the driver's own sponsors. Only an approved membership has a balance."""
+
+    sponsor = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DriverSponsorMembership
+        fields = ['sponsor', 'status']
+        read_only_fields = fields
+
+    def get_sponsor(self, membership):
+        return {'id': membership.sponsor_id, 'name': membership.sponsor.name}
+
+    def to_representation(self, membership):
+        data = super().to_representation(membership)
+        if membership.status == DriverSponsorMembership.APPROVED:
+            data['point_balance'] = membership.point_balance
+        return data
+
+
+class DriverSponsorApplySerializer(serializers.Serializer):
+    sponsor_ids = SponsorIdsField(required=True, allow_empty=False)
+
+
+class ActiveSponsorSerializer(serializers.Serializer):
+    sponsor_id = serializers.IntegerField(min_value=1)
 
 
 class PointAdjustmentRequestSerializer(serializers.Serializer):

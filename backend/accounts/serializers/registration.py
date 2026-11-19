@@ -9,6 +9,28 @@ from ..input_cleaning import (
     unsaved_user_from,
     validate_new_password,
 )
+from ..services import public_sponsor_companies
+
+# Bounds one request's work; there is no limit on sponsors over time.
+MAX_SPONSOR_APPLICATIONS = 20
+
+
+class SponsorIdsField(serializers.ListField):
+    """Sponsor organizations a driver is applying to, without duplicates."""
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault('required', False)
+        kwargs.setdefault('max_length', MAX_SPONSOR_APPLICATIONS)
+        super().__init__(
+            child=serializers.PrimaryKeyRelatedField(queryset=public_sponsor_companies()),
+            **kwargs,
+        )
+
+    def to_internal_value(self, data):
+        # Bound the raw list: the length validator only sees it after deduplication.
+        if isinstance(data, list) and len(data) > self.max_length:
+            self.fail('max_length', max_length=self.max_length)
+        return list(dict.fromkeys(super().to_internal_value(data)))
 
 
 class RegistrationSerializer(serializers.Serializer):
@@ -67,7 +89,8 @@ class RegistrationSerializer(serializers.Serializer):
 
 
 class DriverRegistrationSerializer(RegistrationSerializer):
-    pass
+    # Applying to sponsors is optional; a driver can apply later.
+    sponsor_ids = SponsorIdsField()
 
 
 class SponsorRegistrationSerializer(RegistrationSerializer):

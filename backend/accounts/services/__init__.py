@@ -56,6 +56,17 @@ def driver_sponsor_names(driver):
     return ', '.join(memberships.values_list('sponsor__name', flat=True)) or None
 
 
+def public_sponsor_companies():
+    """Sponsor organizations a driver may apply to: those with an active sponsor user."""
+    from ..models import SponsorCompany
+
+    return (
+        SponsorCompany.objects.filter(sponsor_accounts__user__is_active=True)
+        .distinct()
+        .order_by('name', 'pk')
+    )
+
+
 def get_mfa_status(user):
     """Public MFA state for a user: required flag, enrolled flag, enabled
     methods, this role's default/allowed methods, and remaining backup codes.

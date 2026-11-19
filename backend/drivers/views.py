@@ -7,17 +7,21 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from accounts.models import DriverNotificationPreferences, SponsorCompany, SponsorDriverAlert
-from accounts.permissions import DriverOrSponsor, MFAEnrolled, SponsorAccount
+from accounts.permissions import DriverAccount, DriverOrSponsor, MFAEnrolled, SponsorAccount
 from accounts.serializers import DriverAlertSettingsSerializer
 from accounts.services import get_account_type
 
-from .active_sponsor import display_sponsor_id
+from .active_sponsor import display_sponsor_id, resolve_active_sponsor_id, set_active_sponsor
 from .models import Driver, DriverSponsorMembership, PointTransaction, SponsorBehavior
 from .serializers import (
+    ActiveSponsorSerializer,
+    DriverMembershipSerializer,
     DriverRemovalRequestSerializer,
     DriverSerializer,
+    DriverSponsorApplySerializer,
     DriverStatusChangeSerializer,
     PointAdjustmentRequestSerializer,
     PointHistorySerializer,
@@ -29,6 +33,7 @@ from .services import (
     DriverMembershipError,
     PointAdjustmentError,
     adjust_driver_points,
+    apply_to_sponsors,
     approve_driver_application,
     link_driver_to_sponsor,
     remove_driver_from_sponsor,
@@ -226,7 +231,11 @@ class PointHistoryView(generics.ListAPIView):
                     return queryset.none()
                 queryset = queryset.filter(driver_id=int(driver_id))
         elif account_type == 'driver':
-            queryset = queryset.filter(driver__user=user)
+            # Only the active sponsor's points; with none approved, nothing.
+            sponsor_id = resolve_active_sponsor_id(user.driver_profile, self.request.session)
+            if sponsor_id is None:
+                return queryset.none()
+            queryset = queryset.filter(driver__user=user, sponsor_id=sponsor_id)
         else:
             raise PermissionDenied('Only drivers and sponsors have point history.')
 
@@ -234,6 +243,83 @@ class PointHistoryView(generics.ListAPIView):
         if limit and limit.isdigit():
             queryset = queryset[: min(int(limit), MAX_POINT_HISTORY_LIMIT)]
         return queryset
+
+
+@method_decorator(never_cache, name='dispatch')
+class DriverSponsorsView(APIView):
+    """The signed-in driver's own sponsors, each with its own balance.
+
+    Points from different sponsors never mix, so there is deliberately no total.
+    """
+
+    permission_classes = [IsAuthenticated, DriverAccount, MFAEnrolled]
+
+    def get(self, request):
+        return Response(self.sponsors_payload())
+
+    def sponsors_payload(self):
+        driver = self.request.user.driver_profile
+        balance = (
+            PointTransaction.objects.filter(driver=driver, sponsor=OuterRef('sponsor'))
+            .values('sponsor')
+            .annotate(total=Sum('point_change'))
+            .values('total')
+        )
+        memberships = (
+            driver.memberships.select_related('sponsor')
+            .annotate(
+                point_balance=Coalesce(
+                    Subquery(balance, output_field=IntegerField()),
+                    Value(0),
+                    output_field=IntegerField(),
+                )
+            )
+            .order_by('sponsor__name', 'sponsor_id')
+        )
+        return {
+            'active_sponsor_id': resolve_active_sponsor_id(driver, self.request.session),
+            'memberships': DriverMembershipSerializer(memberships, many=True).data,
+        }
+
+
+class DriverSponsorApplyView(DriverSponsorsView):
+    http_method_names = ['post', 'options']
+
+    def post(self, request):
+        if getattr(request, 'impersonation_active', False):
+            raise PermissionDenied('Stop viewing as this user before applying to sponsors.')
+        serializer = DriverSponsorApplySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            apply_to_sponsors(
+                driver=request.user.driver_profile,
+                sponsors=serializer.validated_data['sponsor_ids'],
+                changed_by_user=request.user,
+            )
+        except DriverMembershipError as error:
+            return Response({error.field: error.message}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.sponsors_payload(), status=status.HTTP_201_CREATED)
+
+
+class ActiveSponsorView(DriverSponsorsView):
+    http_method_names = ['post', 'options']
+
+    # Allowed while viewing as a driver: it only changes which sponsor reads show.
+    def post(self, request):
+        serializer = ActiveSponsorSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        if not set_active_sponsor(
+            request.user.driver_profile, request.session, serializer.validated_data['sponsor_id']
+        ):
+            # The same answer for any sponsor the driver isn't approved by.
+            return Response(
+                {
+                    'sponsor_id': ['You can only switch to a sponsor that has approved you.'],
+                    'code': 'sponsor_not_approved',
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(self.sponsors_payload())
 
 
 class SponsorBehaviorMixin:

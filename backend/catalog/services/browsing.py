@@ -20,7 +20,7 @@ class CatalogListing:
     cart_product_ids: set[int] | None = None
 
 
-def browse_catalog(*, user):
+def browse_catalog(*, user, session=None):
     """Resolve the effective user's catalog before counting or paging products."""
     if not user or not user.is_authenticated:
         raise NotAuthenticated()
@@ -30,11 +30,11 @@ def browse_catalog(*, user):
         balance = None  # Sponsors do not have a Driver's spending balance.
         cart_ids = None
     elif role == 'driver':
-        scope = driver_catalog_scope(user)
+        scope = driver_catalog_scope(user, session)
         # Reuse the ledger-derived balance; catalog reads never adjust points or
         # create notifications. Only the active sponsor's points are spendable here.
         balance = user.driver_profile.point_balance_for(scope.company_id)
-        cart_ids = cart_product_ids(user=user)
+        cart_ids = cart_product_ids(user=user, session=session)
     else:
         raise PermissionDenied('Only driver and sponsor accounts can browse a catalog.')
     return CatalogListing(

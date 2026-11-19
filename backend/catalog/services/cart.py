@@ -40,9 +40,9 @@ def _cart_items(scope):
     ).select_related('product')
 
 
-def get_cart(*, user):
+def get_cart(*, user, session=None):
     """The driver's cart, including rewards that have since become unavailable."""
-    scope = driver_catalog_scope(user)
+    scope = driver_catalog_scope(user, session)
     return Cart(
         sponsor=SponsorCompany.objects.get(pk=scope.company_id),
         point_balance=user.driver_profile.point_balance_for(scope.company_id),
@@ -50,19 +50,19 @@ def get_cart(*, user):
     )
 
 
-def cart_product_ids(*, user):
+def cart_product_ids(*, user, session=None):
     """Product IDs in the driver's cart, for marking catalog cards."""
-    scope = driver_catalog_scope(user)
+    scope = driver_catalog_scope(user, session)
     return set(_cart_items(scope).values_list('product_id', flat=True))
 
 
-def add_to_cart(*, user, product_id):
+def add_to_cart(*, user, product_id, session=None):
     """Add a reward to the driver's cart. Returns (item, created).
 
     Adding a reward already in the cart is not an error: it returns the
     existing item so a double click or retry is harmless.
     """
-    scope = driver_catalog_scope(user)
+    scope = driver_catalog_scope(user, session)
     # Scope before lookup: another organization's ID looks just like a missing ID.
     product = get_object_or_404(scope.restrict(CatalogProduct.objects.all()), pk=product_id)
     existing = CartItem.objects.filter(driver_id=scope.driver_id, product=product).first()
@@ -81,9 +81,9 @@ def add_to_cart(*, user, product_id):
         return CartItem.objects.get(driver_id=scope.driver_id, product=product), False
 
 
-def remove_from_cart(*, user, product_id):
+def remove_from_cart(*, user, product_id, session=None):
     """Remove a reward from the driver's cart. Removing a missing item is a 404."""
-    scope = driver_catalog_scope(user)
+    scope = driver_catalog_scope(user, session)
     item = get_object_or_404(_cart_items(scope), product_id=product_id)
     item.delete()
 
@@ -93,9 +93,9 @@ def clear_cart(driver, sponsor_id):
     CartItem.objects.filter(driver=driver, product__sponsor_id=sponsor_id).delete()
 
 
-def empty_cart(*, user):
+def empty_cart(*, user, session=None):
     """Remove the active sponsor's rewards from the driver's cart. An empty cart is fine."""
-    scope = driver_catalog_scope(user)
+    scope = driver_catalog_scope(user, session)
     _cart_items(scope).delete()
 
 
@@ -143,8 +143,8 @@ def _review_payload(driver, sponsor, items):
 
 
 @transaction.atomic
-def review_cart(*, user):
-    scope = driver_catalog_scope(user)
+def review_cart(*, user, session=None):
+    scope = driver_catalog_scope(user, session)
     driver = Driver.objects.select_for_update().get(pk=scope.driver_id)
     sponsor = SponsorCompany.objects.select_for_update().get(pk=scope.company_id)
     items = _locked_items(scope)
@@ -185,7 +185,7 @@ def _purchase_reason(names):
 
 
 @transaction.atomic
-def checkout_cart(*, user, idempotency_key=None, review_token=None):
+def checkout_cart(*, user, idempotency_key=None, review_token=None, session=None):
     """Buy everything in the driver's cart: spend the points and empty the cart.
 
     This is an internal points redemption, not external provider fulfillment.
@@ -193,7 +193,7 @@ def checkout_cart(*, user, idempotency_key=None, review_token=None):
     # Imported here: drivers.services imports this module to clear carts.
     from drivers.services.points import PointAdjustmentError, spend_driver_points
 
-    scope = driver_catalog_scope(user)
+    scope = driver_catalog_scope(user, session)
     # Serialize checkouts for one Driver before reading their cart. Otherwise
     # concurrent requests can both read the same items and spend twice.
     driver = Driver.objects.select_for_update().get(pk=scope.driver_id)

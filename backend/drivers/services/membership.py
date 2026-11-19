@@ -80,6 +80,35 @@ def open_application(*, driver, sponsor, changed_by_user):
 
 
 @transaction.atomic
+def apply_to_sponsors(*, driver, sponsors, changed_by_user):
+    """A driver applies to several sponsors at once, all or nothing.
+
+    Raises DriverMembershipError, naming each sponsor, when the driver already
+    has an active application or membership with any of them. Returns the
+    pending memberships.
+    """
+    locked_driver = _lock_driver(driver)
+    active = DriverSponsorMembership.objects.filter(
+        driver=locked_driver,
+        sponsor__in=sponsors,
+        status__in=DriverSponsorMembership.ACTIVE_STATUSES,
+    ).select_related('sponsor')
+    conflicts = {
+        str(membership.sponsor_id): (
+            'You already have an active application or membership with '
+            f'{membership.sponsor.name}.'
+        )
+        for membership in active
+    }
+    if conflicts:
+        raise DriverMembershipError('sponsor_ids', conflicts, code='already_active')
+    return [
+        open_application(driver=locked_driver, sponsor=sponsor, changed_by_user=changed_by_user)
+        for sponsor in sponsors
+    ]
+
+
+@transaction.atomic
 def link_driver_to_sponsor(*, username, changed_by_user):
     """Invite a driver to the sponsor's organization as a pending application.
 

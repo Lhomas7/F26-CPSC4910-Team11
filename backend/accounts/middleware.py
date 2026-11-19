@@ -5,6 +5,8 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
+from drivers.active_sponsor import SESSION_KEY as ACTIVE_SPONSOR_KEY
+
 from .models import AdminImpersonationEvent
 from .services import get_account_type, get_mfa_status
 from .services.impersonation import view_as_eligibility
@@ -35,6 +37,8 @@ def clear_impersonation(session):
     session.pop(IMPERSONATION_TARGET_KEY, None)
     session.pop(IMPERSONATION_STARTED_KEY, None)
     session.pop(IMPERSONATION_ROLE_KEY, None)
+    # A sponsor chosen while viewing as a driver belongs to that view only.
+    session.pop(ACTIVE_SPONSOR_KEY, None)
 
 
 def end_impersonation(request, reason, action='invalidate', target=None):

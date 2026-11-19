@@ -11,6 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from accounts.permissions import DriverAccount, MFAEnrolled, SponsorAccount
 from catalog.models import Redemption, RedemptionItem
 from catalog.serializers.purchases import PurchaseDateFilterSerializer, PurchaseHistorySerializer
+from drivers.active_sponsor import resolve_active_sponsor_id
 from drivers.models import DriverSponsorMembership
 
 
@@ -43,6 +44,16 @@ class DriverPurchaseView(PurchaseView):
 
 class DriverPurchaseHistoryView(ListModelMixin, DriverPurchaseView):
     pagination_class = PurchaseHistoryPagination
+
+    def get_queryset(self):
+        # The list follows the active sponsor; a receipt's detail stays reachable.
+        queryset = super().get_queryset()
+        sponsor_id = resolve_active_sponsor_id(
+            self.request.user.driver_profile, self.request.session
+        )
+        if sponsor_id is None:
+            return queryset.none()
+        return queryset.filter(sponsor_id=sponsor_id)
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

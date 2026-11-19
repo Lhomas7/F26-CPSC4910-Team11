@@ -10,6 +10,7 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from drivers.active_sponsor import SESSION_KEY as ACTIVE_SPONSOR_KEY
 from drivers.services import DriverMembershipError, admin_assign_sponsors, admin_remove_sponsor
 
 from ..middleware import (
@@ -70,6 +71,7 @@ class AdminImpersonationStartView(APIView):
         request.session[IMPERSONATION_TARGET_KEY] = target.id
         request.session[IMPERSONATION_ROLE_KEY] = target_role
         request.session[IMPERSONATION_STARTED_KEY] = started_at.isoformat()
+        request.session.pop(ACTIVE_SPONSOR_KEY, None)
         AdminImpersonationEvent.objects.create(
             admin=request.user,
             target=target,
